@@ -130,7 +130,7 @@ def compute_misfit_active_subspace(N, pde_model, return_ss=True):
     
     # compute the active subspace
     ss = asub.Subspaces()
-    ss.compute(df=df, sstype=0, nboot=100)
+    ss.compute(df=df, nboot=100)
     
     if return_ss: return ss
     else: return df
@@ -156,9 +156,9 @@ if __name__ == "__main__":
     print 'Active subspace estimated!'
     
     # plot active subspace metrics
-    asub.utils.plotters.eigenvalues(ss.eigenvalues[:10, 0], e_br=ss.e_br[:10,:])
+    asub.utils.plotters.eigenvalues(ss.eigenvals[:10, 0], e_br=ss.e_br[:10,:])
     asub.utils.plotters.subspace_errors(ss.sub_br[:10,:])
-    asub.utils.plotters.eigenvectors(ss.eigenvectors[:,:2])
+    asub.utils.plotters.eigenvectors(ss.eigenvecs[:,:2])
     
     # set active subspace dimension to 2
     n = 2
