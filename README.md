@@ -2,7 +2,7 @@
 
 *Active subspaces* are part of an emerging set of tools for subspace-based dimension reduction in complex simulation models in science and engineering. This repository contains data sets and associated [Jupyter](http://jupyter.org) notebooks that apply active subspace methods to a wide range of science and engineering models. The Python implementations of the methods are available on [Github](http://github.com/paulcon/active_subspaces/). More information on active subspaces can be found at [activesubspaces.org](http://activesubspaces.org).
 
-Each directory contains a data set as a CSV file (`.txt`) and a Jupyter notebook (`.ipynb`). Github allows you view the notebook by simply clicking the `.ipynb` file. However, Github's rendering of mathematical expressions is not as robust as the rendering at [nbviewer.jupyter.org](http://nbviewer.jupyter.org/). We recommend you copy the link to the notebook you wish to view and paste it in the box at [nbviewer.jupyter.org](http://nbviewer.jupyter.org/). Each notebook also has links to associated publications for more details.
+Each directory contains a data set as a CSV file and a Jupyter notebook (`.ipynb`). Github allows you view the notebook by simply clicking the `.ipynb` file. However, Github's rendering of mathematical expressions is not as robust as the rendering at [nbviewer.jupyter.org](http://nbviewer.jupyter.org/). We recommend you copy the link to the notebook you wish to view and paste it in the box at [nbviewer.jupyter.org](http://nbviewer.jupyter.org/). Each notebook also has links to associated publications for more details.
 
 # Contributing
 
