@@ -8,9 +8,20 @@ Each directory contains a data set as a CSV file and a Jupyter notebook (`.ipynb
 
 The repository contains Jupyter notebooks for the following data sets.
 
-* **Ebola:** A 9-parameter dynamical system model for the geographic spread of Ebola. [PAPER](http://arxiv.org/abs/1603.04955)
-* **HIV:** A 21-parameter dynamical system model for in-host HIV. [PAPER](http://arxiv.org/abs/1604.04588)
-
+* **Ebola:** a 9-parameter dynamical system model for the geographic spread of Ebola. [[paper]](http://arxiv.org/abs/1603.04955)
+* **HIV:** a 21-parameter dynamical system model for in-host HIV. [[paper]](http://arxiv.org/abs/1604.04588)
+* **HyShotII:** a 7-parameter multiphysics model of a hypersonic scramjet. [[paper]](http://dx.doi.org/10.1016/j.jcp.2015.09.001)
+* **Hydrology:** a 20-parameter integrated surface/subsurface hydrologic model. [[paper]](http://dx.doi.org/10.1016/j.cageo.2015.07.001)
+* **Lithium_Battery:** an 18-parameter model of a lithium-ion battery. [[paper]](https://arxiv.org/abs/1606.08770)
+* **MCMC:** exploiting active subspaces to apply MCMC in a 100-parameter PDE model. [[paper]](http://dx.doi.org/10.1137/15M1042127)
+* **MHD:** a 5-parameter magnetohydrodynamics power generation model. [[paper]](https://arxiv.org/abs/1609.01255)
+* **NACA0012:** an 18-parameter model for a two-spatial-dimensional airfoil. [[chapter 5]](http://dx.doi.org/10.1137/1.9781611973860)
+* **NREL_Wind:** a 5-parameter model of off-shore wind turbine fatige. [[paper]](http://dx.doi.org/10.1002/we.1870)
+* **ONERA-M6:** a 60-parameter model for a three-spatial-dimensional transonic wing. [[paper]](http://dx.doi.org/10.2514/6.2014-1171)
+* **Reentry_freestream_conditions:** a 7-parameter model for an atmostpheric re-entry vehicle.
+* **SingleDiodePV:** a 5-parameter model for a lumped-parameter single-diode photovoltaic solar cell. [[paper]](http://dx.doi.org/10.1002/sam.11281)
+* **Stomatal_Resistance:** a 20-parameter model of stomatal resistance in an integrated surface/subsurface hydrologic model. [[thesis]](http://hdl.handle.net/11124/170080)
+* **Subsurface_Permeability:** a 100-parameter model for subsurface permeability for groundwater flow. [[paper]](http://dx.doi.org/10.1016/j.advwatres.2016.03.020)
 
 # Contributing
 
