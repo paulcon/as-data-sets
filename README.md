@@ -6,7 +6,7 @@ Each directory contains a data set as a CSV file and a Jupyter notebook (`.ipynb
 
 # Data sets
 
-The repository contains Jupyter notebooks for the following data sets.
+The repository contains Jupyter notebooks for the following models / data sets.
 
 * **Ebola:** a 9-parameter dynamical system model for the geographic spread of Ebola. [[paper]](http://arxiv.org/abs/1603.04955)
 * **HIV:** a 21-parameter dynamical system model for in-host HIV. [[paper]](http://arxiv.org/abs/1604.04588)
