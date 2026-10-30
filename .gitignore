@@ -1,3 +1,16 @@
+# notebooks
+.ipynb_checkpoints/
 *.ipynb_checkpoints*
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+# publisher PDFs used for reviews; not for redistribution
+papers/
+# OS / tools
 .DS_Store
 gurobi.log
+.mcp.json
+.claude/settings.local.json
+.idea/
