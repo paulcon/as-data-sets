@@ -121,8 +121,9 @@ Xu, idx = np.unique(Xu, axis=0, return_index=True); u, du = u[idx], du[idx]  # o
 ## 9. Acceptance criteria
 
 - Headless execution in `.venv` takes < 60 s, with imports limited to numpy, scipy, matplotlib and active_subspaces.
-- Hartmann u: λ1, λ2 = 36.57 and 1.2275 (±0.1%), λ3–5 < 1e-12·λ1. w1 ≈ ±[−.572, 0, .802, .062, −.160].
-- Hartmann B: λ1, λ2 = 0.08626 and 0.006354 (±0.1%). w1 ≈ ±[−.381, 0, .663, −.493, .414].
+- Hartmann u: λ1, λ2 = 36.57 and 1.2275 (±0.1%), λ3–5 < 1e-12·λ1. w1 ≈ [.572, 0, −.802, −.062, .160].
+- Hartmann B: λ1, λ2 = 0.08626 and 0.006354 (±0.1%). w1 ≈ [.381, 0, −.663, .493, −.414].
+- Signs (author, 2026-10-30): the 2016 / paper rule, first component of w1 and w2 positive, set with `ac.orient`. It gives the signs of the paper's Figs. 2B, 5B and 6B. (The Hartmann w1 values above were first written under the v1 default rule, largest component positive, which flips them.)
 - Generator u (483 rows): λ = [28.98, 0.928, 0.202, 0.0306, 7.3e-5] (±0.5%); λ5/Σλ = 2.4e-6. w1 ≈ [.83, −.02, −.56, .04, −.05].
 - Generator B: λ = [4.156e-3, 4.94e-4, 1.10e-4, 1.58e-5, 4.9e-11]; λ5/Σλ = 1.0e-8. w1 ≈ [.49, −.12, −.30, .73, −.36].
 - Dedup changes these by < 1%.
