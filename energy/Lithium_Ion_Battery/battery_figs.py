@@ -1,1167 +1,151 @@
-import numpy as np
-import pandas as pn
+"""Loading, Algorithm 1 and figures for the lithium-ion battery data.
+
+Constantine & Doostan, Stat. Anal. Data Min. 10(5):243-262, 2017, doi:10.1002/sam.11347.
+The data are the Newman-model runs of Hadigol, Maute & Doostan, J. Power Sources
+300:507-524, 2015 (see DATA.md). Matplotlib settings are left to the notebook.
+"""
+import warnings
+from pathlib import Path
+
 import matplotlib.pyplot as plt
-import pdb
+import numpy as np
+
+import active_subspaces as ac
+
+DATA = Path(__file__).with_name('battery_data.npz')
+RATES = {'0.25C': ('025C', 0.25), '1C': ('1C', 1.0), '4C': ('4C', 4.0)}   # npz key, multiple of 1C
+I_1C = 30.0             # A m^-2: current density of a 1C discharge. Inferred from the 2016 code, not confirmed
+CUTOFF, TOL = 2.8, 1e-3                  # V: every run stops at the cutoff; TOL decides an overshoot
+TSTAR = np.linspace(1, 99, 50)[::-1]     # t* of voltage column k is 99 - 2k (2016 code)
+# Grid columns analyzed: every voltage of the capacity grid; every t* but 99 and 1 (2016 code)
+COLS = {'capacity': np.arange(50), 'voltage': np.arange(1, 49)}
+BANDS = {('capacity', '0.25C'): (2, 17, 38), ('capacity', '1C'): (5, 34, 48), ('capacity', '4C'): (5, 34, 48),
+         **{('voltage', r): (2, 38, 47) for r in RATES}}    # grid indices of the regions A, B, C
+YLABEL = {'capacity': r'Capacity [mAh cm$^{-2}$]', 'voltage': 'Voltage [V]'}
+XLABEL = {'capacity': 'Voltage [V]', 'voltage': r'$t^*$'}
+
+# The 19 inputs in data-column order, with the 2016 line styles (style, color, width).
+LABELS = [r'$\epsilon_a$', r'$\epsilon_s$', r'$\epsilon_c$', r'brugg$_a$', r'brugg$_s$', r'brugg$_c$',
+          r'$t_+^0$', r'$D$', r'$D_a$', r'$D_c$', r'$\sigma_a$', r'$\sigma_c$', r'$k_a$', r'$k_c$',
+          r'$r_a$', r'$r_c$', r'$L_a$', r'$L_s$', r'$L_c$']
+NAMES = ['eps_a', 'eps_s', 'eps_c', 'brugg_a', 'brugg_s', 'brugg_c', 't+0', 'D', 'D_a', 'D_c', 'sigma_a',
+         'sigma_c', 'k_a', 'k_c', 'r_a', 'r_c', 'L_a', 'L_s', 'L_c']     # plain text, for printing
+STYLES = [('-', 'b', 3), ('-', 'g', 3), ('-', 'r', 3), ('-', 'b', 1), ('-', 'g', 1), ('-', 'r', 1),
+          ('-', 'm', 1), (':', 'm', 1), ('-.', 'b', 1), ('-.', 'r', 1), (':', 'b', 1), (':', 'r', 1),
+          ('-.', 'b', 3), ('-.', 'r', 3), ('--', 'b', 1), ('--', 'r', 1), ('--', 'b', 3), ('--', 'g', 3),
+          ('--', 'r', 3)]
+GROUPS = {'Anode': [0, 3, 16, 8, 10, 12, 14], 'Cathode': [2, 5, 18, 9, 11, 13, 15],
+          'Separator': [1, 4, 17], 'Miscellany': [6, 7]}
 
 
-def get_coefficients(X, f):
-    M, m = X.shape
-    
-    A = np.hstack((np.ones((M, 1)), X)) 
-    u = np.linalg.lstsq(A, f)[0]
-    w = u[1:].reshape((m, 1))
-    return w / np.linalg.norm(w)
-    
-def get_coefficients_boot(X, f, nboot=100):
-    M, m = X.shape
-    
-    a = np.zeros((m, nboot))
-    for i in range(nboot):
-        ind = np.random.randint(M, size=(M, ))
-        X0 = X[ind,:].copy()
-        f0 = f[ind,:].copy()
-        a[:,i] = get_coefficients(X0, f0).reshape((m, ))
-        
-    se = np.std(a, axis=1)
-    ind = se < 1e-15
-    se[ind] = 1e-15
-    return se
+def load(rate):
+    """All 3600 runs at one rate: X (3600, 19) in [-1, 1], voltage [V] (3600, 50) on the t* grid,
+    capacity [mAh cm^-2] (3600, 50) on the voltage grid, and that grid vgrid [V] (50,)."""
+    key, c = RATES[rate]
+    with np.load(DATA) as z:
+        seconds = z[f'time_{key}']        # elapsed discharge time [s] (inferred)
+        # capacity = current density * time: A m^-2 * s / 3600 = Ah m^-2 = 0.1 mAh cm^-2
+        return z['X'], z[f'voltage_{key}'], c * I_1C * seconds / 3600 / 10, z[f'vgrid_{key}']
 
-class BatteryData():
-    
-    CAPFAC025 = 7.5/36000.
-    CAPFAC1 = 30./36000.
-    CAPFAC4 = 120./36000.
-    
-    def __init__(self, filename, vfilename, cflag):
-        """
-        cflag: 0 is 0.25C, 1 is 1C, 2 is 4C
-        """
-        
-        df = pn.DataFrame.from_csv(filename)
-        data = df.as_matrix()
-        labels = df.keys()
-        
-        # inputs, normalized to [-1,1]
-        if cflag==2:
-            self.X = np.delete(data[:,:19], 1537, 0)
-        else:
-            self.X = data[:,:19]
-            
-        self.in_labels = labels[:19]
-        
-        # voltage
-        if cflag==2:
-            self.voltage = np.delete(data[:,19:69], 1537, 0)
-        else:
-            self.voltage = data[:,19:69]
-        
-        # capacity
-        if cflag==0:
-            self.capacity = self.CAPFAC025*data[:,69:119]
-        elif cflag==1:
-            self.capacity = self.CAPFAC1*data[:,69:119]
-        elif cflag==2:
-            self.capacity = self.CAPFAC4*np.delete(data[:,69:119], 1537, 0)
-        else:
-            self.capacity = []
-        
-        # concentration anode
-        if cflag==2:
-            self.concentration_anode = np.delete(data[:,119:169], 1537, 0)
-        else:
-            self.concentration_anode = data[:,119:169]  
-        
-        # concentration separator
-        if cflag==2:
-            self.concentration_separator = np.delete(data[:,169:219], 1537, 0)
-        else:
-            self.concentration_separator = data[:,169:219]  
-        
-        # concentration cathode
-        if cflag==2:
-            self.concentration_cathode = np.delete(data[:,219:269], 1537, 0)
-        else:
-            self.concentration_cathode = data[:,219:269]            
-        
-        # time range
-        self.tstar = np.linspace(1, 99, 50)[::-1]
-        
-        # voltage as time
-        self.vtime = np.loadtxt(vfilename)
-    
-    
-def input_labels():
-    # to get tex in matplotlib: 
-    # http://matplotlib.org/users/usetex.html
-    
-    in_labels = [r'$\epsilon_a$', 
-        r'$\epsilon_s$', 
-        r'$\epsilon_c$', 
-        r'brugg$_a$', 
-        r'brugg$_s$', 
-        r'brugg$_c$', 
-        r'$t_+^0$', 
-        r'$D$', 
-        r'$D_a$', 
-        r'$D_c$', 
-        r'$\sigma_a$', 
-        r'$\sigma_c$', 
-        r'$k_a$', 
-        r'$k_c$', 
-        r'$r_a$', 
-        r'$r_c$', 
-        r'$L_a$', 
-        r'$L_s$', 
-        r'$L_c$']
-        
-    linestyles = ['-', 
-        '-',
-        '-',
-        '-',
-        '-',
-        '-',
-        '-',
-        ':',
-        '-.',
-        '-.',
-        ':',
-        ':',
-        '-.',
-        '-.',
-        '--',
-        '--',
-        '--',
-        '--',
-        '--']
-        
-    colors = ['b',
-        'g',
-        'r',
-        'b',
-        'g',
-        'r',
-        'm',
-        'm',
-        'b',
-        'r',
-        'b',
-        'r',
-        'b',
-        'r',
-        'b',
-        'r',
-        'b',
-        'g',
-        'r']
-        
-    linewidths = [3,
-        3,
-        3,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        3,
-        3,
-        1,
-        1,
-        3,
-        3,
-        3]
-        
-    
-    anode_index = [0, 3, 16, 8, 10, 12, 14]
-    separator_index = [1, 4, 17]
-    cathode_index = [2, 5, 18, 9, 11, 13, 15]
-    misc_index = [6, 7]
-    indices = [anode_index, cathode_index, separator_index, misc_index]
-    """
-    comp_ind = [0, 3, 16, 8, 10, 12, 14, 2, 5, 18, 9, 11, 13, 15, 1, 4, 17, 6, 7]
-    """
-    return in_labels, linestyles, colors, linewidths, indices
 
-def Cap_025C():
+def overshoot(voltage):
+    """True for runs whose last voltage is more than TOL below the cutoff."""
+    return voltage[:, -1] < CUTOFF - TOL
 
-    bd = BatteryData('0.25C.txt', 'V_025C.txt', 0)
-    ntime = bd.tstar.shape[0]
-    M, m = bd.X.shape
-    
-    a = np.zeros((m, ntime))
-    for i in range(ntime):
-        ff = bd.capacity[:,i].reshape((M, 1))
-        a[:,i] = get_coefficients(bd.X, ff).reshape((m, ))
-    
-    plt.rc('text', usetex=False)
-    font = {'family' : 'serif',
-        'weight' : 'normal',
-        'size' : 16}
-    plt.rc('font', **font)
-    
-    fig = plt.figure(figsize=(10, 5))
-    ax = fig.add_subplot(111, ylim=(-1, 1))
-    ax.grid(True)
-    tind = [0,12,25,37,49]
-    ax.set_xticks(bd.vtime[tind])
-    ax.set_xticklabels(['{:2.1f}'.format(x) for x in bd.vtime[tind]])
-    ax.invert_xaxis()
-    ax.set_xlabel('Voltage [V]')
-    ax.set_ylabel('$\mathbf{w}$ components, Capacity, 0.25C')
-    ax.fill_between([bd.vtime[1], bd.vtime[3]], [-1, -1], [1, 1], facecolor=[0.7, 0.7, 0.7])
-    ax.fill_between([bd.vtime[16], bd.vtime[18]], [-1, -1], [1, 1], facecolor=[0.7, 0.7, 0.7])
-    ax.fill_between([bd.vtime[37], bd.vtime[39]], [-1, -1], [1, 1], facecolor=[0.7, 0.7, 0.7])
-    fig.text(0.148, 0.85, 'A')
-    fig.text(0.386, 0.85, 'B')
-    fig.text(0.719, 0.85, 'C')
-    
-    in_labels, linestyles, colors, linewidths, indices = input_labels()
-    linez = []
-    for i in range(m):
-        ll, = ax.plot(bd.vtime, a[i,:], linestyle=linestyles[i], color=colors[i], linewidth=linewidths[i], label=in_labels[i])
-        linez.append(ll)        
-        
-    leg0 = plt.legend(handles=[linez[i] for i in indices[0]], labels=[in_labels[i] for i in indices[0]], \
-        bbox_to_anchor=(1.06, 1), loc=2, borderaxespad=0., fontsize=16, title='Anode', handlelength=2)
-    plt.gca().add_artist(leg0)
 
-    leg3 = plt.legend(handles=[linez[i] for i in indices[3]], labels=[in_labels[i] for i in indices[3]], \
-        bbox_to_anchor=(1.265, 0.235), loc=2, borderaxespad=0., fontsize=16, title='Miscellany', handlelength=2, borderpad=0.8)
-    plt.gca().add_artist(leg3)
-    
-    leg2 = plt.legend(handles=[linez[i] for i in indices[2]], labels=[in_labels[i] for i in indices[2]], \
-        bbox_to_anchor=(1.06, 0.235), loc=2, borderaxespad=0., fontsize=16, title='Separator', handlelength=2, borderpad=0.42)
-    plt.gca().add_artist(leg2)
-    
-    leg1 = plt.legend(handles=[linez[i] for i in indices[1]], labels=[in_labels[i] for i in indices[1]], \
-        bbox_to_anchor=(1.265, 1), loc=2, borderaxespad=0., fontsize=16, title='Cathode', handlelength=2)
-   
-    fig, axes = plt.subplots(2, 3, figsize=(3*3.5, 2*3.5)); axes = axes.reshape(6).squeeze()
-    
-    # summary plots 95%
-    ax = axes[0]
-    ff = bd.capacity[:,2].reshape((M, 1))
-    aa = get_coefficients(bd.X, ff).reshape((m, ))
-    ax.set_xlim((-2, 2)); ax.set_ylim((0, 1.05*np.max(bd.capacity)))
+def row(qoi, c):
+    """Row of a weights array (one row per analyzed column) that holds grid column c."""
+    return c - COLS[qoi][0]
+
+
+def weights(X, F, nboot=0, rng=None):
+    """Algorithm 1 (OLS) at each column of F; one SubspaceResult per column.
+
+    v1 returns the signed direction w = u/||u|| of the fitted gradient u, so f increases
+    along w. On a uniform space every OLS call warns ValidityWarning (the heuristic has no
+    Stein-type guarantee there); the warning is expected and filtered here."""
+    space = ac.Uniform.reference(X.shape[1], names=LABELS)
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore', category=ac.ValidityWarning)
+        return [ac.active_subspace(X=X, f=f, space=space, estimator='ols', n=1, nboot=nboot,
+                                   bootstrap_vectors=1 if nboot else 0, rng=rng) for f in F.T]
+
+
+def bootstrap_se(X, F, W, rng, nboot=100):
+    """Bootstrap standard error of w (P, 19) at every column of F (M, P).
+
+    Each replicate resamples the M runs with replacement, one resample for all P columns,
+    so one least-squares solve gives Algorithm 1 at every column. Each replicate of w is
+    signed to agree with W, as v1 aligns its replicates; the SE is their standard deviation."""
+    M = X.shape[0]
+    A = np.hstack([np.ones((M, 1)), X])
+    reps = np.empty((nboot,) + W.shape)
+    for b in range(nboot):
+        i = rng.integers(0, M, size=M)
+        U = np.linalg.lstsq(A[i], F[i], rcond=None)[0][1:].T
+        U /= np.linalg.norm(U, axis=1, keepdims=True)
+        reps[b] = U * np.where(np.sum(U * W, axis=1, keepdims=True) < 0, -1.0, 1.0)
+    return reps.std(axis=0)
+
+
+def _grid_axis(ax, qoi, grid, centers):
+    """Descending grid axis with the shaded regions A, B, C (at 'centers', +-1 grid point)."""
+    ticks = grid[[0, 12, 25, 37, 49]]
+    ax.set_xticks(ticks, [f'{t:.1f}' for t in ticks])
+    ax.set_xlim(grid[0], grid[-1])
+    ax.set_xlabel(XLABEL[qoi])
     ax.grid(True)
-    ax.set_xticks([-2,0,2])
-    ax.locator_params(axis='y',nbins=4)
-    ax.set_xlabel('$\mathbf{w}^T\mathbf{x}$')
-    ax.set_ylabel('Capacity, 0.25C')
-    ax.plot(np.dot(bd.X, aa), ff, 'ko')
-    ax.set_title('A, V = {:2.1f}'.format(bd.vtime[2]))
-    
-    # ZOOM
-    ax = axes[3]
-    ax.set_xlim((-2, 2))
-    ax.grid(True)
-    ax.set_xticks([-2,0,2])
-    ax.locator_params(axis='y',nbins=4)
-    ax.set_xlabel('$\mathbf{w}^T\mathbf{x}$')
-    ax.set_ylabel('Capacity, 0.25C')
-    ax.plot(np.dot(bd.X, aa), ff, 'ko')
-    
-    # summary plots 65%
-    ax = axes[1]
-    ff = bd.capacity[:,17].reshape((M, 1))
-    aa = get_coefficients(bd.X, ff).reshape((m, ))
-    ax.set_xlim((-2, 2)); ax.set_ylim((0, 1.05*np.max(bd.capacity)))
-    ax.grid(True)
-    ax.set_xticks([-2,0,2])
-    ax.locator_params(axis='y',nbins=4)
-    ax.set_xlabel('$\mathbf{w}^T\mathbf{x}$')
-    ax.plot(np.dot(bd.X, aa), ff, 'ko')
-    ax.set_title('B, V = {:2.1f}'.format(bd.vtime[17]))
-    
-    ax = axes[4]
-    ax.set_xlim((-2, 2))
-    ax.grid(True)
-    ax.set_xticks([-2,0,2])
-    ax.locator_params(axis='y',nbins=4)
-    ax.set_xlabel('$\mathbf{w}^T\mathbf{x}$')
-    ax.plot(np.dot(bd.X, aa), ff, 'ko')
-    
-    # summary plots 23%
-    ax = axes[2]
-    ff = bd.capacity[:,38].reshape((M, 1))
-    aa = get_coefficients(bd.X, ff).reshape((m, ))
-    ax.set_xlim((-2, 2)); ax.set_ylim((0, 1.05*np.max(bd.capacity)))
-    ax.grid(True)
-    ax.set_xticks([-2,0,2])
-    ax.locator_params(axis='y',nbins=4)
-    ax.set_xlabel('$\mathbf{w}^T\mathbf{x}$')
-    ax.plot(np.dot(bd.X, aa), ff, 'ko')
-    ax.set_title('C, V = {:2.1f}'.format(bd.vtime[38]))
-    
-    ax = axes[5]
-    ax.set_xlim((-2, 2))
-    ax.grid(True)
-    ax.set_xticks([-2,0,2])
-    ax.locator_params(axis='y',nbins=4)
-    ax.set_xlabel('$\mathbf{w}^T\mathbf{x}$')
-    ax.plot(np.dot(bd.X, aa), ff, 'ko')
-    
+    for c, name in zip(centers, 'ABC'):
+        ax.axvspan(grid[c - 1], grid[c + 1], color='0.7', zorder=0)
+        ax.text(grid[c], 0.93, name, transform=ax.get_xaxis_transform(), ha='center')
+
+
+def _curves(ax, x, A):
+    return [ax.plot(x, A[:, i], ls, color=c, lw=lw)[0] for i, (ls, c, lw) in enumerate(STYLES)]
+
+
+def plot_weights(qoi, rate, grid, x, W):
+    """Components of w against the grid (paper Figs. 2-7, top), legends grouped by component."""
+    fig = plt.figure(figsize=(14, 5))
+    gs = fig.add_gridspec(1, 2, width_ratios=[2.7, 1], wspace=0.05)
+    ax, lax = fig.add_subplot(gs[0]), fig.add_subplot(gs[1])
+    lines = _curves(ax, x, W)
+    ax.set_ylim(-1, 1)
+    ax.set_ylabel(rf'$\mathbf{{w}}$ components, {qoi.capitalize()}, {rate}')
+    _grid_axis(ax, qoi, grid, BANDS[qoi, rate])
+    lax.axis('off')
+    for (title, idx), (bx, by, loc) in zip(GROUPS.items(), [(0, 1, 'upper left'), (0.52, 1, 'upper left'),
+                                                            (0, 0, 'lower left'), (0.52, 0, 'lower left')]):
+        lax.add_artist(lax.legend([lines[i] for i in idx], [LABELS[i] for i in idx], title=title, loc=loc,
+                                  bbox_to_anchor=(bx, by), borderaxespad=0, handlelength=2.2, fontsize=14))
+    return fig
+
+
+def plot_summaries(qoi, rate, grid, X, F, W_abc):
+    """Summary plots of F at A, B, C against w^T x: full range (top) and zoomed (bottom)."""
+    fig, axes = plt.subplots(2, 3, figsize=(12, 7.5), sharex=True)
+    lo, hi = (0, 1.05 * F.max()) if qoi == 'capacity' else (0.95 * F.min(), 1.05 * F.max())
+    for j, (c, name) in enumerate(zip(BANDS[qoi, rate], 'ABC')):
+        for ax in axes[:, j]:
+            ax.plot(X @ W_abc[j], F[:, c], 'ko', ms=2)
+            ax.grid(True)
+            ax.locator_params(axis='y', nbins=4)
+        axes[0, j].set_ylim(lo, hi)
+        axes[0, j].set_title(f'{name}, V = {grid[c]:.1f} V' if qoi == 'capacity' else
+                             rf'{name}, $t^*$ = {grid[c]:.1f}')
+        axes[1, j].set_xlabel(r'$\mathbf{w}^T\mathbf{x}$')
+    for ax in axes[:, 0]:
+        ax.set_ylabel(YLABEL[qoi])
+    axes[0, 0].set_xlim(-2.2, 2.2)
+    axes[0, 0].set_xticks([-2, 0, 2])
+    fig.suptitle(f'{qoi.capitalize()}, I = {rate}')
     fig.tight_layout()
-    
-def Cap_1C():
-    
-    bd = BatteryData('1C.txt', 'V_1C.txt', 1)
-    ntime = bd.tstar.shape[0]
-    M, m = bd.X.shape
-    
-    a = np.zeros((m, ntime))
-    for i in range(ntime):
-        ff = bd.capacity[:,i].reshape((M, 1))
-        a[:,i] = get_coefficients(bd.X, ff).reshape((m, ))
-    
-    plt.rc('text', usetex=False)
-    font = {'family' : 'serif',
-        'weight' : 'normal',
-        'size' : 16}
-    plt.rc('font', **font)
-    
-    fig = plt.figure(figsize=(10, 5))
-    ax = fig.add_subplot(111, ylim=(-1, 1))
-    ax.grid(True)
-    tind = [0,12,25,37,49]
-    ax.set_xticks(bd.vtime[tind])
-    ax.set_xticklabels(['{:2.1f}'.format(x) for x in bd.vtime[tind]])
-    ax.invert_xaxis()
-    ax.set_xlabel('Voltage [V]')
-    ax.set_ylabel('$\mathbf{w}$ components, Capacity, 1C')
-    
-    # 5, 34, 48
-    ax.fill_between([bd.vtime[4], bd.vtime[6]], [-1, -1], [1, 1], facecolor=[0.7, 0.7, 0.7])
-    ax.fill_between([bd.vtime[33], bd.vtime[35]], [-1, -1], [1, 1], facecolor=[0.7, 0.7, 0.7])
-    ax.fill_between([bd.vtime[47], bd.vtime[49]], [-1, -1], [1, 1], facecolor=[0.7, 0.7, 0.7])
-    fig.text(0.196, 0.85, 'A')
-    fig.text(0.655, 0.85, 'B')
-    fig.text(0.876, 0.85, 'C')
-    
-    in_labels, linestyles, colors, linewidths, indices = input_labels()
-    linez = []
-    for i in range(m):
-        ll, = ax.plot(bd.vtime, a[i,:], linestyle=linestyles[i], color=colors[i], linewidth=linewidths[i], label=in_labels[i])
-        linez.append(ll)        
-        
-    leg0 = plt.legend(handles=[linez[i] for i in indices[0]], labels=[in_labels[i] for i in indices[0]], \
-        bbox_to_anchor=(1.06, 1), loc=2, borderaxespad=0., fontsize=16, title='Anode', handlelength=2)
-    plt.gca().add_artist(leg0)
+    return fig
 
-    leg3 = plt.legend(handles=[linez[i] for i in indices[3]], labels=[in_labels[i] for i in indices[3]], \
-        bbox_to_anchor=(1.265, 0.235), loc=2, borderaxespad=0., fontsize=16, title='Miscellany', handlelength=2, borderpad=0.8)
-    plt.gca().add_artist(leg3)
-    
-    leg2 = plt.legend(handles=[linez[i] for i in indices[2]], labels=[in_labels[i] for i in indices[2]], \
-        bbox_to_anchor=(1.06, 0.235), loc=2, borderaxespad=0., fontsize=16, title='Separator', handlelength=2, borderpad=0.42)
-    plt.gca().add_artist(leg2)
-    
-    leg1 = plt.legend(handles=[linez[i] for i in indices[1]], labels=[in_labels[i] for i in indices[1]], \
-        bbox_to_anchor=(1.265, 1), loc=2, borderaxespad=0., fontsize=16, title='Cathode', handlelength=2)
-    
-    fig, axes = plt.subplots(2, 3, figsize=(3*3.5, 2*3.5)); axes = axes.reshape(6).squeeze()
-    
-    # summary plots 95%
-    ax = axes[0]
-    ff = bd.capacity[:,5].reshape((M, 1))
-    aa = get_coefficients(bd.X, ff).reshape((m, ))
-    ax.set_xlim((-2, 2)); ax.set_ylim((0, 1.05*np.max(bd.capacity)))
-    ax.grid(True)
-    ax.set_xticks([-2,0,2])
-    ax.locator_params(axis='y',nbins=4)
-    ax.set_xlabel('$\mathbf{w}^T\mathbf{x}$')
-    ax.set_ylabel('Capacity, 1C')
-    ax.plot(np.dot(bd.X, aa), ff, 'ko')
-    ax.set_title('A, V = {:2.1f}'.format(bd.vtime[5]))
-    
-    # ZOOM
-    ax = axes[3]
-    ax.set_xlim((-2, 2))
-    ax.grid(True)
-    ax.set_xticks([-2,0,2])
-    ax.locator_params(axis='y',nbins=4)
-    ax.set_xlabel('$\mathbf{w}^T\mathbf{x}$')
-    ax.set_ylabel('Capacity, 1C')
-    ax.plot(np.dot(bd.X, aa), ff, 'ko')
-    
-    # summary plots 65%
-    ax = axes[1]
-    ff = bd.capacity[:,34].reshape((M, 1))
-    aa = get_coefficients(bd.X, ff).reshape((m, ))
-    ax.set_xlim((-2, 2)); ax.set_ylim((0, 1.05*np.max(bd.capacity)))
-    ax.grid(True)
-    ax.set_xticks([-2,0,2])
-    ax.locator_params(axis='y',nbins=4)
-    ax.set_xlabel('$\mathbf{w}^T\mathbf{x}$')
-    ax.plot(np.dot(bd.X, aa), ff, 'ko')
-    ax.set_title('B, V = {:2.1f}'.format(bd.vtime[34]))
-    
-    ax = axes[4]
-    ax.set_xlim((-2, 2))
-    ax.grid(True)
-    ax.set_xticks([-2,0,2])
-    ax.locator_params(axis='y',nbins=4)
-    ax.set_xlabel('$\mathbf{w}^T\mathbf{x}$')
-    ax.plot(np.dot(bd.X, aa), ff, 'ko')
-    
-    # summary plots 23%
-    ax = axes[2]
-    ff = bd.capacity[:,48].reshape((M, 1))
-    aa = get_coefficients(bd.X, ff).reshape((m, ))
-    ax.set_xlim((-2, 2)); ax.set_ylim((0, 1.05*np.max(bd.capacity)))
-    ax.grid(True)
-    ax.set_xticks([-2,0,2])
-    ax.locator_params(axis='y',nbins=4)
-    ax.set_xlabel('$\mathbf{w}^T\mathbf{x}$')
-    ax.plot(np.dot(bd.X, aa), ff, 'ko')
-    ax.set_title('C, V = {:2.1f}'.format(bd.vtime[48]))
-    
-    ax = axes[5]
-    ax.set_xlim((-2, 2))
-    ax.grid(True)
-    ax.set_xticks([-2,0,2])
-    ax.locator_params(axis='y',nbins=4)
-    ax.set_xlabel('$\mathbf{w}^T\mathbf{x}$')
-    ax.plot(np.dot(bd.X, aa), ff, 'ko')
-    
-    fig.tight_layout()
 
-def Cap_4C():
-    
-    bd = BatteryData('4C.txt', 'V_4C.txt', 2)
-    ntime = bd.tstar.shape[0]
-    M, m = bd.X.shape
-     
-    a = np.zeros((m, ntime))
-    for i in range(ntime):
-        ff = bd.capacity[:,i].reshape((M, 1))
-        a[:,i] = get_coefficients(bd.X, ff).reshape((m, ))
-    
-    plt.rc('text', usetex=False)
-    font = {'family' : 'serif',
-        'weight' : 'normal',
-        'size' : 16}
-    plt.rc('font', **font)
-    
-    fig = plt.figure(figsize=(10, 5))
-    ax = fig.add_subplot(111, ylim=(-1, 1))
-    ax.grid(True)
-    tind = [0,12,25,37,49]
-    ax.set_xticks(bd.vtime[tind])
-    ax.set_xticklabels(['{:2.1f}'.format(x) for x in bd.vtime[tind]])
-    ax.invert_xaxis()
-    ax.set_xlabel('Voltage [V]')
-    ax.set_ylabel('$\mathbf{w}$ components, Capacity, 4C')
-    
-    # 5, 34, 48
-    ax.fill_between([bd.vtime[4], bd.vtime[6]], [-1, -1], [1, 1], facecolor=[0.7, 0.7, 0.7])
-    ax.fill_between([bd.vtime[33], bd.vtime[35]], [-1, -1], [1, 1], facecolor=[0.7, 0.7, 0.7])
-    ax.fill_between([bd.vtime[47], bd.vtime[49]], [-1, -1], [1, 1], facecolor=[0.7, 0.7, 0.7])
-    fig.text(0.197, 0.85, 'A')
-    fig.text(0.655, 0.85, 'B')
-    fig.text(0.876, 0.85, 'C')
-    
-    in_labels, linestyles, colors, linewidths, indices = input_labels()
-    linez = []
-    for i in range(m):
-        ll, = ax.plot(bd.vtime, a[i,:], linestyle=linestyles[i], color=colors[i], linewidth=linewidths[i], label=in_labels[i])
-        linez.append(ll)        
-        
-    leg0 = plt.legend(handles=[linez[i] for i in indices[0]], labels=[in_labels[i] for i in indices[0]], \
-        bbox_to_anchor=(1.06, 1), loc=2, borderaxespad=0., fontsize=16, title='Anode', handlelength=2)
-    plt.gca().add_artist(leg0)
-
-    leg3 = plt.legend(handles=[linez[i] for i in indices[3]], labels=[in_labels[i] for i in indices[3]], \
-        bbox_to_anchor=(1.265, 0.235), loc=2, borderaxespad=0., fontsize=16, title='Miscellany', handlelength=2, borderpad=0.8)
-    plt.gca().add_artist(leg3)
-    
-    leg2 = plt.legend(handles=[linez[i] for i in indices[2]], labels=[in_labels[i] for i in indices[2]], \
-        bbox_to_anchor=(1.06, 0.235), loc=2, borderaxespad=0., fontsize=16, title='Separator', handlelength=2, borderpad=0.42)
-    plt.gca().add_artist(leg2)
-    
-    leg1 = plt.legend(handles=[linez[i] for i in indices[1]], labels=[in_labels[i] for i in indices[1]], \
-        bbox_to_anchor=(1.265, 1), loc=2, borderaxespad=0., fontsize=16, title='Cathode', handlelength=2)
-    
-    fig, axes = plt.subplots(2, 3, figsize=(3*3.5, 2*3.5)); axes = axes.reshape(6).squeeze()
-    
-    # summary plots 95%
-    ax = axes[0]
-    ff = bd.capacity[:,5].reshape((M, 1))
-    aa = get_coefficients(bd.X, ff).reshape((m, ))
-    ax.set_xlim((-2, 2)); ax.set_ylim((0, 1.05*np.max(bd.capacity)))
-    ax.grid(True)
-    ax.set_xticks([-2,0,2])
-    ax.locator_params(axis='y',nbins=4)
-    ax.set_xlabel('$\mathbf{w}^T\mathbf{x}$')
-    ax.set_ylabel('Capacity, 4C')
-    ax.plot(np.dot(bd.X, aa), ff, 'ko')
-    ax.set_title('A, V = {:2.1f}'.format(bd.vtime[5]))
-    
-    # ZOOM
-    ax = axes[3]
-    ax.set_xlim((-2, 2))
-    ax.grid(True)
-    ax.set_xticks([-2,0,2])
-    ax.locator_params(axis='y',nbins=4)
-    ax.set_xlabel('$\mathbf{w}^T\mathbf{x}$')
-    ax.set_ylabel('Capacity, 4C')
-    ax.plot(np.dot(bd.X, aa), ff, 'ko')
-    
-    # summary plots 65%
-    ax = axes[1]
-    ff = bd.capacity[:,34].reshape((M, 1))
-    aa = get_coefficients(bd.X, ff).reshape((m, ))
-    ax.set_xlim((-2, 2)); ax.set_ylim((0, 1.05*np.max(bd.capacity)))
-    ax.grid(True)
-    ax.set_xticks([-2,0,2])
-    ax.locator_params(axis='y',nbins=4)
-    ax.set_xlabel('$\mathbf{w}^T\mathbf{x}$')
-    ax.plot(np.dot(bd.X, aa), ff, 'ko')
-    ax.set_title('B, V = {:2.1f}'.format(bd.vtime[34]))
-    
-    ax = axes[4]
-    ax.set_xlim((-2, 2))
-    ax.grid(True)
-    ax.set_xticks([-2,0,2])
-    ax.locator_params(axis='y',nbins=4)
-    ax.set_xlabel('$\mathbf{w}^T\mathbf{x}$')
-    ax.plot(np.dot(bd.X, aa), ff, 'ko')
-    
-    # summary plots 23%
-    ax = axes[2]
-    ff = bd.capacity[:,48].reshape((M, 1))
-    aa = get_coefficients(bd.X, ff).reshape((m, ))
-    ax.set_xlim((-2, 2)); ax.set_ylim((0, 1.05*np.max(bd.capacity)))
-    ax.grid(True)
-    ax.set_xticks([-2,0,2])
-    ax.locator_params(axis='y',nbins=4)
-    ax.set_xlabel('$\mathbf{w}^T\mathbf{x}$')
-    ax.plot(np.dot(bd.X, aa), ff, 'ko')
-    ax.set_title('C, V = {:2.1f}'.format(bd.vtime[48]))
-    
-    ax = axes[5]
-    ax.set_xlim((-2, 2))
-    ax.grid(True)
-    ax.set_xticks([-2,0,2])
-    ax.locator_params(axis='y',nbins=4)
-    ax.set_xlabel('$\mathbf{w}^T\mathbf{x}$')
-    ax.plot(np.dot(bd.X, aa), ff, 'ko')
-    
-    fig.tight_layout()
-
-def Vol_025C():
-    bd = BatteryData('0.25C.txt', 'V_025C.txt', 0)
-    ntime = bd.tstar.shape[0]
-    M, m = bd.X.shape
-    
-    a = np.zeros((m, ntime-2))
-    for i in range(ntime-2):
-        ff = bd.voltage[:,i+1].reshape((M, 1))
-        a[:,i] = get_coefficients(bd.X, ff).reshape((m, ))
-    
-    plt.rc('text', usetex=False)
-    font = {'family' : 'serif',
-        'weight' : 'normal',
-        'size' : 16}
-    plt.rc('font', **font)
-    
-    fig = plt.figure(figsize=(10, 5))
-    ax = fig.add_subplot(111, ylim=(-1, 1))
-    ax.grid(True)
-    tind = [0,12,25,37,49]
-    ax.set_xticks(bd.tstar[tind])
-    ax.set_xticklabels(['{:2.1f}'.format(x) for x in bd.tstar[tind]])
-    ax.set_xlim([np.min(bd.tstar), np.max(bd.tstar)])
-    ax.invert_xaxis()
-    ax.set_xlabel('$t^*$')
-    ax.set_ylabel('$\mathbf{w}$ components, Voltage, 0.25C')
-    ax.fill_between([bd.tstar[1], bd.tstar[3]], [-1, -1], [1, 1], facecolor=[0.7, 0.7, 0.7])
-    ax.fill_between([bd.tstar[37], bd.tstar[39]], [-1, -1], [1, 1], facecolor=[0.7, 0.7, 0.7])
-    ax.fill_between([bd.tstar[46], bd.tstar[48]], [-1, -1], [1, 1], facecolor=[0.7, 0.7, 0.7])
-    fig.text(0.148, 0.85, 'A')
-    fig.text(0.719, 0.85, 'B')
-    fig.text(0.86, 0.85, 'C')
-    
-    in_labels, linestyles, colors, linewidths, indices = input_labels()
-    linez = []
-    for i in range(m):
-        ll, = ax.plot(bd.tstar[1:-1], a[i,:], linestyle=linestyles[i], color=colors[i], linewidth=linewidths[i], label=in_labels[i])
-        linez.append(ll)        
-        
-    leg0 = plt.legend(handles=[linez[i] for i in indices[0]], labels=[in_labels[i] for i in indices[0]], \
-        bbox_to_anchor=(1.06, 1), loc=2, borderaxespad=0., fontsize=16, title='Anode', handlelength=2)
-    plt.gca().add_artist(leg0)
-
-    leg3 = plt.legend(handles=[linez[i] for i in indices[3]], labels=[in_labels[i] for i in indices[3]], \
-        bbox_to_anchor=(1.265, 0.235), loc=2, borderaxespad=0., fontsize=16, title='Miscellany', handlelength=2, borderpad=0.8)
-    plt.gca().add_artist(leg3)
-    
-    leg2 = plt.legend(handles=[linez[i] for i in indices[2]], labels=[in_labels[i] for i in indices[2]], \
-        bbox_to_anchor=(1.06, 0.235), loc=2, borderaxespad=0., fontsize=16, title='Separator', handlelength=2, borderpad=0.42)
-    plt.gca().add_artist(leg2)
-    
-    leg1 = plt.legend(handles=[linez[i] for i in indices[1]], labels=[in_labels[i] for i in indices[1]], \
-        bbox_to_anchor=(1.265, 1), loc=2, borderaxespad=0., fontsize=16, title='Cathode', handlelength=2)
-  
-    fig, axes = plt.subplots(2, 3, figsize=(3*3.5, 2*3.5)); axes = axes.reshape(6).squeeze()
-
-    # summary plots 95%
-    ax = axes[0]
-    ff = bd.voltage[:,2].reshape((M, 1))
-    aa = get_coefficients(bd.X, ff).reshape((m, ))
-    ax.set_xlim((-2, 2)); ax.set_ylim((0.95*np.min(bd.voltage), 1.05*np.max(bd.voltage)))
-    ax.grid(True)
-    ax.set_xticks([-2,0,2])
-    ax.locator_params(axis='y',nbins=4)
-    ax.set_xlabel('$\mathbf{w}^T\mathbf{x}$')
-    ax.set_ylabel('Voltage, 0.25C')
-    ax.plot(np.dot(bd.X, aa), ff, 'ko')
-    ax.set_title(r'A, $t^*$ = {:2.1f}'.format(bd.tstar[2]))
-    
-    # ZOOM
-    ax = axes[3]
-    ax.set_xlim((-2, 2))
-    ax.grid(True)
-    ax.set_xticks([-2,0,2])
-    ax.locator_params(axis='y',nbins=4)
-    ax.set_xlabel('$\mathbf{w}^T\mathbf{x}$')
-    ax.set_ylabel('Voltage, 0.25C')
-    ax.plot(np.dot(bd.X, aa), ff, 'ko')
-    
-    # summary plots 65%
-    ax = axes[1]
-    ff = bd.voltage[:,38].reshape((M, 1))
-    aa = get_coefficients(bd.X, ff).reshape((m, ))
-    ax.set_xlim((-2, 2)); ax.set_ylim((0.95*np.min(bd.voltage), 1.05*np.max(bd.voltage)))
-    ax.grid(True)
-    ax.set_xticks([-2,0,2])
-    ax.locator_params(axis='y',nbins=4)
-    ax.set_xlabel('$\mathbf{w}^T\mathbf{x}$')
-    ax.plot(np.dot(bd.X, aa), ff, 'ko')
-    ax.set_title(r'B, $t^*$ = {:2.1f}'.format(bd.tstar[38]))
-    
-    ax = axes[4]
-    ax.set_xlim((-2, 2))
-    ax.grid(True)
-    ax.set_xticks([-2,0,2])
-    ax.locator_params(axis='y',nbins=4)
-    ax.set_xlabel('$\mathbf{w}^T\mathbf{x}$')
-    ax.plot(np.dot(bd.X, aa), ff, 'ko')
-    
-    # summary plots 23%
-    ax = axes[2]
-    ff = bd.voltage[:,47].reshape((M, 1))
-    aa = get_coefficients(bd.X, ff).reshape((m, ))
-    ax.set_xlim((-2, 2)); ax.set_ylim((0.95*np.min(bd.voltage), 1.05*np.max(bd.voltage)))
-    ax.grid(True)
-    ax.set_xticks([-2,0,2])
-    ax.locator_params(axis='y',nbins=4)
-    ax.set_xlabel('$\mathbf{w}^T\mathbf{x}$')
-    ax.plot(np.dot(bd.X, aa), ff, 'ko')
-    ax.set_title(r'C, $t^*$ = {:2.1f}'.format(bd.tstar[47]))
-    
-    ax = axes[5]
-    ax.set_xlim((-2, 2))
-    ax.grid(True)
-    ax.set_xticks([-2,0,2])
-    ax.locator_params(axis='y',nbins=4)
-    ax.set_xlabel('$\mathbf{w}^T\mathbf{x}$')
-    ax.plot(np.dot(bd.X, aa), ff, 'ko')
-    
-    fig.tight_layout()
-
-def Vol_1C():
-    bd = BatteryData('1C.txt', 'V_1C.txt', 1)
-    ntime = bd.tstar.shape[0]
-    M, m = bd.X.shape
-    
-    a = np.zeros((m, ntime-2))
-    for i in range(ntime-2):
-        ff = bd.voltage[:,i+1].reshape((M, 1))
-        a[:,i] = get_coefficients(bd.X, ff).reshape((m, ))
-    
-    plt.rc('text', usetex=False)
-    font = {'family' : 'serif',
-        'weight' : 'normal',
-        'size' : 16}
-    plt.rc('font', **font)
-    
-    fig = plt.figure(figsize=(10, 5))
-    ax = fig.add_subplot(111, ylim=(-1, 1))
-    ax.grid(True)
-    tind = [0,12,25,37,49]
-    ax.set_xticks(bd.tstar[tind])
-    ax.set_xticklabels(['{:2.1f}'.format(x) for x in bd.tstar[tind]])
-    ax.set_xlim([np.min(bd.tstar), np.max(bd.tstar)])
-    ax.invert_xaxis()
-    ax.set_xlabel('$t^*$')
-    ax.set_ylabel('$\mathbf{w}$ components, Voltage, 1C')
-    ax.fill_between([bd.tstar[1], bd.tstar[3]], [-1, -1], [1, 1], facecolor=[0.7, 0.7, 0.7])
-    ax.fill_between([bd.tstar[37], bd.tstar[39]], [-1, -1], [1, 1], facecolor=[0.7, 0.7, 0.7])
-    ax.fill_between([bd.tstar[46], bd.tstar[48]], [-1, -1], [1, 1], facecolor=[0.7, 0.7, 0.7])
-    fig.text(0.148, 0.85, 'A')
-    fig.text(0.719, 0.85, 'B')
-    fig.text(0.86, 0.85, 'C')
-    
-    in_labels, linestyles, colors, linewidths, indices = input_labels()
-    linez = []
-    for i in range(m):
-        ll, = ax.plot(bd.tstar[1:-1], a[i,:], linestyle=linestyles[i], color=colors[i], linewidth=linewidths[i], label=in_labels[i])
-        linez.append(ll)        
-        
-    leg0 = plt.legend(handles=[linez[i] for i in indices[0]], labels=[in_labels[i] for i in indices[0]], \
-        bbox_to_anchor=(1.06, 1), loc=2, borderaxespad=0., fontsize=16, title='Anode', handlelength=2)
-    plt.gca().add_artist(leg0)
-
-    leg3 = plt.legend(handles=[linez[i] for i in indices[3]], labels=[in_labels[i] for i in indices[3]], \
-        bbox_to_anchor=(1.265, 0.235), loc=2, borderaxespad=0., fontsize=16, title='Miscellany', handlelength=2, borderpad=0.8)
-    plt.gca().add_artist(leg3)
-    
-    leg2 = plt.legend(handles=[linez[i] for i in indices[2]], labels=[in_labels[i] for i in indices[2]], \
-        bbox_to_anchor=(1.06, 0.235), loc=2, borderaxespad=0., fontsize=16, title='Separator', handlelength=2, borderpad=0.42)
-    plt.gca().add_artist(leg2)
-    
-    leg1 = plt.legend(handles=[linez[i] for i in indices[1]], labels=[in_labels[i] for i in indices[1]], \
-        bbox_to_anchor=(1.265, 1), loc=2, borderaxespad=0., fontsize=16, title='Cathode', handlelength=2)
-
-    fig, axes = plt.subplots(2, 3, figsize=(3*3.5, 2*3.5)); axes = axes.reshape(6).squeeze()
-
-    # summary plots 95%
-    ax = axes[0]
-    ff = bd.voltage[:,2].reshape((M, 1))
-    aa = get_coefficients(bd.X, ff).reshape((m, ))
-    ax.set_xlim((-2, 2)); ax.set_ylim((0.95*np.min(bd.voltage), 1.05*np.max(bd.voltage)))
-    ax.grid(True)
-    ax.set_xticks([-2,0,2])
-    ax.locator_params(axis='y',nbins=4)
-    ax.set_xlabel('$\mathbf{w}^T\mathbf{x}$')
-    ax.set_ylabel('Voltage, 1C')
-    ax.plot(np.dot(bd.X, aa), ff, 'ko')
-    ax.set_title(r'A, $t^*$ = {:2.1f}'.format(bd.tstar[2]))
-    
-    # ZOOM
-    ax = axes[3]
-    ax.set_xlim((-2, 2))
-    ax.grid(True)
-    ax.set_xticks([-2,0,2])
-    ax.locator_params(axis='y',nbins=4)
-    ax.set_xlabel('$\mathbf{w}^T\mathbf{x}$')
-    ax.set_ylabel('Voltage, 1C')
-    ax.plot(np.dot(bd.X, aa), ff, 'ko')
-    
-    # summary plots 65%
-    ax = axes[1]
-    ff = bd.voltage[:,38].reshape((M, 1))
-    aa = get_coefficients(bd.X, ff).reshape((m, ))
-    ax.set_xlim((-2, 2)); ax.set_ylim((0.95*np.min(bd.voltage), 1.05*np.max(bd.voltage)))
-    ax.grid(True)
-    ax.set_xticks([-2,0,2])
-    ax.locator_params(axis='y',nbins=4)
-    ax.set_xlabel('$\mathbf{w}^T\mathbf{x}$')
-    ax.plot(np.dot(bd.X, aa), ff, 'ko')
-    ax.set_title(r'B, $t^*$ = {:2.1f}'.format(bd.tstar[38]))
-    
-    ax = axes[4]
-    ax.set_xlim((-2, 2))
-    ax.grid(True)
-    ax.set_xticks([-2,0,2])
-    ax.locator_params(axis='y',nbins=4)
-    ax.set_xlabel('$\mathbf{w}^T\mathbf{x}$')
-    ax.plot(np.dot(bd.X, aa), ff, 'ko')
-    
-    # summary plots 23%
-    ax = axes[2]
-    ff = bd.voltage[:,47].reshape((M, 1))
-    aa = get_coefficients(bd.X, ff).reshape((m, ))
-    ax.set_xlim((-2, 2)); ax.set_ylim((0.95*np.min(bd.voltage), 1.05*np.max(bd.voltage)))
-    ax.grid(True)
-    ax.set_xticks([-2,0,2])
-    ax.locator_params(axis='y',nbins=4)
-    ax.set_xlabel('$\mathbf{w}^T\mathbf{x}$')
-    ax.plot(np.dot(bd.X, aa), ff, 'ko')
-    ax.set_title(r'C, $t^*$ = {:2.1f}'.format(bd.tstar[47]))
-    
-    ax = axes[5]
-    ax.set_xlim((-2, 2))
-    ax.grid(True)
-    ax.set_xticks([-2,0,2])
-    ax.locator_params(axis='y',nbins=4)
-    ax.set_xlabel('$\mathbf{w}^T\mathbf{x}$')
-    ax.plot(np.dot(bd.X, aa), ff, 'ko')
-    
-    fig.tight_layout()
-
-def Vol_4C():
-    bd = BatteryData('4C.txt', 'V_4C.txt', 2)
-    ntime = bd.tstar.shape[0]
-    M, m = bd.X.shape
-    
-    a = np.zeros((m, ntime-2))
-    for i in range(ntime-2):
-        ff = bd.voltage[:,i+1].reshape((M, 1))
-        a[:,i] = get_coefficients(bd.X, ff).reshape((m, ))
-    
-    plt.rc('text', usetex=False)
-    font = {'family' : 'serif',
-        'weight' : 'normal',
-        'size' : 16}
-    plt.rc('font', **font)
-    
-    fig = plt.figure(figsize=(10, 5))
-    ax = fig.add_subplot(111, ylim=(-1, 1))
-    ax.grid(True)
-    tind = [0,12,25,37,49]
-    ax.set_xticks(bd.tstar[tind])
-    ax.set_xticklabels(['{:2.1f}'.format(x) for x in bd.tstar[tind]])
-    ax.set_xlim([np.min(bd.tstar), np.max(bd.tstar)])
-    ax.invert_xaxis()
-    ax.set_xlabel('$t^*$')
-    ax.set_ylabel('$\mathbf{w}$ components, Voltage, 4C')
-    ax.fill_between([bd.tstar[1], bd.tstar[3]], [-1, -1], [1, 1], facecolor=[0.7, 0.7, 0.7])
-    ax.fill_between([bd.tstar[37], bd.tstar[39]], [-1, -1], [1, 1], facecolor=[0.7, 0.7, 0.7])
-    ax.fill_between([bd.tstar[46], bd.tstar[48]], [-1, -1], [1, 1], facecolor=[0.7, 0.7, 0.7])
-    fig.text(0.148, 0.85, 'A')
-    fig.text(0.719, 0.85, 'B')
-    fig.text(0.86, 0.85, 'C')
-    
-    in_labels, linestyles, colors, linewidths, indices = input_labels()
-    linez = []
-    for i in range(m):
-        ll, = ax.plot(bd.tstar[1:-1], a[i,:], linestyle=linestyles[i], color=colors[i], linewidth=linewidths[i], label=in_labels[i])
-        linez.append(ll)        
-        
-    leg0 = plt.legend(handles=[linez[i] for i in indices[0]], labels=[in_labels[i] for i in indices[0]], \
-        bbox_to_anchor=(1.06, 1), loc=2, borderaxespad=0., fontsize=16, title='Anode', handlelength=2)
-    plt.gca().add_artist(leg0)
-
-    leg3 = plt.legend(handles=[linez[i] for i in indices[3]], labels=[in_labels[i] for i in indices[3]], \
-        bbox_to_anchor=(1.265, 0.235), loc=2, borderaxespad=0., fontsize=16, title='Miscellany', handlelength=2, borderpad=0.8)
-    plt.gca().add_artist(leg3)
-    
-    leg2 = plt.legend(handles=[linez[i] for i in indices[2]], labels=[in_labels[i] for i in indices[2]], \
-        bbox_to_anchor=(1.06, 0.235), loc=2, borderaxespad=0., fontsize=16, title='Separator', handlelength=2, borderpad=0.42)
-    plt.gca().add_artist(leg2)
-    
-    leg1 = plt.legend(handles=[linez[i] for i in indices[1]], labels=[in_labels[i] for i in indices[1]], \
-        bbox_to_anchor=(1.265, 1), loc=2, borderaxespad=0., fontsize=16, title='Cathode', handlelength=2)
-
-    fig, axes = plt.subplots(2, 3, figsize=(3*3.5, 2*3.5)); axes = axes.reshape(6).squeeze()
-
-    # summary plots 95%
-    ax = axes[0]
-    ff = bd.voltage[:,2].reshape((M, 1))
-    aa = get_coefficients(bd.X, ff).reshape((m, ))
-    ax.set_xlim((-2, 2)); ax.set_ylim((0.95*np.min(bd.voltage), 1.05*np.max(bd.voltage)))
-    ax.grid(True)
-    ax.set_xticks([-2,0,2])
-    ax.locator_params(axis='y',nbins=4)
-    ax.set_xlabel('$\mathbf{w}^T\mathbf{x}$')
-    ax.set_ylabel('Voltage, 4C')
-    ax.plot(np.dot(bd.X, aa), ff, 'ko')
-    ax.set_title(r'A, $t^*$ = {:2.1f}'.format(bd.tstar[2]))
-    
-    # ZOOM
-    ax = axes[3]
-    ax.set_xlim((-2, 2))
-    ax.grid(True)
-    ax.set_xticks([-2,0,2])
-    ax.locator_params(axis='y',nbins=4)
-    ax.set_xlabel('$\mathbf{w}^T\mathbf{x}$')
-    ax.set_ylabel('Voltage, 4C')
-    ax.plot(np.dot(bd.X, aa), ff, 'ko')
-    
-    # summary plots 65%
-    ax = axes[1]
-    ff = bd.voltage[:,38].reshape((M, 1))
-    aa = get_coefficients(bd.X, ff).reshape((m, ))
-    ax.set_xlim((-2, 2)); ax.set_ylim((0.95*np.min(bd.voltage), 1.05*np.max(bd.voltage)))
-    ax.grid(True)
-    ax.set_xticks([-2,0,2])
-    ax.locator_params(axis='y',nbins=4)
-    ax.set_xlabel('$\mathbf{w}^T\mathbf{x}$')
-    ax.plot(np.dot(bd.X, aa), ff, 'ko')
-    ax.set_title(r'B, $t^*$ = {:2.1f}'.format(bd.tstar[38]))
-    
-    ax = axes[4]
-    ax.set_xlim((-2, 2))
-    ax.grid(True)
-    ax.set_xticks([-2,0,2])
-    ax.locator_params(axis='y',nbins=4)
-    ax.set_xlabel('$\mathbf{w}^T\mathbf{x}$')
-    ax.plot(np.dot(bd.X, aa), ff, 'ko')
-    
-    # summary plots 23%
-    ax = axes[2]
-    ff = bd.voltage[:,47].reshape((M, 1))
-    aa = get_coefficients(bd.X, ff).reshape((m, ))
-    ax.set_xlim((-2, 2)); ax.set_ylim((0.95*np.min(bd.voltage), 1.05*np.max(bd.voltage)))
-    ax.grid(True)
-    ax.set_xticks([-2,0,2])
-    ax.locator_params(axis='y',nbins=4)
-    ax.set_xlabel('$\mathbf{w}^T\mathbf{x}$')
-    ax.plot(np.dot(bd.X, aa), ff, 'ko')
-    ax.set_title(r'C, $t^*$ = {:2.1f}'.format(bd.tstar[47]))
-    
-    ax = axes[5]
-    ax.set_xlim((-2, 2))
-    ax.grid(True)
-    ax.set_xticks([-2,0,2])
-    ax.locator_params(axis='y',nbins=4)
-    ax.set_xlabel('$\mathbf{w}^T\mathbf{x}$')
-    ax.plot(np.dot(bd.X, aa), ff, 'ko')
-    
-    fig.tight_layout()
-        
-def bootstrap_SE():    
-
-    plt.rc('text', usetex=False)
-    font = {'family' : 'serif',
-        'weight' : 'normal',
-        'size' : 16}
-    plt.rc('font', **font)    
-    
-    fig, axes = plt.subplots(3, 2, figsize=(2*6, 3*3)); axes = axes.reshape(6).squeeze()
-    
-    ax = axes[0]
-    
-    bd = BatteryData('0.25C.txt', 'V_025C.txt', 0)
-    ntime = bd.tstar.shape[0]
-    M, m = bd.X.shape
-    
-    a = np.zeros((m, ntime))
-    for i in range(ntime):
-        ff = bd.capacity[:,i].reshape((M, 1))
-        a[:,i] = get_coefficients(bd.X, ff).reshape((m, ))
-            
-    a_br = np.zeros((m, ntime))
-    for i in range(ntime):
-        ff = bd.capacity[:,i].reshape((M, 1))
-        a_br[:,i] = get_coefficients_boot(bd.X, ff).reshape((m, ))
-    
-    ax.grid(True)
-    tind = [0,12,25,37,49]
-    ax.set_xticks(bd.vtime[tind])
-    ax.set_xticklabels(['{:2.1f}'.format(x) for x in bd.vtime[tind]])
-    ax.invert_xaxis()
-    ax.set_xlabel('Capacity, 0.25C')
-    ax.set_ylabel('Bootstrap SE')
-    ax.set_ylim([0, 0.01])
-    ax.fill_between([bd.vtime[1], bd.vtime[3]], [-1, -1], [1, 1], facecolor=[0.7, 0.7, 0.7])
-    ax.fill_between([bd.vtime[16], bd.vtime[18]], [-1, -1], [1, 1], facecolor=[0.7, 0.7, 0.7])
-    ax.fill_between([bd.vtime[37], bd.vtime[39]], [-1, -1], [1, 1], facecolor=[0.7, 0.7, 0.7])
-    ax.text(0.025, 0.90, 'A', transform=ax.transAxes)
-    ax.text(0.325, 0.90, 'B', transform=ax.transAxes)
-    ax.text(0.755, 0.90, 'C', transform=ax.transAxes)    
-    
-    in_labels, linestyles, colors, linewidths, indices = input_labels()
-    linez = []
-    for i in range(m):
-        ll, = ax.plot(bd.vtime, a_br[i,:], linestyle=linestyles[i], color=colors[i], linewidth=linewidths[i], label=in_labels[i])
-        linez.append(ll)
-    
-    
-    ax = axes[2]
-    
-    bd = BatteryData('1C.txt', 'V_1C.txt', 1)
-    ntime = bd.tstar.shape[0]
-    M, m = bd.X.shape
-    
-    a = np.zeros((m, ntime))
-    for i in range(ntime):
-        ff = bd.capacity[:,i].reshape((M, 1))
-        a[:,i] = get_coefficients(bd.X, ff).reshape((m, ))
-            
-    a_br = np.zeros((m, ntime))
-    for i in range(ntime):
-        ff = bd.capacity[:,i].reshape((M, 1))
-        a_br[:,i] = get_coefficients_boot(bd.X, ff).reshape((m, ))
-    
-    ax.grid(True)
-    tind = [0,12,25,37,49]
-    ax.set_xticks(bd.vtime[tind])
-    ax.set_xticklabels(['{:2.1f}'.format(x) for x in bd.vtime[tind]])
-    ax.invert_xaxis()
-    ax.set_xlabel('Capacity, 1C')
-    ax.set_ylabel('Bootstrap SE')
-    ax.set_ylim([0, 0.01])
-    ax.fill_between([bd.vtime[4], bd.vtime[6]], [-1, -1], [1, 1], facecolor=[0.7, 0.7, 0.7])
-    ax.fill_between([bd.vtime[33], bd.vtime[35]], [-1, -1], [1, 1], facecolor=[0.7, 0.7, 0.7])
-    ax.fill_between([bd.vtime[47], bd.vtime[49]], [-1, -1], [1, 1], facecolor=[0.7, 0.7, 0.7])
-    ax.text(0.085, 0.90, 'A', transform=ax.transAxes)
-    ax.text(0.670, 0.90, 'B', transform=ax.transAxes)
-    ax.text(0.960, 0.90, 'C', transform=ax.transAxes)    
-    
-    in_labels, linestyles, colors, linewidths, indices = input_labels()
-    linez = []
-    for i in range(m):
-        ll, = ax.plot(bd.vtime, a_br[i,:], linestyle=linestyles[i], color=colors[i], linewidth=linewidths[i], label=in_labels[i])
-        linez.append(ll)
-        
-    ax = axes[4]
-        
-    bd = BatteryData('4C.txt', 'V_4C.txt', 2)
-    ntime = bd.tstar.shape[0]
-    M, m = bd.X.shape
-    
-    a = np.zeros((m, ntime))
-    for i in range(ntime):
-        ff = bd.capacity[:,i].reshape((M, 1))
-        a[:,i] = get_coefficients(bd.X, ff).reshape((m, ))
-            
-    a_br = np.zeros((m, ntime))
-    for i in range(ntime):
-        ff = bd.capacity[:,i].reshape((M, 1))
-        a_br[:,i] = get_coefficients_boot(bd.X, ff).reshape((m, ))
-    
-    ax.grid(True)
-    tind = [0,12,25,37,49]
-    ax.set_xticks(bd.vtime[tind])
-    ax.set_xticklabels(['{:2.1f}'.format(x) for x in bd.vtime[tind]])
-    ax.invert_xaxis()
-    ax.set_xlabel('Capacity, 4C')
-    ax.set_ylabel('Bootstrap SE')
-    ax.set_ylim([0, 0.01])
-    ax.fill_between([bd.vtime[4], bd.vtime[6]], [-1, -1], [1, 1], facecolor=[0.7, 0.7, 0.7])
-    ax.fill_between([bd.vtime[33], bd.vtime[35]], [-1, -1], [1, 1], facecolor=[0.7, 0.7, 0.7])
-    ax.fill_between([bd.vtime[47], bd.vtime[49]], [-1, -1], [1, 1], facecolor=[0.7, 0.7, 0.7])
-    ax.text(0.085, 0.90, 'A', transform=ax.transAxes)
-    ax.text(0.670, 0.90, 'B', transform=ax.transAxes)
-    ax.text(0.960, 0.90, 'C', transform=ax.transAxes)    
-    
-    in_labels, linestyles, colors, linewidths, indices = input_labels()
-    linez = []
-    for i in range(m):
-        ll, = ax.plot(bd.vtime, a_br[i,:], linestyle=linestyles[i], color=colors[i], linewidth=linewidths[i], label=in_labels[i])
-        linez.append(ll)
-        
-    ax = axes[1]
-        
-    bd = BatteryData('0.25C.txt', 'V_025C.txt', 0)
-    ntime = bd.tstar.shape[0]
-    M, m = bd.X.shape
-    
-    a = np.zeros((m, ntime-2))
-    for i in range(ntime-2):
-        ff = bd.voltage[:,i+1].reshape((M, 1))
-        a[:,i] = get_coefficients(bd.X, ff).reshape((m, ))
-            
-    a_br = np.zeros((m, ntime-2))
-    for i in range(ntime-2):
-        ff = bd.voltage[:,i+1].reshape((M, 1))
-        a_br[:,i] = get_coefficients_boot(bd.X, ff).reshape((m, ))
-    
-    ax.grid(True)
-    tind = [0,12,25,37,49]
-    ax.set_xticks(bd.tstar[tind])
-    ax.set_xticklabels(['{:2.1f}'.format(x) for x in bd.tstar[tind]])
-    ax.set_xlim([np.min(bd.tstar), np.max(bd.tstar)])
-    ax.invert_xaxis()
-    ax.set_xlabel('Voltage, 0.25C')
-    ax.set_ylim([0, 0.01])
-    ax.fill_between([bd.tstar[1], bd.tstar[3]], [-1, -1], [1, 1], facecolor=[0.7, 0.7, 0.7])
-    ax.fill_between([bd.tstar[37], bd.tstar[39]], [-1, -1], [1, 1], facecolor=[0.7, 0.7, 0.7])
-    ax.fill_between([bd.tstar[46], bd.tstar[48]], [-1, -1], [1, 1], facecolor=[0.7, 0.7, 0.7])
-    ax.text(0.024, 0.90, 'A', transform=ax.transAxes)
-    ax.text(0.758, 0.90, 'B', transform=ax.transAxes)
-    ax.text(0.941, 0.90, 'C', transform=ax.transAxes)    
-    
-    in_labels, linestyles, colors, linewidths, indices = input_labels()
-    linez = []
-    for i in range(m):
-        ll, = ax.plot(bd.tstar[1:-1], a_br[i,:], linestyle=linestyles[i], color=colors[i], linewidth=linewidths[i], label=in_labels[i])
-        linez.append(ll)
-        
-    ax = axes[3]
-        
-    bd = BatteryData('1C.txt', 'V_1C.txt', 1)
-    ntime = bd.tstar.shape[0]
-    M, m = bd.X.shape
-    
-    a = np.zeros((m, ntime-2))
-    for i in range(ntime-2):
-        ff = bd.voltage[:,i+1].reshape((M, 1))
-        a[:,i] = get_coefficients(bd.X, ff).reshape((m, ))
-            
-    a_br = np.zeros((m, ntime-2))
-    for i in range(ntime-2):
-        ff = bd.voltage[:,i+1].reshape((M, 1))
-        a_br[:,i] = get_coefficients_boot(bd.X, ff).reshape((m, ))
-    
-    ax.grid(True)
-    tind = [0,12,25,37,49]
-    ax.set_xticks(bd.tstar[tind])
-    ax.set_xticklabels(['{:2.1f}'.format(x) for x in bd.tstar[tind]])
-    ax.set_xlim([np.min(bd.tstar), np.max(bd.tstar)])
-    ax.invert_xaxis()
-    ax.set_xlabel('Voltage, 1C')
-    ax.set_ylim([0, 0.01])
-    ax.fill_between([bd.tstar[1], bd.tstar[3]], [-1, -1], [1, 1], facecolor=[0.7, 0.7, 0.7])
-    ax.fill_between([bd.tstar[37], bd.tstar[39]], [-1, -1], [1, 1], facecolor=[0.7, 0.7, 0.7])
-    ax.fill_between([bd.tstar[46], bd.tstar[48]], [-1, -1], [1, 1], facecolor=[0.7, 0.7, 0.7])
-    ax.text(0.024, 0.90, 'A', transform=ax.transAxes)
-    ax.text(0.758, 0.90, 'B', transform=ax.transAxes)
-    ax.text(0.941, 0.90, 'C', transform=ax.transAxes)    
-    
-    in_labels, linestyles, colors, linewidths, indices = input_labels()
-    linez = []
-    for i in range(m):
-        ll, = ax.plot(bd.tstar[1:-1], a_br[i,:], linestyle=linestyles[i], color=colors[i], linewidth=linewidths[i], label=in_labels[i])
-        linez.append(ll)
-        
-    ax = axes[5]
-        
-    bd = BatteryData('4C.txt', 'V_4C.txt', 2)
-    ntime = bd.tstar.shape[0]
-    M, m = bd.X.shape
-    
-    a = np.zeros((m, ntime-2))
-    for i in range(ntime-2):
-        ff = bd.voltage[:,i+1].reshape((M, 1))
-        a[:,i] = get_coefficients(bd.X, ff).reshape((m, ))
-            
-    a_br = np.zeros((m, ntime-2))
-    for i in range(ntime-2):
-        ff = bd.voltage[:,i+1].reshape((M, 1))
-        a_br[:,i] = get_coefficients_boot(bd.X, ff).reshape((m, ))
-    
-    ax.grid(True)
-    tind = [0,12,25,37,49]
-    ax.set_xticks(bd.tstar[tind])
-    ax.set_xticklabels(['{:2.1f}'.format(x) for x in bd.tstar[tind]])
-    ax.set_xlim([np.min(bd.tstar), np.max(bd.tstar)])
-    ax.invert_xaxis()
-    ax.set_xlabel('Voltage, 4C')
-    ax.set_ylim([0, 0.01])
-    ax.fill_between([bd.tstar[1], bd.tstar[3]], [-1, -1], [1, 1], facecolor=[0.7, 0.7, 0.7])
-    ax.fill_between([bd.tstar[37], bd.tstar[39]], [-1, -1], [1, 1], facecolor=[0.7, 0.7, 0.7])
-    ax.fill_between([bd.tstar[46], bd.tstar[48]], [-1, -1], [1, 1], facecolor=[0.7, 0.7, 0.7])
-    ax.text(0.024, 0.90, 'A', transform=ax.transAxes)
-    ax.text(0.758, 0.90, 'B', transform=ax.transAxes)
-    ax.text(0.941, 0.90, 'C', transform=ax.transAxes)    
-    
-    in_labels, linestyles, colors, linewidths, indices = input_labels()
-    linez = []
-    for i in range(m):
-        ll, = ax.plot(bd.tstar[1:-1], a_br[i,:], linestyle=linestyles[i], color=colors[i], linewidth=linewidths[i], label=in_labels[i])
-        linez.append(ll)
-        
-    fig.tight_layout()
-
-if __name__ == '__main__':
-    
-    plt.close('all')
-    
-    Cap_025C()
-    Cap_1C()
-    Cap_4C()
-    Vol_025C()
-    Vol_1C()
-    Vol_4C()
-    
-    plt.show()
-
-    
+def plot_se(ax, qoi, rate, grid, x, SE):
+    """Bootstrap standard errors of the components of w against the grid (paper Fig. 9)."""
+    _curves(ax, x, SE)
+    ax.set_ylim(0, 1.15 * SE.max())
+    ax.set_title(f'{qoi.capitalize()}, I = {rate}')
+    _grid_axis(ax, qoi, grid, BANDS[qoi, rate])
