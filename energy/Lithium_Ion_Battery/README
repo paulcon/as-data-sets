@@ -1,3 +1,5 @@
-This data set and Python script produce the figures in 
-"Time-dependent global sensitivity analysis with active subspaces for a lithium ion battery model" 
-by Constantine and Doostan.
+This data set and Python script produce the figures in
+"Time-dependent global sensitivity analysis with active subspaces for a lithium ion battery model"
+by Constantine and Doostan, Stat. Anal. Data Min. 10(5):243-262, 2017, doi:10.1002/sam.11347.
+The data are the simulations of Hadigol, Maute and Doostan, J. Power Sources 300:507-524, 2015,
+doi:10.1016/j.jpowsour.2015.09.060. See DATA.md for the files, columns, units and provenance.

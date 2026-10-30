@@ -150,7 +150,7 @@ def load(rate):
 - Linear-fit R² of the summary plots: 0.25C capacity A/B/C = 0.992 / 0.931 / 1.000; 1C capacity idx 34 = 0.840 (the loosest).
 - The seeded bootstrap SE has its maximum in region B for 0.25C (idx 17) and 1C (idx 34); overall max ≤ 0.011.
 - Optional QPHD: log₁₀(λ₁/λ₂) for 0.25C capacity at A/B/C ≈ 1.9 / 0.85 / 3.5.
-- Figures (13, as legacy, or 14 with the optional Fig. 8): 6 weight-vs-grid figures, 6 summary grids (2×3), 1 bootstrap grid (3×2). Every QoI axis has units.
+- Figures (15; author, 2026-10-30): 6 weight-vs-grid figures, 6 summary grids (2×3), 1 bootstrap grid (3×2), paper Fig. 8 (QPHD eigenvalues, 3×2), and 1 v1 bootstrap-band figure (`plot_eigenvectors(..., interval="percentile")`, 1C capacity at A/B/C). Every QoI axis has units.
 - Data in the repo ≤ 20 MB for this directory (if the npz/gz option is accepted).
 
 ## 10. Prototype results
