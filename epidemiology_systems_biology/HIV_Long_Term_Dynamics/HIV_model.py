@@ -1,62 +1,120 @@
-from scipy.integrate import ode
+"""Long-term HIV model of Loudon and Pankavich (Math. Biosci. Eng. 14(3), 2017, Eq. 1).
+
+Seven ODEs for the CD4+ T cells T, actively infected T cells T_I, latently
+infected T cells T_L, macrophages M, infected macrophages M_I, cytotoxic
+lymphocytes CTL and virions V, with 27 parameters (Table 1 of the paper).
+
+`Tcells(p, times)` returns T(t) at the given times for each row of physical
+parameters `p`. Settings, kept from the 2016 code that produced the shipped data:
+
+- Initial conditions are the same for every sample, by design: the uninfected
+  equilibrium at the nominal parameters plus one virion,
+  (T, T_I, T_L, M, M_I, CTL, V)(0) = (1000, 0, 0, 0.15/0.005, 0, 5/0.015, 1).
+- T is floored at 0.1: once T falls to 0.1 the state is frozen, and T stays 0.1
+  for the rest of the run. The paper does not have this floor. Here it is an
+  event (T = 0.1, terminal) of `solve_ivp`; the 2016 code returned a zero
+  right-hand side below 0.1, which has the same frozen values.
+- Solver: `scipy.integrate.solve_ivp`, LSODA, rtol = atol = 1e-10, with the
+  analytic Jacobian.
+
+Only numpy and scipy are imported.
+"""
 import numpy as np
+from scipy.integrate import solve_ivp
+
+#: Parameter names, in column order (Table 1 of the paper).
+NAMES = ('s1', 's2', 's3', 'p1', 'C1', 'K1', 'K2', 'K3', 'K4', 'K5', 'K6', 'K7', 'K8',
+         'K9', 'K10', 'K11', 'K12', 'K13', 'delta1', 'delta2', 'delta3', 'delta4',
+         'delta5', 'delta6', 'delta7', 'alpha1', 'psi')
+
+#: Nominal parameter values (Table 1 of the paper).
+NOMINAL = np.array([10, .15, 5, .2, 55.6, 3.87e-3, 1e-6, 4.5e-4, 7.45e-4, 5.22e-4, 3e-6,
+                    3.3e-4, 6e-9, .537, .285, 7.79e-6, 1e-6, 4e-5, .01, .28, .05, .005,
+                    .005, .015, 2.39, 3e-4, .97])
+
+#: Uniform input ranges: 2.5 % below and above nominal (p. 718 of the paper).
+LOWER = .975*NOMINAL
+UPPER = 1.025*NOMINAL
+
+#: Initial state (T, T_I, T_L, M, M_I, CTL, V), the same for every sample.
+Y0 = np.array([1000., 0., 0., .15/.005, 0., 5/.015, 1.])
+
+#: The floor on T.
+T_FLOOR = .1
+
+RTOL = ATOL = 1e-10
+
+
+def _rhs(t, x, q):
+    s1, s2, s3, p1, C1, K1, K2, K3, K4, K5, K6, K7, K8, K9, K10, K11, K12, K13, \
+        d1, d2, d3, d4, d5, d6, d7, a1, psi = q
+    T, TI, TL, M, MI, CTL, V = x
+    inf = (K1*V + K2*MI)*T
+    return np.array([
+        s1 + p1*T*V/(C1 + V) - d1*T - inf,
+        psi*inf + a1*TL - d2*TI - K3*TI*CTL,
+        (1 - psi)*inf - a1*TL - d3*TL,
+        s2 + K4*M*V - K5*M*V - d4*M,
+        K5*M*V - d5*MI - K6*MI*CTL,
+        s3 + (K7*TI + K8*MI)*CTL - d6*CTL,
+        K9*TI + K10*MI - K11*T*V - (K12 + K13)*M*V - d7*V])
+
+
+def _jac(t, x, q):
+    s1, s2, s3, p1, C1, K1, K2, K3, K4, K5, K6, K7, K8, K9, K10, K11, K12, K13, \
+        d1, d2, d3, d4, d5, d6, d7, a1, psi = q
+    T, TI, TL, M, MI, CTL, V = x
+    r = K1*V + K2*MI
+    J = np.zeros((7, 7))
+    J[0] = [p1*V/(C1 + V) - d1 - r, 0, 0, 0, -K2*T, 0, p1*T*C1/(C1 + V)**2 - K1*T]
+    J[1] = [psi*r, -d2 - K3*CTL, a1, 0, psi*K2*T, -K3*TI, psi*K1*T]
+    J[2] = [(1 - psi)*r, 0, -a1 - d3, 0, (1 - psi)*K2*T, 0, (1 - psi)*K1*T]
+    J[3] = [0, 0, 0, (K4 - K5)*V - d4, 0, 0, (K4 - K5)*M]
+    J[4] = [0, 0, 0, K5*V, -d5 - K6*CTL, -K6*MI, K5*M]
+    J[5] = [0, K7*CTL, 0, 0, K8*CTL, K7*TI + K8*MI - d6, 0]
+    J[6] = [-K11*V, K9, 0, -(K12 + K13)*V, K10, 0, -K11*T - (K12 + K13)*M - d7]
+    return J
+
+
+def _floor(t, x, q):
+    return x[0] - T_FLOOR
+
+
+_floor.terminal = True
+_floor.direction = -1
+
+
+def trajectory(q, times):
+    """T at `times` (increasing, > 0) for one parameter vector `q`, and the floor time.
+
+    Returns ``(T, t_floor)``; ``t_floor`` is ``inf`` if T stays above 0.1 up to
+    ``times[-1]``, and ``T`` is 0.1 at every time after ``t_floor``.
+    """
+    times = np.asarray(times, dtype=float)
+    q = tuple(float(v) for v in q)
+    sol = solve_ivp(_rhs, (0., times[-1]), Y0, method='LSODA', t_eval=times, events=_floor,
+                    args=(q,), jac=_jac, rtol=RTOL, atol=ATOL)
+    if sol.status < 0:
+        raise RuntimeError(f'solve_ivp failed: {sol.message}')
+    T = np.full(len(times), T_FLOOR)
+    T[:len(sol.t)] = sol.y[0]
+    t_floor = sol.t_events[0][0] if len(sol.t_events[0]) else np.inf
+    return T, t_floor
+
 
 def Tcells(p, times):
+    """T-cell count T(t) at `times` for each row of physical parameters `p`.
+
+    Parameters
+    ----------
+    p : array_like, shape (N, 27)
+        Physical parameters, columns in the order of `NAMES`.
+    times : array_like, shape (K,)
+        Increasing output times in days, all > 0.
+
+    Returns
+    -------
+    numpy.ndarray, shape (N, K)
     """
-    This takes the unnormalized parameters, p = (s1, s2, s3, p1, C1, K1, K2, K3, K4, K5, K6, K7, K8, 
-    K9, K10, K11, K12, K13, d1, d2, d3, d4, d5, d6, d7, a1, psy), and returns the Tcell count at points
-    in the 'times' input.
-    """
-    
-    s1 = p[:,0]; s2 = p[:,1]; s3 = p[:,2]; p1 = p[:,3]; C1 = p[:,4]; K1 = p[:,5]; K2 = p[:,6]; K3 = p[:,7]
-    K4 = p[:,8]; K5 = p[:,9]; K6 = p[:,10]; K7 = p[:,11]; K8 = p[:,12]; K9 = p[:,13]; K10 = p[:,14]; K11 = p[:,15]
-    K12 = p[:,16]; K13 = p[:,17]; d1 = p[:,18]; d2 = p[:,19]; d3 = p[:,20]; d4 = p[:,21]; d5 = p[:,22]; d6 = p[:,23]
-    d7 = p[:,24]; a1 = p[:,25]; psy = p[:,26]
-    
-    def ode_system(x, t, i):
-        T = x[0]; TI = x[1]; TL = x[2]; M = x[3]; MI = x[4]; CTL = x[5]; V = x[6]
-        
-        if T < .1: return np.zeros(7)
-        
-        dTdt = s1[i] + p1[i]*T*V/(C1[i] + V) - d1[i]*T - (K1[i]*V + K2[i]*MI)*T
-        dTIdt = psy[i]*(K1[i]*V + K2[i]*MI)*T + a1[i]*TL - d2[i]*TI - K3[i]*TI*CTL
-        dTLdt = (1 - psy[i])*(K1[i]*V + K2[i]*MI)*T - a1[i]*TL - d3[i]*TL
-        dMdt = s2[i] + K4[i]*M*V - K5[i]*M*V - d4[i]*M
-        dMIdt = K5[i]*M*V - d5[i]*MI - K6[i]*MI*CTL
-        dCTLdt = s3[i] + (K7[i]*TI + K8[i]*MI)*CTL - d6[i]*CTL
-        dVdt = K9[i]*TI + K10[i]*MI - K11[i]*T*V - (K12[i] + K13[i])*M*V - d7[i]*V
-        
-        return np.array((dTdt, dTIdt, dTLdt, dMdt, dMIdt, dCTLdt, dVdt))
-        
-    def jac(x, t, i):
-        T = x[0]; TI = x[1]; TL = x[2]; M = x[3]; MI = x[4]; CTL = x[5]; V = x[6]
-        
-        if T < .1: return np.zeros((7, 7))
-        
-        return np.array([[p1[i]*V/(C1[i] + V) - d1[i] - (K1[i]*V + K2[i]*MI), psy[i]*(K1[i]*V + K2[i]*MI), \
-            (1 - psy[i])*(K1[i]*V + K2[i]*MI), 0, 0, 0, -K11[i]*V],\
-        [0, -d2[i] - K3[i]*CTL, 0, 0, 0, K7[i]*CTL, K9[i]],\
-        [0, a1[i], -a1[i] - d3[i], 0, 0, 0, 0],\
-        [0, 0, 0, K4[i]*V - K5[i]*V - d4[i], K5[i]*V, 0, -(K12[i] + K13[i])*V],\
-        [-K2[i]*T, psy[i]*K2[i]*T, (1 - psy[i])*K2[i]*T, 0, -d5[i] - K6[i]*CTL, K8[i]*CTL, K10[i]],\
-        [0, -K3[i]*TI, 0, 0, -K6[i]*MI, K7[i]*TI + K8[i]*MI - d6[i], 0],\
-        [p1[i]*T/(C1[i] + V) - p1[i]*T*V/(C1[i] + V)**2 - K1[i]*T, psy[i]*K1[i]*T, (1 - psy[i])*K1[i]*T,
-            K4[i]*M - K5[i]*M, K5[i]*M, 0, -K11[i]*T - (K12[i] + K13[i])*M - d7[i]]])
-    
-    ans = np.empty((p.shape[0], len(times)))
-    
-    for i in range(p.shape[0]):        
-        T0 = 1000
-        M0 = .15/.005
-        CTL0 = 5/.015
-        
-        y0 = np.array((T0, 0, 0, M0, 0, CTL0, 1))
-        
-        solver = ode(lambda t, x: ode_system(x, t, i), lambda t, x: jac(x, t, i).T)
-        solver.set_integrator('vode', nsteps=1500, method='bdf', max_step=1)
-        solver.set_initial_value(y0, 0)
-        
-        for j in range(len(times)):
-            ans[i,j] = solver.integrate(times[j])[0]      
-    
-    return ans
+    p = np.atleast_2d(np.asarray(p, dtype=float))
+    return np.array([trajectory(q, times)[0] for q in p])

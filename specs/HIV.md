@@ -9,7 +9,7 @@ Status line: `HIV/HIV.ipynb` | paper: T. Loudon and S. Pankavich, *Mathematical 
 The model equations (Eq. 1, p.711), all 27 names, nominal values and units (Table 1, p.713) and the ±2.5% uniform ranges (p.718) match the published paper. The notebook's claims about dominant parameters (t = 24: K1, K9, δ7, ψ; late times: K4, δ7, δ4, K5) are confirmed on the shipped 1000-sample data with v1. The late-time set agrees with the paper's T(1700) result (K4, δ4, δ7 > 0.3; p.719, Fig. 3). The published paper itself links to this notebook (p.710: `nbviewer…/as-data-sets/blob/master/HIV/HIV.ipynb`), so the path must not change. Main findings:
 
 1. **The shipped gradients are accurate, but the notebook's own gradient computation is not reproducible in Python 3.**
-   - A tight-tolerance `solve_ivp` (LSODA, rtol = atol = 1e-10) with central FD reproduces the shipped `gradients.csv` rows to a relative error of 1e-5 at every time tested (24 to 3400 days; cos = 1.000).
+   - A tight-tolerance `solve_ivp` (LSODA, rtol = atol = 1e-10) with central FD agrees with the shipped `gradients.csv` rows to a relative 1e-5 at the few samples first tested (24 to 3400 days; cos = 1.000). **Corrected after the port (PR #51):** over all 1000 samples the 2016 files are less accurate than that. Gradients above the floor agree with the regeneration to a median of 2.9e-5, a 99th percentile of 2.6e-3 and a maximum of 0.16 (at t = 38–90). Outputs agree to a median of 1e-7 and a maximum of 5.5e-4 (at T < 3). At the worst rows, tighter solves agree with the new values to ≤ 1.3e-5, so the errors are in the 2016 vode run (default rtol 1e-6, 1e-7 forward step). The eigenvectors are unaffected (≤ 9e-5). The CSVs were replaced by the regeneration (author, 2026-10-30).
    - Running the notebook's own path (`HIV_model.Tcells`, scipy `ode`/vode, `nsteps=1500`, forward FD with step 2.5e-9 relative) under the venv scipy gives a t = 3400 gradient that is **130×** wrong in relative norm. vode also emits "Excess work done" warnings, and `Tcells` never checks `solver.successful()`.
    - So the small-sample section (cells 3–13) would produce garbage at late times. It would also take an estimated ~30 min (the notebook says 10).
 2. **The 0.1 "freeze" in `HIV_model.py` is a code artifact, not in the paper.** `if T < .1: return np.zeros(7)` freezes the state. In the shipped data, 6, 24, 61, 130, 283 and 474 of the 1000 samples are frozen at t = 1800, 2000, 2200, 2400, 2800 and 3400.
@@ -18,7 +18,7 @@ The model equations (Eq. 1, p.711), all 27 names, nominal values and units (Tabl
 3. **The shipped data are not the paper's computation, and they are cleaner than it.** The paper used MATLAB ode23s, forward FD with δ = 1e-6 in normalized coordinates (pp.716–718), and 86 time subintervals (p.721); Appendix B shows 18 times.
    - The paper's eigenvalue tails sit 1–2 orders above the notebook's. Fig. 2 (T(1700), p.717) has λ1 ≈ 1.5e4, λ2 ≈ 2e3 and a tail of about 20–500. The shipped data give λ1 = 1.2e4 / 2.6e4 (t = 1600 / 1800), λ2 ≈ 400–600 and λ3 ≈ 10.
    - At t = 2000 the paper's Fig. 7 (p.721) has λ2 ≈ λ1 (≈ 4e4 vs 5e4) and the paper picks n = 2. The shipped data give λ1/λ2 = 75 (n = 1).
-   - Because the shipped gradients are verified to 1e-5, the paper's tails and its t = 2000 λ2 are most likely FD/solver noise (ode23s with a 1e-6 forward step). This is likely, not proven.
+   - Because the regenerated gradients are verified to about 1e-5, the paper's tails and its t = 2000 λ2 are most likely FD/solver noise (ode23s with a 1e-6 forward step). This is likely, not proven.
    - The notebook must not import the paper's t = 2000 "2-D" statement. The notebook data come from `generate_data.py` (scipy vode, FD step 1e-7·half-range). The text implies the two are the same analysis.
 4. **Citations and README.** The README says 21 parameters (it is 27), the journal name is wrong, the CDW 2014 title is wrong, and there are typos.
 5. **Migration.** Shipped gradients are w.r.t. normalized inputs, so divide by (xu − xl)/2 and pass them with `ac.Uniform(xl, xu)`, or pass them with `Uniform.reference(27)`. Both were tested and give identical results. The hand sign flip has to act on a copy, because v1 `W1` is read-only.
@@ -62,7 +62,7 @@ The model equations (Eq. 1, p.711), all 27 names, nominal values and units (Tabl
 
 | page | published text | issue | evidence | confidence |
 |---|---|---|---|---|
-| 721, Fig. 7 | t = 2000: "the largest spectral gap exists between the second and third eigenvalues" (λ2 ≈ λ1) | not reproduced: verified Python gradients (1000 samples, same ±2.5% box) give λ1/λ2 = 75 and λ2/λ3 = 22.5 | shipped `gradients.csv`, checked against tight `solve_ivp` to 1e-5 | likely an artifact of noisy MATLAB FD gradients |
+| 721, Fig. 7 | t = 2000: "the largest spectral gap exists between the second and third eigenvalues" (λ2 ≈ λ1) | not reproduced: verified Python gradients (1000 samples, same ±2.5% box) give λ1/λ2 = 75 and λ2/λ3 = 22.5 | regenerated `gradients.csv` (PR #51), checked against rtol 1e-12 `solve_ivp` to about 1e-5 | likely an artifact of noisy MATLAB FD gradients |
 | 717, Fig. 2 | eigenvalue tail at T(1700) of about 20–500 | 1–2 orders above the verified data (λ3 ≈ 10 at t = 1600–1800) | same | likely (FD/solver noise) |
 | 726 | "at most 3 of the 27 parameters - namely, K11, K12, and K13 - could be eliminated" | verified data also give K2, K8, δ3, α1 with max \|w1\| ≤ 0.0014 over 21 times | same | likely (different time mesh; noise inflates small weights) |
 | 726–727 | acute stage: K3 "maximum weight during the first 40 days is 0.1256"; s3, K7, δ6 below 0.032 | verified data: K3 max 0.203; s3 0.056, K7 0.125, δ6 0.064 | same (includes t = 5, 15, not in the paper's mesh) | unverified (mesh-dependent) |
@@ -125,11 +125,11 @@ G = df.reshape(1000, 21, 27)                                        # G[:, i, :]
   - Per sample, call `solve_ivp(rhs, (0, times[-1]), y0, method='LSODA', t_eval=times, rtol=1e-10, atol=1e-10, events=floor)`. Use `floor(t, y) = y[0] - 0.1`, `terminal=True`, `direction=-1`, and fill the remaining outputs with 0.1.
   - Keep the same ICs. Optionally pass the analytic Jacobian, which is verified correct.
   - Measured cost: 0.04–0.07 s per 3400-day trajectory.
-  - Reproduces `outputs.csv` to a relative error of 1.4e-5 and non-frozen `gradients.csv` rows to 1e-5.
+  - Agrees with the 2016 `outputs.csv` to a relative 1.4e-5 at the samples first tested, and to 5.5e-4 over all samples (at T < 3). Agrees with the 2016 non-frozen `gradients.csv` rows to 1e-5 at those samples, but only to 0.16 over all samples, because of errors in the 2016 files (see §1.1).
 - **`generate_data.py`: port to py3 or mark as legacy.**
-  - Port: numpy I/O, seeded rng, one trajectory per FD perturbation for all 21 times, central FD with h = 1e-4 (normalized), and zero gradients after the floor event.
+  - Port: numpy I/O, seeded rng, one trajectory per FD perturbation for all 21 times, central FD with h = 3e-4 (normalized), and zero gradients after the floor event. With h = 1e-4 the error against an rtol 1e-12 solve is 3–5e-5, from solver noise; with h = 3e-4 it is about 1e-5. Step 3e-4 confirmed (author, 2026-10-30).
   - Estimated cost: 1000 × 54 solves × ~0.05 s ≈ 45 min.
-  - Do **not** regenerate the shipped CSVs by default. Keep them, as they are verified.
+  - ~~Do not regenerate the shipped CSVs by default.~~ Superseded (author, 2026-10-30). The CSVs were regenerated at the 19 times and replace the 2016 values, which stay at `legacy-master`. The measured cost was 33 min on 3 processes.
   - If the author prefers, delete the script and document provenance in the notebook.
 
 ## 8. Update plan
@@ -154,7 +154,7 @@ G = df.reshape(1000, 21, 27)                                        # G[:, i, :]
 - `jupyter nbconvert --execute` from `HIV/` in `.venv` finishes in < 2 min, with no pandas and no warnings from the ODE solver.
 - Shipped data: t = 24 has λ1 = 1.046e4 (±0.5%), λ1/λ2 > 3000, and w1 top-4 (oriented) = K1 .51, K9 .49, ψ .47, δ7 −.47 (±0.01).
 - t = 3400 has λ1 = 4.54e5 (±1% without masking), λ1/λ2 ≈ 850, and w1 top = K4 .66, δ7 −.38, δ4 −.35, K5 −.28 (signs per orientation).
-- Weight-vs-time plot: K1 ≈ 0.5–0.6 for t ≤ 1000 and ≈ 0 for t ≥ 2000; K4 ≈ 0 for t ≤ 140 and ≥ 0.57 for t ≥ 1600.
+- Weight-vs-time plot: K1 ≈ 0.5–0.6 for t ≤ 500, ≈ 0.38 at t = 1000 (also in the 2016 data), and ≈ 0 for t ≥ 2000; K4 ≈ 0 for t ≤ 140 and ≥ 0.57 for t ≥ 1600.
 - Small-sample t = 24 (N = 20, v1 FD): λ1 within 20% of the shipped-data λ1, and the same four dominant parameters.
 - Optional, if t = 1700 is added: w1 has \|w\| > 0.3 exactly for K4, δ4 and δ7, as in published p.719 / Fig. 3 (true at both 1600 and 1800 in the shipped data).
 - Figures: trajectories (1), t = 24 eigen/eigvec/summary (3), 7×3 summary grid (1), t = 3400 eigen/eigvec/1-D/2-D summary (4), weight-vs-time (1), for both the small and large sample where applicable.
