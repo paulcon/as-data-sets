@@ -156,6 +156,12 @@ class PDESolver(_EllipticPDE):
         u, a, lu = self.solve(x)
         return self._adjoint_grad(u, a, lu, self._qoi_weights())
 
+    def qoi_and_grad(self, x):
+        """(qoi, grad_qoi) from one factorization: one solve plus one adjoint."""
+        u, a, lu = self.solve(x)
+        w = self._qoi_weights()
+        return np.sum(w * u), self._adjoint_grad(u, a, lu, w)
+
 
 class PDEMisfit(_EllipticPDE):
     """MCMC model: sensor observations u[indz, -1] and Gaussian misfit."""

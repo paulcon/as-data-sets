@@ -4,7 +4,7 @@
 
 Each data set's directory contains a Jupyter notebook (`.ipynb`) and the data or model it analyzes. Data files are mostly text (`.txt`, `.csv`); PDE_Inverse_Problem_MCMC's chains are `.mat` files. Github renders the notebooks when you click an `.ipynb` file, but its rendering of mathematical expressions is not as robust as [nbviewer.org](https://nbviewer.org/). To view a notebook there, paste its Github link into the box at [nbviewer.org](https://nbviewer.org/). Links to notebooks must use the `main` branch (`blob/main/...`): the default branch was renamed from `master` to `main` in October 2026, and nbviewer links that name `master` no longer work. Each notebook also has links to associated publications for more details.
 
-The notebooks were written in 2016 for Python 2 and the pre-1.0 `active_subspaces` API. They are being ported to Python 3 and `active_subspaces` 1.0; until a notebook is ported, it does not run with the packages in `requirements.txt`. The 2016 version of the repository is the tag [`legacy-master`](https://github.com/paulcon/as-data-sets/tree/legacy-master).
+The notebooks were written in 2016 for Python 2 and the pre-1.0 `active_subspaces` API. They are being ported to Python 3 and `active_subspaces` 1.0; until a notebook is ported, it does not run with the packages in `requirements.txt`. Ported so far: Elliptic_PDE_Random_Coefficients. The 2016 version of the repository is the tag [`legacy-master`](https://github.com/paulcon/as-data-sets/tree/legacy-master).
 
 # Data sets
 
@@ -43,7 +43,7 @@ The data sets are grouped by application area, one directory per category. Each 
 
 ## UQ benchmark collections (`uq_benchmarks/`)
 
-* **[Elliptic_PDE_Random_Coefficients](uq_benchmarks/Elliptic_PDE_Random_Coefficients/):** a 100-parameter elliptic PDE whose log-coefficient is a Karhunen–Loève expansion, at two correlation lengths. [[paper]](https://doi.org/10.1137/130916138) _Python model (`pde_model.py`)._
+* **[Elliptic_PDE_Random_Coefficients](uq_benchmarks/Elliptic_PDE_Random_Coefficients/):** a 100-parameter elliptic PDE whose log-coefficient is a Karhunen–Loève expansion, at two correlation lengths. [[paper]](https://doi.org/10.1137/130916138) _Python model (`pde_model.py`)._ Ported to Python 3 and `active_subspaces` 1.0.
 * **[PDE_Inverse_Problem_MCMC](uq_benchmarks/PDE_Inverse_Problem_MCMC/):** exploiting active subspaces to apply MCMC in a 100-parameter PDE model. [[paper]](https://doi.org/10.1137/15M1042127) _Python model (`pde_model.py`)._
 
 Categories with no data sets yet: combustion and chemical kinetics (`combustion_chemical_kinetics/`); climate, atmosphere and ocean (`climate_atmosphere_ocean/`); structural, materials and additive manufacturing (`structural_materials_manufacturing/`); biomedical and cardiovascular (`biomedical_cardiovascular/`); ecology and agriculture (`ecology_agriculture/`); electronics and circuits (`electronics_circuits/`).
