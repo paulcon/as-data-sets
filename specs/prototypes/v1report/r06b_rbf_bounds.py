@@ -5,7 +5,7 @@ from fvsolver import PDESolver
 import active_subspaces as ac
 warnings.simplefilter('ignore')
 for case in ("short",):
-    s = PDESolver(f'/Users/paulconstantine/PycharmProjects/as-data-sets/Elliptic_PDE/kl-{case}.npz')
+    s = PDESolver(f'/Users/paulconstantine/PycharmProjects/as-data-sets/uq_benchmarks/Elliptic_PDE_Random_Coefficients/kl-{case}.npz')
     rng = np.random.default_rng(2014)
     X = rng.standard_normal((300, 100)); fg = [s.qoi_and_grad(x) for x in X]
     f0 = np.array([a for a, _ in fg]); G = np.array([b for _, b in fg])

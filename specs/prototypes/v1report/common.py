@@ -19,32 +19,32 @@ YU = np.array([.15, 4, 3, 4, .4, .16, .13, .55, .4, .6, .09, .45, .25, .4, 1, .3
 
 def hydrology_grass():
     """Physical grass inputs (z0m column 16 raw), outputs (300, k)."""
-    h, X = _rd(f"{R}/Hydrology/SC_ScatterParameters_grass.txt")
+    h, X = _rd(f"{R}/hydrology_subsurface_geoscience/Land_Surface_Energy_Fluxes/SC_ScatterParameters_grass.txt")
     X = X[:, [h.index(n) for n in ORDER_G]]
-    F = np.loadtxt(f"{R}/Hydrology/ScatterSummary_grass.txt")
+    F = np.loadtxt(f"{R}/hydrology_subsurface_geoscience/Land_Surface_Energy_Fluxes/ScatterSummary_grass.txt")
     return X, F
 
 
 def stomatal():
-    h, X = _rd(f"{R}/Stomatal_Resistance/stomata_realization_inputs.txt")
-    _, B = _rd(f"{R}/Stomatal_Resistance/param_ranges.txt")
+    h, X = _rd(f"{R}/hydrology_subsurface_geoscience/Photosynthesis_Stomatal_Resistance/stomata_realization_inputs.txt")
+    _, B = _rd(f"{R}/hydrology_subsurface_geoscience/Photosynthesis_Stomatal_Resistance/param_ranges.txt")
     out = {}
     for fn in ['mo_avg_rssha', 'mo_avg_rssun', 'mo_avg_tran_veg', 'JJA_hr_avg_rssha',
                'JJA_hr_avg_rssun', 'JJA_hr_avg_tran_veg']:
-        hh, F = _rd(f"{R}/Stomatal_Resistance/Tonzi_Stomata_SC.{fn}.txt")
+        hh, F = _rd(f"{R}/hydrology_subsurface_geoscience/Photosynthesis_Stomatal_Resistance/Tonzi_Stomata_SC.{fn}.txt")
         out[fn] = (hh, F)
     return h, X, B, out
 
 
 def subsurface():
-    X = np.loadtxt(f"{R}/Subsurface_Permeability/inputs-ShortCorr.GW02.txt")
-    fs = np.loadtxt(f"{R}/Subsurface_Permeability/RunOff02_Saturated_10k.txt")
-    fu = np.loadtxt(f"{R}/Subsurface_Permeability/RunOff02_Unsaturated_10k.txt")
+    X = np.loadtxt(f"{R}/hydrology_subsurface_geoscience/Runoff_Permeability_Field/inputs-ShortCorr.GW02.txt")
+    fs = np.loadtxt(f"{R}/hydrology_subsurface_geoscience/Runoff_Permeability_Field/RunOff02_Saturated_10k.txt")
+    fu = np.loadtxt(f"{R}/hydrology_subsurface_geoscience/Runoff_Permeability_Field/RunOff02_Unsaturated_10k.txt")
     return X, fs, fu
 
 
 def battery(rate="0.25C"):
-    d = np.loadtxt(f"{R}/Lithium_Battery/{rate}.txt", delimiter=",", skiprows=1)
+    d = np.loadtxt(f"{R}/energy/Lithium_Ion_Battery/{rate}.txt", delimiter=",", skiprows=1)
     if rate == "4C":
         d = np.delete(d, 1537, 0)
     capfac = {'0.25C': 7.5 / 36000., '1C': 30. / 36000., '4C': 120. / 36000.}[rate]
@@ -56,12 +56,12 @@ BATTERY_NAMES = ["eps_a", "eps_s", "eps_c", "brugg_a", "brugg_s", "brugg_c", "t_
 
 
 def wind():
-    d = np.loadtxt(f"{R}/NREL_Wind/NRELwind_testing.txt", delimiter=",", skiprows=1)
+    d = np.loadtxt(f"{R}/energy/Offshore_Wind_Turbine_Fatigue/NRELwind_testing.txt", delimiter=",", skiprows=1)
     return d
 
 
 def pv():
-    d = np.loadtxt(f"{R}/SingleDiodePV/SingleDiodePV-Pmax.txt", delimiter=",", skiprows=1)
+    d = np.loadtxt(f"{R}/energy/Single_Diode_Solar_Cell/SingleDiodePV-Pmax.txt", delimiter=",", skiprows=1)
     return d
 
 
@@ -78,16 +78,16 @@ HYSHOT_XU = np.array([4.6, 1.9, 367.5, 1.9012e7, 3.4280e6, 0.07, 0.203])
 
 
 def hyshot30():
-    d30 = np.loadtxt(f"{R}/HyShotII/HyShotII30.txt", delimiter=",")
+    d30 = np.loadtxt(f"{R}/aerospace_cfd/HyShotII_Scramjet/HyShotII30.txt", delimiter=",")
     Z = d30[:-2, :7]
     X = HYSHOT_XL + (Z + 1) / 2 * (HYSHOT_XU - HYSHOT_XL)
     return X, d30[:-2, 7]
 
 
 def hiv():
-    G = np.loadtxt(f"{R}/HIV/gradients.csv", skiprows=1, delimiter=",")[:, 1:]
-    X = np.loadtxt(f"{R}/HIV/inputs.csv", skiprows=1, delimiter=",")[:, 1:]
-    F = np.loadtxt(f"{R}/HIV/outputs.csv", skiprows=1, delimiter=",")[:, 1:]
+    G = np.loadtxt(f"{R}/epidemiology_systems_biology/HIV_Long_Term_Dynamics/gradients.csv", skiprows=1, delimiter=",")[:, 1:]
+    X = np.loadtxt(f"{R}/epidemiology_systems_biology/HIV_Long_Term_Dynamics/inputs.csv", skiprows=1, delimiter=",")[:, 1:]
+    F = np.loadtxt(f"{R}/epidemiology_systems_biology/HIV_Long_Term_Dynamics/outputs.csv", skiprows=1, delimiter=",")[:, 1:]
     return X, F, G
 
 

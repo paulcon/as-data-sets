@@ -35,7 +35,7 @@ def wcodes(w):
 def elliptic(case):
     sys.path.append(f"{R}/specs/prototypes/g2")
     from fvsolver import PDESolver
-    fn = f"{R}/Elliptic_PDE/kl-{case}.npz"
+    fn = f"{R}/uq_benchmarks/Elliptic_PDE_Random_Coefficients/kl-{case}.npz"
     if not os.path.exists(fn):
         return None
     s = PDESolver(fn)
@@ -68,7 +68,7 @@ try:
                       ("short", {1: (0.01, 0.008, None), 2: (0.01, 0.008, None)})):
         d = elliptic(case)
         if d is None:
-            report("SKIP", f"V1-01 elliptic {case}", f"missing {R}/Elliptic_PDE/kl-{case}.npz")
+            report("SKIP", f"V1-01 elliptic {case}", f"missing {R}/uq_benchmarks/Elliptic_PDE_Random_Coefficients/kl-{case}.npz")
             continue
         s, f0, sub, Xt, ft = d
         fv = f0.var()
@@ -114,8 +114,8 @@ def hand(s, Yq, level=0.95, kind="prediction", side="two"):
 
 
 try:
-    if not os.path.exists(f"{R}/HyShotII/HyShotII30.txt"):
-        report("SKIP", "V1-03 HyShotII 0.30", f"missing {R}/HyShotII/HyShotII30.txt")
+    if not os.path.exists(f"{R}/aerospace_cfd/HyShotII_Scramjet/HyShotII30.txt"):
+        report("SKIP", "V1-03 HyShotII 0.30", f"missing {R}/aerospace_cfd/HyShotII_Scramjet/HyShotII30.txt")
     else:
         X, f = hyshot30(); space = ac.Uniform(HYSHOT_XL, HYSHOT_XU)
         with warnings.catch_warnings():
@@ -156,7 +156,7 @@ except Exception as e:
 
 # Hydrology, six cases
 try:
-    hy = [f"{R}/Hydrology/{n}" for n in ("SC_ScatterParameters_grass.txt", "SC_ScatterParameters_bare.txt",
+    hy = [f"{R}/hydrology_subsurface_geoscience/Land_Surface_Energy_Fluxes/{n}" for n in ("SC_ScatterParameters_grass.txt", "SC_ScatterParameters_bare.txt",
                                           "ScatterSummary_grass.txt", "ScatterSummary_bare.txt")]
     miss = [p for p in hy if not os.path.exists(p)]
     if miss:
@@ -199,7 +199,7 @@ except Exception as e:
 
 # HyShotII phi = 0.35 safe-box limit
 try:
-    fn35 = f"{R}/HyShotII/HyShotII35.txt"
+    fn35 = f"{R}/aerospace_cfd/HyShotII_Scramjet/HyShotII35.txt"
     if not os.path.exists(fn35):
         report("SKIP", "V1-03 HyShotII 0.35", f"missing {fn35}")
     else:

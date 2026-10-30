@@ -1,7 +1,7 @@
 import numpy as np, sys
 sys.path.insert(0,'.')
 from fvsolver import PDESolver
-s=PDESolver('/Users/paulconstantine/PycharmProjects/as-data-sets/MCMC/kl-short.npz')
+s=PDESolver('/Users/paulconstantine/PycharmProjects/as-data-sets/uq_benchmarks/PDE_Inverse_Problem_MCMC/kl-short.npz')
 rng=np.random.default_rng(1510); xt=rng.standard_normal(100); obs=s.observations(xt); sig2=1e-4*obs@obs; d=obs+np.sqrt(sig2)*rng.standard_normal(7)
 mis=lambda x:.5*np.sum((s.observations(x)-d)**2)/sig2
 for std in [0.1, np.sqrt(0.1)]:

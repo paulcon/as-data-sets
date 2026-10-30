@@ -1,7 +1,7 @@
 import numpy as np, time, sys
 sys.path.insert(0, '.')
 from fvsolver import PDESolver
-R='/Users/paulconstantine/PycharmProjects/as-data-sets/Elliptic_PDE/'
+R='/Users/paulconstantine/PycharmProjects/as-data-sets/uq_benchmarks/Elliptic_PDE_Random_Coefficients/'
 s = PDESolver(R+'kl-long.npz'); rng = np.random.default_rng(1)
 x = rng.standard_normal(100); a = s.coeff(x)
 u = rng.standard_normal((99, 99)); L = s.matrix(a)

@@ -3,7 +3,7 @@ sys.path.insert(0, '.')
 from fvsolver import PDESolver
 import active_subspaces as ac
 warnings.simplefilter('ignore')
-R='/Users/paulconstantine/PycharmProjects/as-data-sets/Elliptic_PDE/'
+R='/Users/paulconstantine/PycharmProjects/as-data-sets/uq_benchmarks/Elliptic_PDE_Random_Coefficients/'
 d = np.load('elliptic_proto.npz'); s = PDESolver(R+'kl-long.npz')
 space = ac.Gaussian.reference(100)
 w1 = d['long_W'][:, 0]

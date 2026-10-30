@@ -21,7 +21,7 @@ for fn,gfn in [(g.uavg_grad,'u'),(g.Bind_grad,'B')]:
     t0=time.time(); sub=ac.active_subspace(space=space,grads=Gp,quad_weights=W); 
     print(gfn,'eig',sub.eigenvalues,'n',sub.n,'legacy(x2^-5)',sub.eigenvalues[:2]/32, '%.2fs'%(time.time()-t0)); print('  W1,W2', sub.W[:,0], sub.W[:,1])
 # generator
-d='/Users/paulconstantine/PycharmProjects/as-data-sets/MHD/'
+d='/Users/paulconstantine/PycharmProjects/as-data-sets/plasma_fusion/MHD_Generator/'
 lbg=np.log([.001,.1,.1,.1,.1]); ubg=np.log([.01,10,.5,10,1])
 spg=ac.Uniform(lower=lbg,upper=ubg,names=names)
 for fn in ['Uavg','Bind']:

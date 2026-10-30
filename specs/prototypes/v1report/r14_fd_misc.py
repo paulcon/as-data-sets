@@ -25,7 +25,7 @@ try:
     ac.Uniform.reference(3, names=["a", "b", "c"])
 except TypeError as e:
     print("Uniform.reference(3, names=...) -> TypeError", str(e)[:80])
-hdr = open(f"{R}/Lithium_Battery/0.25C.txt").readline().strip().split(",")[1:20]
+hdr = open(f"{R}/energy/Lithium_Ion_Battery/0.25C.txt").readline().strip().split(",")[1:20]
 s = ac.Uniform(-np.ones(19), np.ones(19), names=hdr)
 print("LaTeX header names accepted:", s.names[:3])
 print("Uniform signature:", inspect.signature(ac.Uniform))
