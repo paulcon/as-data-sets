@@ -27,7 +27,7 @@ Kind: **stored data**. SU2 computed the values and gradients in `ONERA-M6.txt`, 
 
 - **Source.** These are the runs of T. W. Lukaczyk, F. Palacios, J. J. Alonso and P. G. Constantine, "Active subspaces for shape optimization", AIAA 2014-1171, §IV: the ONERA-M6 wing in inviscid flow (the SU2 Euler solver) at free-stream Mach 0.8395 and angle of attack 3.06°, with lift and drag gradients from the SU2 adjoint solver. The paper's Fig. 1 gives C_L = 0.2864 and C_D = 0.0118 for "a typical direct solution", and its lift constraint is C_L ≥ 0.2864 (eq. 1). The file has no run at the baseline design (all inputs 0).
 - **Code.** SU2, the Stanford Aerospace Design Laboratory's open-source suite (flow, adjoint, and FFD mesh deformation). The design variables are control points of a Bézier box (FFD) enclosing the wing (the paper's §II).
-- **Who ran it.** Not recorded. The paper's authors are credited; the runs were presumably made at Stanford by Trent Lukaczyk, the first author. Paul Constantine committed the file, with a first notebook, in this repository's initial commit on 2014-10-23 (7c26e3a), and the file has not changed since. Ryan Howard rewrote the notebook and added the three PNG files in 2016 (79789d9); where the PNGs were rendered is not recorded.
+- **Who ran it.** Trent Lukaczyk (Stanford University), the paper's first author, ran SU2 (author, 2026-10-30). Paul Constantine committed the file, with a first notebook, in this repository's initial commit on 2014-10-23 (7c26e3a), and the file has not changed since. Ryan Howard rewrote the notebook and added the three PNG files in 2016 (79789d9); where the PNGs were rendered is not recorded.
 - **Unknown** (author, 2026-10-30), and not stated in the paper:
   - which 3 of the 300 Latin hypercube runs are missing, and why. The paper says the bounds were shrunk "until a majority of the flow evaluations would successfully converge", so they may be failed runs; that is a guess;
   - which FFD control point, and which displacement direction, each of `x01`–`x50` is;
@@ -40,4 +40,4 @@ The data cannot be regenerated from this repository. The notebook reads `ONERA-M
 
 ## License and credit
 
-Code: MIT (`LICENSE`). Data (`ONERA-M6.txt` and the PNG files): CC BY 4.0 (`LICENSE-DATA`). Credit the authors of, and cite, T. W. Lukaczyk, F. Palacios, J. J. Alonso and P. G. Constantine, "Active subspaces for shape optimization", 10th AIAA Multidisciplinary Design Optimization Conference, National Harbor, MD, 2014, AIAA 2014-1171, doi:10.2514/6.2014-1171.
+Code: MIT (`LICENSE`). Data (`ONERA-M6.txt` and the PNG files): CC BY 4.0 (`LICENSE-DATA`). Credit Trent Lukaczyk (SU2 runs) and cite T. W. Lukaczyk, F. Palacios, J. J. Alonso and P. G. Constantine, "Active subspaces for shape optimization", 10th AIAA Multidisciplinary Design Optimization Conference, National Harbor, MD, 2014, AIAA 2014-1171, doi:10.2514/6.2014-1171.
