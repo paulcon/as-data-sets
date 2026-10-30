@@ -84,9 +84,12 @@ def hyshot30():
 
 
 def hiv():
-    G = np.loadtxt(f"{R}/epidemiology_systems_biology/HIV_Long_Term_Dynamics/gradients.csv", skiprows=1, delimiter=",")[:, 1:]
-    X = np.loadtxt(f"{R}/epidemiology_systems_biology/HIV_Long_Term_Dynamics/inputs.csv", skiprows=1, delimiter=",")[:, 1:]
-    F = np.loadtxt(f"{R}/epidemiology_systems_biology/HIV_Long_Term_Dynamics/outputs.csv", skiprows=1, delimiter=",")[:, 1:]
+    # CSVs written by the ported generate_data.py: "#" header lines, no index column;
+    # 19 times, gradient column 27*i + j for time i and input j
+    d = f"{R}/epidemiology_systems_biology/HIV_Long_Term_Dynamics"
+    G = np.loadtxt(f"{d}/gradients.csv", delimiter=",")
+    X = np.loadtxt(f"{d}/inputs.csv", delimiter=",")
+    F = np.loadtxt(f"{d}/outputs.csv", delimiter=",")
     return X, F, G
 
 

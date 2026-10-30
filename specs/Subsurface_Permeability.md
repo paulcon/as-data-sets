@@ -115,9 +115,9 @@ None. The ParFlow runs and the KL generator are not in the repo.
 ## 9. Acceptance criteria
 - Executes in `.venv` with `jupyter nbconvert --execute` in < 5 min (QPHD ≈ 2×46 s here), no pandas, no warnings.
 - OLS λ₁: Dunnian 11372.3058, Hortonian 6568.8455 (rtol 1e-8). |w_v1 · w_legacy| = 1 to 1e-10.
-- QPHD eigenvalues[:4]: Dunnian 12252.5 / 630.56 / 424.28 / 363.64; Hortonian 12978.8 / 1235.71 / 1103.29 / 371.36 (rtol 1e-6).
+- QPHD eigenvalues[:4]: Dunnian 12252.5 / 630.56 / 424.28 / 363.64 (all 10,000 runs); Hortonian 16294.24 / 2151.55 / 1833.69 / 701.62 on the 6,863 non-zero runs (author, 2026-10-30; [#46](https://github.com/paulcon/as-data-sets/pull/46)) (rtol 1e-6). The all-runs Hortonian values 12978.8 / 1235.71 / 1103.29 / 371.36 reproduce 2016 (§10).
 - Max |w_qphd − w_ols| after alignment: 0.0173 (D) and 0.0369 (H).
-- R² table (in-sample, degree 1/2/3): D, OLS 1-D 0.8473 / 0.8771 / 0.8776; D, QPHD 1-D 0.8455 / 0.8763 / 0.8769; H, OLS 1-D 0.4965 / 0.7385 / 0.7693; H, QPHD 3-D 0.4924 / 0.8230 / 0.8910. LOO is shown next to these.
+- R² table (in-sample, degree 1/2/3): D, OLS 1-D 0.8473 / 0.8771 / 0.8776; D, QPHD 1-D 0.8455 / 0.8763 / 0.8769; H (6,863 non-zero runs), OLS 1-D 0.5319 / 0.7233 / 0.7397; H, QPHD 1-D 0.5171 / 0.7278 / 0.7497; H, QPHD 3-D 0.5224 / 0.8280 / 0.8742. (All runs, as in 2016: H, OLS 1-D 0.4965 / 0.7385 / 0.7693; H, QPHD 3-D 0.4924 / 0.8230 / 0.8910.) LOO is shown next to these.
 - The log-scale Hortonian summary plot states "3137 of 10000 runs have zero runoff (not shown)".
 - Hortonian OLS w₁ < 0 and the summary slope > 0 (paper Fig. 7 orientation). Dunnian w₁ = +0.962.
 

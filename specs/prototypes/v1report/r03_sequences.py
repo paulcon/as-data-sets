@@ -36,7 +36,8 @@ print("50 OLS calls (M=3600, m=19): %.2fs" % (time.time() - t))
 Xh, Fh, Gh = hiv()
 print("HIV shapes", Xh.shape, Fh.shape, Gh.shape)
 t = time.time()
-subs = [ac.active_subspace(grads=Gh[:, 27 * i:27 * (i + 1)], space=ac.Uniform.reference(27)) for i in range(21)]
-print("HIV 21 AS calls: %.2fs; n chosen:" % (time.time() - t), [s.n for s in subs])
+nt = Gh.shape[1] // 27
+subs = [ac.active_subspace(grads=Gh[:, 27 * i:27 * (i + 1)], space=ac.Uniform.reference(27)) for i in range(nt)]
+print("HIV %d AS calls: %.2fs; n chosen:" % (nt, time.time() - t), [s.n for s in subs])
 W = np.array([s.W1[:, 0] for s in subs])
-print("HIV v1 w1 reversals between consecutive times:", int((np.sum(W[1:] * W[:-1], 1) < 0).sum()), "/20")
+print("HIV v1 w1 reversals between consecutive times:", int((np.sum(W[1:] * W[:-1], 1) < 0).sum()), "/%d" % (nt - 1))
