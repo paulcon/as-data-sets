@@ -151,10 +151,10 @@ The spec §6 call maps predate the v1 additions at `ca41b3d`. Where a spec §6 r
 - [ ] v1: replace the hand sign flips with `ac.orient` (V1-05)
 
 ### ONERA-M6 ([ONERA-M6.md](ONERA-M6.md))
-- [ ] Rewrite the R² text with v1 leave-one-out values (drag 0.70 / 0.88 / 0.93 for n = 1/2/3, not ≈ .965); print `ac.dimension_criterion`'s choice beside the eigenvalue plot, then set n = 2 for drag explicitly (author, 2026-10-30)
-- [ ] Reference [1]: author order as on the paper's title page (Lukaczyk, Palacios, Alonso, Constantine; the cell-0 author block is already right) and "Palacios"; add the missing [R3] link
-- [ ] README: 50 parameters; the "60" is book §5.3.2, a different study not in this repo (its data are unavailable, author 2026-10-30)
-- [ ] DATA.md: the 3 missing LHS runs and the FFD mapping of x01–x50 are unknown (author, 2026-10-30)
+- [x] Rewrite the R² text with v1 leave-one-out values (drag 0.70 / 0.88 / 0.93 for n = 1/2/3, not ≈ .965); print `ac.dimension_criterion`'s choice beside the eigenvalue plot, then set n = 2 for drag explicitly (author, 2026-10-30). Done ([#44](https://github.com/paulcon/as-data-sets/pull/44)): LOO 0.703 / 0.884 / 0.932, with the 2016 in-sample values read off its figure printed beside them; EVG picks n = 1 for drag (gap ratio 1.06), then `with_dimension(…, 2)`. Lift w₁ is signed as in the paper's Fig. 6 (opposite to 2016); the other columns keep the 2016 rule
+- [x] Reference [1]: author order as on the paper's title page (Lukaczyk, Palacios, Alonso, Constantine; the cell-0 author block is already right) and "Palacios"; add the missing [R3] link. Done ([#44](https://github.com/paulcon/as-data-sets/pull/44)): header with the title-page affiliations (Palacios at Stanford), no emails, Ryan Howard on a "(2016 notebook)" line
+- [x] README: 50 parameters; the "60" is book §5.3.2, a different study not in this repo (its data are unavailable, author 2026-10-30). Done in [#34](https://github.com/paulcon/as-data-sets/pull/34); the notebook and DATA.md say the book's study uses a different data set ([#44](https://github.com/paulcon/as-data-sets/pull/44))
+- [x] DATA.md: the 3 missing LHS runs and the FFD mapping of x01–x50 are unknown (author, 2026-10-30). Done ([#44](https://github.com/paulcon/as-data-sets/pull/44)): the SU2 version and settings are unknown too; every column fills 297 of the 300 LHS strata. The data came in 7c26e3a (2014), not in 79789d9 as spec §5 says
 
 ### Reentry_freestream_conditions: excluded from main
 Not ported (author decision 2026-10-29). The spec stays for reference: [Reentry_freestream_conditions.md](Reentry_freestream_conditions.md).
