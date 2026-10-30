@@ -42,12 +42,12 @@ Every item marked "(author, 2026-10-30)" in this file was decided in the intervi
 
 ## 1. Branches: master + dev → main ([BRANCH_MERGE.md](BRANCH_MERGE.md))
 
-- [ ] Tag `legacy-master` (32e5839) and push it. Annotated tag created locally 2026-10-30; push pending. **No `legacy-dev` tag** (author, 2026-10-30): dev stays reachable through the merge commit's second parent
+- [x] Tag `legacy-master` (32e5839) and push it. Annotated tag pushed 2026-10-30. **No `legacy-dev` tag** (author, 2026-10-30): dev stays reachable through the merge commit's second parent
 - [x] In a separate worktree: `git merge -s ours --no-commit origin/dev`, restore only `LM104X/LM104X.txt` and `LM104X/active-subspace-LM104X.ipynb` from dev (not Atacamac: author decision), commit. Fix the BRANCH_MERGE.md §2 commit message, which names Atacamac. Done 2026-10-30: branch `merge-dev` (no upstream set), merge commit f910d06; BRANCH_MERGE.md §2.1 updated. The worktree was then removed and `merge-dev` is checked out in the main checkout, so `specs/` and `CLAUDE.md` exist once, tracked
 - [x] Remove `Reentry_freestream_conditions/` from main (author decision 2026-10-29; it stays in `legacy-master`). Done 2026-10-30 on `merge-dev` (8ec9b43), with its README bullet
 - [x] Verify: exactly 2 added files vs master (LM104X), plus the Reentry removal; blame on `LM104X/LM104X.txt` points to 7c26e3a; dev listed as merged. Verified 2026-10-30 (also: README.md modified, LM104X differs from dev only by the omitted `.DS_Store`)
 - [x] Hygiene commit: `git rm --cached ONERA-M6/figs/.DS_Store`; `git restore --staged .idea`; extend `.gitignore` (`papers/` already added locally 2026-10-29; `.venv/`, `__pycache__/`, `.mcp.json`, `.claude/settings.local.json`, `.idea/`); commit `CLAUDE.md` and `specs/` (minus `specs/prototypes/**/__pycache__`), which also commits the D-212 edit to `accept_surrogates.py`. Done 2026-10-30 on `merge-dev` as two commits (hygiene; CLAUDE.md + specs/). `.idea` unstaged in the main checkout
-- [ ] Open PR into master with a merge commit (never squash or rebase)
+- [ ] Open PR into master with a merge commit (never squash or rebase). Opened 2026-10-30: [#32](https://github.com/paulcon/as-data-sets/pull/32); merge it with "Create a merge commit"
 - [ ] Rename `master` → `main` on GitHub (keeps redirects and forks); update local clones
 - [ ] Check redirects of `blob/master`, `raw.githubusercontent.com/.../master`, nbviewer URLs
 - [ ] Delete `dev`
@@ -231,7 +231,7 @@ Done. All of V1-01 to V1-13 from [ACTIVE_SUBSPACES_V1_CHANGES.md](ACTIVE_SUBSPAC
 - [x] V1-06 `ac.Product` (no `order=`; blocks in column order)
 - [x] V1-09 `ac.finite_difference_gradients_multi` (a separate function, not `outputs=`)
 - [x] V1-07, V1-08, V1-10 – V1-13
-- [x] Commit the D-212 edit to `prototypes/v1report/accept_surrogates.py` (in the §1 hygiene commit with the rest of `specs/`). Done 2026-10-30 on `merge-dev`, not yet pushed
+- [x] Commit the D-212 edit to `prototypes/v1report/accept_surrogates.py` (in the §1 hygiene commit with the rest of `specs/`). Done 2026-10-30 on `merge-dev` (PR #32)
 - [ ] Update the per-notebook spec expectations that relied on the old behavior: the Elliptic `flat_objective` warning (D-212), the out-of-space message text (V1-10, NREL_Wind §10), the signs of physical directions (V1-05), and the shape of `Gaussian.cov` for a diagonal matrix (D-214). Alternatively, treat the §3 "v1:" items as superseding the spec rows
 - [ ] Re-run the three acceptance scripts in `prototypes/v1report/` after any upstream change. Expected: subspaces 20 passed, 1 skipped; surrogates 17 passed; spaces 21 passed
 
