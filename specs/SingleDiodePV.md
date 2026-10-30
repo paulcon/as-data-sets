@@ -96,7 +96,7 @@ None today. Optional: add a `single_diode.py` (about 25 lines: `pmax(params, T=2
 - No pandas, no py2 syntax, a seeded rng, no warnings.
 - Eigenvalues = [3.3350e-3, 1.7227e-4, 2.1552e-5, 1.3414e-6, 3.9520e-7] (rel. tol 1e-10). λ₁/λ₂ = 19.4.
 - w₁ = [0.7674, −0.4228, 0.4730, −0.0906, 0.0207] and w₂ = [0.6346, 0.4290, −0.6074, 0.2088, 0.0288] (tol 1e-4, v1 signs).
-- Bootstrap min/max range of w₁ (seeded) has width ≤ 0.02 per component; mean subspace distance for n = 1 is ≈ 2e-3.
+- Bootstrap on a seeded M = 1000 subsample with 1000 replicates and 99 % percentile intervals, as in the paper (author, 2026-10-30; this replaced a min/max criterion on all 10,000 samples). The widest 99 % interval of a w₁ component is ≤ 0.03 and of a w₂ component ≤ 0.06 (the port prints 0.027 and 0.056). The mean subspace distance for n = 1 is ≈ 7e-3 (the port prints 7.3e-3; paper Fig. 2b ≈ 7e-3).
 - Normalized inputs of the summary plots lie in [−1, 1].
 - Figures: eigenvalues, subspace errors, eigenvectors (2, labeled, with bands), 1-D and 2-D summary plots (5, as legacy), plus an optional surrogate fit.
 
