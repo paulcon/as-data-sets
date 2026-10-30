@@ -92,7 +92,7 @@ None.
 - `jupyter nbconvert --execute` in `.venv` finishes in < 30 s with peak RSS < 2 GB.
 - Imports are only numpy, scipy, matplotlib and active_subspaces.
 - Eigenvalues (6^8 rule): Liberia λ1..3 = 1.0194, 0.2621, 0.02506 (±0.1%); SL λ1..3 = 1.1014, 0.1546, 0.02169 (±0.1%). These are **not** the legacy figure values, which are 256× smaller; say so in a markdown cell.
-- w1 (sign by the v1 rule): L ≈ [−.381, −.061, −.337, −.043, .255, .299, .038, .761]; SL ≈ [−.364, −.056, −.167, −.039, .190, .177, .034, .875] (±0.005).
+- w1 (sign by the 2016 rule, first component positive, as in the paper's Fig. 8; restored with `ac.orient(by="reference")`) (author, 2026-10-30): L ≈ [.381, .061, .337, .043, −.255, −.299, −.038, −.761]; SL ≈ [.364, .056, .167, .039, −.190, −.177, −.034, −.875] (±0.005).
 - Normalized activity scores for ψ: 0.52 (L) and 0.69 (S) (±0.01).
 - Figures: 2 eigenvalue plots, 4 sufficient-summary plots (1-D and 2-D per country), 2 eigenvector plots, 1 activity-score figure.
 
