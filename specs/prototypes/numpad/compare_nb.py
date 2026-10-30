@@ -17,7 +17,7 @@ for case in ['long','short']:
         print(f'  q(t e_{kk}) t=-3..3:', np.array2string(np.array([S.qoi(tt*np.eye(100)[kk]) for tt in t]),precision=4))
     print('  q(t*w1) t=-3..3:', np.array2string(np.array([S.qoi(tt*W[:,0]) for tt in t]),precision=4), '(sign of w1 arbitrary)')
 # MCMC Gradient_Samples
-df=IO.loadmat(R+'/MCMC/Gradient_Samples.mat')['Samples']
+df=IO.loadmat(R+'/uq_benchmarks/PDE_Inverse_Problem_MCMC/Gradient_Samples.mat')['Samples']
 e0,W0=np.linalg.eigh(df.T@df/df.shape[0]); e0,W0=e0[::-1],W0[:,::-1]
 print('== stored Gradient_Samples eigs[:6]', np.array2string(e0[:6],precision=3), ' mean|g|', f'{np.linalg.norm(df,axis=1).mean():.2f}')
 M=PDEMisfit('short', datadir=R+'/MCMC')

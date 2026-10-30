@@ -1,6 +1,6 @@
 import numpy as np, scipy.io as sio, os, io, time, warnings
 import active_subspaces as ac
-D='/Users/paulconstantine/PycharmProjects/as-data-sets/MCMC/'
+D='/Users/paulconstantine/PycharmProjects/as-data-sets/uq_benchmarks/PDE_Inverse_Problem_MCMC/'
 for fn in ['Vanilla_Chain.mat','Vanilla_Acceptance.mat','AV_Chain.mat','AV_Acceptance.mat','Gradient_Samples.mat']:
     m = sio.loadmat(D+fn); k = [k for k in m if not k.startswith('__')]
     print(fn, m['__header__'][:60], {kk: (m[kk].shape, m[kk].dtype) for kk in k})

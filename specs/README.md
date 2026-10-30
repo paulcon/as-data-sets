@@ -2,6 +2,30 @@
 
 Review of every notebook in `paulcon/as-data-sets` for the port to Python 3 and `active_subspaces` v1, without pandas or numpad. Each spec covers inventory, text and math versus the literature, code, data management, the v1 call map, an update plan, acceptance criteria, prototype results and open questions. Start with [TODO.md](TODO.md).
 
+## Paths
+
+On 2026-10-30 the data sets moved into category directories and were renamed, and each notebook was renamed after its directory. The specs below were written before the move and use the old paths. Map:
+
+| Old directory (old notebook) | New directory and notebook |
+|---|---|
+| `HyShotII/` (`HyShotII.ipynb`) | `aerospace_cfd/HyShotII_Scramjet/HyShotII_Scramjet.ipynb` |
+| `NACA0012/` (`active-subspace-naca0012.ipynb`) | `aerospace_cfd/NACA0012_Airfoil/NACA0012_Airfoil.ipynb` |
+| `ONERA-M6/` (`active-subspace-oneraM6.ipynb`) | `aerospace_cfd/ONERA_M6_Wing/ONERA_M6_Wing.ipynb` |
+| `LM104X/` (`active-subspace-LM104X.ipynb`) | `aerospace_cfd/N2_Supersonic_Jet/N2_Supersonic_Jet.ipynb` |
+| `Hydrology/` (`PF-CLM_Active_Subspaces.ipynb`) | `hydrology_subsurface_geoscience/Land_Surface_Energy_Fluxes/Land_Surface_Energy_Fluxes.ipynb` |
+| `Stomatal_Resistance/` (`Stomatal_Resistance.ipynb`) | `hydrology_subsurface_geoscience/Photosynthesis_Stomatal_Resistance/Photosynthesis_Stomatal_Resistance.ipynb` |
+| `Subsurface_Permeability/` (`Subsurface_permeability.ipynb`) | `hydrology_subsurface_geoscience/Runoff_Permeability_Field/Runoff_Permeability_Field.ipynb` |
+| `Lithium_Battery/` (`Li_Battery.ipynb`) | `energy/Lithium_Ion_Battery/Lithium_Ion_Battery.ipynb` |
+| `MHD/` (`MHD.ipynb`) | `plasma_fusion/MHD_Generator/MHD_Generator.ipynb` |
+| `NREL_Wind/` (`NREL_Wind.ipynb`) | `energy/Offshore_Wind_Turbine_Fatigue/Offshore_Wind_Turbine_Fatigue.ipynb` |
+| `SingleDiodePV/` (`active-subspace-pv.ipynb`) | `energy/Single_Diode_Solar_Cell/Single_Diode_Solar_Cell.ipynb` |
+| `Ebola/` (`Ebola.ipynb`) | `epidemiology_systems_biology/Ebola_SEIR/Ebola_SEIR.ipynb` |
+| `HIV/` (`HIV.ipynb`) | `epidemiology_systems_biology/HIV_Long_Term_Dynamics/HIV_Long_Term_Dynamics.ipynb` |
+| `Elliptic_PDE/` (`PDE_notebook.ipynb`) | `uq_benchmarks/Elliptic_PDE_Random_Coefficients/Elliptic_PDE_Random_Coefficients.ipynb` |
+| `MCMC/` (`MCMC.ipynb`) | `uq_benchmarks/PDE_Inverse_Problem_MCMC/PDE_Inverse_Problem_MCMC.ipynb` |
+
+The prototype scripts in `prototypes/` were updated to the new paths. Data file names did not change.
+
 | Directory | m (verified) | Most serious finding | Spec |
 |---|---|---|---|
 | Ebola | 8 | Eigenvalues 256× too small (extra quadrature factor) | [Ebola.md](Ebola.md) |

@@ -2,6 +2,8 @@
 
 Compiled 2026-10-29 from the per-notebook specs in this directory. Each item links to the spec section with details. Paste the sections into GitHub issues (one issue per heading works well); `- [ ]` items render as task lists.
 
+Paths: on 2026-10-30 the data sets moved into category directories with new names (map in [README.md](README.md#paths)). The items below use the old names, which are also the spec names.
+
 Target for every notebook: Python 3.11+, runs headless with `jupyter nbconvert --execute` from its own directory, imports only numpy, scipy, matplotlib and `active_subspaces` v1. No pandas, no numpad.
 
 ## 0. Decisions for the author (block the items below)
@@ -53,13 +55,14 @@ Every item marked "(author, 2026-10-30)" in this file was decided in the intervi
 - [x] Delete `dev`. Deleted 2026-10-30 (merged into main); `merge-dev` deleted too
 - [x] Protect `main` (author, 2026-10-30): require a PR to merge, block force-pushes and deletion, no required reviewers. Done 2026-10-30, with `enforce_admins` on so the rule also applies to the owner
 - [ ] Close issue #1 when v1 is released
-- [ ] Author: update the external links you control from `blob/master` to `blob/main`, especially nbviewer links, which no longer resolve (activesubspaces.org, the active_subspaces README, course pages). The HIV paper's printed nbviewer link (p. 710) stays dead
+- [ ] Author: update the external links you control from `blob/master` to `blob/main` and to the new category paths (map in [README.md](README.md#paths); Github does not redirect moved files), especially nbviewer links, which no longer resolve (activesubspaces.org, the active_subspaces README, course pages). The HIV paper's printed nbviewer link (p. 710) stays dead
 
 ## 2. Repo-wide
 
+- [x] Directory layout (author, 2026-10-30): 12 category directories (snake_case, each with a `README.md`); data sets renamed after their papers and moved in; each notebook renamed after its directory. HyShotII in aerospace, MHD in plasma_fusion, Stomatal_Resistance in hydrology, Elliptic_PDE and MCMC in uq_benchmarks. Map in [README.md](README.md#paths). Done on branch `categories`
 - [x] README parameter counts: Ebola 9 → 8, HIV 21 → 27, Hydrology 20 → 19, Lithium_Battery 18 → 19, ONERA-M6 60 → 50. Done 2026-10-30 (branch `repo-wide-docs`)
 - [x] README typo: "fatige" → "fatigue". Done 2026-10-30 (branch `repo-wide-docs`); also "off-shore" → "offshore" and the NREL link labeled [model] (NREL_Wind.md §8.5)
-- [x] README: add the missing Elliptic_PDE bullet; add an `N2_Supersonic_Jet` (ex-LM104X) bullet; remove the Reentry_freestream_conditions bullet. Done 2026-10-30 (branch `repo-wide-docs`). The bullet is named **LM104X** for now, matching the directory; the LM104X port PR renames it with the directory (§3). The Reentry bullet went in 8ec9b43
+- [x] README: add the missing Elliptic_PDE bullet; add an `N2_Supersonic_Jet` (ex-LM104X) bullet; remove the Reentry_freestream_conditions bullet. Done 2026-10-30 (branch `repo-wide-docs`). The bullet was named **LM104X** at first; it became **N2_Supersonic_Jet** with the directory move (branch `categories`). The Reentry bullet went in 8ec9b43
 - [x] README: replace "Each directory contains a data set as a CSV file" (data are .txt, .mat, .npz, or closed-form); `nbviewer.jupyter.org` → `nbviewer.org`; any nbviewer link must use `blob/main` (`blob/master` 404s since the rename); say that the HIV paper's printed nbviewer link is dead and give the `main` URL (done 2026-10-30 in the README HIV bullet and HIV notebook cell 0); add a "2016 version" note pointing to the `legacy-master` tag. Done 2026-10-30 (branch `repo-wide-docs`), with a note that unported notebooks do not run under `requirements.txt`, and Installation and License sections
 - [x] README: cite published versions — Ebola: Appl. Math. Comput. 324 (2018), doi:10.1016/j.amc.2017.11.039; HIV: Math. Biosci. Eng. 14(3) (2017), doi:10.3934/mbe.2017040; Lithium_Battery: Stat. Anal. Data Min. 10(5) (2017), doi:10.1002/sam.11347; MHD: Stat. Anal. Data Min. 10(5) (2017), doi:10.1002/sam.11355; Stomatal_Resistance: J. Hydrometeorol. 18(3) (2017), doi:10.1175/JHM-D-16-0053.1. Done 2026-10-30 (branch `repo-wide-docs`): DOI links, arXiv kept as a second link; all `dx.doi.org` links → `doi.org`
 - [x] All notebooks: fix the Constantine–Dow–Wang title to "Active subspace methods in theory and practice: applications to kriging surfaces". Done 2026-10-30 (branch `repo-wide-docs`) (13 notebooks; LM104X already had it)
@@ -97,7 +100,7 @@ The spec §6 call maps predate the v1 additions at `ca41b3d`. Where a spec §6 r
 - [ ] Load CSVs with `np.loadtxt(skiprows=1, delimiter=",")[:, 1:]`, then re-save without the pandas index column
 - [ ] Port `generate_data.py` to `solve_ivp` (LSODA, tol 1e-10, T = 0.1 event) (author, 2026-10-30); it must reproduce the shipped CSVs to 1e-5. Document that the data are a Python regeneration, not the paper's MATLAB runs (ode23s, forward FD step 1e-6 on normalized parameters)
 - [ ] Times (author, 2026-10-30): the paper's 18 (Appendix B: 24 … 3400) plus t = 1700 as the worked example (Figs. 2–6); drop 5, 15 and 750. The shipped CSVs have no t = 1700, so add it with the ported `generate_data.py` (~45 min) and re-save the CSVs
-- [ ] Keep the path `HIV/HIV.ipynb`: the published paper links to it on master (p. 710); after the rename, check that the redirect works
+- [x] ~~Keep the path `HIV/HIV.ipynb`: the published paper links to it on master (p. 710); after the rename, check that the redirect works~~ Moot: the paper's link is an nbviewer `blob/master` URL, which 404s since the rename, and the author moved the notebook to `epidemiology_systems_biology/HIV_Long_Term_Dynamics/HIV_Long_Term_Dynamics.ipynb` (2026-10-30). The README and notebook cell 0 give the new URL
 - [ ] Negligible parameters (author, 2026-10-30): state the list the data support (K11, K12, K13 plus K2, K8, δ3, α1 with max |w1| ≤ 0.0014; recheck on the final time set) and note that the paper (p. 726) names only K11–K13
 - [ ] Do not repeat the paper's t = 2000 "2-D subspace" claim (data give λ1/λ2 = 75); describe the late-time trend as the paper's "arctangent × step" (p. 723) in cell 10
 - [ ] v1: the finite-difference demo makes one `ac.finite_difference_gradients_multi(model, X=, space=, outputs=21)` call, not 21 scalar calls (V1-09); replace the hand sign flips with `ac.orient`, chaining `by="reference", reference=sub_prev` across time steps (V1-05)
@@ -213,7 +216,7 @@ Not ported: the author does not want the model in main (2026-10-30). It stays in
 - [ ] 105 inputs (wing 50, tail 24, aft deck 16, fuselage 15; dissertation fig. 2.20, p. 42), not 50; the column-to-component mapping is unknown (author, 2026-10-30), so do not label eigenvector components
 - [ ] Cite the final dissertation (June 2015, purl.stanford.edu/xx611nd3190, CC BY-NC 3.0 US); the final is now in `papers/`
 - [ ] Compare with dissertation fig. 4.14 (p. 108): inputs normalized to [−1, 1] and each output min–max scaled to [−1, 1]; the data then give λ₁ lift 0.19, drag 0.084, EA 1.4e-3. State the output scaling, since v1 does not apply it
-- [ ] Rename the directory to `N2_Supersonic_Jet` (author, 2026-10-30) with `git mv` in the port PR, not in the merge commit, so the §1 merge still restores dev's paths. Rename the notebook to match and check that `git log --follow` crosses the rename
+- [x] Rename the directory to `N2_Supersonic_Jet` (author, 2026-10-30) with `git mv` in the port PR, not in the merge commit, so the §1 merge still restores dev's paths. Rename the notebook to match and check that `git log --follow` crosses the rename. Done 2026-10-30 in the directory move (branch `categories`), not the port PR: `aerospace_cfd/N2_Supersonic_Jet/N2_Supersonic_Jet.ipynb`. `LM104X.txt` keeps its name
 - [ ] State that the 310 rows vs 305 retained (dissertation) and the ±0.3 data vs ±3.0 Eq. 2.21 bounds are unexplained (author, 2026-10-30)
 - [ ] Add a gradient-quality cell (author, 2026-10-30) (adjoint direction ~25° off the exact linear regression direction; the dissertation reports 9.9 % lift vs 2.0 % drag adjoint-gradient error on NACA0012, Table 3.4 p. 72, and no N+2-specific gradient check)
 
@@ -237,7 +240,7 @@ Done. All of V1-01 to V1-13 from [ACTIVE_SUBSPACES_V1_CHANGES.md](ACTIVE_SUBSPAC
 - [x] V1-07, V1-08, V1-10 – V1-13
 - [x] Commit the D-212 edit to `prototypes/v1report/accept_surrogates.py` (in the §1 hygiene commit with the rest of `specs/`). Done 2026-10-30 on `merge-dev` (PR #32)
 - [ ] Update the per-notebook spec expectations that relied on the old behavior: the Elliptic `flat_objective` warning (D-212), the out-of-space message text (V1-10, NREL_Wind §10), the signs of physical directions (V1-05), and the shape of `Gaussian.cov` for a diagonal matrix (D-214). Alternatively, treat the §3 "v1:" items as superseding the spec rows
-- [ ] Re-run the three acceptance scripts in `prototypes/v1report/` after any upstream change. Expected: subspaces 20 passed, 1 skipped; surrogates 17 passed; spaces 21 passed
+- [ ] Re-run the three acceptance scripts in `prototypes/v1report/` after any upstream change. Expected: subspaces 20 passed, 1 skipped; surrogates 17 passed; spaces 21 passed. Since Reentry left main (8ec9b43), spaces gives 19 passed, 1 skipped (`V1-06 reentry`: data file missing); last run 2026-10-30 after the directory move
 
 ## 6. Errata in the published sources (for the author's records)
 

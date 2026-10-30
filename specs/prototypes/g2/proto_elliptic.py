@@ -2,7 +2,7 @@ import numpy as np, time, sys, warnings
 sys.path.insert(0, '.')
 from fvsolver import PDESolver
 import active_subspaces as ac
-R='/Users/paulconstantine/PycharmProjects/as-data-sets/Elliptic_PDE/'
+R='/Users/paulconstantine/PycharmProjects/as-data-sets/uq_benchmarks/Elliptic_PDE_Random_Coefficients/'
 rng = np.random.default_rng(2014)
 space = ac.Gaussian.reference(100)
 X = rng.standard_normal((300, 100)); Xtest = rng.standard_normal((500, 100))

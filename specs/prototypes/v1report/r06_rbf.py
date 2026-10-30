@@ -4,7 +4,7 @@ from scipy.spatial.distance import cdist
 sys.path.insert(0, '/Users/paulconstantine/PycharmProjects/as-data-sets/specs/prototypes/g2')
 from fvsolver import PDESolver
 import active_subspaces as ac
-s = PDESolver('/Users/paulconstantine/PycharmProjects/as-data-sets/Elliptic_PDE/kl-long.npz')
+s = PDESolver('/Users/paulconstantine/PycharmProjects/as-data-sets/uq_benchmarks/Elliptic_PDE_Random_Coefficients/kl-long.npz')
 rng = np.random.default_rng(2014); space = ac.Gaussian.reference(100)
 X = rng.standard_normal((300, 100)); fg = [s.qoi_and_grad(x) for x in X]
 f0 = np.array([a for a, _ in fg]); G = np.array([b for _, b in fg])

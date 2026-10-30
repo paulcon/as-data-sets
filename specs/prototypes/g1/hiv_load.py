@@ -1,6 +1,6 @@
 import numpy as np, time
 import active_subspaces as ac
-d='/Users/paulconstantine/PycharmProjects/as-data-sets/HIV/'
+d='/Users/paulconstantine/PycharmProjects/as-data-sets/epidemiology_systems_biology/HIV_Long_Term_Dynamics/'
 t0=time.time()
 X=np.loadtxt(d+'inputs.csv',delimiter=',',skiprows=1)[:,1:]
 F=np.loadtxt(d+'outputs.csv',delimiter=',',skiprows=1)[:,1:]

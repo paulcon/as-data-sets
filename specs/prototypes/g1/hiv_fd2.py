@@ -1,7 +1,7 @@
 import numpy as np, time, warnings
 from scipy.integrate import solve_ivp
 from hiv_model_copy import Tcells
-d='/Users/paulconstantine/PycharmProjects/as-data-sets/HIV/'
+d='/Users/paulconstantine/PycharmProjects/as-data-sets/epidemiology_systems_biology/HIV_Long_Term_Dynamics/'
 X=np.loadtxt(d+'inputs.csv',delimiter=',',skiprows=1)[:,1:]; F=np.loadtxt(d+'outputs.csv',delimiter=',',skiprows=1)[:,1:]; DF=np.loadtxt(d+'gradients.csv',delimiter=',',skiprows=1)[:,1:]
 nominal = np.array([10, .15, 5, .2, 55.6, 3.87e-3, 1e-6, 4.5e-4, 7.45e-4, 5.22e-4, 3e-6, 3.3e-4, 6e-9, .537, .285, 7.79e-6, 1e-6, 4e-5, .01, .28, .05, .005, .005, .015, 2.39, 3e-4, .97])
 xl=.975*nominal; xu=1.025*nominal; half=(xu-xl)/2

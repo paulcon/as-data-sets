@@ -2,7 +2,7 @@ import numpy as np, time, sys, warnings
 sys.path.insert(0, '.')
 from fvsolver import PDESolver
 import active_subspaces as ac
-s = PDESolver('/Users/paulconstantine/PycharmProjects/as-data-sets/MCMC/kl-short.npz')
+s = PDESolver('/Users/paulconstantine/PycharmProjects/as-data-sets/uq_benchmarks/PDE_Inverse_Problem_MCMC/kl-short.npz')
 rng = np.random.default_rng(1510)
 xt = rng.standard_normal(100); obs = s.observations(xt); sig2 = 1e-4*obs@obs; d = obs + np.sqrt(sig2)*rng.standard_normal(7)
 t = time.time(); [s.observations(rng.standard_normal(100)) for _ in range(50)]; tv = (time.time()-t)/50
