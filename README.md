@@ -9,7 +9,7 @@ Each directory contains a data set as a CSV file and a Jupyter notebook (`.ipynb
 The repository contains Jupyter notebooks for the following models / data sets.
 
 * **Ebola:** a 9-parameter dynamical system model for the geographic spread of Ebola. [[paper]](http://arxiv.org/abs/1603.04955)
-* **HIV:** a 21-parameter dynamical system model for in-host HIV. [[paper]](http://arxiv.org/abs/1604.04588)
+* **HIV:** a 21-parameter dynamical system model for in-host HIV. [[paper]](http://arxiv.org/abs/1604.04588) The paper's printed nbviewer link points to the old `master` branch and no longer works; use [this link](https://nbviewer.org/github/paulcon/as-data-sets/blob/main/HIV/HIV.ipynb) instead.
 * **HyShotII:** a 7-parameter multiphysics model of a hypersonic scramjet. [[paper]](http://dx.doi.org/10.1016/j.jcp.2015.09.001)
 * **Hydrology:** a 20-parameter integrated surface/subsurface hydrologic model. [[paper]](http://dx.doi.org/10.1016/j.cageo.2015.07.001)
 * **Lithium_Battery:** an 18-parameter model of a lithium-ion battery. [[paper]](https://arxiv.org/abs/1606.08770)
