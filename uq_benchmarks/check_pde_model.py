@@ -74,6 +74,11 @@ for name, d in DIRS.items():
         rel = np.linalg.norm(g - fd_grad(S.qoi, x)) / np.linalg.norm(g)
         report(rel < 1e-6, tag + ' grad_qoi vs FD', 'relative error {:.1e} (< 1e-6)'.format(rel))
 
+        q1, g1 = S.qoi_and_grad(x)
+        dq, dg = abs(q1 - S.qoi(x)) / abs(q1), np.linalg.norm(g1 - g) / np.linalg.norm(g)
+        report(max(dq, dg) < 1e-12, tag + ' qoi_and_grad',
+               'vs qoi, grad_qoi: {:.1e}, {:.1e} (< 1e-12)'.format(dq, dg))
+
         M = pdem.PDEMisfit(case)
         s2 = (np.array(M.indz) + 1) * M.dx
         report(np.allclose(s2, [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]), tag + ' sensors',
