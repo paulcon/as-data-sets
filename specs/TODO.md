@@ -47,19 +47,20 @@ Every item marked "(author, 2026-10-30)" in this file was decided in the intervi
 - [x] Remove `Reentry_freestream_conditions/` from main (author decision 2026-10-29; it stays in `legacy-master`). Done 2026-10-30 on `merge-dev` (8ec9b43), with its README bullet
 - [x] Verify: exactly 2 added files vs master (LM104X), plus the Reentry removal; blame on `LM104X/LM104X.txt` points to 7c26e3a; dev listed as merged. Verified 2026-10-30 (also: README.md modified, LM104X differs from dev only by the omitted `.DS_Store`)
 - [x] Hygiene commit: `git rm --cached ONERA-M6/figs/.DS_Store`; `git restore --staged .idea`; extend `.gitignore` (`papers/` already added locally 2026-10-29; `.venv/`, `__pycache__/`, `.mcp.json`, `.claude/settings.local.json`, `.idea/`); commit `CLAUDE.md` and `specs/` (minus `specs/prototypes/**/__pycache__`), which also commits the D-212 edit to `accept_surrogates.py`. Done 2026-10-30 on `merge-dev` as two commits (hygiene; CLAUDE.md + specs/). `.idea` unstaged in the main checkout
-- [ ] Open PR into master with a merge commit (never squash or rebase). Opened 2026-10-30: [#32](https://github.com/paulcon/as-data-sets/pull/32); merge it with "Create a merge commit"
-- [ ] Rename `master` → `main` on GitHub (keeps redirects and forks); update local clones
-- [ ] Check redirects of `blob/master`, `raw.githubusercontent.com/.../master`, nbviewer URLs
-- [ ] Delete `dev`
-- [ ] Protect `main` (author, 2026-10-30): require a PR to merge, block force-pushes and deletion, no required reviewers
+- [x] Open PR into master with a merge commit (never squash or rebase). [#32](https://github.com/paulcon/as-data-sets/pull/32), merged 2026-10-30 as merge commit 56aee01 (parents 32e5839, 12fa6a2)
+- [x] Rename `master` → `main` on GitHub (keeps redirects and forks); update local clones. Done 2026-10-30; default branch is `main`; the local checkout tracks `origin/main`, `origin/HEAD` → `main`
+- [x] Check redirects of `blob/master`, `raw.githubusercontent.com/.../master`, nbviewer URLs. Checked 2026-10-30: `github.com/…/blob/master/…` and `tree/master` redirect to `main` (200); `raw.githubusercontent.com/…/master/…` serves main's files (200). **`nbviewer.org/…/blob/master/…` returns 404**, because nbviewer uses the GitHub contents API, and `contents?ref=master` does not follow the rename. That breaks the HIV paper's link (p. 710). `nbviewer…/blob/main/…` works. **Leave it broken** (author, 2026-10-30): no `master` branch is recreated
+- [x] Delete `dev`. Deleted 2026-10-30 (merged into main); `merge-dev` deleted too
+- [x] Protect `main` (author, 2026-10-30): require a PR to merge, block force-pushes and deletion, no required reviewers. Done 2026-10-30, with `enforce_admins` on so the rule also applies to the owner
 - [ ] Close issue #1 when v1 is released
+- [ ] Author: update the external links you control from `blob/master` to `blob/main`, especially nbviewer links, which no longer resolve (activesubspaces.org, the active_subspaces README, course pages). The HIV paper's printed nbviewer link (p. 710) stays dead
 
 ## 2. Repo-wide
 
 - [ ] README parameter counts: Ebola 9 → 8, HIV 21 → 27, Hydrology 20 → 19, Lithium_Battery 18 → 19, ONERA-M6 60 → 50
 - [ ] README typo: "fatige" → "fatigue"
 - [ ] README: add the missing Elliptic_PDE bullet; add an `N2_Supersonic_Jet` (ex-LM104X) bullet; remove the Reentry_freestream_conditions bullet
-- [ ] README: replace "Each directory contains a data set as a CSV file" (data are .txt, .mat, .npz, or closed-form); `nbviewer.jupyter.org` → `nbviewer.org`; add a "2016 version" note pointing to the `legacy-master` tag
+- [ ] README: replace "Each directory contains a data set as a CSV file" (data are .txt, .mat, .npz, or closed-form); `nbviewer.jupyter.org` → `nbviewer.org`; any nbviewer link must use `blob/main` (`blob/master` 404s since the rename); say that the HIV paper's printed nbviewer link is dead and give the `main` URL; add a "2016 version" note pointing to the `legacy-master` tag
 - [ ] README: cite published versions — Ebola: Appl. Math. Comput. 324 (2018), doi:10.1016/j.amc.2017.11.039; HIV: Math. Biosci. Eng. 14(3) (2017), doi:10.3934/mbe.2017040; Lithium_Battery: Stat. Anal. Data Min. 10(5) (2017), doi:10.1002/sam.11347; MHD: Stat. Anal. Data Min. 10(5) (2017), doi:10.1002/sam.11355; Stomatal_Resistance: J. Hydrometeorol. 18(3) (2017), doi:10.1175/JHM-D-16-0053.1
 - [ ] All notebooks: fix the Constantine–Dow–Wang title to "Active subspace methods in theory and practice: applications to kriging surfaces"
 - [ ] All notebooks: "Palacois" → "Palacios" (NACA0012, ONERA-M6)

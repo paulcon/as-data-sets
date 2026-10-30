@@ -25,6 +25,10 @@ jupyter lab                                   # interactive
 cd HIV && jupyter nbconvert --to notebook --execute --inplace HIV.ipynb
 ```
 
+## Branches
+
+The default branch is `main` (renamed from `master` 2026-10-30). It is protected: every change, the owner's included, lands through a PR merged with "Create a merge commit". Force-pushes and deletion are blocked. The 2016 state is the tag `legacy-master`.
+
 ## Update specs
 
 `specs/` holds the October 2026 review: one spec per notebook (known errors, the v1 call map, a pandas-free loader, acceptance criteria), `TODO.md`, `BRANCH_MERGE.md` (master + dev → main), and `numpad_replacement.md`. Read a directory's spec before you change its notebook.
