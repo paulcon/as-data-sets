@@ -46,7 +46,7 @@ The file keeps the name of the 2016 notebook ("Lockheed-Martin 104X"). What "104
   - the SU2 version, mesh size and adjoint settings;
   - (new) the scale of the stored `Equiv Area` values relative to Eq. (2.21), and why its gradients are about 15 times smaller than the values imply;
   - (new) what "104X" in the file name stands for.
-- **Dissertation errata noted.** Fig. 4.15 (p. 109) computes the active variable from the physical ±0.3 inputs (its axis, −0.48 to 0.57, is reproduced exactly that way), while §4.2 (pp. 78–79) and Fig. 4.14 normalize the inputs. "Passengjer" in the captions of Figs. 2.16 and 2.19.
+- **Dissertation errata noted.** Fig. 4.15 (p. 109) computes the active variable from the raw ±0.3 inputs (its axis, −0.48 to 0.57, is reproduced exactly that way), contradicting §4.2 (pp. 78–79) and Fig. 4.14, which normalize the inputs. "Passengjer" in the captions of Figs. 2.16 and 2.19.
 
 ## Regenerating
 
