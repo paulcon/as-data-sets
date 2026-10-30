@@ -1,0 +1,10 @@
+The data files in this repository (everything other than the notebooks and
+the .py files, which are under the MIT License in LICENSE) are licensed under
+the Creative Commons Attribution 4.0 International License (CC BY 4.0):
+
+    https://creativecommons.org/licenses/by/4.0/
+    Legal code: https://creativecommons.org/licenses/by/4.0/legalcode
+
+When you use a data set, credit its source as given in that directory's
+notebook (and DATA.md, where present), and cite the associated publication
+listed in README.md.
