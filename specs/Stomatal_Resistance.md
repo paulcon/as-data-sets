@@ -1,5 +1,7 @@
 # Stomatal_Resistance: update spec
 
+Kind: **stored data**: ParFlow-CLM runs (see [README.md](README.md#two-kinds-of-data-sets)).
+
 Status line: `Stomatal_Resistance/Stomatal_Resistance.ipynb` | papers: J. Jefferson, PhD thesis, Colorado School of Mines, 2016, "Exploring sensitivities of latent heat parameterizations using a coupled, integrated hydrologic model", hdl:11124/170080; journal version: J.L. Jefferson, R.M. Maxwell, P.G. Constantine, "Exploring the sensitivity of photosynthesis and stomatal resistance parameters in a land surface model", J. Hydrometeorol. 18(3) (2017) 897–915, doi:10.1175/JHM-D-16-0053.1 (the notebook title is the journal title) | m = 20 (README 20, correct) | QoI: transpiration (tran_veg) and sunlit and shaded stomatal resistance (rssun, rssha) at Tonzi Ranch, as 12 monthly means and 14 JJA hourly means → 78 OLS fits | legacy API: `Subspaces.compute(sstype='OLS')`, `BoundedNormalizer` | py2 issues: minor (no `print`; pandas `DataFrame.from_csv` / `.as_matrix()` removed).
 
 ## 1. Summary

@@ -1,5 +1,7 @@
 # Subsurface_Permeability: update spec
 
+Kind: **stored data**: ParFlow runs (see [README.md](README.md#two-kinds-of-data-sets)).
+
 Status line: `Subsurface_Permeability/Subsurface_permeability.ipynb` | paper: Gilbert, Jefferson, Constantine, Maxwell, "Global spatial sensitivity of runoff to subsurface permeability using the active subspace method", Adv. Water Resour. 92 (2016) 30–42, doi:10.1016/j.advwatres.2016.03.020 | m = 100 KL coefficients (README 100, correct) | QoI: cumulative runoff volume, Dunnian (initially saturated) and Hortonian (initially unsaturated), 10,000 runs each | legacy API: `Subspaces.compute(sstype='OLS', nboot=500)`, `sstype='QPHD'`, `.partition`, `utils.plotters.{sufficient_summary,eigenvalues}`, `utils.response_surfaces.PolynomialApproximation(1|2|3)` | py2 issues: yes (`print` statements in cell 14; `i/3` used as an index).
 
 ## 1. Summary

@@ -70,12 +70,13 @@ Every item marked "(author, 2026-10-30)" in this file was decided in the intervi
 - [ ] Add `LICENSE` (author, 2026-10-30): MIT for code (notebooks, `.py`), CC BY 4.0 for data, with per-directory data credit in each `DATA.md` (Hadigol et al. for Lithium_Battery, NREL/Graf for NREL_Wind, Sandia/Drekar for MHD, Lukaczyk for LM104X, …). Confirm redistribution with the data providers named in the spec §11 questions
   - [x] `LICENSE` (MIT, so Github detects it) and `LICENSE-DATA` (CC BY 4.0 notice and link). Done 2026-10-30 ([#34](https://github.com/paulcon/as-data-sets/pull/34))
   - [ ] Per-directory credit: with the `DATA.md` item below
-  - [ ] Author: confirm redistribution with the providers not yet confirmed (NREL, Sandia and LM104X are confirmed)
-- [ ] Notebook headers (author, 2026-10-30): authors and affiliations as in each published paper, no emails. Where there is no published paper (NREL_Wind's analysis, the Elliptic_PDE notebook), ask the author
+  - [x] Author: confirm redistribution with the providers not yet confirmed (NREL, Sandia and LM104X are confirmed). **Assume all data can be redistributed** (author, 2026-10-30)
+- [ ] Notebook headers (author, 2026-10-30): authors and affiliations as in each published paper, no emails. Where there is no published paper (NREL_Wind's analysis, the Elliptic_PDE notebook), ask the author. Answered: NREL_Wind: **Andrew Glaws, Peter Graf and Ryan Howard**; Elliptic_PDE: Ryan Howard and Paul Constantine (author, 2026-10-30). Each header is set in its port PR
 - [x] Add `requirements.txt` (numpy, scipy, matplotlib, jupyter, active_subspaces ≥ 1.0). 1.0.0 is not on PyPI yet (account recovery): until it is, install from the `upstream-v1/src` checkout. Done 2026-10-30 ([#34](https://github.com/paulcon/as-data-sets/pull/34)): pins `active_subspaces @ git+https://github.com/paulcon/active_subspaces@ca41b3d` (`pip install --dry-run -r requirements.txt` resolves). Switch to `active_subspaces>=1.0` when 1.0 is on PyPI
 - [ ] When porting, rename any use of the RBF field `f_variance` to `RBFSurrogate.training_variance` (D-206; the `fit_surrogate` keyword stays `f_variance`). Remove any warning filter added for `accuracy.flat_objective` (D-212)
-- [ ] Add a `DATA.md` per directory: files, shapes, columns with units, coordinates of gradients (physical or normalized), provenance, license
+- [ ] Add a `DATA.md` per directory: files, shapes, columns with units, coordinates of gradients (physical or normalized), provenance, license. It opens with the data set's kind (stored data or Python model; [README.md](README.md#two-kinds-of-data-sets)). Stored data: generating code and version, who ran it, credit, unknowns. Python model: the model module, how to regenerate, seeds, runtime, tolerance, and how the files relate to the paper's original runs
 - [x] Shared PDE solver: one numpy/scipy module (`PDESolver`, `PDEMisfit`) replacing numpad, copied byte-identically into Elliptic_PDE/ and MCMC/ ([numpad_replacement.md](numpad_replacement.md)). Done 2026-10-30 (branch `shared-pde-solver`): the spec's Appendix A prototype with `indz = [19, …, 79]`; `uq_benchmarks/check_pde_model.py` runs the spec §8 criteria on both copies, plus the identity and sensor-position checks (all pass, ~30 s). The callers (notebooks, `pde_study.py`, `pde_mcmc_study.py`, `generate_data.py`) are not changed: they go with each port. The direct numpad-vs-replacement comparison (spec §4c) is still not run
+- [x] Two kinds of data sets (author, 2026-10-30): **stored data** (outside model; the files are the record) vs **Python model** (the model is code in the directory; data regenerable). Definitions, rules and the per-data-set table in [README.md](README.md#two-kinds-of-data-sets); a `Kind:` line at the top of each spec; tags in the top-level README; CLAUDE.md section
 - [ ] Output policy: commit notebooks executed top-to-bottom with fixed seeds; optional `nbstripout --keep-output`
 - [x] ~~Optional: GitHub Actions job executing every notebook on PRs~~ **No CI** (author, 2026-10-30); the per-port spec §9 checks are the gate
 
@@ -88,6 +89,7 @@ The spec §6 call maps predate the v1 additions at `ca41b3d`. Where a spec §6 r
 ### Ebola ([Ebola.md](Ebola.md))
 - [ ] Remove the extra `2**-8` factor (eigenvalues are 256× too small; λ1 = 1.02, not 4e-3)
 - [ ] Replace the 15-minute 8^8 loop with the paper's 8^8 tensor rule passed as `quad_weights` to `ac.active_subspace` (author, 2026-10-30); λ1 = 1.0217, peak memory ≈ 1.25 × G (V1-08). Say in markdown that it needs ~1.5 GB free
+- [ ] Python model: move R0 and its gradient from the notebook into `ebola_model.py` so they can be called outside it (author, 2026-10-30)
 - [ ] `n < 7` → `n < 8`; typos; runtime sentence; affiliations as in the published paper
 - [ ] Cell 16 policy sentence: restore the paper's caveat that local metrics favor Liberia
 - [ ] v1: replace the activity-score formula with `ac.activity_scores(sub, n=)` (V1-07) and the hand-built C with `ac.subspace_from_matrix(C, space=)` or `active_subspace(grads=, quad_weights=)` (V1-08; both give λ1 = 1.0217 at 8^8)
@@ -108,7 +110,7 @@ The spec §6 call maps predate the v1 additions at `ca41b3d`. Where a spec §6 r
 ### MHD ([MHD.md](MHD.md))
 - [ ] Remove the extra `2**-5` factor (Hartmann eigenvalues 32× too small)
 - [ ] Text: inner (not outer) product in the eigenvalue-sum identity; ∇_z not ∇_x; momentum equation as published Eq. 21 (arXiv Eq. 20); u/U notation; affiliations as in the published paper
-- [ ] `gradients.py`: `np.zeros` not `0.0*np.empty`; gradients w.r.t. log inputs; no star import / module globals
+- [ ] `gradients.py`: `np.zeros` not `0.0*np.empty`; gradients w.r.t. log inputs; no star import / module globals. Rename it `hartmann_model.py` (author, 2026-10-30; the Python-model naming rule, [README.md](README.md#two-kinds-of-data-sets)) and import it by name; the generator part stays stored data
 - [ ] Dedupe u_avg rows 47/48 (cause unknown, author 2026-10-30); document the index gaps; credit Sandia (Drekar) in the header
 - [ ] Hartmann B_ind (author, 2026-10-30): show the notebook's result with ℓ = μ0 = 1 stated, and note that it does not match published Fig. 3 (w1 components 3 and 5, eigenvalue scale); how Fig. 3 was computed is unknown
 - [ ] v1: replace the hand sign flips with `ac.orient` (V1-05)
@@ -189,7 +191,7 @@ Not ported (author decision 2026-10-29). The spec stays for reference: [Reentry_
 - [ ] "nearly 500,000 pairs" → 50,000, a subset of the paper's 500,000-sample 5D study (Graf et al. p. 7)
 - [ ] Space from data bounds (inputs are not on [−1, 1]); 2,000 seeded gradient centers; choose each output's n with `ac.dimension_criterion`, print it, then pass n explicitly. This replaces the unexplained (1, 1, 3, 3, 2, 2, 2) (author, 2026-10-30)
 - [ ] Document the input encoding, outputs (edgewise blade-root moment, side-to-side tower-base moment, anchor tensions; DELs with m = 4 for all outputs) and units. Keep m = 4 and note that Graf et al. use m = 10 for the composite blade root (author, 2026-10-30)
-- [ ] Credit Peter Graf / NREL in the header and DATA.md; redistribution under CC BY 4.0 confirmed (author, 2026-10-30)
+- [ ] Credit Peter Graf / NREL in the header and DATA.md; redistribution under CC BY 4.0 confirmed (author, 2026-10-30). Header authors: Andrew Glaws, Peter Graf, Ryan Howard (author, 2026-10-30)
 - [ ] State that the active-subspace analysis is unpublished: Graf et al. 2016 is the source of the model and data only; compare with its grid-coarsening findings (Figs. 6–7)
 - [ ] Framing: the contrast is fixed-bottom vs floating, not land vs offshore
 - [ ] v1: the `Uniform.reference(5)` failure (spec §10 line 117) now names the input, value, side and bound; `details["n_outside"] == 724`, `details["name"] == "PlatformDir"` (V1-10). Update the expected message

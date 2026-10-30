@@ -1,5 +1,7 @@
 # Elliptic_PDE: update spec
 
+Kind: **Python model**: the shared `pde_model.py`; the KL bases `kl-*.npz` are stored inputs (generating script lost) (see [README.md](README.md#two-kinds-of-data-sets)).
+
 Status line: `Elliptic_PDE/PDE_notebook.ipynb` (22 cells, kernel `python2`); paper: Constantine, Dow & Wang, "Active subspace methods in theory and practice: applications to kriging surfaces", SIAM J. Sci. Comput. 36(4):A1500–A1524, 2014, doi:10.1137/130916138 (arXiv:1304.2070); m = 100 (KL coefficients, x ~ N(0, I)); QoI = average of u over the Neumann (right) boundary; two fields, "β = 1" (long) and "β = 0.01" (short); legacy API: `Subspaces.compute/partition`, `utils.simrunners.SimulationRunner/SimulationGradientRunner`, `utils.response_surfaces.RadialBasisApproximation`; py2 issues: yes (kernelspec, `pde_study.py` print statements; the notebook cells themselves are py3-clean); hard dependency on numpad (unavailable).
 
 ## 1. Summary

@@ -1,5 +1,7 @@
 # Atacamac: update spec
 
+Kind: **stored data**: ATACAMAC annular-combustor model runs (Bauerheim et al.) (see [README.md](README.md#two-kinds-of-data-sets)).
+
 Status line: `Atacamac/active-subspace-atacamac.ipynb` (dev only; identical to master at `9c1b8a7^`, removed from master in 9c1b8a7) | paper: Bauerheim, Ndiaye, Constantine, Moreau, Nicoud, *Symmetry breaking of azimuthal thermoacoustic modes: the UQ perspective*, J. Fluid Mech. 789:534–566 (2016), doi:10.1017/jfm.2015.730 (open copy: hal-01234985v2; the local "published" PDF in `~/Documents/Claude/JobAppDocs/papers/published/` is HAL **v1**, the author manuscript with HAL cover "Journal of Fluid Mechanics, 2015", whose body is identical to v2; page refs below are its printed manuscript pages, not the journal's 534–566); companion paper with the same data setup: Bauerheim, Ndiaye, Constantine, Iaccarino, Moreau, Nicoud, *Uncertainty quantification of thermo-acoustic instabilities in annular combustors*, Proc. CTR Summer Program 2014, Stanford, pp. 209–218 | m = 38 (n_i, tau_i, i = 1..19), two cases (weak / strong coupling) | QoI: growth rate f_Im of the first azimuthal mode (column `maxFreq`) | legacy API: `UnboundedNormalizer`, `Subspaces.compute(df=, nboot=500)`, `.partition`, `plotters.eigenvalues/subspace_errors`, `response_surfaces.PolynomialApproximation` | py2 issues: yes (`print` statements cells 17, 20; `i/2` used as an index in cell 17)
 
 ## 1. Summary

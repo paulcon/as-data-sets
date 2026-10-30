@@ -1,5 +1,7 @@
 # Ebola: update spec
 
+Kind: **Python model**: R0 and its gradient are closed form, computed in the notebook; the port moves them to `ebola_model.py` (author, 2026-10-30); no data files (see [README.md](README.md#two-kinds-of-data-sets)).
+
 Status line: `Ebola/Ebola.ipynb` | paper: Diaz, Constantine, Kalmbach, Jones, Pankavich, *A modified SEIR model for the spread of Ebola in Western Africa and metrics for resource allocation*, Appl. Math. Comput. 324 (2018) 141–155, doi:10.1016/j.amc.2017.11.039 (checked against the published PDF; arXiv:1603.04955 v3 read first; page refs below are to the published version) | m = 8 (β1, β2, β3, ρ1, γ1, γ2, ω, ψ), uniform | QoI: basic reproduction number R0 (closed form, analytic gradient), two parameter boxes (Liberia, Sierra Leone) | legacy API: `ac.utils.quadrature.gauss_legendre`, `ac.subspaces.sorted_eigh`, `ac.utils.plotters.{eigenvalues,eigenvectors,sufficient_summary}` | py2 issues: no print statements; kernelspec python2; otherwise py3-clean.
 
 ## 1. Summary
