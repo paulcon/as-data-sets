@@ -1,5 +1,7 @@
 # Lithium_Battery: update spec
 
+Kind: **stored data**: Newman-model runs by Hadigol et al. (see [README.md](README.md#two-kinds-of-data-sets)).
+
 Status line: `Lithium_Battery/Li_Battery.ipynb` (analysis code is in `battery_figs.py`) | paper: P. G. Constantine, A. Doostan, "Time-dependent global sensitivity analysis with active subspaces for a lithium ion battery model", *Stat. Anal. Data Min.* 10(5):243–262 (2017), doi:10.1002/sam.11347 (checked against the arXiv v2 text and, on 2026-10-29, the **published** version: Table 1 p. 250, §3.1–3.2 pp. 250–251, §4 p. 251, Fig. 2 p. 253, Fig. 8 p. 259, Fig. 9 and Acknowledgments p. 260; page numbers below refer to the published version). Data source: Hadigol, Maute, Doostan, *J. Power Sources* 300:507–524 (2015), doi:10.1016/j.jpowsour.2015.09.060 | m = 19 | QoIs: capacity [mAh cm⁻²] on a 50-point voltage grid, and voltage [V] on a 50-point scaled-time grid t*. Each is given at 3 discharge rates (0.25C, 1C, 4C) | legacy API: none. The analysis uses hand-written `np.linalg.lstsq` (paper Algorithm 1) and pandas only | py2 issues: yes (pandas `DataFrame.from_csv`/`.as_matrix` were removed in pandas 1.0, and non-raw `'$\mathbf{w}$'` strings trigger SyntaxWarning in py ≥ 3.12). The notebook itself has no `print` statements.
 
 ## 1. Summary

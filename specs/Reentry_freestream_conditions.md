@@ -1,5 +1,7 @@
 # Reentry_freestream_conditions: update spec
 
+Kind: **stored data**: EXPERT reentry simulations (see [README.md](README.md#two-kinds-of-data-sets)).
+
 Status line: `Reentry_freestream_conditions/reentry.ipynb` | paper: the notebook cites "A.F. Cortesi, P.G. Constantine, T.E. Magin, P.M. Congedo, *Heat flux based reconstruction of freestream conditions in atmospheric reentry flows*, Submitted, 2016". **No publication with that title was found** (Crossref, HAL listings, web). The README gives no paper. The published JCP 2020 paper by the same authors (PDF checked) studies a **different configuration** (HEG cylinder, 8 inputs); see §3 for the settled citation. The EXPERT model comes from Tryoen et al., AIAA J. 52(10):2190–2197 (2014), doi:10.2514/1.J052831 (no local copy; not checked). | m = 7 (3 uniform freestream/catalysis + 4 Gaussian log reaction rates) | QoI: stagnation-point pressure p_st and heat flux q_st on the EXPERT vehicle | legacy API: `Subspaces.compute(X, f, sstype='QPHD')`, `.partition(2)`, `utils.misc.BoundedNormalizer`, `utils.plotters.eigenvalues/eigenvectors/sufficient_summary` (imported as `asub`) | py2 issues: no `print`; kernelspec and pandas only
 
 ## 1. Summary

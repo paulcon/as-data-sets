@@ -35,6 +35,13 @@ The default branch is `main` (renamed from `master` 2026-10-30). It is protected
 
 `specs/` holds the October 2026 review: one spec per notebook (known errors, the v1 call map, a pandas-free loader, acceptance criteria), `TODO.md`, `BRANCH_MERGE.md` (master + dev → main), and `numpad_replacement.md`. Read a directory's spec before you change its notebook.
 
+## Two kinds of data sets
+
+Every data set is **stored data** or a **Python model**; MHD_Generator has one part of each. The README tags each entry, and `specs/README.md` ("Two kinds of data sets") has the full rules and the per-data-set table.
+
+- **Stored data**: an outside code (SU2, ParFlow-CLM, Drekar, FAST, MATLAB, …) produced the files, and they are the only record. Never regenerate or "correct" their values. Format conversions must be lossless and scripted. Rows are dropped in the notebook by a stated rule or a flag, never deleted from the file.
+- **Python model**: the model is a numpy/scipy `*_model.py` module in the directory that loads its files relative to `__file__` (e.g. `HIV_model.py`, `pde_model.py`); a closed-form model may stay in a notebook cell. Shipped outputs are written by `generate_data.py` with saved seeds, and that script must reproduce them.
+
 ## Conventions in the notebooks
 
 - Inputs are normalized to `[-1, 1]^m` before computing subspaces. The usual pattern is `ac.utils.misc.BoundedNormalizer(xl, xu)`, or the hand-written affine map `p = .5*(diag(xu-xl) @ XX.T + xu + xl).T`. Gradients taken with respect to physical inputs are then rescaled by `.5*(xu - xl)`.
