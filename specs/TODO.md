@@ -144,11 +144,11 @@ The spec §6 call maps predate the v1 additions at `ca41b3d`. Where a spec §6 r
 - [ ] v1 uses Student's t (AoA ≤ 3.179); the paper uses the normal quantile 2.33 (AoA ≤ 3.193). Rescale the half-width by `st.norm.ppf(0.99) / st.t.ppf(0.99, iv.dof)` as `accept_surrogates.py` does, and explain the difference in markdown (D-211)
 
 ### NACA0012 ([NACA0012.md](NACA0012.md))
-- [ ] Fix the cell-3 comment: gradients are physical, not normalized (pass with the physical space)
-- [ ] DATA.md: flow conditions, the second batch (runs 945–1756) and the bump mapping of x01–x18 are unknown (author, 2026-10-30)
-- [ ] Drop the duplicate nominal run 945 from the fits and say so (author, 2026-10-30); drag w₂ sign flip under v1; "last 9 parameters" holds for drag only
-- [ ] The book (ch. 5) used the first M = 122 rows; say so, and match book Fig. 5.11 on those rows
-- [ ] v1: replace the hand sign flips with `ac.orient` (V1-05)
+- [x] Fix the cell-3 comment: gradients are physical, not normalized (pass with the physical space). Done ([#39](https://github.com/paulcon/as-data-sets/pull/39)): `Uniform(-0.01, 0.01)^18`; a check cell reproduces the 2016 eigenvalues on all 1756 rows (v1 = 1e-4 × 2016 to 2e-15) and shows the linear-fit slope equals the mean gradient (ratio 1.01)
+- [x] DATA.md: flow conditions, the second batch (runs 945–1756) and the bump mapping of x01–x18 are unknown (author, 2026-10-30). Done ([#39](https://github.com/paulcon/as-data-sets/pull/39)). New lead, not used: Lukaczyk's dissertation §2.4.1 gives Mach 0.80, α = 1.25°, Euler for his (2-parameter) NACA 0012 case; listed in the PR for the author
+- [x] Drop the duplicate nominal run 945 from the fits and say so (author, 2026-10-30); drag w₂ sign flip under v1; "last 9 parameters" holds for drag only. Done ([#39](https://github.com/paulcon/as-data-sets/pull/39)): rule "drop a row whose inputs repeat an earlier row" (1755 rows kept); the §9 eigenvalues are checked on all 1756 rows
+- [x] The book (ch. 5) used the first M = 122 rows; say so, and match book Fig. 5.11 on those rows. Done ([#39](https://github.com/paulcon/as-data-sets/pull/39)), with 1000 bootstrap replicates; Fig. 5.12 also reproduced (signed with `orient(by="covariance")`, as in the book)
+- [x] v1: replace the hand sign flips with `ac.orient` (V1-05). Done ([#39](https://github.com/paulcon/as-data-sets/pull/39)): the legacy notebook had no hand flips; `orient(by="reference")` against e1 restores the 2016 rule, which un-mirrors drag w₂
 
 ### ONERA-M6 ([ONERA-M6.md](ONERA-M6.md))
 - [ ] Rewrite the R² text with v1 leave-one-out values (drag 0.70 / 0.88 / 0.93 for n = 1/2/3, not ≈ .965); print `ac.dimension_criterion`'s choice beside the eigenvalue plot, then set n = 2 for drag explicitly (author, 2026-10-30)
