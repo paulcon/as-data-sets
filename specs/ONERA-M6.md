@@ -53,7 +53,7 @@ Gradient-based AS on 297 samples, an R²-vs-dimension study with RBF surrogates,
 - 1.06 MB CSV, `%.16e`, header present, no units (coefficients, dimensionless; FFD displacement units unknown).
 - Inputs and gradients are both **physical**. The bounds ±0.05 are stored only in the notebook.
 - No redundancy and no NaNs. Run = 1..297.
-- Provenance/license: none. Added in commit 79789d9 (R. Howard, 2016); presumably from T. Lukaczyk's SU2 runs (unverified). The PNGs are SU2/Tecplot renderings. Fine to keep.
+- Provenance/license: none. `ONERA-M6.txt` was added in the initial commit 7c26e3a (P. Constantine, 2014-10-23) and is byte-identical since; 79789d9 (R. Howard, 2016) added the PNGs and rewrote the notebook. Trent Lukaczyk (Stanford) ran SU2 (author, 2026-10-30). The PNGs are SU2/Tecplot renderings. Fine to keep.
 - Delete the tracked `figs/.DS_Store`.
 - **Tested pandas-free loader:**
 ```python
