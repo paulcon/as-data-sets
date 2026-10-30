@@ -114,8 +114,8 @@ def hand(s, Yq, level=0.95, kind="prediction", side="two"):
 
 
 try:
-    if not os.path.exists(f"{R}/aerospace_cfd/HyShotII_Scramjet/HyShotII30.txt"):
-        report("SKIP", "V1-03 HyShotII 0.30", f"missing {R}/aerospace_cfd/HyShotII_Scramjet/HyShotII30.txt")
+    if not os.path.exists(f"{R}/aerospace_cfd/HyShotII_Scramjet/HyShotII_phi030.csv"):
+        report("SKIP", "V1-03 HyShotII 0.30", f"missing {R}/aerospace_cfd/HyShotII_Scramjet/HyShotII_phi030.csv")
     else:
         X, f = hyshot30(); space = ac.Uniform(HYSHOT_XL, HYSHOT_XU)
         with warnings.catch_warnings():
@@ -199,13 +199,12 @@ except Exception as e:
 
 # HyShotII phi = 0.35 safe-box limit
 try:
-    fn35 = f"{R}/aerospace_cfd/HyShotII_Scramjet/HyShotII35.txt"
+    fn35 = f"{R}/aerospace_cfd/HyShotII_Scramjet/HyShotII_phi035.csv"
     if not os.path.exists(fn35):
         report("SKIP", "V1-03 HyShotII 0.35", f"missing {fn35}")
     else:
-        d35 = np.loadtxt(fn35, delimiter=",", skiprows=1)
-        X35 = d35[:, 1:8].copy()
-        X35[-2:] = HYSHOT_XL + 0.5 * (HYSHOT_XU - HYSHOT_XL) * (X35[-2:] + 1)  # last 2 rows are normalized
+        d35 = np.loadtxt(fn35, delimiter=",")  # run, 7 physical inputs, f(0.30), f(0.35), validation
+        X35 = d35[:, 1:8]
         f35 = d35[:, 9]
         sp = ac.Uniform(HYSHOT_XL, HYSHOT_XU)
         with warnings.catch_warnings():

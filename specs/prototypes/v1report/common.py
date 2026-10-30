@@ -78,10 +78,9 @@ HYSHOT_XU = np.array([4.6, 1.9, 367.5, 1.9012e7, 3.4280e6, 0.07, 0.203])
 
 
 def hyshot30():
-    d30 = np.loadtxt(f"{R}/aerospace_cfd/HyShotII_Scramjet/HyShotII30.txt", delimiter=",")
-    Z = d30[:-2, :7]
-    X = HYSHOT_XL + (Z + 1) / 2 * (HYSHOT_XU - HYSHOT_XL)
-    return X, d30[:-2, 7]
+    # columns: run, 7 physical inputs, exit pressure, validation; rows 51-52 are the validation runs
+    d30 = np.loadtxt(f"{R}/aerospace_cfd/HyShotII_Scramjet/HyShotII_phi030.csv", delimiter=",")
+    return d30[:50, 1:8], d30[:50, 8]
 
 
 def hiv():
