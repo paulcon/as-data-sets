@@ -48,7 +48,7 @@ Outputs (columns 6–12). Each is a short-term damage equivalent load (DEL) of o
 | `rf4_TwrBsMyt` | tower-base fore-aft bending moment | presumably kN·m |
 | `rf4_Anch1Ten`, `rf4_Anch2Ten`, `rf4_Anch3Ten` | tension at the anchor of mooring line 1, 2, 3 | presumably kN |
 
-The paper names `RootMxc1`, `TwrBsMxt` and `Anch1Ten`; the other meanings follow FAST's channel names. The units are FAST 7's channel units by inference; neither the paper nor the data state them.
+The paper names `RootMxc1`, `TwrBsMxt` and `Anch1Ten`; the other meanings follow FAST's channel names. The units are unconfirmed: they are FAST 7's channel units by inference, and neither the paper nor the data state them.
 
 ## Gradients
 
@@ -56,11 +56,11 @@ None are stored. The notebook estimates them by local linear fits (60 nearest ne
 
 ## Unknowns
 
-- The output units (kN·m and kN are inferred).
+- The output units (kN·m and kN are inferred, unconfirmed).
 - The distribution parameters of the 5-input study, and so the physical input values.
 - How the 50,000 rows were selected from the 500,000.
 - Software versions other than FAST 7, and the run dates.
-- Why the paper's Fig. 7 does not match these data. The m = 4 long-term DEL (mean of f⁴)^(1/4) of `rf4_RootMxc1` is 5,327, while Fig. 7 shows about 7,200, close to the largest stored value (7,394.5). The value for `rf4_Anch1Ten` (67.4) does agree with Fig. 6 (about 66). Both checks are printed by the notebook.
+- The m = 4 long-term DEL, (mean of f⁴)^(1/4), of `rf4_RootMxc1` in these data is 5,327; the paper's Fig. 7 shows about 7,200. The cause is unknown.
 
 ## Loading
 
@@ -76,7 +76,7 @@ in_labels, out_labels = names[1:6], names[6:]
 
 ## Regenerating
 
-The data cannot be regenerated here. The notebook computes everything else from the file in about 40 seconds. All draws (gradient centers, bootstrap, plotted subset) come from one `np.random.default_rng(2016)`, and two runs give identical printed output.
+The data cannot be regenerated here. The notebook computes everything else from the file in about a minute. All draws (gradient centers, bootstrap, plotted subset) come from one `np.random.default_rng(2016)`, and two runs give identical printed output.
 
 ## License and credit
 
