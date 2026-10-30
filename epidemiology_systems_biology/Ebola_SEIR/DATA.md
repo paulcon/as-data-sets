@@ -14,14 +14,16 @@ Kind: **Python model**. The model is `ebola_model.py`: the basic reproduction nu
 R0 = (β1 + β2ρ1γ1/ω + β3ψ/γ2) / (γ1 + ψ), Eq. (4) of Diaz et al. (2018), from the SEIR system of their Eqs. (1)–(2) by the next-generation matrix.
 
 - **Inputs**: m = 8, in the order β1, β2, β3, ρ1, γ1, γ2, ω, ψ (`NAMES`). All are rates in day⁻¹ except ρ1, which is a fraction. The incubation rate δ = 1/9 and the hospital burial fraction ρ2 do not enter R0.
-- **Input arrays**: `R0` and `R0_grad` take physical parameters with shape (..., 8). `R0_grad` returns the gradient with respect to the physical parameters, with shape (..., 8). `ac.active_subspace` maps it to the normalized coordinates [-1, 1]^8 by multiplying by (upper − lower)/2.
+- **Input arrays**: `R0` and `R0_grad` take physical parameters with shape (..., 8). `R0_grad` returns the gradient with respect to the physical parameters, with shape (..., 8). The notebook maps it to the normalized coordinates [-1, 1]^8 by multiplying by (upper − lower)/2 (`space.scale`).
 - **Fitted values** (`FITTED`): Table 2 of the paper, for Liberia and Sierra Leone (Guinea is not in the active-subspace analysis). At these values R0 = 1.5634 (Liberia) and 1.4433 (Sierra Leone). The paper's Table 3 gives 1.563 and 1.445. The Sierra Leone difference is rounding in Table 2: with the less-rounded values printed in the paper's Fig. 2c, R0 = 1.4451.
 - **Ranges** (`BOUNDS`): independent uniform distributions from Table 7 of the paper. The fitted Sierra Leone γ2 = 0.0833 (Table 2) lies outside its Table 7 range [0.1236, 0.384]. The paper has the same disagreement, and it is not known which value is wrong (author, 2026-10-30). The notebook uses the range as published.
 - **Gradient check**: the notebook compares `R0_grad` with central finite differences at one random point per country (maximum relative error 2.4e-9 and 2.2e-10).
 
 ## Quadrature
 
-C = ∫ ∇R0 ∇R0ᵀ ρ dx is computed with the paper's tensor Gauss–Legendre rule, 8 points per dimension (8^8 = 16,777,216 points). The weights are the scipy `roots_legendre(8)` weights halved, so their tensor product sums to 1 and already includes the density ρ = 2⁻⁸. The gradients go to `ac.active_subspace(grads=..., quad_weights=...)`. The quadrature has no randomness.
+C = ∫ ∇R0 ∇R0ᵀ ρ dx is computed with the paper's tensor Gauss–Legendre rule, 8 points per dimension (8^8 = 16,777,216 points). The weights are the scipy `roots_legendre(8)` weights halved, so their tensor product sums to 1 and already includes the density ρ = 2⁻⁸. The quadrature has no randomness.
+
+The notebook accumulates the 8 × 8 matrix C = Σ ω_i ∇R0(x_i) ∇R0(x_i)ᵀ (normalized coordinates) in 64 blocks of 8^6 points, and passes it to `ac.subspace_from_matrix` (author, 2026-10-30). The full gradient array (1.07 GB) is never held. The notebook first checks this path on the 5^8 rule against `ac.active_subspace(grads=..., quad_weights=...)` with the full gradient array. The eigenvalues agree to a relative 1.7e-13 and w1, w2 to 1.8e-15 (printed).
 
 The 2016 notebook multiplied the integrand by 2⁻⁸ as well, so its eigenvalue plots were 256 times too small (λ1 ≈ 3.99e-3 for Liberia instead of 1.0217). The notebook prints both values. The eigenvectors and the normalized activity scores do not depend on that factor.
 
@@ -33,14 +35,14 @@ The rule has converged. λ1 for each rule size (the 8^8 values are printed by th
 | 7 | 1.0213 | 1.1042 |
 | 8 | 1.0217 | 1.1049 |
 
-**Memory**: the gradient array is 16,777,216 × 8 doubles, 1.07 GB. `ac.active_subspace` keeps a normalized copy of it and hashes its bytes for the provenance record, which makes another temporary copy. The peak resident memory of the notebook is 3.0 GB on macOS (printed). The 6^8 rule would need about 0.5 GB and change λ1 by 0.2–0.3 %.
+**Memory**: the peak resident memory of the notebook is about 0.43 GB on macOS (433 MB in the committed run, printed). Passing the full 8^8 gradient array to `ac.active_subspace` instead would peak at about 3 GB: the array is 1.07 GB, the function keeps a normalized copy, and it hashes the bytes for its provenance record, which makes a third copy.
 
 ## Regenerating
 
-There are no shipped outputs and no `generate_data.py`. The notebook computes everything in about 25 seconds (one Python process, about 11 s per country for the quadrature):
+There are no shipped outputs and no `generate_data.py`. The notebook computes everything in about 20 seconds (17 s in the committed run; one Python process, about 7 s per country for the quadrature):
 
 - R0 at the fitted values, and the gradient check (one random point per country);
-- the active subspace of each country from the 8^8 rule;
+- the 5^8 check of the blocked matrix, and the active subspace of each country from the 8^8 rule;
 - 2000 uniform random points per country for the sufficient summary plots (the same normalized points mapped into each country's box).
 
 All draws come from one `np.random.default_rng(2018)`. The seed affects only the gradient-check points and the summary-plot points, not the eigenvalues, eigenvectors or activity scores. Two runs give identical printed output.
