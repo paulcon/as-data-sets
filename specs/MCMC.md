@@ -242,8 +242,16 @@ Spaces:
   - contains x_true, d, σ², seed, X_grad, G, W;
   - `W[:, :2].T @ W[:, :2] = I` to 1e-12;
   - recomputing the subspace from `G` reproduces `W[:, :2]` up to sign (\|cos\| > 1 − 1e-10).
-- **Consistency between chains.** The AV chain's sample mean of y lies within 3 batch-means standard errors of the vanilla chain's projected mean (after burn-in), component-wise. The legacy files fail this check without the sign fix (y2: +1.36 vs −1.46).
-- **Acceptance rates are reported.** Vanilla is expected near 0.55 and AV near 0.6 at std 0.1.
+- **AV chain vs the approximate posterior** (rewritten 2026-10-30 with the author's sampler decision, PR #52). The AV chain does not sample the posterior, so it is tested against what it approximates:
+  - **Reference.** π_M ∝ E[exp(−ĝ_M(y))] ρ(y) with M = 10: the average over the Monte Carlo noise of the likelihood estimate. Algorithm 1 as printed (ĝ kept with the state) is a pseudo-marginal method and samples π_M exactly. The 2016 variant (ĝ recomputed at every step, the shipped chain) is the noisy approximation of it called Monte Carlo within Metropolis (Andrieu & Roberts 2009), with no closed-form target.
+  - **Grid.** Compute the mean of y under π_M on a 15 × 15 grid covering ±4 AV standard deviations around the AV mean. Use the same 40 prior draws of z at every grid point, and estimate E[exp(−ĝ_10)] by averaging over 400 random 10-draw subsets of the 40.
+  - **SE_grid** is the standard deviation over 200 bootstrap resamples of the 40 draws. It is about 0.03 for y2, consistent with the 0.04–0.06 spread between two independent 40-draw grids. A two-halves estimate (one degree of freedom) gave 0.001 and is too small to use.
+  - **SE_chain** is the consistent batch-means standard error of the AV mean after burn-in (Flegal, Haran & Jones 2008, b = ⌊N^{2/3}⌋).
+  - **Pass** if |mean_AV − mean_π_M| ≤ 3 (SE_chain² + SE_grid²)^{1/2} for each of y1, y2. Three standard errors give a two-sided false-alarm rate of about 0.3% per component if both errors are roughly normal.
+  - **Expected deviation.** The 2016 variant's chain is shifted from π_M toward the posterior and is wider, because the noise in the acceptance test lets it visit states that π_M weights less. A failure in that direction is the variant's noise bias, not a bug. The notebook reports whichever happens, together with the π_ε grid mean (exp(−g_ε) with the exact conditional mean).
+  - **Vanilla.** The vanilla chain's projected mean is reported, not tested. π_ε and π_M differ from the posterior by the bias that Theorem 3.1 bounds (λ3 + … + λ100 = 124 for the shipped data), and the gap is several standard errors.
+  - **Original criterion.** AV within 3 SEs of the vanilla projected mean. It fails for both shipped variants for this reason (5 combined SEs with ĝ cached, 3.1 and 2.3 with ĝ recomputed). The legacy files failed it without the sign fix (y2: +1.36 vs −1.46).
+- **Acceptance rates are reported.** Vanilla is expected near 0.55 (paper 60%). AV is expected near 0.6 at std 0.1 (paper 62%) with ĝ recomputed at every step (author, 2026-10-30), but near 0.29 with ĝ kept with the state (Algorithm 1 as printed; `generate_data.py --cached-ghat`).
 - **Figures.**
   - quadratic: eigenvalues, subspace error, sufficient summary, 2 trace plots, 2 KDE contour plots, 1-D y density;
   - PDE: eigenvalues, subspace error, eigenvectors, 2 log-coefficient sensitivity maps, trace plots (vanilla x₁₀/x₉₀, AV y, AV-reconstructed x), 3×3 bivariate KDE of Wᵀx (vanilla).

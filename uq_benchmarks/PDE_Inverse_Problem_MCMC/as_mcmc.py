@@ -6,9 +6,12 @@ Monte Carlo with active subspaces", SIAM J. Sci. Comput. 38(5):A2779-A2805,
 
 - `random_walk_metropolis`: random-walk Metropolis-Hastings on x, the
   "vanilla" chain;
-- `ActiveSubspaceMCMC.sample_active_variables`: the paper's Algorithm 1,
-  random-walk Metropolis-Hastings on the active variables y = W1^T x with the
-  Monte Carlo misfit estimate ghat(y), computed once per state and cached;
+- `ActiveSubspaceMCMC.sample_active_variables`: random-walk
+  Metropolis-Hastings on the active variables y = W1^T x with the Monte Carlo
+  misfit estimate ghat(y). By default ghat is recomputed at the current state
+  and at the proposal at every step, as the 2016 code that produced the
+  paper's results did (an approximate, noisy Metropolis-Hastings);
+  recompute=False keeps ghat with the state, the paper's Algorithm 1 as printed;
 - `ActiveSubspaceMCMC.sample_original_variables`: the reconstruction (4.2),
   x = W1 y + W2 z with z drawn from the prior.
 
@@ -66,7 +69,7 @@ def random_walk_metropolis(misfit, x0, N, prop_std, rng, progress=None):
 
 
 class ActiveSubspaceMCMC:
-    """Algorithm 1 for a misfit f(x) and a standard Gaussian prior on x.
+    """Metropolis-Hastings on the active variables, for a misfit f(x) and a N(0, I) prior on x.
 
     Parameters
     ----------
@@ -80,14 +83,21 @@ class ActiveSubspaceMCMC:
         A fixed quadrature rule for the conditional mean: nodes Z, shape
         (M, m-n), and weights w, shape (M,), for the N(0, I_{m-n}) density.
         Default: Monte Carlo with fresh draws, as in the paper's (2.16).
+    evaluate : callable, optional
+        X (k, m) -> f at each row, shape (k,). Default: misfit row by row.
+        Pass a parallel map here; results must not depend on it.
     """
 
-    def __init__(self, misfit, W1, W2, z_rule=None):
+    def __init__(self, misfit, W1, W2, z_rule=None, evaluate=None):
         self.misfit = misfit
         self.W1 = np.asarray(W1, dtype=float)
         self.W2 = np.asarray(W2, dtype=float)
         self.m, self.n = self.W1.shape
         self.z_rule = z_rule
+        self.evaluate = evaluate or (lambda X: np.array([misfit(x) for x in X]))
+
+    def _points(self, y, Z):
+        return self.W1 @ np.asarray(y, dtype=float) + Z @ self.W2.T
 
     def ghat(self, y, M, rng):
         """Estimate of the conditional mean of f given y: M misfit evaluations.
@@ -96,40 +106,58 @@ class ActiveSubspaceMCMC:
         (M, m-n) block from rng) and averages f(W1 y + W2 z_i). With z_rule,
         the weighted sum over its nodes instead (M and rng are not used).
         """
-        y = np.asarray(y, dtype=float)
         if self.z_rule is None:
-            Z, w = rng.standard_normal((M, self.m - self.n)), None
-        else:
-            Z, w = self.z_rule
-        f = np.array([self.misfit(x) for x in self.W1 @ y + Z @ self.W2.T])
-        return float(f.mean() if w is None else w @ f)
+            f = self.evaluate(self._points(y, rng.standard_normal((M, self.m - self.n))))
+            return float(f.mean())
+        Z, w = self.z_rule
+        return float(w @ self.evaluate(self._points(y, Z)))
 
-    def sample_active_variables(self, y0, N, M, prop_std, rng, progress=None):
-        """Algorithm 1: Metropolis-Hastings on y with ghat cached at the current state.
+    def sample_active_variables(self, y0, N, M, prop_std, rng, recompute=True, progress=None):
+        """Random-walk Metropolis-Hastings on y with the misfit estimate ghat.
 
-        ghat(y0) is computed once; each step then costs M misfit evaluations,
-        for ghat at the proposal. Per step, rng gives n standard normals for
-        the proposal, an (M, m-n) block for ghat (Monte Carlo only), then one
-        uniform.
+        recompute=True (the default; the 2016 code, which produced the paper's
+        results): at every step ghat is computed afresh, with new draws of z,
+        at both the current state and the proposal, 2M misfit evaluations per
+        step. Because ghat is noisy, this is an approximate (noisy)
+        Metropolis-Hastings, not an exact sampler of a fixed density. Per step,
+        rng gives n standard normals for the proposal, an (M, m-n) block for
+        the current state, an (M, m-n) block for the proposal, then one uniform.
+
+        recompute=False: the paper's Algorithm 1 as printed. ghat(y0) is
+        computed once and ghat is kept with the state that it was computed
+        for, so each step costs M evaluations (for the proposal). Per step,
+        rng gives n standard normals, an (M, m-n) block for the proposal, then
+        one uniform.
+
+        With z_rule, ghat is deterministic and both settings give the same
+        chain; the cached path is used.
 
         Returns
         -------
         Y : array, shape (N, n)
             States of the active variables, Y[0] = y0.
         ghat : array, shape (N,)
-            ghat(Y[k]), the value used in the acceptance test.
+            ghat at Y[k] as used in the acceptance test of step k.
         accept : bool array, shape (N,)
             Whether the proposal made at step k was accepted.
         """
         y = np.array(y0, dtype=float)
-        gy = self.ghat(y, M, rng)
         Y = np.empty((N, self.n))
         G = np.empty(N)
         accept = np.zeros(N, dtype=bool)
+        noisy = recompute and self.z_rule is None
+        if not noisy:
+            gy = self.ghat(y, M, rng)
         for k in range(N):
-            Y[k], G[k] = y, gy
             yp = y + prop_std * rng.standard_normal(self.n)
-            gp = self.ghat(yp, M, rng)
+            if noisy:
+                Zc = rng.standard_normal((M, self.m - self.n))
+                Zp = rng.standard_normal((M, self.m - self.n))
+                f = self.evaluate(np.vstack([self._points(y, Zc), self._points(yp, Zp)]))
+                gy, gp = float(f[:M].mean()), float(f[M:].mean())
+            else:
+                gp = self.ghat(yp, M, rng)
+            Y[k], G[k] = y, gy
             if np.log(rng.random()) <= (gy + 0.5 * y @ y) - (gp + 0.5 * yp @ yp):
                 y, gy = yp, gp
                 accept[k] = True

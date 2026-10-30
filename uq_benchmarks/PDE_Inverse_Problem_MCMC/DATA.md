@@ -8,9 +8,9 @@ Kind: **Python model**. The model is `pde_model.py` (class `PDEMisfit`). `genera
 |---|---|---|
 | `PDE_Inverse_Problem_MCMC.ipynb` | the case study (Python 3, active_subspaces v1) | executed top to bottom with seed 2016; outputs committed; loads the chains, does not rerun them |
 | `pde_model.py` | `PDEMisfit`: `observations`, `set_data`, `misfit`, `misfit_grad` (and `PDESolver` for the Elliptic_PDE QoI) | the model; byte-identical to `../Elliptic_PDE_Random_Coefficients/pde_model.py` |
-| `as_mcmc.py` | `random_walk_metropolis`, `ActiveSubspaceMCMC` (Algorithm 1, reconstruction (4.2)), `batch_means_se` | the samplers; numpy only |
+| `as_mcmc.py` | `random_walk_metropolis`, `ActiveSubspaceMCMC` (Metropolis–Hastings on the active variables, with ĝ recomputed at every step or kept with the state; reconstruction (4.2)), `batch_means_se` | the samplers; numpy only |
 | `generate_data.py` | the script that writes `pde_mcmc_chains.npz` | regeneration |
-| `pde_mcmc_chains.npz` | inputs, subspace and chains, listed below (7.6 MB) | generated |
+| `pde_mcmc_chains.npz` | inputs, subspace and chains, listed below (7.7 MB) | generated |
 | `kl-short.npz` | `K` (10000, 100) float64, `lam` (100,) float64 | KL basis (stored); see `../Elliptic_PDE_Random_Coefficients/DATA.md` |
 
 ## Model
@@ -42,8 +42,9 @@ Load with `np.load` (no pickle). Indices are 0-based.
 | `van_accept` | (100000,) bool | whether the proposal made at step k was accepted |
 | `van_last` | (100,) | the last vanilla state |
 | `av_y0`, `av_y` | (2,), (10000, 2) | start (a prior draw) and states of the active-variable chain |
-| `av_ghat`, `av_accept` | (10000,), (10000,) bool | ĝ at each state; acceptance flags |
-| `wall_*`, `versions` | | wall times (s) of the run and the package versions |
+| `av_ghat`, `av_accept` | (10000,), (10000,) bool | ĝ at the current state as used in the acceptance test of each step (recomputed every step); acceptance flags |
+| `av_recompute_ghat` | () bool | True: ĝ recomputed at the current state and at the proposal at every step |
+| `wall_*`, `versions` | | wall times (s) and package versions; `wall_grad`, `wall_van` from the full run, `wall_av` and `wall_total` from the `--active-only` run |
 
 The full 100-dimensional vanilla chain (80 MB as float64) is not stored. The notebook needs only the reductions above, and the full chain is reproducible.
 
@@ -51,14 +52,25 @@ The full 100-dimensional vanilla chain (80 MB as float64) is not stored. The not
 
 ```bash
 cd uq_benchmarks/PDE_Inverse_Problem_MCMC
-python generate_data.py                       # writes pde_mcmc_chains.npz
+python generate_data.py                       # writes pde_mcmc_chains.npz (4 processes)
 python generate_data.py --n-van 2000 --n-av 200 --out /tmp/short.npz   # a short check
+python generate_data.py --active-only pde_mcmc_chains.npz --workers 6   # rerun only the AV chain
+python generate_data.py --active-only pde_mcmc_chains.npz --cached-ghat --out /tmp/cached.npz
 ```
 
-- **Steps**: synthetic data; 1000 misfit gradients and the subspace (20 to 50 s); then the vanilla chain (100,000 steps of random-walk Metropolis–Hastings on x) and the active-variable chain (10,000 steps of Algorithm 1 with ĝ cached at the current state, M = 10). Each chain costs 10⁵ forward solves. The two chains run in two processes (`--workers 1` runs them one after the other; the result is the same).
-- **Runtime**: the shipped file took 47 minutes (2817 s, stored as `wall_total`) on a 4-core Intel laptop (i7-1068NG7) shared with other jobs, 16 to 50 ms per solve depending on the load. With the two chains in parallel on an idle machine, expect about 40 minutes.
+- **Steps**: synthetic data; 1000 misfit gradients and the subspace (20 to 50 s); the vanilla chain (100,000 steps of random-walk Metropolis–Hastings on x, 10⁵ solves); the active-variable chain (10,000 steps of Metropolis–Hastings on y with ĝ, M = 10, recomputed at the current state and at the proposal at every step, 2 × 10⁵ solves). The vanilla chain runs in its own process. The active-variable chain runs in the main process and spreads its 20 solves per step over the other `--workers − 1` processes. The draws are made in the main process, so the result does not depend on `--workers`.
+- **`--active-only FILE`** copies the data, subspace and vanilla chain from FILE (after checking the seed and data) and reruns only the active-variable chain. The vanilla chain does not depend on how the active-variable chain is run, so the result equals a full run.
+- **`--cached-ghat`** runs the paper's Algorithm 1 as printed instead (ĝ kept with the state, 10⁵ solves).
+- **How the shipped file was made**: the data, subspace and vanilla chain come from the first full run (2026-10-30, 47 min: vanilla 46 min in one process). The active-variable chain was then rerun with `--active-only --workers 6` after the author's decision to use the 2016 variant (22 min, 0.13 s per step, against 0.39 s per step serially: a 2.9× speedup with 5 evaluation processes).
+- **Runtime of a full rerun**: about 50 minutes on 6 processes on an idle 4-core Intel laptop (i7-1068NG7). The active-variable chain is the longer part (about 25 min, or about 65 min serially).
 - **Seeds**: every random draw comes from the streams above, drawn one step at a time in a fixed order, so a shorter run reproduces the first steps of a longer one.
-- **Reproduction check**: `python generate_data.py --n-van 2000 --n-av 200` reproduced every array of the shipped file bitwise, taken to the same length (the data, `X_grad`, `G`, `W`, the first 2000 vanilla and 200 active-variable steps of every chain array, and the first 200 rows of `van_thin`), except the wall times and `van_last` (2026-10-30, on the machine that wrote the file; `--workers 1` and `--workers 2` also agree bitwise). The full 47-minute run was not repeated. The notebook reruns the first 1000 vanilla and 100 active-variable steps and prints the differences, which are 0. On another machine, BLAS and SuperLU rounding may differ in the last bits; an accept/reject decision then flips only if a log acceptance ratio falls within rounding of log t, so short reruns should agree to rounding, while long chains may eventually part.
+- **Reproduction checks** (2026-10-30, on the machine that wrote the file):
+  - `python generate_data.py --n-van 2000 --n-av 200 --workers 6`, a full short run (not `--active-only`), reproduced every array of the shipped file bitwise, taken to the same length: the data, `X_grad`, `G`, `W`, the first 2000 vanilla and 200 active-variable steps of every chain array, and the first 200 rows of `van_thin`. The exceptions are the wall times and `van_last`.
+  - Short runs with `--workers 1`, `2` and `6` agree bitwise.
+  - `--cached-ghat` reproduces the first 100 steps of the earlier cached chain bitwise.
+  - The full runs were not repeated.
+  - The notebook reruns the first 1000 vanilla and 100 active-variable steps and prints the differences, which are 0.
+  - On another machine, BLAS and SuperLU rounding may differ in the last bits. An accept/reject decision then flips only if a log acceptance ratio falls within rounding of log t, so short reruns should agree to rounding, while long chains may eventually part.
 
 ## Relation to the paper's runs
 
@@ -68,9 +80,20 @@ Differences from the paper and the 2016 files:
 
 - different synthetic data (x_true, d) and sensors at s1 = 0.99, s2 = 0.2, …, 0.8;
 - a different discretization (finite volumes, not the paper's finite differences);
-- ĝ is cached at the current state, as in the paper's Algorithm 1. The 2016 code recomputed it at the current state every step with fresh draws. That variant costs twice as many solves and gives a higher acceptance rate. On the shipped data and W, a 300-step test of the recompute variant started at the posterior mean accepted 0.58, against 0.289 for the shipped (cached) chain. With M = 10, ĝ at the posterior mean has a standard deviation of about 1.5 (printed in the notebook), and a state whose ĝ came out low holds the chain. The paper's 62% and the 2016 file's 0.615 are in line with the recompute variant;
 - 20% burn-in, as in the paper; the 2016 notebook used none.
+
+**ĝ: the 2016 variant, not Algorithm 1 as printed (author's decision, 2026-10-30).** The paper's Algorithm 1 computes ĝ once per state and keeps it. The 2016 code, which produced the paper's results, recomputes ĝ with fresh draws at the current state and at the proposal at every step. The shipped chain uses the 2016 variant. Because ĝ is noisy, that variant is an approximate (noisy) Metropolis–Hastings, not an exact sampler of a fixed density.
+
+- Recompute variant (shipped): acceptance 0.6095, against the paper's 62% and the 2016 file's 0.615.
+- Algorithm 1 as printed, run on the same data, W and seed stream (`--cached-ghat`; it was the first version of this file): acceptance 0.2889 over 10,000 steps. With M = 10, ĝ at the posterior mean has a standard deviation of about 1.5 (printed in the notebook), and a state whose ĝ came out low holds the chain.
+- Means of (ŷ1, ŷ2) after burn-in:
+  - vanilla posterior: (0.755, −0.882);
+  - cached chain: (0.650, −0.637);
+  - recompute chain: (0.667, −0.738);
+  - notebook grid: π_ε (0.618, −0.527) and π_M (0.632, −0.559), where π_M ∝ E[exp(−ĝ_10)] ρ is the target that the cached chain samples exactly.
+- The recompute chain is also wider than the cached one (standard deviations 0.28 and 0.45, against 0.19 and 0.33), as expected of Monte Carlo within Metropolis.
+- Both chains differ from the vanilla posterior by the bias of the active-subspace approximation (λ3 + … + λ100 = 124).
 
 ## License and credit
 
-Code: MIT (`LICENSE`). Data (`pde_mcmc_chains.npz`, `kl-short.npz`): CC BY 4.0 (`LICENSE-DATA`). Notebook by Ryan Howard. Cite P. G. Constantine, C. Kent and T. Bui-Thanh, "Accelerating Markov chain Monte Carlo with active subspaces", SIAM J. Sci. Comput. 38(5):A2779–A2805, 2016, doi:10.1137/15M1042127.
+Code: MIT (`LICENSE`). Data (`pde_mcmc_chains.npz`, `kl-short.npz`): CC BY 4.0 (`LICENSE-DATA`). Notebook by Ryan Howard (2016). Cite P. G. Constantine, C. Kent and T. Bui-Thanh, "Accelerating Markov chain Monte Carlo with active subspaces", SIAM J. Sci. Comput. 38(5):A2779–A2805, 2016, doi:10.1137/15M1042127.

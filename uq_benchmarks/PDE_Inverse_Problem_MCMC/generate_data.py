@@ -2,8 +2,9 @@
 
 Run from anywhere with the repository's Python 3 environment:
 
-    python generate_data.py                      # the shipped file, about 45 min
+    python generate_data.py                      # the shipped file, 4 processes
     python generate_data.py --n-van 2000 --n-av 200 --out /tmp/short.npz
+    python generate_data.py --active-only pde_mcmc_chains.npz   # rerun only the AV chain
 
 Steps, all seeded from SEED (one numpy SeedSequence, spawned into the streams
 listed in STREAMS):
@@ -14,17 +15,25 @@ listed in STREAMS):
    (active_subspaces v1, n = 2, first components of w1 and w2 made positive);
 3. the vanilla chain: N_VAN steps of random-walk Metropolis-Hastings on all
    100 parameters, proposal standard deviation PROP_STD;
-4. the active-variable chain: N_AV steps of Algorithm 1 on y = W1^T x, with
-   M misfit evaluations per ghat and proposal standard deviation PROP_STD.
+4. the active-variable chain: N_AV steps of random-walk Metropolis-Hastings on
+   y = W1^T x, proposal standard deviation PROP_STD, with the misfit estimate
+   ghat (M misfit evaluations) recomputed at the current state and at the
+   proposal at every step, as in the 2016 code that produced the paper's
+   results (author's decision, 2026-10-30). --cached-ghat runs the paper's
+   Algorithm 1 as printed instead (ghat kept with the state).
 
-Steps 3 and 4 are independent and run in two processes (--workers 1 runs them
-one after the other; the output does not depend on it). Each stream draws
-step by step, so a shorter run reproduces the first steps of a longer one.
-The script writes the inputs, the subspace and the chains (the vanilla chain
-reduced, see DATA.md) to one compressed npz.
+Step 3 runs in its own process, and step 4 in the main process with its misfit
+evaluations spread over the remaining --workers - 1 processes. The output does
+not depend on --workers. Each stream draws step by step, so a shorter run
+reproduces the first steps of a longer one. The vanilla chain does not depend
+on how the active-variable chain is run, so --active-only FILE copies steps 1-3
+from FILE (after checking that FILE has this seed, data and W) and reruns only
+step 4. The script writes the inputs, the subspace and the chains (the vanilla
+chain reduced, see DATA.md) to one compressed npz.
 """
 import argparse
 import hashlib
+import math
 import os
 import platform
 import sys
@@ -55,6 +64,8 @@ BURN_IN = 0.2          # fraction of each chain the notebook discards
 THIN = 10              # thinning of the stored full vanilla states
 TRACE = (9, 89)        # x_10 and x_90 (0-based), stored at every step
 N_PROJ = 4             # stored components of W^T x for the vanilla chain
+VAN_KEYS = ('van_x0', 'van_trace', 'van_proj', 'van_thin', 'van_misfit', 'van_accept',
+            'van_last', 'wall_van')
 
 
 def streams(seed=SEED):
@@ -104,17 +115,41 @@ def run_vanilla(d, sig2, W, rng, N=N_VAN):
             'wall_van': time.perf_counter() - t0}
 
 
-def run_active(d, sig2, W, rng, N=N_AV):
-    """The active-variable chain (Algorithm 1)."""
+_MODEL = None
+
+
+def _init_worker(d, sig2):
+    global _MODEL
+    _MODEL = PDEMisfit()
+    _MODEL.set_data(d, sig2)
+
+
+def _worker_misfit(x):
+    return _MODEL.misfit(x)
+
+
+def run_active(d, sig2, W, rng, N=N_AV, recompute=True, workers=1):
+    """The active-variable chain; workers > 1 spreads the misfit evaluations of each step."""
     t0 = time.perf_counter()
     model = PDEMisfit()
     model.set_data(d, sig2)
-    sampler = ActiveSubspaceMCMC(model.misfit, W[:, :N_ACTIVE], W[:, N_ACTIVE:])
-    y0 = rng.standard_normal(N_ACTIVE)
-    Y, ghat, accept = sampler.sample_active_variables(y0, N, M, PROP_STD, rng,
-                                                      progress=_progress('active', N, t0))
+    pool, evaluate = None, None
+    if workers > 1:
+        pool = ProcessPoolExecutor(max_workers=workers, initializer=_init_worker,
+                                   initargs=(d, sig2))
+        chunk = math.ceil(2 * M / workers)
+        evaluate = lambda X: np.array(list(pool.map(_worker_misfit, X, chunksize=chunk)))  # noqa: E731
+    try:
+        sampler = ActiveSubspaceMCMC(model.misfit, W[:, :N_ACTIVE], W[:, N_ACTIVE:],
+                                     evaluate=evaluate)
+        y0 = rng.standard_normal(N_ACTIVE)
+        Y, ghat, accept = sampler.sample_active_variables(
+            y0, N, M, PROP_STD, rng, recompute=recompute, progress=_progress('active', N, t0))
+    finally:
+        if pool is not None:
+            pool.shutdown()
     return {'av_y0': y0, 'av_y': Y, 'av_ghat': ghat, 'av_accept': accept,
-            'wall_av': time.perf_counter() - t0}
+            'av_recompute_ghat': np.bool_(recompute), 'wall_av': time.perf_counter() - t0}
 
 
 def _md5(path):
@@ -126,7 +161,12 @@ def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     p.add_argument('--n-van', type=int, default=N_VAN)
     p.add_argument('--n-av', type=int, default=N_AV)
-    p.add_argument('--workers', type=int, default=2, choices=(1, 2))
+    p.add_argument('--workers', type=int, default=4,
+                   help='processes in all (default 4); 1 runs everything in this process')
+    p.add_argument('--cached-ghat', action='store_true',
+                   help="the paper's Algorithm 1 as printed: keep ghat with the state")
+    p.add_argument('--active-only', metavar='FILE',
+                   help='copy the data, subspace and vanilla chain from FILE; rerun the AV chain')
     p.add_argument('--out', default=OUT)
     args = p.parse_args(argv)
 
@@ -137,36 +177,48 @@ def main(argv=None):
     model.set_data(d, sig2)
     print(f'data: sigma^2 = {sig2:.4e}, d = {np.round(d, 5)}', flush=True)
 
-    X_grad = rng['grad_points'].standard_normal((N_GRAD, model.m))
-    G = np.array([model.misfit_grad(x) for x in X_grad])
-    sub = misfit_subspace(G, rng['bootstrap'])
-    W = sub.W
-    wall_grad = time.perf_counter() - t0
-    print(f'{N_GRAD} gradients and subspace: {wall_grad:.0f} s; '
-          f'eigenvalues[:4] = {np.round(sub.eigenvalues[:4], 2)}', flush=True)
-
-    jobs = [(run_vanilla, (d, sig2, W, rng['vanilla'], args.n_van)),
-            (run_active, (d, sig2, W, rng['active'], args.n_av))]
-    if args.workers == 1:
-        results = [fn(*a) for fn, a in jobs]
+    if args.active_only:
+        old = np.load(args.active_only)
+        assert int(old['seed']) == SEED and np.array_equal(old['d'], d), 'different seed or data'
+        X_grad, G, W, eigenvalues = old['X_grad'], old['G'], old['W'], old['eigenvalues']
+        wall_grad = float(old['wall_grad'])
+        van = {k: old[k] for k in VAN_KEYS}
+        print(f'copied the data, subspace and vanilla chain from {args.active_only}', flush=True)
     else:
-        with ProcessPoolExecutor(max_workers=2) as ex:
-            results = [f.result() for f in [ex.submit(fn, *a) for fn, a in jobs]]
+        X_grad = rng['grad_points'].standard_normal((N_GRAD, model.m))
+        G = np.array([model.misfit_grad(x) for x in X_grad])
+        sub = misfit_subspace(G, rng['bootstrap'])
+        W, eigenvalues = sub.W, sub.eigenvalues
+        wall_grad = time.perf_counter() - t0
+        print(f'{N_GRAD} gradients and subspace: {wall_grad:.0f} s; '
+              f'eigenvalues[:4] = {np.round(eigenvalues[:4], 2)}', flush=True)
+
+    av_kw = dict(N=args.n_av, recompute=not args.cached_ghat)
+    if args.active_only:
+        av = run_active(d, sig2, W, rng['active'], workers=args.workers, **av_kw)
+    elif args.workers == 1:
+        van = run_vanilla(d, sig2, W, rng['vanilla'], args.n_van)
+        av = run_active(d, sig2, W, rng['active'], **av_kw)
+    else:
+        with ProcessPoolExecutor(max_workers=1) as ex:
+            fut = ex.submit(run_vanilla, d, sig2, W, rng['vanilla'], args.n_van)
+            av = run_active(d, sig2, W, rng['active'], workers=max(args.workers - 1, 1), **av_kw)
+            van = fut.result()
 
     out = {'seed': np.int64(SEED), 'streams': np.array(STREAMS),
            'x_true': x_true, 'd': d, 'sig2': np.float64(sig2),
            'indz': np.array(model.indz), 'sensor_s1': np.full(len(model.indz), 1 - model.dx),
            'sensor_s2': (np.array(model.indz) + 1) * model.dx,
            'kl_md5': np.str_(_md5(os.path.join(HERE, 'kl-short.npz'))),
-           'X_grad': X_grad, 'G': G, 'W': W, 'eigenvalues': sub.eigenvalues,
+           'X_grad': X_grad, 'G': G, 'W': W, 'eigenvalues': eigenvalues,
            'n_active': np.int64(N_ACTIVE), 'prop_std': np.float64(PROP_STD), 'M': np.int64(M),
            'burn_in': np.float64(BURN_IN), 'thin': np.int64(THIN), 'trace_index': np.array(TRACE),
            'wall_grad': np.float64(wall_grad),
            'versions': np.array([f'python {platform.python_version()}', f'numpy {np.__version__}',
                                  f'scipy {scipy.__version__}',
                                  f'active_subspaces {ac.__version__}', platform.platform()])}
-    for r in results:
-        out.update(r)
+    out.update(van)
+    out.update(av)
     out['wall_total'] = np.float64(time.perf_counter() - t0)
     np.savez_compressed(args.out, **out)
     print(f'vanilla acceptance {out["van_accept"].mean():.4f}, '
