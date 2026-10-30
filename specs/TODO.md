@@ -108,12 +108,12 @@ The spec §6 call maps predate the v1 additions at `ca41b3d`. Where a spec §6 r
 - [ ] v1: the finite-difference demo makes one `ac.finite_difference_gradients_multi(model, X=, space=, outputs=21)` call, not 21 scalar calls (V1-09); replace the hand sign flips with `ac.orient`, chaining `by="reference", reference=sub_prev` across time steps (V1-05)
 
 ### MHD ([MHD.md](MHD.md))
-- [ ] Remove the extra `2**-5` factor (Hartmann eigenvalues 32× too small)
-- [ ] Text: inner (not outer) product in the eigenvalue-sum identity; ∇_z not ∇_x; momentum equation as published Eq. 21 (arXiv Eq. 20); u/U notation; affiliations as in the published paper
-- [ ] `gradients.py`: `np.zeros` not `0.0*np.empty`; gradients w.r.t. log inputs; no star import / module globals. Rename it `hartmann_model.py` (author, 2026-10-30; the Python-model naming rule, [README.md](README.md#two-kinds-of-data-sets)) and import it by name; the generator part stays stored data
-- [ ] Dedupe u_avg rows 47/48 (cause unknown, author 2026-10-30); document the index gaps; credit Sandia (Drekar) in the header
-- [ ] Hartmann B_ind (author, 2026-10-30): show the notebook's result with ℓ = μ0 = 1 stated, and note that it does not match published Fig. 3 (w1 components 3 and 5, eigenvalue scale); how Fig. 3 was computed is unknown
-- [ ] v1: replace the hand sign flips with `ac.orient` (V1-05)
+- [x] Remove the extra `2**-5` factor (Hartmann eigenvalues 32× too small). Done ([#45](https://github.com/paulcon/as-data-sets/pull/45)): λ1 = 36.57 for u_avg; the notebook also prints the 2016 values (×2⁻⁵, λ1 = 1.14)
+- [x] Text: inner (not outer) product in the eigenvalue-sum identity; ∇_z not ∇_x; momentum equation as published Eq. 21 (arXiv Eq. 20); u/U notation; affiliations as in the published paper. Done ([#45](https://github.com/paulcon/as-data-sets/pull/45)), with the published dimensional analysis (8 quantities, 4 Π groups, Rm in B*_ind) per §0; Ryan Howard kept as "(2016 notebook)"
+- [x] `gradients.py`: `np.zeros` not `0.0*np.empty`; gradients w.r.t. log inputs; no star import / module globals. Rename it `hartmann_model.py` (author, 2026-10-30; the Python-model naming rule, [README.md](README.md#two-kinds-of-data-sets)) and import it by name; the generator part stays stored data. Done ([#45](https://github.com/paulcon/as-data-sets/pull/45)): ℓ and μ0 are keyword arguments; agrees with the 2016 functions to 1e-13
+- [x] Dedupe u_avg rows 47/48 (cause unknown, author 2026-10-30); document the index gaps; credit Sandia (Drekar) in the header. Done ([#45](https://github.com/paulcon/as-data-sets/pull/45)): rule "keep the first of rows that repeat an earlier row in all 11 data columns" (drops label 50; eigenvalues change ≤ 0.21 %); files unchanged. Also found: for 47 shared input points the u_avg label is the B_ind label + 1 (labels 51–99), cause unknown (DATA.md)
+- [x] Hartmann B_ind (author, 2026-10-30): show the notebook's result with ℓ = μ0 = 1 stated, and note that it does not match published Fig. 3 (w1 components 3 and 5, eigenvalue scale); how Fig. 3 was computed is unknown. Done ([#45](https://github.com/paulcon/as-data-sets/pull/45))
+- [x] v1: replace the hand sign flips with `ac.orient` (V1-05). Done ([#45](https://github.com/paulcon/as-data-sets/pull/45)): 2016 rule (first component of w1 and w2 positive), which gives the signs of the paper's Figs. 2B, 5B, 6B
 
 ### Elliptic_PDE ([Elliptic_PDE.md](Elliptic_PDE.md))
 - [x] ~~Replace `pde_model.py` with the shared solver~~ (done in §2); delete `pde_study.py`. Done 2026-10-30 ([#38](https://github.com/paulcon/as-data-sets/pull/38)); the notebook's solver-check cell replaces it. Added `PDESolver.qoi_and_grad` (one LU for value and gradient) to both copies, checked by `check_pde_model.py`
