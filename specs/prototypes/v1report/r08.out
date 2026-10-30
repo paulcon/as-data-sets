@@ -1,0 +1,9 @@
+Subsurface Hortonian zeros: 3137 of 10000
+plot_sufficient_summary(f=log10 f) -> InputError input.nonfinite | f: contains NaN or inf (first at index (1,)) [input.nonfinite]
+masked idiom X[f>0], log10(f[f>0]) works: 6863
+NREL rows outside [-1,1]^5: 724 per column [  0   0 441   0 284]
+local_linear_gradients(space=Uniform.reference(5)) -> InputError input.out_of_space | X: row 7 lies outside the support of the input space (coordinate 4 = np.float64(1.0389279698213882)) [input.out_of_space]
+local_linear_gradients 2000 centers, M=50000: 4.4s
+local_linear_gradients all 5000 centers, M=5000: 1.4s
+wind EVG n: 1
+Gaussian identity space accepts out-of-box rows: True

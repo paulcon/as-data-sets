@@ -18,7 +18,6 @@ The repository contains Jupyter notebooks for the following models / data sets.
 * **NACA0012:** an 18-parameter model for a two-spatial-dimensional airfoil. [[chapter 5]](http://dx.doi.org/10.1137/1.9781611973860)
 * **NREL_Wind:** a 5-parameter model of off-shore wind turbine fatige. [[paper]](http://dx.doi.org/10.1002/we.1870)
 * **ONERA-M6:** a 60-parameter model for a three-spatial-dimensional transonic wing. [[paper]](http://dx.doi.org/10.2514/6.2014-1171)
-* **Reentry_freestream_conditions:** a 7-parameter model for an atmostpheric re-entry vehicle.
 * **SingleDiodePV:** a 5-parameter model for a lumped-parameter single-diode photovoltaic solar cell. [[paper]](http://dx.doi.org/10.1002/sam.11281)
 * **Stomatal_Resistance:** a 20-parameter model of stomatal resistance in an integrated surface/subsurface hydrologic model. [[thesis]](http://hdl.handle.net/11124/170080)
 * **Subsurface_Permeability:** a 100-parameter model for subsurface permeability for groundwater flow. [[paper]](http://dx.doi.org/10.1016/j.advwatres.2016.03.020)

@@ -1,0 +1,10 @@
+public space classes: ['Any', 'ArrayLike', 'ClassVar', 'Gaussian', 'InputError', 'InputSpace', 'Literal', 'Mapping', 'NDArray', 'Protocol', 'SchemaError', 'Self', 'Sequence', 'Uniform']
+(a) Uniform(+-inf) -> InputError input.parameter | lower: must be finite [input.parameter]
+(b) Uniform.reference(19), normalized data -> InputError input.out_of_space | X: row 2 lies outside the support of the input space (coordinate 16 = np.float64(-1.3445057506038987)) [input.
+(c) Gaussian identity workaround: lambda1 = 6.68147e+10, warnings []
+    space.kind = gaussian -> sample() would draw N(0,1) for the 18 uniform inputs
+(d) Uniform on 18 columns: warnings [('ValidityWarning', 'validity.assumption')]
+reference_covariance Gaussian identity diag[:3] = [1. 1. 1.] (true 1/3 for uniform cols)
+Stomatal wj1: values [1.  4.  4.5], bounds [1.  4.5]
+Stomatal wj2: values [ 2.   8.  10.5], bounds [ 2.  10.5]
+Stomatal Uniform(bounds).contains(all rows): True

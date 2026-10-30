@@ -1,0 +1,3 @@
+HyShotII phi=0.30 (M=50) 95% PI at y=-2.0127,0,+2.0127: lower [2.0348 2.3672 2.7402] upper [2.0961 2.4065 2.7982]
+   95% CI at y=0: [2.3836, 2.3901]
+Hydrology grass LH 95% PI half-width at y=0: 1.3919e+05; CI half-width 1.0119e+04; in-sample R2 0.819

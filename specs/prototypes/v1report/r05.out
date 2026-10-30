@@ -1,0 +1,21 @@
+k=5: N=390625, sum(w)-1=0.0e+00, G bytes 0.03 GB
+  active_subspace: 0.6s, numpy peak inside call 0.08 GB (3.1 x G), lambda1=1.0125
+  hand C: lambda1=1.0125
+  subspace_from_basis eigenvalues: [nan nan nan] W1 vs hand |cos|: [1. 1.]
+  plot_eigenvalues(basis) -> InputError input.parameter | a 'basis' result has no eigenvalues to plot [input.parameter]
+  maxrss 0.36 GB
+        2.56 real         1.96 user         0.42 sys
+k=6: N=1679616, sum(w)-1=-6.7e-16, G bytes 0.11 GB
+  active_subspace: 2.5s, numpy peak inside call 0.34 GB (3.1 x G), lambda1=1.0194
+  hand C: lambda1=1.0194
+  subspace_from_basis eigenvalues: [nan nan nan] W1 vs hand |cos|: [1. 1.]
+  plot_eigenvalues(basis) -> InputError input.parameter | a 'basis' result has no eigenvalues to plot [input.parameter]
+  maxrss 1.16 GB
+        5.04 real         4.28 user         0.96 sys
+k=7: N=5764801, sum(w)-1=-6.7e-16, G bytes 0.37 GB
+  active_subspace: 8.1s, numpy peak inside call 1.15 GB (3.1 x G), lambda1=1.0213
+  hand C: lambda1=1.0213
+  subspace_from_basis eigenvalues: [nan nan nan] W1 vs hand |cos|: [1. 1.]
+  plot_eigenvalues(basis) -> InputError input.parameter | a 'basis' result has no eigenvalues to plot [input.parameter]
+  maxrss 3.67 GB
+       13.68 real        11.83 user         2.58 sys
