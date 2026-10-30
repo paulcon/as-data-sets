@@ -1,0 +1,5 @@
+v1 QPHD (gelsd) m=100 M=10000: 40.8s, |lambda|[:4]=[12252.5   630.6   424.3   363.6]
+design (10000, 5151) 0.41 GB
+scipy lstsq gelsy: 27.5s
+numpy QR + solve: 13.3s
+QR eigenvalues match gelsd: True
