@@ -89,7 +89,7 @@ The spec §6 call maps predate the v1 additions at `ca41b3d`. Where a spec §6 r
 ### Ebola ([Ebola.md](Ebola.md))
 - [ ] Remove the extra `2**-8` factor (eigenvalues are 256× too small; λ1 = 1.02, not 4e-3)
 - [ ] Replace the 15-minute 8^8 loop with the paper's 8^8 tensor rule passed as `quad_weights` to `ac.active_subspace` (author, 2026-10-30); λ1 = 1.0217, peak memory ≈ 1.25 × G (V1-08). Say in markdown that it needs ~1.5 GB free
-- [ ] Python model: move R0 and its gradient from the notebook into `ebola_model.py` so they can be called outside it (the kinds rule prefers a module; optional for a closed form)
+- [ ] Python model: move R0 and its gradient from the notebook into `ebola_model.py` so they can be called outside it (author, 2026-10-30)
 - [ ] `n < 7` → `n < 8`; typos; runtime sentence; affiliations as in the published paper
 - [ ] Cell 16 policy sentence: restore the paper's caveat that local metrics favor Liberia
 - [ ] v1: replace the activity-score formula with `ac.activity_scores(sub, n=)` (V1-07) and the hand-built C with `ac.subspace_from_matrix(C, space=)` or `active_subspace(grads=, quad_weights=)` (V1-08; both give λ1 = 1.0217 at 8^8)
@@ -110,7 +110,7 @@ The spec §6 call maps predate the v1 additions at `ca41b3d`. Where a spec §6 r
 ### MHD ([MHD.md](MHD.md))
 - [ ] Remove the extra `2**-5` factor (Hartmann eigenvalues 32× too small)
 - [ ] Text: inner (not outer) product in the eigenvalue-sum identity; ∇_z not ∇_x; momentum equation as published Eq. 21 (arXiv Eq. 20); u/U notation; affiliations as in the published paper
-- [ ] `gradients.py`: `np.zeros` not `0.0*np.empty`; gradients w.r.t. log inputs; no star import / module globals. Rename it `hartmann_model.py` (the Python-model naming rule, [README.md](README.md#two-kinds-of-data-sets)); the generator part stays stored data
+- [ ] `gradients.py`: `np.zeros` not `0.0*np.empty`; gradients w.r.t. log inputs; no star import / module globals. Rename it `hartmann_model.py` (author, 2026-10-30; the Python-model naming rule, [README.md](README.md#two-kinds-of-data-sets)) and import it by name; the generator part stays stored data
 - [ ] Dedupe u_avg rows 47/48 (cause unknown, author 2026-10-30); document the index gaps; credit Sandia (Drekar) in the header
 - [ ] Hartmann B_ind (author, 2026-10-30): show the notebook's result with ℓ = μ0 = 1 stated, and note that it does not match published Fig. 3 (w1 components 3 and 5, eigenvalue scale); how Fig. 3 was computed is unknown
 - [ ] v1: replace the hand sign flips with `ac.orient` (V1-05)

@@ -46,9 +46,9 @@ Every data set is one of two kinds, and the kind decides what the port must deli
 
 | Data set (spec) | Kind | Model in the repo | Outside generating code (stored data) |
 |---|---|---|---|
-| Ebola | Python model | closed-form R0 and its gradient, in the notebook; no data files | — |
+| Ebola | Python model | closed-form R0 and its gradient, in the notebook until the port moves them to `ebola_model.py`; no data files | — |
 | HIV | Python model | `HIV_model.py` (ODE); `generate_data.py` writes the CSVs | — |
-| MHD | both | Hartmann problem: closed-form `gradients.py` | 3-D MHD generator: Drekar (Sandia), 483 runs with adjoint gradients |
+| MHD | both | Hartmann problem: closed-form `gradients.py` (renamed `hartmann_model.py` in the port) | 3-D MHD generator: Drekar (Sandia), 483 runs with adjoint gradients |
 | Elliptic_PDE | Python model | `pde_model.py` (shared solver); KL bases `kl-*.npz` are stored | — |
 | MCMC | Python model | `pde_model.py` (shared solver); `generate_data.py` writes the chains | — |
 | HyShotII | stored data | — | HyShot II scramjet simulations (JCP 2015; book §5.1) |
