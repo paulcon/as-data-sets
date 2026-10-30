@@ -1,0 +1,7 @@
+numpy>=2.2
+scipy>=1.15
+matplotlib>=3.10
+jupyter
+# active_subspaces 1.0 is not on PyPI yet. Until it is, install it from Github
+# (the commit the notebooks are ported against); then use active_subspaces>=1.0
+active_subspaces @ git+https://github.com/paulcon/active_subspaces@ca41b3d
