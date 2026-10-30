@@ -39,7 +39,7 @@ One value per line with a trailing space, 10,000 lines. `RunOff02_Unsaturated_10
 | `RunOff02_Saturated_10k.txt` | Dunnian (initially saturated): near-surface water table, no precipitation | cumulative runoff volume at the outlet over the 48-h simulation, m³ | 45,219 – 46,168 | mean 45,483 |
 | `RunOff02_Unsaturated_10k.txt` | Hortonian (initially unsaturated): deep water table, 3-h, 5 cm/h storm in hours 1–3 | same | 0 – 1,345 | mean 66.1; **3,137 runs exactly 0**; smallest non-zero 8.8e-5 |
 
-The quantity and units are those of the paper (§2.6, p. 35; the axis of Figs. 6b and 7b reads "Cumulative Runoff Volume [cubic meters]"). The paper drops the zero Hortonian runs from Fig. 7 (p. 37), and so does the notebook, for the Hortonian least-squares fit and its summary plot. The notebook's quadratic-model extension, which is not in the paper, uses all 10,000 runs.
+The quantity and units are those of the paper (§2.6, p. 35; the axis of Figs. 6b and 7b reads "Cumulative Runoff Volume [cubic meters]"). The paper drops the zero Hortonian runs from Fig. 7 (p. 37), and so does the notebook, for every Hortonian fit: the least-squares direction, its summary plot and the quadratic-model extension, which is not in the paper (author, 2026-10-30). That extension fits 5,151 coefficients from 6,863 runs (1.33 runs per coefficient), so its Hessian is noisy. The Dunnian fits use all 10,000 runs.
 
 ## Provenance
 
@@ -48,7 +48,7 @@ The quantity and units are those of the paper (§2.6, p. 35; the axis of Figs. 6
 
 ## Regenerating
 
-The files cannot be regenerated from this repository. The notebook reads them and runs in one to two minutes in one Python process; the two quadratic-model fits take most of that time. It uses no random numbers, and two runs give identical printed output. It reproduces the 2016 notebook's least-squares eigenvalues ‖â‖² (11372.3058 Dunnian, 6568.8455 Hortonian, all runs) and its in-sample R² table, except for the 2016 Hortonian "linear subspace" row, which used an arbitrary basis.
+The files cannot be regenerated from this repository. The notebook reads them and runs in one to two minutes in one Python process; the two quadratic-model fits take most of that time. It uses no random numbers, and two runs give identical printed output. It reproduces the 2016 notebook's least-squares eigenvalues ‖â‖² (11372.3058 Dunnian, 6568.8455 Hortonian, all runs) and its Dunnian in-sample R² table. Its Hortonian R² table is computed on the non-zero runs, so it is not comparable with the 2016 one, which used all runs.
 
 ## License and credit
 
