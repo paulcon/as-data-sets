@@ -123,13 +123,14 @@ guard("V1-02 HyShotII", v102_hy)
 # ---------------- V1-05
 def v105_hiv():
     Xh, Fh, Gh = hiv(); sp = ac.Uniform.reference(27)
-    subs = [ac.active_subspace(grads=Gh[:, 27 * i:27 * (i + 1)], space=sp) for i in range(21)]
+    nt = Gh.shape[1] // 27
+    subs = [ac.active_subspace(grads=Gh[:, 27 * i:27 * (i + 1)], space=sp) for i in range(nt)]
     raw = rev(np.array([s.W[:, 0] for s in subs]))
     out = [subs[0]]
     for s in subs[1:]:
         out.append(ac.orient(s, by="reference", reference=out[-1]))
     r = rev(np.array([s.W[:, 0] for s in out]))
-    rep(r == 0, "V1-05 HIV chained orient", f"reversals {r}/20 vs 0 (unoriented {raw}/20)")
+    rep(r == 0, "V1-05 HIV chained orient", f"reversals {r}/{nt - 1} vs 0 (unoriented {raw}/{nt - 1})")
 guard("V1-05 HIV", v105_hiv)
 
 

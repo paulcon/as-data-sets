@@ -7,7 +7,7 @@ Status line: `Reentry_freestream_conditions/reentry.ipynb` | paper: the notebook
 ## 1. Summary
 Value-only AS (global quadratic, "QPHD") on 7460 samples. The port is trivial except for one method issue:
 1. **The text and code disagree on the second moment.** The markdown (cell 0, step 4) correctly says C = bbᵀ + H E[xxᵀ] Hᵀ with a diagonal E[xxᵀ]. The legacy `qphd_subspace` sets a scalar γ = 1 for *all* coordinates whenever max(X) > 1. Uniform coordinates should get 1/3. The legacy plots therefore use Σ = I. With the correct Σ = diag(1/3,1/3,1/3,1,1,1,1), λ₂ drops 3× (p_st) and 2.8× (q_st), and w₁ for q_st changes by about 0.04.
-2. v1 has only `Uniform` or `Gaussian` spaces, **no mixed product space**. `ac.Gaussian(0, I)` on hand-normalized X reproduces 2016 exactly but declares the wrong density for 3 of the 7 inputs.
+2. v1 has only `Uniform` or `Gaussian` spaces, **no mixed product space**. `ac.Gaussian(0, I)` on hand-normalized X reproduces 2016 exactly but declares the wrong density for 3 of the 7 inputs. **Since resolved:** v1 added `ac.Product` (V1-06), which declares the right density. This data set is excluded from main, so the spec was not updated further.
 3. Cell 7 says the p_st λ₂ is "an order of magnitude smaller" than λ₁. It is 83× (Σ=I) or 244× (correct Σ), i.e. about two orders.
 4. The quadratic fit for q_st has R² = 0.79 only. The notebook does not report it, and the QPHD subspace for q_st is accordingly rough.
 5. The dev branch `Reentry/` is the **same model and study** but a **different design** (150-point quasi-random, uniform rates). Its notebook mislabels its own input distributions. Details in §5.
@@ -69,7 +69,7 @@ pst, qst = d[:, 8], d[:, 9]
 ```
 
 ## 6. Migration to active_subspaces v1
-v1 has no mixed uniform/Gaussian space (`active_subspace(space=…)` accepts `Uniform` or `Gaussian`; migration.md E4 says "v1 has no input space for that mix"). Two options, both tested:
+**Superseded: v1 now has `ac.Product` (V1-06); the two options below predate it.** At the time of writing v1 had no mixed uniform/Gaussian space (`active_subspace(space=…)` accepts `Uniform` or `Gaussian`; migration.md E4 says "v1 has no input space for that mix"). Two options, both tested:
 
 | legacy call | v1 replacement | notes |
 |---|---|---|
