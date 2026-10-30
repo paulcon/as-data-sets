@@ -2,9 +2,9 @@
 
 *Active subspaces* are part of an emerging set of tools for subspace-based dimension reduction in complex simulation models in science and engineering. This repository contains data sets and associated [Jupyter](http://jupyter.org) notebooks that apply active subspace methods to a wide range of science and engineering models. The Python implementations of the methods are available on [Github](http://github.com/paulcon/active_subspaces/). More information on active subspaces can be found at [activesubspaces.org](http://activesubspaces.org).
 
-Each data set's directory contains a Jupyter notebook (`.ipynb`) and the data or model it analyzes. Data files are mostly text (`.txt`, `.csv`); PDE_Inverse_Problem_MCMC's chains are `.mat` files. Github renders the notebooks when you click an `.ipynb` file, but its rendering of mathematical expressions is not as robust as [nbviewer.org](https://nbviewer.org/). To view a notebook there, paste its Github link into the box at [nbviewer.org](https://nbviewer.org/). Links to notebooks must use the `main` branch (`blob/main/...`): the default branch was renamed from `master` to `main` in October 2026, and nbviewer links that name `master` no longer work. Each notebook also has links to associated publications for more details.
+Each data set's directory contains a Jupyter notebook (`.ipynb`), the data or model it analyzes, and a `DATA.md` that describes the files, their provenance and license, and what is unknown about them. Data files are mostly text (`.txt`, `.csv`) or NumPy `.npz`; PDE_Inverse_Problem_MCMC's chains are still `.mat` files until its port lands. Github renders the notebooks when you click an `.ipynb` file, but its rendering of mathematical expressions is not as robust as [nbviewer.org](https://nbviewer.org/). To view a notebook there, paste its Github link into the box at [nbviewer.org](https://nbviewer.org/). Links to notebooks must use the `main` branch (`blob/main/...`): the default branch was renamed from `master` to `main` in October 2026, and nbviewer links that name `master` no longer work. Each notebook also has links to associated publications for more details.
 
-The notebooks were written in 2016 for Python 2 and the pre-1.0 `active_subspaces` API. They are being ported to Python 3 and `active_subspaces` 1.0; until a notebook is ported, it does not run with the packages in `requirements.txt`. Ported so far: Elliptic_PDE_Random_Coefficients. The 2016 version of the repository is the tag [`legacy-master`](https://github.com/paulcon/as-data-sets/tree/legacy-master).
+The notebooks were written in 2016 for Python 2 and the pre-1.0 `active_subspaces` API. All but one have been ported to Python 3 and `active_subspaces` 1.0 and run with the packages in `requirements.txt`; each is committed with the outputs of a seeded run. The exception is PDE_Inverse_Problem_MCMC, whose port is in progress ([#52](https://github.com/paulcon/as-data-sets/pull/52)); until it lands, that notebook does not run with `requirements.txt`. The 2016 version of the repository is the tag [`legacy-master`](https://github.com/paulcon/as-data-sets/tree/legacy-master).
 
 # Data sets
 
@@ -34,17 +34,17 @@ The data sets are grouped by application area, one directory per category. Each 
 
 ## Plasma and fusion (`plasma_fusion/`)
 
-* **[MHD_Generator](plasma_fusion/MHD_Generator/):** a 5-parameter magnetohydrodynamics power generation model. [[paper]](https://doi.org/10.1002/sam.11355) [[arXiv]](https://arxiv.org/abs/1609.01255) _Both: Python model for the Hartmann problem; stored data for the 3-D generator._
+* **[MHD_Generator](plasma_fusion/MHD_Generator/):** a 5-parameter magnetohydrodynamics power generation model. [[paper]](https://doi.org/10.1002/sam.11355) [[arXiv]](https://arxiv.org/abs/1609.01255) _Both: Python model for the Hartmann problem (`hartmann_model.py`); stored data for the 3-D generator._
 
 ## Epidemiology and systems biology (`epidemiology_systems_biology/`)
 
-* **[Ebola_SEIR](epidemiology_systems_biology/Ebola_SEIR/):** an 8-parameter model for the geographic spread of Ebola: the basic reproduction number R0 of a 9-parameter SEIR fit. [[paper]](https://doi.org/10.1016/j.amc.2017.11.039) [[arXiv]](https://arxiv.org/abs/1603.04955) _Python model (closed form, in the notebook)._
+* **[Ebola_SEIR](epidemiology_systems_biology/Ebola_SEIR/):** an 8-parameter model for the geographic spread of Ebola: the basic reproduction number R0 of a 9-parameter SEIR fit. [[paper]](https://doi.org/10.1016/j.amc.2017.11.039) [[arXiv]](https://arxiv.org/abs/1603.04955) _Python model (`ebola_model.py`)._
 * **[HIV_Long_Term_Dynamics](epidemiology_systems_biology/HIV_Long_Term_Dynamics/):** a 27-parameter dynamical system model for in-host HIV. [[paper]](https://doi.org/10.3934/mbe.2017040) [[arXiv]](https://arxiv.org/abs/1604.04588) _Python model (`HIV_model.py`)._ The paper's printed nbviewer link points to the old `master` branch and no longer works; use [this link](https://nbviewer.org/github/paulcon/as-data-sets/blob/main/epidemiology_systems_biology/HIV_Long_Term_Dynamics/HIV_Long_Term_Dynamics.ipynb) instead.
 
 ## UQ benchmark collections (`uq_benchmarks/`)
 
-* **[Elliptic_PDE_Random_Coefficients](uq_benchmarks/Elliptic_PDE_Random_Coefficients/):** a 100-parameter elliptic PDE whose log-coefficient is a Karhunen–Loève expansion, at two correlation lengths. [[paper]](https://doi.org/10.1137/130916138) _Python model (`pde_model.py`)._ Ported to Python 3 and `active_subspaces` 1.0.
-* **[PDE_Inverse_Problem_MCMC](uq_benchmarks/PDE_Inverse_Problem_MCMC/):** exploiting active subspaces to apply MCMC in a 100-parameter PDE model. [[paper]](https://doi.org/10.1137/15M1042127) _Python model (`pde_model.py`)._
+* **[Elliptic_PDE_Random_Coefficients](uq_benchmarks/Elliptic_PDE_Random_Coefficients/):** a 100-parameter elliptic PDE whose log-coefficient is a Karhunen–Loève expansion, at two correlation lengths. [[paper]](https://doi.org/10.1137/130916138) _Python model (`pde_model.py`)._
+* **[PDE_Inverse_Problem_MCMC](uq_benchmarks/PDE_Inverse_Problem_MCMC/):** exploiting active subspaces to apply MCMC in a 100-parameter PDE model. [[paper]](https://doi.org/10.1137/15M1042127) _Python model (`pde_model.py`)._ Not yet ported (in progress).
 
 Categories with no data sets yet: combustion and chemical kinetics (`combustion_chemical_kinetics/`); climate, atmosphere and ocean (`climate_atmosphere_ocean/`); structural, materials and additive manufacturing (`structural_materials_manufacturing/`); biomedical and cardiovascular (`biomedical_cardiovascular/`); ecology and agriculture (`ecology_agriculture/`); electronics and circuits (`electronics_circuits/`).
 
