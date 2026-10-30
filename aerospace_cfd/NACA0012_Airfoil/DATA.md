@@ -29,7 +29,7 @@ Kind: **stored data**. SU2 computed the values and gradients in `NACA0012.txt`, 
 ## Provenance and unknowns
 
 - **Code.** SU2, the Stanford Aerospace Design Laboratory's compressible flow solver, with its adjoint solver for the gradients (the book, p. 82). The book describes the flow only as "transonic, compressible".
-- **Who ran it.** The runs are credited to Trent Lukaczyk (Stanford University), the notebook's first author. Paul Constantine committed the file and the first notebook to this repository on 2014-10-27 (commit 51a93cd).
+- **Who ran it.** Trent Lukaczyk (Stanford University) ran SU2 (author, 2026-10-30). Paul Constantine committed the file and the first notebook to this repository on 2014-10-27 (commit 51a93cd).
 - **Unknown** (author, 2026-10-30), and not stated in the book or the AIAA 2014-1171 paper:
   - the flow conditions: Mach number, angle of attack, Euler or RANS;
   - the SU2 version, the mesh, and the adjoint settings;
