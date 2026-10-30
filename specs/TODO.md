@@ -197,13 +197,13 @@ Not ported (author decision 2026-10-29). The spec stays for reference: [Reentry_
 - [ ] v1: the `Uniform.reference(5)` failure (spec §10 line 117) now names the input, value, side and bound; `details["n_outside"] == 724`, `details["name"] == "PlatformDir"` (V1-10). Update the expected message
 
 ### SingleDiodePV ([SingleDiodePV.md](SingleDiodePV.md))
-- [ ] I_SC upper bound typo `0.23598` → `0.23958`
-- [ ] Bootstrap on a seeded M = 1000 subsample with `interval="percentile", level=0.99` to match the paper's figures (author, 2026-10-30)
-- [ ] Add `single_diode.py` (~25 lines, from `prototypes/g5/pv_model.py`: `pmax` via Lambert W, `to_physical`, `to_normalized`) and a cell that checks it against the shipped data (author, 2026-10-30)
-- [ ] Stored gradients are normalized: divide by (xu − xl)/2 before passing with the physical space (or use `Uniform.reference(5)`)
-- [ ] Gap statement: λ_n − λ_{n+1}, not λ_{n+1} − λ_n; add units and V_th
-- [ ] One sentence on the constant 4.7e-5 dISC bias (cause unknown); a footnote listing the paper's gap-wording (p. 266) and cosine/sine (p. 269) errors (author, 2026-10-30)
-- [ ] v1: bootstrap with `bootstrap_vectors=` and `plot_eigenvectors(..., interval=)` (V1-02); `physical_directions()` now keeps the signs of W (V1-05), so recheck spec §6 line 77
+- [x] I_SC upper bound typo `0.23598` → `0.23958`. Done ([#41](https://github.com/paulcon/as-data-sets/pull/41)); normalized inputs now in [−0.99998, 0.99995]
+- [x] Bootstrap on a seeded M = 1000 subsample with `interval="percentile", level=0.99` to match the paper's figures (author, 2026-10-30). Done ([#41](https://github.com/paulcon/as-data-sets/pull/41)): 1000 replicates on the M = 1000 subsample (mean subspace distance 7.3e-3 for n = 1, as in paper Fig. 2b). **Only this bootstrap; the full-sample 500-replicate bootstrap is dropped** (author, 2026-10-30), and the spec §9 bootstrap criterion is rewritten for the M = 1000 run. The point estimates, the w1 table and the summary plots use all 10,000 samples without a bootstrap. Header: the published authors and affiliations, plus Ryan Howard on a separate "(2016 notebook)" line (author, 2026-10-30). The signs from `orient`, the `single_diode.py` name and the handling of the 1.2e-6 P_max offset (noted in the PR, not investigated further) stand (author, 2026-10-30)
+- [x] Add `single_diode.py` (~25 lines, from `prototypes/g5/pv_model.py`: `pmax` via Lambert W, `to_physical`, `to_normalized`) and a cell that checks it against the shipped data (author, 2026-10-30). Done ([#41](https://github.com/paulcon/as-data-sets/pull/41)): P_max at all 10,000 rows within a relative 1.6e-6; gradients at 20 rows within 6.0e-6, except dISC (+4.7e-5). `DATA.md` added
+- [x] Stored gradients are normalized: divide by (xu − xl)/2 before passing with the physical space (or use `Uniform.reference(5)`). Done ([#41](https://github.com/paulcon/as-data-sets/pull/41)) (divided; eigenvalues equal `eigvalsh(GᵀG/M)`, w1 equals the 2016 output)
+- [x] Gap statement: λ_n − λ_{n+1}, not λ_{n+1} − λ_n; add units and V_th. Done ([#41](https://github.com/paulcon/as-data-sets/pull/41))
+- [x] One sentence on the constant 4.7e-5 dISC bias (cause unknown); a footnote listing the paper's gap-wording (p. 266) and cosine/sine (p. 269) errors (author, 2026-10-30). Done ([#41](https://github.com/paulcon/as-data-sets/pull/41))
+- [x] v1: bootstrap with `bootstrap_vectors=` and `plot_eigenvectors(..., interval=)` (V1-02); `physical_directions()` now keeps the signs of W (V1-05), so recheck spec §6 line 77. Done ([#41](https://github.com/paulcon/as-data-sets/pull/41)): `ac.orient` sets the paper's sign rule (first component positive), which equals v1's default for these data; the notebook does not use `physical_directions`, so V1-05 does not affect it
 
 ### Atacamac ([Atacamac.md](Atacamac.md)): excluded from main
 Not ported: the author does not want the model in main (2026-10-30). It stays in history. The items below stay for reference only.
