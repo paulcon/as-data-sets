@@ -1,6 +1,6 @@
 # River_Flood_Dyke_Overflow: data
 
-Kind: **Python model**. The model is `flood_model.py`, a closed form. `generate_data.py` draws the inputs with a saved seed and writes all three CSVs, and a rerun on the same platform reproduces them bit for bit (on another, to rounding error; see below).
+Kind: **Python model**. The model is `flood_model.py`, a closed form. `generate_data.py` draws the inputs with a saved seed and writes all three CSVs, and a rerun reproduces them to rounding error (see below).
 
 ## Files
 
@@ -74,12 +74,12 @@ python generate_data.py                           # writes the three CSVs here
 python generate_data.py --out /tmp/flood --check  # writes elsewhere and compares
 ```
 
-The run takes 0.2 s (0.8 s with Python start-up) and also prints the gradient check. `--check` on 2026-10-30 (numpy 2.5.4, scipy 1.18.1, Python 3.13.18) reported the three files identical to the shipped ones. In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31) they differ by rounding error: at most a relative 9.2e-16 (inputs) and 1.7e-15 (outputs), and 5.8e-16 absolute (gradients). The notebook runs in about 5 s (9 s with kernel start-up under nbconvert).
+The shipped files were written on 2026-10-30 in a Linux container (numpy 2.5.4, scipy 1.18.1, Python 3.13.18). In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31) the run takes 0.2 s (1.0 s with Python start-up) and also prints the gradient check; `--check` finds the files differ from the shipped ones by rounding error: at most a relative 9.2e-16 (inputs) and 1.7e-15 (outputs), and 5.8e-16 absolute (gradients). The notebook runs in about 12 s under nbconvert.
 
 ## Accuracy
 
-- **Values.** Closed form in double precision; `flood_model.overflow` reproduces `outputs.csv` to rounding error (printed in the notebook: 0 on the platform that wrote it, 1.4e-14 m in the repo's `.venv`).
-- **Gradients.** Exact. Checked against central finite differences with step 10⁻⁶ standard deviations of each input, at all 10 000 samples: largest relative error (row 2-norm) 1.4 × 10⁻⁸ for S and 2.9 × 10⁻⁸ for Cp (no sample within 10⁻⁵ m of the kink), the size expected from rounding in the differences.
+- **Values.** Closed form in double precision; `flood_model.overflow` reproduces `outputs.csv` to rounding error (1.4e-14 m, printed in the notebook).
+- **Gradients.** Exact. Checked against central finite differences with step 10⁻⁶ standard deviations of each input, at all 10 000 samples: largest relative error (row 2-norm) 1.4 × 10⁻⁸ for S and 3.0 × 10⁻⁸ for Cp (no sample within 10⁻⁵ m of the kink), the size expected from rounding in the differences.
 - **Quadrature.** `exact_moments` uses adaptive quadrature (relative tolerance 10⁻¹³) for the moments of Q and K_s, and 40-point Gauss–Legendre rules on each side of the mode for the triangular inputs (exact for the polynomial densities times the smooth integrands to machine precision). Against 400 000 Monte Carlo samples (seed 0, scratch check): Var(S) 1.1745 vs 1.1704, ν_j within 0.2 % for every input. On the shipped 10 000 samples: mean of S −10.9342 (exact −10.9445), variance 1.2087 (exact 1.1745).
 
 ## How these files relate to the paper

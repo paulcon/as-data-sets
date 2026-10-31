@@ -6,7 +6,7 @@ Kind: **Python model**. The model is `fire_satellite_model.py`, a numpy/scipy re
 
 | file | contents | role |
 |---|---|---|
-| `Fire_Satellite_Coupled_System.ipynb` | the case study (Python 3, active_subspaces v1) | executed top to bottom with `SEED = 2012`; outputs committed; about 10 s |
+| `Fire_Satellite_Coupled_System.ipynb` | the case study (Python 3, active_subspaces v1) | executed top to bottom with `SEED = 2012`; outputs committed; about 11 s under nbconvert |
 | `fire_satellite_model.py` | `solve`, `qoi`, `grad`, `sample`, `orbit`, `attitude`, `power`; `NAMES`, `UNITS`, `MEAN`, `SD`, `LOWER`, `UPPER`, the Table 1 constants | the model |
 | `generate_data.py` | writes the three CSVs; `--out DIR --check` compares a rerun with the shipped files | regenerates the data |
 | `inputs.csv` | 2000 × 9 physical inputs, columns in the order of `NAMES` | model input |
@@ -60,7 +60,7 @@ python generate_data.py                                   # writes the three CSV
 python generate_data.py --out /tmp/fs --check             # writes elsewhere and compares
 ```
 
-The 2026-10-30 run (numpy 2.5.4, scipy 1.18.1, Python 3.13) took 0.12 s for the 2000 samples (1.3 s including start-up). A rerun on that platform reproduces the files exactly: `--check` prints 0.0e+00 for inputs, outputs and gradients. In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31) it prints maximum relative differences of 1.0e-15 (inputs), 1.0e-15 (outputs) and 8.6e-16 (gradients): rounding error.
+The shipped files were written on 2026-10-30 in a Linux container (numpy 2.5.4, scipy 1.18.1, Python 3.13). In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31) a rerun takes 0.09 s for the 2000 samples (1.6 s including start-up), and `--check` prints maximum relative differences of 1.0e-15 (inputs), 1.0e-15 (outputs) and 8.6e-16 (gradients): rounding error.
 
 ## Accuracy
 

@@ -14,7 +14,7 @@ Kind: **Python model**. The model is `arch_buckling_model.py`, a closed-form for
 | `gradients_fixed.csv` | 1000 × 7: ∂N_acr/∂x_j for the fixed arch, kN per unit of input j (**physical** inputs) | model output |
 | `gradients_pinned.csv` | 1000 × 7: the same for the pin-ended arch | model output |
 
-The CSVs are plain comma-separated numbers after two `#` lines (a description and the column names with units), written with 17 significant digits, so `np.loadtxt(path, delimiter=',')` reads them and a rerun on the same platform reproduces them bit for bit (on another, to rounding error; see below).
+The CSVs are plain comma-separated numbers after two `#` lines (a description and the column names with units), written with 17 significant digits, so `np.loadtxt(path, delimiter=',')` reads them and a rerun reproduces them to rounding error (see below).
 
 ## Model
 
@@ -80,13 +80,13 @@ python generate_data.py                          # writes the four CSVs here
 python generate_data.py --out /tmp/arch --check  # writes elsewhere and compares with the files here
 ```
 
-The run takes 0.05 s for the computation (0.2 s with interpreter start-up) on this container (Python 3, numpy 2). `--check` prints a maximum relative difference of 0 for all four files: a rerun reproduces them bit for bit. In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31) it prints 0 (inputs), 9.1e-16 (outputs), 1.4e-15 (fixed gradients) and 4.5e-15 (pin-ended gradients): rounding error. The notebook runs in 4–6 s of cell time (about 12 s with `nbconvert` start-up).
+The shipped files were written on 2026-10-30 in a Linux container (Python 3, numpy 2). In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31) the run takes 0.04 s for the computation (0.2 s with interpreter start-up), and `--check` prints maximum relative differences of 0 (inputs), 9.1e-16 (outputs), 1.4e-15 (fixed gradients) and 4.5e-15 (pin-ended gradients): rounding error. The notebook runs in about 12 s under nbconvert.
 
 ## Accuracy
 
 - **Gradients vs. complex step** (scratch script, not committed; an independent re-implementation of the formulas in complex arithmetic, step 10⁻²⁰ of each input's range): maximum relative error of the gradient vector over the 1000 samples 7.4e-16 (fixed) and 1.2e-15 (pin-ended).
 - **Gradients vs. central differences** (notebook check cell; step 10⁻⁶ of each input's range; samples within 10⁻⁴ of the pin-ended switch would be left out, none are): maximum relative error 6.3e-9 (fixed) and 6.0e-9 (pin-ended), median 1.5e-9 for both, the truncation and rounding error of the difference.
-- **Outputs**: the notebook re-evaluates the model at the 1000 inputs and finds a relative difference of 0 from `outputs.csv` on the platform that wrote it; in the repo's `.venv` it prints 9.1e-16 (fixed) and 7.6e-16 (pin-ended), rounding error.
+- **Outputs**: the notebook re-evaluates the model at the 1000 inputs and finds a relative difference from `outputs.csv` of 9.1e-16 (fixed) and 7.6e-16 (pin-ended), rounding error.
 - **Formula reading**: continuity of the fixed-arch branches at λ = 18.6 (to 0.0006 in c) checks the square-root reading of Eq. (3); Eq. (2) has the 1.6 % jump noted above, which Pi et al. (2002) could settle.
 
 ## How these files relate to the paper

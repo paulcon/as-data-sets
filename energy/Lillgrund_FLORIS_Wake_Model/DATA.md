@@ -65,7 +65,7 @@ python generate_data.py                                  # 500 samples, 2 proces
 python generate_data.py --rows 0:6 --out /tmp/lg --check     # a subset, compared with the files here
 ```
 
-The inputs come from the seed and the outputs from the model, so a rerun reproduces the files; `--workers` changes only the run time. The run that wrote the shipped files (2026-10-30, Python 3.13.18, numpy 2.5.4) took 693 s (11.5 min) on two processes of a 2-core container that other jobs were also using: 78 farm solves per sample (6 directions × 13), 30–50 ms each. `--rows 445:451 --check` reported the inputs identical, outputs to 2.3 × 10⁻¹⁶ and gradients to 1.6 × 10⁻¹³ (the 13 significant digits written). The notebook runs in about 4 s.
+The inputs come from the seed and the outputs from the model, so a rerun reproduces the files; `--workers` changes only the run time. The shipped files were written on 2026-10-30 in a Linux container (Python 3.13.18, numpy 2.5.4). In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31) a full rerun with `--check` took 987 s (16.5 min) on two processes, with other jobs running: 78 farm solves per sample (6 directions × 13), about 45 ms of CPU each. It reported the inputs identical, outputs to a relative 1.0 × 10⁻¹⁵ and gradients to 1.0 × 10⁻¹⁰ (2-norm of each row). The notebook runs in about 10 s under nbconvert.
 
 ## Accuracy
 

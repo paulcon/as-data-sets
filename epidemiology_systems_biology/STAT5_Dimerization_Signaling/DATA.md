@@ -82,7 +82,7 @@ python generate_data.py                                    # 1000 samples, 2 pro
 python generate_data.py --n 20 --out /tmp/stat5 --check    # the first 20 rows, compared with the files here
 ```
 
-The seed is fixed and the samples are the first N rows of one stream, so a run reproduces the files. `--workers` changes only the run time. The run that wrote the shipped files (2026-10-30; Python 3.13.18, numpy 2.5.4, scipy 1.18.1; Linux x86_64, 2 cores shared with another job) took 965 s on two processes, about 1–2 s of CPU per sample. `--n 20 --check` printed: inputs identical; maximum relative difference, outputs 4.1e-13 and gradients 4.6e-11 (the digits written). The notebook runs in about 25 s.
+The seed is fixed and the samples are the first N rows of one stream, so a run reproduces the files. `--workers` changes only the run time. The shipped files were written on 2026-10-30 in a Linux container (Python 3.13.18, numpy 2.5.4, scipy 1.18.1). In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31) a full rerun with `--check` took 1010 s on two processes, with other jobs running, about 1.8 s of CPU per sample. It printed: inputs identical; maximum relative difference, outputs 4.7e-5 and gradients 3.7e-5. Both maxima are at one sample (row 474) whose output 16 is 1.8e-7 %, where the solver's absolute tolerance (1e-10) dominates; scaled by each output's largest value, the differences are at most 2.9e-11 (outputs) and 1.1e-10 (gradient norms). Over the first 20 rows (`--n 20 --check`) the printed maxima are 6.9e-11 and 7.5e-11. The notebook runs in about 24 s under nbconvert.
 
 ## Accuracy
 

@@ -63,7 +63,7 @@ The CSVs are numbers after two `#` lines (a description with the distribution, s
 ### Solver
 
 - The symmetric root solves the Bloch condition det(R T − e^{2πj/N} I) = 0 by the secant method from ω⁰ (weak: 5058.035 − 14.690j rad/s, 805.011 Hz, Im f = −2.338 s⁻¹; strong: 4272.262 + 3.709j rad/s, 679.952 Hz, Im f = +0.590 s⁻¹).
-- For each sample, the contour integrals (1/2πj)∮ zᵏ D′/D dω, k = 0, 1, 2 (trapezoid rule, 64 points), give the root count and the two roots (Newton's identities); D′/D = tr(A⁻¹ ∂_ω A) with A = M − I and ∂_ω A from the analytic derivatives of R and Γ. Six Newton steps on D/(ω − ω_other) polish each root (step from the SVD of A, stable at the root). Last step ≤ 2.6×10⁻¹² rad/s and |D(root)| ≤ 10⁻¹⁵ in all samples.
+- For each sample, the contour integrals (1/2πj)∮ zᵏ D′/D dω, k = 0, 1, 2 (trapezoid rule, 64 points), give the root count and the two roots (Newton's identities); D′/D = tr(A⁻¹ ∂_ω A) with A = M − I and ∂_ω A from the analytic derivatives of R and Γ. Six Newton steps on D/(ω − ω_other) polish each root (step from the SVD of A, stable at the root). Last step ≤ 3.8×10⁻¹² rad/s and |D(root)| ≤ 10⁻¹⁵ in all samples.
 - Gradient: ∂ω/∂p = −(yᴴ ∂_pA x)/(yᴴ ∂_ωA x), x and y the right and left singular vectors of A for its zero singular value (the adjoint formula of Magri eq. 14 for a simple root); ∂_pA = S_i R ∂T_i/∂𝔽 Q_i ∂𝔽_i/∂p with prefix/suffix products Q_i, S_i, ∂𝔽/∂n = κe^{jωτ}, ∂𝔽/∂τ = κ n jω e^{jωτ}. ∇f_Im = Im(∇ω)/(2π) for the component that attains the maximum. The maximum is not differentiable where the two growth rates are equal; this happens on a set of measure zero, and the smallest split in the gradient sets is 1.7 rad/s (weak) and 11.5 rad/s (strong).
 - `growth_rate` raises `RuntimeError` if the root count differs from 2 by more than 10⁻³.
 
@@ -74,12 +74,12 @@ python generate_data.py                       # both cases, writes the eight CSV
 python generate_data.py --out /tmp/acx --mc 1000 --nfd 3   # quick run elsewhere
 ```
 
-Seeds are saved in `generate_data.SEEDS`; a rerun reproduces the files to the digits written (the notebook's check cell reruns five samples per case: 2.5×10⁻¹² and 5.0×10⁻¹² s⁻¹). The run that wrote these files (2026-10-30, Python 3.13.18, numpy 2.5.4) took 211 s on one core of a 2-core container: 7 s per 1000 gradient samples, about 100 s per 10 000 Monte Carlo samples, and the rest for the finite-difference check. The printed log reports the nominal roots, the Magri Table 2 check, the branch checks, the gradient check and the risk factors.
+Seeds are saved in `generate_data.SEEDS`; a rerun reproduces the files to the root-finding error (the notebook's check cell reruns five samples per case: 2.5×10⁻¹² and 5.0×10⁻¹² s⁻¹). The shipped files were written on 2026-10-30 in a Linux container (Python 3.13.18, numpy 2.5.4). In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31) a full rerun took 372 s on one core, with other jobs running: 11–17 s per 1000 gradient samples, 160–190 s per 10 000 Monte Carlo samples, and the rest for the finite-difference check. It reproduces the inputs exactly, and every other file to at most 1.2×10⁻¹¹ of each column's largest value (elementwise, a relative 10⁻⁸ in the smallest gradient components). The printed log reports the nominal roots, the Magri Table 2 check, the branch checks, the gradient check and the risk factors.
 
 ## Accuracy
 
-- **Roots.** Last Newton correction ≤ 2.6×10⁻¹² rad/s, residual |D| ≤ 10⁻¹⁵, root count 2 to 10⁻⁹ in every sample (generate_data.py log).
-- **Gradients.** Against central differences of the model with step 10⁻⁵ of each input's range, 10 samples per case, all 38 components: relative error (2-norm) at most 8.0×10⁻¹⁰ (weak) and 1.9×10⁻⁹ (strong).
+- **Roots.** Last Newton correction ≤ 3.8×10⁻¹² rad/s, residual |D| ≤ 10⁻¹⁵, root count 2 to 10⁻⁹ in every sample (generate_data.py log in `.venv`).
+- **Gradients.** Against central differences of the model with step 10⁻⁵ of each input's range, 10 samples per case, all 38 components: relative error (2-norm) at most 8.5×10⁻¹⁰ (weak) and 1.9×10⁻⁹ (strong).
 - **Change of variables.** The notebook checks the chain-rule gradient in Fourier coordinates against central differences through the inverse map: 2.2×10⁻⁹ (weak), 9.8×10⁻⁹ (strong).
 
 ## How these files relate to the paper and to the 2016 files
