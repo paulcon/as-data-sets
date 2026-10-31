@@ -33,8 +33,7 @@ def wcodes(w):
 
 # ---------------------------------------------------------------- V1-01
 def elliptic(case):
-    sys.path.append(f"{R}/docs/port-2026/prototypes/g2")
-    from fvsolver import PDESolver
+    from fvsolver import PDESolver  # this directory is on sys.path (above)
     fn = f"{R}/uq_benchmarks/Elliptic_PDE_Random_Coefficients/kl-{case}.npz"
     if not os.path.exists(fn):
         return None

@@ -1,4 +1,0 @@
-PolynomialSurrogate fields: ['provenance', 'qoi', 'space', 'subspace', 'degree', 'indices', 'coefficients', 'Y', 'f', 'sample_weights', 'residuals', 'loo_residuals', 'loo_r_squared', 'samples']
-public attrs: ['SCHEMA_VERSION', 'TYPE', 'Y', 'active_dim', 'coefficients', 'degree', 'evaluate', 'f', 'from_dict', 'gradient', 'indices', 'loo_r_squared', 'loo_residuals', 'n_samples', 'provenance', 'qoi', 'residuals', 'sample_weights', 'samples', 'save', 'space', 'subspace', 'to_dict']
-surrogates module public: ['PolynomialSurrogate', 'RBFSurrogate', 'Surrogate', 'fit_surrogate', 'fit_surrogate_from_model', 'predict', 'predict_gradient', 'quadratic_terms']
-HyShotII phi=0.30 (M=50): in-sample R2=0.9911  loo_r_squared=0.9883
