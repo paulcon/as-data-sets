@@ -117,6 +117,8 @@ def main():
     p.add_argument("--workers", type=int, default=2)
     p.add_argument("--check", action="store_true", help="compare with the shipped files")
     a = p.parse_args()
+    if (a.check or a.rows) and os.path.abspath(a.out) == os.path.abspath(HERE):
+        sys.exit('--check and --rows need --out DIR outside this directory, so that the shipped files are not overwritten')
     os.makedirs(a.out, exist_ok=True)
     cases = ["19", "36", "mc36"] if a.case == "all" else [a.case]
     total = 0.0

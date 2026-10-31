@@ -68,11 +68,25 @@ def write(out, X, F, D):
                       'gradients\n' + ','.join(cols))
 
 
+def compare(out, here, files):
+    """Max relative difference (per element, NaNs must match) between the files in out and here."""
+    for f in files:
+        a = np.loadtxt(os.path.join(out, f), delimiter=',', comments='#', ndmin=2)
+        b = np.loadtxt(os.path.join(here, f), delimiter=',', comments='#', ndmin=2)
+        ok = np.isfinite(b)
+        same_nan = np.array_equal(np.isnan(a), np.isnan(b))
+        rel = np.max(np.abs(a[ok] - b[ok]) / np.maximum(np.abs(b[ok]), 1e-300)) if ok.any() else 0.0
+        print(f'{f}: max relative difference from the shipped file {rel:.1e}'
+              + ('' if same_nan else ' (NaN pattern differs)'))
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     ap.add_argument('--out', default=HERE, help='output directory (default: this directory)')
     ap.add_argument('--check', action='store_true', help='compare with the CSVs in this directory')
     args = ap.parse_args()
+    if args.check and os.path.abspath(args.out) == HERE:
+        ap.error('--check needs --out DIR outside this directory, so that the shipped files are not overwritten')
     t0 = time.perf_counter()
     X, F, D = compute()
     os.makedirs(args.out, exist_ok=True)
@@ -81,10 +95,7 @@ def main():
     print(f'wrote {args.out} in {time.perf_counter() - t0:.2f} s; gradient check vs central differences '
           f'(h = 1e-6 in ln x), max relative error (row 2-norm): rms {er:.1e}, G {eG:.1e}')
     if args.check:
-        same = [np.array_equal(np.loadtxt(os.path.join(args.out, f), delimiter=','),
-                               np.loadtxt(os.path.join(HERE, f), delimiter=','))
-                for f in ('inputs.csv', 'outputs.csv', 'gradients.csv')]
-        print('identical to the shipped files (inputs, outputs, gradients):', same)
+        compare(args.out, HERE, ('inputs.csv', 'outputs.csv', 'gradients.csv'))
 
 
 if __name__ == '__main__':

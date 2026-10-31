@@ -118,6 +118,8 @@ def main():
     ap.add_argument('--check', action='store_true', help='compare with the files next to this script')
     ap.add_argument('--any-smrt', action='store_true', help='run with another SMRT version')
     a = ap.parse_args()
+    if (a.check or a.rows) and os.path.abspath(a.out) == os.path.abspath(HERE):
+        sys.exit('--check and --rows need --out DIR outside this directory, so that the shipped files are not overwritten')
     from importlib.metadata import version
     have = version('smrt')
     if have != sm.CONFIG['smrt_version'] and not a.any_smrt:

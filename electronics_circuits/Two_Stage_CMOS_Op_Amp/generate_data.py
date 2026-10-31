@@ -121,8 +121,8 @@ def main():
     ap.add_argument('--check', action='store_true', help='compare with the shipped files')
     ap.add_argument('--fd-check', default=None, help='a:b rows: compare steps H, 10H, H/10')
     a = ap.parse_args()
-    if a.check and os.path.abspath(a.out) == HERE:
-        ap.error('--check needs --out elsewhere, so that the shipped files are not overwritten')
+    if (a.check or a.rows) and os.path.abspath(a.out) == HERE:
+        ap.error('--check and --rows need --out elsewhere, so that the shipped files are not overwritten')
     if a.fd_check:   # on the box draws, or with --set gain200 on the shipped gain200 inputs
         X = read_csv(os.path.join(HERE, 'gain200_inputs.csv')) if a.set == 'gain200' else draw_inputs()
         r0, r1 = (int(s) for s in a.fd_check.split(':'))

@@ -98,6 +98,18 @@ def write(out, X, f, G, variant='tm'):
                                  for n, u in zip(names, units)))
 
 
+def compare(out, here, files):
+    """Max relative difference (per element, NaNs must match) between the files in out and here."""
+    for f in files:
+        a = np.loadtxt(os.path.join(out, f), delimiter=',', comments='#', ndmin=2)
+        b = np.loadtxt(os.path.join(here, f), delimiter=',', comments='#', ndmin=2)
+        ok = np.isfinite(b)
+        same_nan = np.array_equal(np.isnan(a), np.isnan(b))
+        rel = np.max(np.abs(a[ok] - b[ok]) / np.maximum(np.abs(b[ok]), 1e-300)) if ok.any() else 0.0
+        print(f'{f}: max relative difference from the shipped file {rel:.1e}'
+              + ('' if same_nan else ' (NaN pattern differs)'))
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     ap.add_argument('--out', default=HERE, help='output directory (default: this directory)')
@@ -107,6 +119,8 @@ def main():
     args = ap.parse_args()
     if args.variant != 'tm' and os.path.abspath(args.out) == HERE:
         ap.error('--variant openturns must be written with --out to another directory (the shipped files are tm)')
+    if args.check and os.path.abspath(args.out) == HERE:
+        ap.error('--check needs --out DIR outside this directory, so that the shipped files are not overwritten')
     if args.variant != 'tm' and args.check:
         ap.error('--check compares with the shipped files, which are the tm variant')
 
@@ -123,9 +137,7 @@ def main():
           f'vs complex step {ecs:.1e}')
     print(f'samples outside physical meaning: {unphysical(X)}')
     if args.check:
-        same = [np.array_equal(read_csv(os.path.join(args.out, n)), read_csv(os.path.join(HERE, n)))
-                for n in ('inputs.csv', 'outputs.csv', 'gradients.csv')]
-        print('files identical to the shipped ones (inputs, outputs, gradients):', same)
+        compare(args.out, HERE, ('inputs.csv', 'outputs.csv', 'gradients.csv'))
 
 
 if __name__ == '__main__':

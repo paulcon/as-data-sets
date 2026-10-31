@@ -233,6 +233,8 @@ def main():
     ap.add_argument("--fd-check", action="store_true",
                     help="write only fd_check_soilWHC.csv (smaller-step soilWHC derivatives)")
     a = ap.parse_args()
+    if (a.check or a.rows) and os.path.abspath(a.out) == os.path.abspath(HERE):
+        sys.exit('--check and --rows need --out DIR outside this directory, so that the shipped files are not overwritten')
     binary = os.path.abspath(a.sipnet)
     X = sample_inputs()
     if a.fd_check:
