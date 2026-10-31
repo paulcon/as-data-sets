@@ -1,6 +1,6 @@
 # ONERA-M6: update spec
 
-Kind: **stored data**: SU2 runs with adjoint gradients (see [README.md](README.md#two-kinds-of-data-sets)).
+Kind: **stored data**: SU2 runs with adjoint gradients (see [README.md](../README.md#two-kinds-of-data-sets)).
 
 Status line: `ONERA-M6/active-subspace-oneraM6.ipynb` | paper: **Lukaczyk, Palacios, Alonso, Constantine** (order per the published title page), "Active subspaces for shape optimization", 10th AIAA MDO Conf., National Harbor MD, 13–17 Jan. 2014, AIAA 2014-1171, doi:10.2514/6.2014-1171 (published PDF checked). The book (Constantine 2015, §5.3.2 pp. 84–86) describes a **different** ONERA-M6 data set (60 parameters, no gradients); see §1 | m = **50** FFD parameters, each in [−0.05, 0.05] | QoI: C_L and C_D (SU2), with adjoint gradients | legacy API: `Subspaces.compute(df=…, nboot=500)`, `.partition(n)`, `.eigenvals/.W1`, `utils.misc.BoundedNormalizer`, `utils.response_surfaces.RadialBasisApproximation(2)` + `.Rsqr`, `domains.BoundedActiveVariableDomain(ss).vertY`, `utils.plotters.sufficient_summary/zonotope_2d_plot` | py2 issues: minor (`j is 0`; kernelspec; pandas)
 

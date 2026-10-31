@@ -1,6 +1,6 @@
 """Acceptance check for the shared elliptic PDE solver (pde_model.py).
 
-Runs the criteria in specs/numpad_replacement.md section 8 on both copies:
+Runs the criteria in docs/port-2026/numpad_replacement.md section 8 on both copies:
 Elliptic_PDE_Random_Coefficients/ and PDE_Inverse_Problem_MCMC/. Run it from
 anywhere after any change to pde_model.py:
 

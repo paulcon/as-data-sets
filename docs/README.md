@@ -1,10 +1,14 @@
-# Update specs (2026-10-29)
+# Repository documentation
 
-Review of every notebook in `paulcon/as-data-sets` for the port to Python 3 and `active_subspaces` v1, without pandas or numpad. Each spec covers inventory, text and math versus the literature, code, data management, the v1 call map, an update plan, acceptance criteria, prototype results and open questions. Start with [TODO.md](TODO.md).
+Notes about the repository, not data sets.
+
+- [TODO.md](TODO.md): the open work and the record of decisions, with links to the PRs. This is the one file here that is still updated.
+- This file: the two kinds of data sets (the rules every data set follows) and the table of data sets by kind (below).
+- [port-2026/](port-2026/): the October 2026 review for the port to Python 3 and `active_subspaces` v1, without pandas or numpad, kept as a record. It holds one spec per 2016 notebook (inventory, text and math versus the literature, code, data management, the v1 call map, an update plan, acceptance criteria, prototype results and open questions), the cross-cutting documents listed at the end, and the prototype scripts. The DATA.md files cite these specs by section. The port is finished, so these files are not updated; they were written in `specs/` (moved here on 2026-10-31) and still refer to that directory, and to the old data set paths mapped below.
 
 ## Paths
 
-On 2026-10-30 the data sets moved into category directories and were renamed, and each notebook was renamed after its directory. The specs below were written before the move and use the old paths. Map:
+On 2026-10-30 the data sets moved into category directories and were renamed, and each notebook was renamed after its directory. The specs in `port-2026/` were written before the move and use the old paths. Map:
 
 | Old directory (old notebook) | New directory and notebook |
 |---|---|
@@ -24,7 +28,7 @@ On 2026-10-30 the data sets moved into category directories and were renamed, an
 | `Elliptic_PDE/` (`PDE_notebook.ipynb`) | `uq_benchmarks/Elliptic_PDE_Random_Coefficients/Elliptic_PDE_Random_Coefficients.ipynb` |
 | `MCMC/` (`MCMC.ipynb`) | `uq_benchmarks/PDE_Inverse_Problem_MCMC/PDE_Inverse_Problem_MCMC.ipynb` |
 
-The prototype scripts in `prototypes/` were updated to the new paths. Data file names did not change.
+The prototype scripts in `port-2026/prototypes/` were updated to the new paths. Data file names did not change.
 
 ## Two kinds of data sets
 
@@ -32,7 +36,7 @@ Every data set is one of two kinds, and the kind decides what the port must deli
 
 **Stored data.** An outside model generated the data: a CFD, hydrology, battery or wind code, or MATLAB code that is not in the repo. The shipped files are the only record of those runs and cannot be regenerated here.
 - Never regenerate, refit or "correct" stored values. Allowed changes: lossless format conversion (text → CSV with a `#` header, or `.npz`) by a committed script that checks the values are unchanged, and full originals moved to Zenodo (decision §0). Rows the analysis drops (duplicates, overshoots, validation runs) are dropped in the notebook by a stated rule or a stored flag, never deleted from the file.
-- DATA.md records the generating code and version, who ran it, the input ranges and distributions, units, the gradient coordinates (physical or normalized), license and credit, and every unknown (see [UNKNOWNS.md](UNKNOWNS.md)).
+- DATA.md records the generating code and version, who ran it, the input ranges and distributions, units, the gradient coordinates (physical or normalized), license and credit, and every unknown (see [UNKNOWNS.md](port-2026/UNKNOWNS.md)).
 - Acceptance: the notebook's numbers reproduce from the shipped files.
 - A Python re-implementation may be added to *check* stored data (SingleDiodePV's `single_diode.py`), but the shipped files stay the record, and any disagreement is reported, not fixed.
 
@@ -88,32 +92,32 @@ The 15 data sets added in October 2026 (14 in [#56](https://github.com/paulcon/a
 
 | Directory | Kind | m (verified) | Most serious finding | Spec |
 |---|---|---|---|---|
-| Ebola | Python model | 8 | Eigenvalues 256× too small (extra quadrature factor) | [Ebola.md](Ebola.md) |
-| HIV | Python model | 27 | Legacy solver no longer reproduces the (correct) shipped data in Python 3 | [HIV.md](HIV.md) |
-| MHD | both | 5 | Hartmann eigenvalues 32× too small (extra quadrature factor) | [MHD.md](MHD.md) |
-| Elliptic_PDE | Python model | 100 | SENS index off by one; surrogate length scale edited after training | [Elliptic_PDE.md](Elliptic_PDE.md) |
-| MCMC | Python model | 100 | Chains unreproducible (seeds and synthetic data never saved); 80 MB .mat | [MCMC.md](MCMC.md) |
-| HyShotII | stored data | 7 | Validation runs inside the bootstrap; safe ranges differ from paper Table 4 | [HyShotII.md](HyShotII.md) |
-| NACA0012 | stored data | 18 | Gradients are physical, comment says normalized | [NACA0012.md](NACA0012.md) |
-| ONERA-M6 | stored data | 50 | Quoted R² are in-sample; leave-one-out is much lower for drag | [ONERA-M6.md](ONERA-M6.md) |
-| Reentry_freestream_conditions (excluded from main) | stored data | 7 | Wrong variance for uniform inputs; cited paper not found | [Reentry_freestream_conditions.md](Reentry_freestream_conditions.md) |
-| Hydrology | stored data | 19 | Quadratic prediction bands use a linear formula | [Hydrology.md](Hydrology.md) |
-| Stomatal_Resistance | stored data | 20 | Hard-coded sign flip breaks under v1; hidden nominal row | [Stomatal_Resistance.md](Stomatal_Resistance.md) |
-| Subsurface_Permeability | stored data | 100 | 31% zero runoffs silently dropped from log plot; meaningless 3-D OLS R² | [Subsurface_Permeability.md](Subsurface_Permeability.md) |
-| Lithium_Battery | stored data | 19 | One run silently dropped; 67 MB text data | [Lithium_Battery.md](Lithium_Battery.md) |
-| NREL_Wind | stored data | 5 | Text says ~500,000 samples, file has 50,000; inputs not on [−1, 1] | [NREL_Wind.md](NREL_Wind.md) |
-| SingleDiodePV | stored data | 5 | Stored gradients are normalized; passing them to v1 as physical scales them twice | [SingleDiodePV.md](SingleDiodePV.md) |
-| Atacamac (excluded from main) | stored data | 38 | Chain-rule sign error changes eigenvalue ratios and R² | [Atacamac.md](Atacamac.md) |
-| LM104X | stored data | 105 | Data release unconfirmed (cleared 2026-10-30); notebook says 50 inputs | [LM104X.md](LM104X.md) |
+| Ebola | Python model | 8 | Eigenvalues 256× too small (extra quadrature factor) | [Ebola.md](port-2026/Ebola.md) |
+| HIV | Python model | 27 | Legacy solver no longer reproduces the (correct) shipped data in Python 3 | [HIV.md](port-2026/HIV.md) |
+| MHD | both | 5 | Hartmann eigenvalues 32× too small (extra quadrature factor) | [MHD.md](port-2026/MHD.md) |
+| Elliptic_PDE | Python model | 100 | SENS index off by one; surrogate length scale edited after training | [Elliptic_PDE.md](port-2026/Elliptic_PDE.md) |
+| MCMC | Python model | 100 | Chains unreproducible (seeds and synthetic data never saved); 80 MB .mat | [MCMC.md](port-2026/MCMC.md) |
+| HyShotII | stored data | 7 | Validation runs inside the bootstrap; safe ranges differ from paper Table 4 | [HyShotII.md](port-2026/HyShotII.md) |
+| NACA0012 | stored data | 18 | Gradients are physical, comment says normalized | [NACA0012.md](port-2026/NACA0012.md) |
+| ONERA-M6 | stored data | 50 | Quoted R² are in-sample; leave-one-out is much lower for drag | [ONERA-M6.md](port-2026/ONERA-M6.md) |
+| Reentry_freestream_conditions (excluded from main) | stored data | 7 | Wrong variance for uniform inputs; cited paper not found | [Reentry_freestream_conditions.md](port-2026/Reentry_freestream_conditions.md) |
+| Hydrology | stored data | 19 | Quadratic prediction bands use a linear formula | [Hydrology.md](port-2026/Hydrology.md) |
+| Stomatal_Resistance | stored data | 20 | Hard-coded sign flip breaks under v1; hidden nominal row | [Stomatal_Resistance.md](port-2026/Stomatal_Resistance.md) |
+| Subsurface_Permeability | stored data | 100 | 31% zero runoffs silently dropped from log plot; meaningless 3-D OLS R² | [Subsurface_Permeability.md](port-2026/Subsurface_Permeability.md) |
+| Lithium_Battery | stored data | 19 | One run silently dropped; 67 MB text data | [Lithium_Battery.md](port-2026/Lithium_Battery.md) |
+| NREL_Wind | stored data | 5 | Text says ~500,000 samples, file has 50,000; inputs not on [−1, 1] | [NREL_Wind.md](port-2026/NREL_Wind.md) |
+| SingleDiodePV | stored data | 5 | Stored gradients are normalized; passing them to v1 as physical scales them twice | [SingleDiodePV.md](port-2026/SingleDiodePV.md) |
+| Atacamac (excluded from main) | stored data | 38 | Chain-rule sign error changes eigenvalue ratios and R² | [Atacamac.md](port-2026/Atacamac.md) |
+| LM104X | stored data | 105 | Data release unconfirmed (cleared 2026-10-30); notebook says 50 inputs | [LM104X.md](port-2026/LM104X.md) |
 
-Papers: the published versions used for these checks are in `../papers/` (not for redistribution).
+Papers: the published versions used for these checks are in `papers/` at the repository root (not for redistribution).
 
 Cross-cutting documents:
 
-- [BRANCH_MERGE.md](BRANCH_MERGE.md): master + dev → main, with commands, GitHub steps and hygiene.
-- [ACTIVE_SUBSPACES_V1_CHANGES.md](ACTIVE_SUBSPACES_V1_CHANGES.md): verified changes needed in the `active_subspaces` v1 library, for its maintainer agent (repro scripts in `prototypes/v1report/`).
-- [UNKNOWNS.md](UNKNOWNS.md): every question the author answered as unknown, which the notebooks and DATA.md must state as unknown. Add new unknowns here.
-- [numpad_replacement.md](numpad_replacement.md): scipy.sparse finite-volume solver with adjoint gradients, validated against the legacy residual and finite differences.
-- [prototypes/](prototypes/): the scripts the reviewers ran (Python 3.11 `.venv`, v1). They hard-code absolute paths to this checkout.
+- [BRANCH_MERGE.md](port-2026/BRANCH_MERGE.md): master + dev → main, with commands, GitHub steps and hygiene.
+- [ACTIVE_SUBSPACES_V1_CHANGES.md](port-2026/ACTIVE_SUBSPACES_V1_CHANGES.md): verified changes needed in the `active_subspaces` v1 library, for its maintainer agent (repro scripts in `port-2026/prototypes/v1report/`).
+- [UNKNOWNS.md](port-2026/UNKNOWNS.md): every question the author answered as unknown, which the notebooks and DATA.md must state as unknown. Add new unknowns here.
+- [numpad_replacement.md](port-2026/numpad_replacement.md): scipy.sparse finite-volume solver with adjoint gradients, validated against the legacy residual and finite differences.
+- [prototypes/](port-2026/prototypes/): the scripts the reviewers ran (Python 3.11 `.venv`, v1). They hard-code absolute paths to this checkout.
 
 The general guide for building a new notebook from a paper is the Claude Doc "Plan: New Active Subspaces Notebook from a Published Article" (https://claude.ai/artifact/TrkTwESVSbEwLbFzj2Ue26).

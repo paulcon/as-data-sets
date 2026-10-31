@@ -1,6 +1,6 @@
 # Unknowns: questions the author could not answer
 
-Every item here is a question the author answered as "unknown" or "not sure", in either the first or second round of the 2026-10-30 interview ([TODO.md](TODO.md) §0). The notebook and `DATA.md` must state each one as unknown, without guessing. If a fact turns up later (from a data provider, an old archive or a coauthor), record it here, update the matching TODO item and spec, and strike the line.
+Every item here is a question the author answered as "unknown" or "not sure", in either the first or second round of the 2026-10-30 interview ([TODO.md](../TODO.md) §0). The notebook and `DATA.md` must state each one as unknown, without guessing. If a fact turns up later (from a data provider, an old archive or a coauthor), record it here, update the matching TODO item and spec, and strike the line.
 
 Add new unknowns from later interviews to this file.
 

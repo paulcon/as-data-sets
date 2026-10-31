@@ -1,6 +1,6 @@
 # MCMC: update spec
 
-Kind: **Python model**: the shared `pde_model.py`; `generate_data.py` writes the chains with saved seeds (see [README.md](README.md#two-kinds-of-data-sets)).
+Kind: **Python model**: the shared `pde_model.py`; `generate_data.py` writes the chains with saved seeds (see [README.md](../README.md#two-kinds-of-data-sets)).
 
 Status line: `MCMC/MCMC.ipynb` (39 cells, kernel `python2`; also on origin/dev, where master is newer). Paper: Constantine, Kent & Bui-Thanh, "Accelerating Markov chain Monte Carlo with active subspaces", SIAM J. Sci. Comput. 38(5):A2779–A2805, 2016, doi:10.1137/15M1042127 (arXiv:1510.00024).
 - **Two examples:**

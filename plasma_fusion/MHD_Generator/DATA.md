@@ -27,7 +27,7 @@ There are no shipped Hartmann outputs and no `generate_data.py`: the notebook ev
 ### Relation to the paper
 
 - u_avg: λ1 = 36.57, λ2 = 1.2275, λ1/λ2 = 29.8. The eigenvectors match the paper's Fig. 2B, with the same signs. The paper's Fig. 2A shows λ1 ≈ 1.4 and λ2 ≈ 0.05: its scale matches the 2016 values (1.14, 0.038), so the figure appears to carry the same extra 2⁻⁵. Its text (p. 319) calls the gap between λ1 and λ2 "three orders of magnitude"; its own figure shows a ratio of about 28. The notebook does not repeat that sentence.
-- B_ind: λ1 = 0.0863, λ1/λ2 = 13.6, w1 = [0.381, 0, −0.663, 0.493, −0.414]. This does **not** match the paper's Fig. 3: Fig. 3B shows w1 ≈ [0.38, 0, −0.56, 0.49, −0.56], and Fig. 3A shows λ1 ≈ 3 and λ1/λ2 ≈ 45. μ0 cannot explain it. A smaller ℓ (about 0.4) reproduces the published w1 but not the eigenvalues (specs/MHD.md §10). How Fig. 3 was computed is not known (author, 2026-10-30); the notebook keeps ℓ = μ0 = 1, states it, and says that Fig. 3 differs.
+- B_ind: λ1 = 0.0863, λ1/λ2 = 13.6, w1 = [0.381, 0, −0.663, 0.493, −0.414]. This does **not** match the paper's Fig. 3: Fig. 3B shows w1 ≈ [0.38, 0, −0.56, 0.49, −0.56], and Fig. 3A shows λ1 ≈ 3 and λ1/λ2 ≈ 45. μ0 cannot explain it. A smaller ℓ (about 0.4) reproduces the published w1 but not the eigenvalues (docs/port-2026/MHD.md §10). How Fig. 3 was computed is not known (author, 2026-10-30); the notebook keeps ℓ = μ0 = 1, states it, and says that Fig. 3 differs.
 
 ## MHD generator (stored data)
 

@@ -1,6 +1,6 @@
 # HIV: update spec
 
-Kind: **Python model**: `HIV_model.py`; `generate_data.py` writes the shipped CSVs and must reproduce them (see [README.md](README.md#two-kinds-of-data-sets)).
+Kind: **Python model**: `HIV_model.py`; `generate_data.py` writes the shipped CSVs and must reproduce them (see [README.md](../README.md#two-kinds-of-data-sets)).
 
 Status line: `HIV/HIV.ipynb` | paper: T. Loudon and S. Pankavich, *Mathematical analysis and dynamic active subspaces for a long term model of HIV*, Math. Biosci. Eng. 14(3) (2017) 709–733, doi:10.3934/mbe.2017040 (checked against the published PDF; arXiv:1604.04588 v2 read first. Page, equation, table and figure refs below are to the published version). It is **Mathematical Biosciences and Engineering** (AIMS), not *Mathematical Biosciences* | m = 27 (README's "21-parameter" is wrong; 21 is the number of output times) | QoI: T-cell count T(t) at 21 times (5 … 3400 days), one active subspace per time | legacy API: `ac.gradients.finite_difference_gradients`, `ac.subspaces.Subspaces().compute(df=)/.partition(2)/.W1/.eigenvals`, `ac.utils.misc.BoundedNormalizer`, `ac.utils.plotters.*` | py2 issues: yes. `generate_data.py` has a `print` statement; the notebook uses pandas `DataFrame.from_csv(...).as_matrix()`; kernelspec python2.
 

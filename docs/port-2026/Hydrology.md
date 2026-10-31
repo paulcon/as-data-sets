@@ -1,6 +1,6 @@
 # Hydrology: update spec
 
-Kind: **stored data**: ParFlow-CLM runs (see [README.md](README.md#two-kinds-of-data-sets)).
+Kind: **stored data**: ParFlow-CLM runs (see [README.md](../README.md#two-kinds-of-data-sets)).
 
 Status line: `Hydrology/PF-CLM_Active_Subspaces.ipynb` | paper: Jefferson, Gilbert, Constantine, Maxwell, Comput. Geosci. 83 (2015) 127–138, doi:10.1016/j.cageo.2015.07.001 (reprinted in Comput. Geosci. 90 (2016) 78–89, doi:10.1016/j.cageo.2015.11.002) | m = 19 for grass, 3 for bare soil (the README says 20) | QoI: total latent, sensible and ground heat over 144 h, single-column domain, bare soil and grass (6 OLS subspaces) | legacy API: `Subspaces.compute(sstype='OLS', nboot=500)`, `utils.misc.BoundedNormalizer`, `utils.response_surfaces.PolynomialApproximation` | py2 issues: yes (`i/2` used as a list index in cell 11; pandas `.as_matrix()`).
 

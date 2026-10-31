@@ -49,7 +49,7 @@ All draws come from one `np.random.default_rng(2018)`. The seed affects only the
 
 ## Relation to the paper's runs
 
-The paper computed the same 8^8 rule with its own code (https://github.com/PaulMDiaz/Ebola, not used here). The notebook's w1 matches the paper's Fig. 8, with the same signs: the 2016 sign rule (first component positive) is restored with `ac.orient`. The normalized activity scores for ψ (0.522 Liberia, 0.689 Sierra Leone) match Fig. 9. The paper's Fig. 7 eigenvalues are about 4 times the notebook's, with the same spacing (specs/Ebola.md §10). That factor is what normalizing to [0, 1] instead of [-1, 1] would give, but this is not confirmed. Fig. 7 shows λ1/λ2 ≈ 4 (Liberia) and 7 (Sierra Leone), and the notebook prints 3.9 and 7.1. The paper's text on p. 151 ("nearly two orders of magnitude" between λ1 and λ2) disagrees with its own figure, and the notebook does not repeat it.
+The paper computed the same 8^8 rule with its own code (https://github.com/PaulMDiaz/Ebola, not used here). The notebook's w1 matches the paper's Fig. 8, with the same signs: the 2016 sign rule (first component positive) is restored with `ac.orient`. The normalized activity scores for ψ (0.522 Liberia, 0.689 Sierra Leone) match Fig. 9. The paper's Fig. 7 eigenvalues are about 4 times the notebook's, with the same spacing (docs/port-2026/Ebola.md §10). That factor is what normalizing to [0, 1] instead of [-1, 1] would give, but this is not confirmed. Fig. 7 shows λ1/λ2 ≈ 4 (Liberia) and 7 (Sierra Leone), and the notebook prints 3.9 and 7.1. The paper's text on p. 151 ("nearly two orders of magnitude" between λ1 and λ2) disagrees with its own figure, and the notebook does not repeat it.
 
 ## License and credit
 

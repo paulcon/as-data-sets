@@ -1,6 +1,6 @@
 # HyShotII: update spec
 
-Kind: **stored data**: HyShot II scramjet simulations (JCP 2015; book §5.1) (see [README.md](README.md#two-kinds-of-data-sets)).
+Kind: **stored data**: HyShot II scramjet simulations (JCP 2015; book §5.1) (see [README.md](../README.md#two-kinds-of-data-sets)).
 
 Status line: `HyShotII/HyShotII.ipynb` | paper: Constantine, Emory, Larsson, Iaccarino, "Exploiting active subspaces to quantify uncertainty in the numerical simulation of the HyShot II scramjet", J. Comput. Phys. 302 (2015) 1–20, doi:10.1016/j.jcp.2015.09.001 (published version checked: Table 2 p. 8, eq. (15) p. 10, Table 3 p. 14, Table 4 p. 17); **and** Constantine, *Active Subspaces*, SIAM 2015, §5.1 pp. 71–78 (Tables 5.1–5.2, Figs. 5.2–5.6), doi:10.1137/1.9781611973860. The notebook's φ=0.35 analysis and the 0.30 column of `HyShotII35.txt` follow the **book**, not the paper (see §3) | m = 7 | QoI: exit pressure [bar], the pressure averaged over the last 10 mm of the combustor, at fuel plenum pressure P0,H2 = 4.8 bar (φ ≈ 0.30) and 5.6 bar (φ ≈ 0.35) | legacy API: `Subspaces.compute(sstype='OLS', nboot=500)`, `utils.misc.BoundedNormalizer`, `utils.misc.atleast_2d_col`, `utils.plotters.sufficient_summary/eigenvectors`, `utils.response_surfaces.PolynomialApproximation(2)` | py2 issues: yes
 
