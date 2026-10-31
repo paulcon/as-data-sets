@@ -2,4 +2,6 @@
 
 Combustion, flames, thermoacoustics and chemical reaction mechanisms.
 
-No data sets yet. See [Contributing](../README.md#contributing) to add one.
+Data sets (descriptions and papers are in the [top-level README](../README.md#data-sets)):
+
+- [Annular_Combustor_Thermoacoustics](Annular_Combustor_Thermoacoustics/)

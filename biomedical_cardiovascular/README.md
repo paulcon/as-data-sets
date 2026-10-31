@@ -2,4 +2,7 @@
 
 Biomedical, physiological and cardiovascular models.
 
-No data sets yet. See [Contributing](../README.md#contributing) to add one.
+Data sets (descriptions and papers are in the [top-level README](../README.md#data-sets)):
+
+- [Hodgkin_Huxley_Action_Potential](Hodgkin_Huxley_Action_Potential/)
+- [Luo_Rudy_Cardiac_Action_Potential](Luo_Rudy_Cardiac_Action_Potential/)
