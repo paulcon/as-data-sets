@@ -2,4 +2,6 @@
 
 Structural mechanics, materials models and additive manufacturing.
 
-No data sets yet. See [Contributing](../README.md#contributing) to add one.
+Data sets (descriptions and papers are in the [top-level README](../README.md#data-sets)):
+
+- [Steel_Arch_Inplane_Buckling](Steel_Arch_Inplane_Buckling/)
