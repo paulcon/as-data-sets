@@ -1,6 +1,6 @@
 # SingleDiodePV: update spec
 
-Kind: **stored data**: Campanelli's MATLAB code. The planned `single_diode.py` re-implementation checks the data; the shipped file stays the record (see [README.md](README.md#two-kinds-of-data-sets)).
+Kind: **stored data**: Campanelli's MATLAB code. The planned `single_diode.py` re-implementation checks the data; the shipped file stays the record (see [README.md](../README.md#two-kinds-of-data-sets)).
 
 Status line: `SingleDiodePV/active-subspace-pv.ipynb` | paper: P. G. Constantine, B. Zaharatos, M. Campanelli, "Discovering an active subspace in a single-diode solar cell model", *Stat. Anal. Data Min.* 8(5–6):264–273 (2015), doi:10.1002/sam.11281 (arXiv:1406.7607v3 and, on 2026-10-29, the **published** version: §2.1 p. 266, Table 1 p. 268, eqs. (9)–(10) p. 268, §4.1–4.2 p. 269, Table 2 p. 271, §4.5 p. 272; NREL/JA-5J00-65463; page numbers below refer to the published version) | m = 5 (I_SC, I_S [log-uniform], n, R_S, R_P) | QoI: P_max [W] = max IV subject to the single-diode equation | legacy API: `ac.utils.misc.BoundedNormalizer(xl, xu).normalize`, `ac.subspaces.Subspaces().compute(df=G, nboot=500)`, `.eigenvals/.eigenvecs/.e_br/.sub_br/.partition/.W1`, `ac.utils.plotters.eigenvalues/subspace_errors/eigenvectors(W_br=)/sufficient_summary` | py2 issues: yes (`print` in cell 15; pandas `from_csv`/`as_matrix`)
 

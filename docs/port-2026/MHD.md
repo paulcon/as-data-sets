@@ -1,6 +1,6 @@
 # MHD: update spec
 
-Kind: **both**: the Hartmann problem is a Python model (closed-form `gradients.py`, renamed `hartmann_model.py` in the port, author 2026-10-30); the 3-D generator runs are stored data from Drekar (Sandia) (see [README.md](README.md#two-kinds-of-data-sets)).
+Kind: **both**: the Hartmann problem is a Python model (closed-form `gradients.py`, renamed `hartmann_model.py` in the port, author 2026-10-30); the 3-D generator runs are stored data from Drekar (Sandia) (see [README.md](../README.md#two-kinds-of-data-sets)).
 
 Status line: `MHD/MHD.ipynb` | paper: Glaws, Constantine, Shadid, Wildey, *Dimension reduction in magnetohydrodynamics power generation models: Dimensional analysis and active subspaces*, Stat. Anal. Data Min. 10(5) (2017) 312–325, doi:10.1002/sam.11355 (checked against the published PDF; page/equation refs below are to the published version, whose equation numbers differ from arXiv:1609.01255 v1, titled "…MHD power generation models…") | m = 5 log-inputs (log μ, log ρ, log ∂p0/∂x, log η, log B0), uniform in the logs | QoIs: u_avg and B_ind, for (a) the analytic Hartmann problem and (b) the 3-D MHD generator (Drekar, adjoint gradients, 483 runs) | legacy API: `ac.utils.quadrature.gauss_legendre`, `ac.subspaces.sorted_eigh`, `ac.subspaces.Subspaces().compute(df=, nboot=500)/.partition(2)/.e_br`, `ac.utils.plotters.*` | py2 issues: no print statements; pandas `DataFrame.from_csv(...).as_matrix()` (removed in pandas ≥ 1.0); kernelspec python2.
 

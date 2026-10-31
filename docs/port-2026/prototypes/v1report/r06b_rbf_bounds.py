@@ -1,6 +1,6 @@
 # Item 6 follow-up: lower bound from the variance of the training f instead of the gradient sample
 import numpy as np, sys, warnings
-sys.path.insert(0, '/Users/paulconstantine/PycharmProjects/as-data-sets/specs/prototypes/g2')
+sys.path.insert(0, '/Users/paulconstantine/PycharmProjects/as-data-sets/docs/port-2026/prototypes/g2')
 from fvsolver import PDESolver
 import active_subspaces as ac
 warnings.simplefilter('ignore')

@@ -25,7 +25,7 @@ CSV with one header row, 10,000 rows × 12 columns, values written as `%.16e`. S
 | `Pmax` | maximum power P_max, 0.0143 to 0.2032 | W | |
 | `dISC`, `dIS`, `dn`, `dRS`, `dRP` | ∂P_max/∂x_i | W | **normalized** x, with I_S through log I_S |
 
-**Gradient coordinates.** The gradients are taken with respect to x ∈ [−1, 1]⁵, where x_i = 2(q_i − L_i)/(U_i − L_i) − 1, q = (I_SC, log I_S, n, R_S, R_P), and L, U are the bounds below (the paper's eq. (13)). To get gradients with respect to q, divide by (U − L)/2. active_subspaces v1 expects gradients with respect to the inputs of its space and applies the factor (U − L)/2 itself. So with `ac.Uniform(lower=L, upper=U)` on q, pass `G / ((U - L) / 2)`. Passing the stored `G` unchanged scales it twice, and the first eigenvector then comes out dominated by R_P (specs/SingleDiodePV.md §10).
+**Gradient coordinates.** The gradients are taken with respect to x ∈ [−1, 1]⁵, where x_i = 2(q_i − L_i)/(U_i − L_i) − 1, q = (I_SC, log I_S, n, R_S, R_P), and L, U are the bounds below (the paper's eq. (13)). To get gradients with respect to q, divide by (U − L)/2. active_subspaces v1 expects gradients with respect to the inputs of its space and applies the factor (U − L)/2 itself. So with `ac.Uniform(lower=L, upper=U)` on q, pass `G / ((U - L) / 2)`. Passing the stored `G` unchanged scales it twice, and the first eigenvector then comes out dominated by R_P (docs/port-2026/SingleDiodePV.md §10).
 
 **Inputs.** The paper's Table 1 gives the ranges (typical 2 cm² crystalline silicon cells). I_S is log-uniform, and the other inputs are uniform:
 
@@ -46,7 +46,7 @@ The stored inputs fill the box: in normalized coordinates they span [−0.99998,
 `single_diode.py` solves eq. (9) for I explicitly with the Lambert W function, and maximizes VI over [0, V_oc] with a bounded scalar search. The notebook runs the check (seed 2016):
 
 - P_max at all 10,000 rows: relative difference from −1.6e-6 to −9.6e-7.
-- Gradient by central differences (step 10⁻⁶ in x) at 20 random rows: `dIS`, `dn`, `dRS` and `dRP` agree within a relative 6.0e-6. `dISC` is off by a nearly constant relative **4.7e-5** at every row. The cause is unknown (author, 2026-10-30; `specs/UNKNOWNS.md`). It is consistent with the original code using slightly different I_SC bounds than Table 1. The bias is far smaller than the bootstrap variability, and the notebook uses the stored gradients as they are.
+- Gradient by central differences (step 10⁻⁶ in x) at 20 random rows: `dIS`, `dn`, `dRS` and `dRP` agree within a relative 6.0e-6. `dISC` is off by a nearly constant relative **4.7e-5** at every row. The cause is unknown (author, 2026-10-30; `docs/port-2026/UNKNOWNS.md`). It is consistent with the original code using slightly different I_SC bounds than Table 1. The bias is far smaller than the bootstrap variability, and the notebook uses the stored gradients as they are.
 
 These checks confirm the column meanings and the gradient coordinates above.
 

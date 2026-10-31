@@ -1,7 +1,7 @@
 # Item 6: RBF default on Elliptic_PDE beta = 1 (kl-long), vs CDW 2014 Sec. 4.2-4.3 (alpha bounded by (4.13))
 import numpy as np, sys, warnings, scipy.linalg, scipy.optimize
 from scipy.spatial.distance import cdist
-sys.path.insert(0, '/Users/paulconstantine/PycharmProjects/as-data-sets/specs/prototypes/g2')
+sys.path.insert(0, '/Users/paulconstantine/PycharmProjects/as-data-sets/docs/port-2026/prototypes/g2')
 from fvsolver import PDESolver
 import active_subspaces as ac
 s = PDESolver('/Users/paulconstantine/PycharmProjects/as-data-sets/uq_benchmarks/Elliptic_PDE_Random_Coefficients/kl-long.npz')

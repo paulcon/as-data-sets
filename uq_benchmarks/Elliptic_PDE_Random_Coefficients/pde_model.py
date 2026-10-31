@@ -6,7 +6,7 @@ uq_benchmarks/PDE_Inverse_Problem_MCMC/. The two copies must stay
 byte-identical (uq_benchmarks/check_pde_model.py checks this). Reproduces
 the legacy finite-volume residual exactly (same grid, same face averaging,
 same boundary padding) and computes gradients with a hand-coded discrete
-adjoint. See specs/numpad_replacement.md.
+adjoint. See docs/port-2026/numpad_replacement.md.
 
 Grid: nx x nx cells (nx = 100), coefficient a is cell-centred, u lives on
 the (nx+1) x (nx+1) vertices; unknowns are the (nx-1) x (nx-1) interior
