@@ -1,6 +1,0 @@
-k=8: N=16777216, sum(w)-1=0.0e+00, G bytes 1.07 GB
-  active_subspace: 26.2s, numpy peak inside call 3.36 GB (3.1 x G), lambda1=1.0217
-  hand C: lambda1=1.0217
-  plot_eigenvalues(basis) -> InputError input.parameter | a 'basis' result has no eigenvalues to plot [input.parameter]
-  maxrss 7.57 GB
-       40.15 real        32.88 user         8.55 sys

@@ -32,7 +32,7 @@ The default branch is `main` (renamed from `master` 2026-10-30). It is protected
 
 ## Docs
 
-`docs/` holds notes about the repository, not data sets. `docs/TODO.md` is the open work and the record of decisions; update it with each PR. `docs/README.md` has the rules for the two kinds of data sets and the old-to-new path map. `docs/port-2026/` is the October 2026 review, kept as a record and not updated: one spec per 2016 notebook (known errors, the v1 call map, a pandas-free loader, acceptance criteria), `BRANCH_MERGE.md` (master + dev → main), `numpad_replacement.md`, `UNKNOWNS.md`, the `active_subspaces` v1 change reports, and the prototype scripts in `prototypes/`. Its files were written as `specs/` (moved 2026-10-31) and still say so. Read a 2016 notebook's spec before you change the notebook.
+`docs/` holds notes about the repository, not data sets. `docs/TODO.md` is the open work and the record of decisions; update it with each PR. `docs/README.md` has the rules for the two kinds of data sets and the old-to-new path map. `docs/port-2026/` is the October 2026 review, kept as a record and not updated: one spec per 2016 notebook (known errors, the v1 call map, a pandas-free loader, acceptance criteria), `numpad_replacement.md`, `UNKNOWNS.md`, and the `active_subspaces` acceptance scripts in `prototypes/v1report/`. Its files were written as `specs/` (moved 2026-10-31) and still say so. The review's working files (the other prototype scripts, `BRANCH_MERGE.md`, the v1 change reports, the Reentry spec) are only at the tag `port-review-2026`. Read a 2016 notebook's spec before you change the notebook.
 
 ## Two kinds of data sets
 

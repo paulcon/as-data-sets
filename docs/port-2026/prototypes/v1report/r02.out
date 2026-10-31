@@ -1,9 +1,0 @@
-/private/tmp/claude-501/-Users-paulconstantine-PycharmProjects-as-data-sets/3700eedb-53cb-4f15-be9e-7188ce518442/scratchpad/v1report/r02_orient_boot.py:24: ValidityWarning: outside the method's assumptions; estimator 'ols' on a uniform space: needs the linearity condition, which the cube satisfies only in special cases [Li1991] [validity.assumption]
-  s = ac.active_subspace(X=X, f=C[:, 2], space=space, estimator="ols", n=1, nboot=100, rng=0)
-0.25C capacity, 50 OLS fits: v1 sign disagrees with sign(cov(Xw,f)) at 44/50; consecutive-voltage sign reversals: v1 1/49, cov-oriented 0/49; 50 warnings {('ValidityWarning', 'validity.assumption')}; 0.33s
-SubspaceResult fields: ['provenance', 'qoi', 'space', 'estimator', 'estimator_options', 'eigenvalues', 'eigenvectors', 'n', 'dimension_rule', 'dimension_options', 'criterion', 'n_samples', 'nboot', 'bootstrap_eigenvalues', 'bootstrap_distances', 'bootstrap_dets']
-bootstrap arrays: (100, 19) (100, 18) (100, 18)
-rank-one OLS, bootstrap_distances[:,0] (sin angle w, w^(b)): median 0.0064 max 0.0107
-dataclasses.replace(sub, eigenvectors=-W) accepted: W1[0] 0.128 -> -0.128; provenance kept: True
-plot_sufficient_summary x == X @ v1 w: True
-hand bootstrap SE of sign-aligned w (idx 2): max 0.0019
