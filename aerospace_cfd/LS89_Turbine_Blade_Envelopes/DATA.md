@@ -59,11 +59,11 @@ Content of the paper card. Page, table and figure numbers refer to the arXiv pre
 ## Regenerating
 
 ```bash
-python convert_data.py --npz /path/to/blade_envelopes.npz           # writes the four CSVs (0.6 s)
+python convert_data.py --npz /path/to/blade_envelopes.npz           # writes the four CSVs (0.7 s)
 python convert_data.py --npz /path/to/blade_envelopes.npz --check   # rebuilds them in memory and compares
 ```
 
-The script refuses an archive whose SHA-256 differs from the one above. It checks that each array has the expected shape and dtype, and that each CSV reads back with `np.loadtxt` equal to the source array bit for bit (as uint64), `inf` included. The shipped files were written on 2026-10-30 with numpy 2.5.4 and Python 3.13.18, and `--check` reports all four identical. There is no randomness. Running SU2 again is a different matter: see the EMA notes kept outside the repository.
+The script refuses an archive whose SHA-256 differs from the one above. It checks that each array has the expected shape and dtype, and that each CSV reads back with `np.loadtxt` equal to the source array bit for bit (as uint64), `inf` included. In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, macOS; 2026-10-31) `--check` reports all four identical and every array read back bit for bit, in 0.7 s. There is no randomness. Running SU2 again is a different matter: see the EMA notes kept outside the repository.
 
 ## Accuracy
 

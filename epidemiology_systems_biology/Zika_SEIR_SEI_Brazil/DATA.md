@@ -6,7 +6,7 @@ Kind: **Python model**. The model is `zika_model.py` (numpy and scipy only), and
 
 | file | contents | role |
 |---|---|---|
-| `Zika_SEIR_SEI_Brazil.ipynb` | the case study (Python 3, active_subspaces v1) | executed top to bottom with `SEED = 2018`; outputs committed; about 8 s |
+| `Zika_SEIR_SEI_Brazil.ipynb` | the case study (Python 3, active_subspaces v1) | executed top to bottom with `SEED = 2018`; outputs committed; about 9 s under nbconvert |
 | `zika_model.py` | `trajectory(p)`, `cumulative_with_sens(p)`, `qoi_and_grad(p)`, `qoi(p)`, `load_cases()`; `NAMES`, `UNITS`, `NOMINAL`, `LOWER`, `UPPER`, held constants | the model |
 | `generate_data.py` | draws the inputs (seed 2018) and writes the three CSVs; `--check`, `--fd-check K` | regenerates the data |
 | `inputs.csv` | 1000 × 10 physical inputs, columns in the order of `NAMES` | model input |
@@ -80,12 +80,12 @@ python generate_data.py --out /tmp/zika --check           # regenerate elsewhere
 python generate_data.py --fd-check 20                     # gradients vs. independent central differences
 ```
 
-The run that wrote the shipped files (2026-10-30, Python 3.13.18, numpy 2.5.4, scipy 1.18.1, one core of the build container) took 38 s. A rerun with `--check` reproduced the files to a relative 5.2 × 10⁻¹⁶ (outputs) and 4.2 × 10⁻¹⁶ (gradients), with identical inputs. `--fd-check 20` took 211 s.
+The shipped files were written on 2026-10-30 in a Linux container (Python 3.13.18, numpy 2.5.4, scipy 1.18.1). In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31) a rerun takes 46 s on one core, and `--check` gives maximum relative differences of 6.4 × 10⁻¹³ (outputs) and 2.7 × 10⁻¹² (gradients), with identical inputs. `--fd-check 20` takes 269 s.
 
 ## Accuracy
 
 - **Outputs.** At seven rows (0–4 and the rows with the largest and smallest C₅₂), DOP853 at the shipped tolerances agrees with Radau at rtol = 10⁻¹³, atol = 10⁻¹⁸ to a relative 1.7 × 10⁻¹⁴ in C₅₂ and 5.9 × 10⁻¹³ in J (scratch script, not committed).
-- **Gradients.** `generate_data.py --fd-check 20`: the sensitivity gradients at the first 20 rows agree with central differences of an independent solver (Radau, rtol = 10⁻¹², atol = 10⁻¹⁶, step 10⁻⁴ of each input's half-range; a second-order one-sided difference within one step of a zero lower bound) to a relative 3.8 × 10⁻⁹ for C₅₂ (median 8.8 × 10⁻¹¹) and 2.1 × 10⁻⁸ for J (median 1.6 × 10⁻¹⁰), in the 2-norm of the 10-vector.
+- **Gradients.** `generate_data.py --fd-check 20`: the sensitivity gradients at the first 20 rows agree with central differences of an independent solver (Radau, rtol = 10⁻¹², atol = 10⁻¹⁶, step 10⁻⁴ of each input's half-range; a second-order one-sided difference within one step of a zero lower bound) to a relative 3.8 × 10⁻⁹ for C₅₂ (median 9.5 × 10⁻¹¹) and 2.1 × 10⁻⁸ for J (median 1.7 × 10⁻¹⁰), in the 2-norm of the 10-vector.
 - The notebook re-solves five rows and prints the largest relative difference from `outputs.csv` (1.5 × 10⁻¹², from the solve without sensitivities taking different steps).
 
 ## How these files relate to the paper
