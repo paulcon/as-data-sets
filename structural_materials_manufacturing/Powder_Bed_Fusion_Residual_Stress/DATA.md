@@ -1,0 +1,101 @@
+# Powder_Bed_Fusion_Residual_Stress: data
+
+Kind: **stored data**. The values come from the Abaqus thermal and mechanical runs of Guo and Kramer, "Risk-based design optimization for powder bed fusion metal additive manufacturing" (Struct. Multidisc. Optim. 68(9):179, 2025). The authors publish them as one zip file in the GitHub repository [yulin-g/BPOF-optimization-AM](https://github.com/yulin-g/BPOF-optimization-AM). `convert_data.py` copied four of its CSV files into this directory, losslessly: each line of each source file is kept as it is, after two `#` header lines. From the 220 cooling-step temperature files it kept only the first frame (five values per run, with their original text) in two small CSVs. Nothing was rerun, refitted, rescaled or corrected, and no rows were dropped. The zip (1,599,864 bytes) is not shipped. Its URL and SHA-256 are below, and `convert_data.py --check` rebuilds the CSVs from it.
+
+## Files
+
+| file | contents | role |
+|---|---|---|
+| `Powder_Bed_Fusion_Residual_Stress.ipynb` | the case study (Python 3, active_subspaces v1) | executed top to bottom with seed 2025; outputs committed |
+| `convert_data.py` | writes the six CSVs from the zip and checks them bit for bit; `NAMES`, `UNITS`, `LOWER`, `UPPER`, `TABLE1_LOWER`, `TABLE1_UPPER`, source URL, commit and SHA-256 | lossless conversion |
+| `pbf_training_inputs.csv` | 120 × 12: `v` (mm/s), `P` (W), `T0` (°C), `Y` (MPa), `E` (GPa), `rho` (kg/m³), then the held coefficients `a0`, `a1`, `a2`, `b0`, `b1`, `b2` | stored data (source `Training_data/Input_120.csv`) |
+| `pbf_training_stress.csv` | 120 × 448: von Mises residual stress (MPa) at the end of cooling at the 448 integration points of the x_c–z_c plane, columns `vm_000` … `vm_447`; rows as the inputs | stored data (`Training_data/allStress_120.csv`) |
+| `pbf_validation_inputs.csv` | 100 × 12, as above: 50 runs at (v, P) = (417.3 mm/s, 82.97 W), then 50 at (614.5 mm/s, 115.8 W) | stored data (`Validation_data/Input_50_50.csv`) |
+| `pbf_validation_stress.csv` | 100 × 448, as above | stored data (`Validation_data/allStress_50_50.csv`) |
+| `pbf_training_cooling_start_T.csv` | 120 × 5: temperature (°C) at t = 0 of the cooling step (the end of the moving-heat step) at elements 3780, 12, 1452, 1524, 2988 (columns `T_e3780` … `T_e2988`; locations below); row i − 1 from source file i | stored data, first frame only (`Training_data/allTemperature_120/TempCV_<i>_Step_4_all_frames.csv`) |
+| `pbf_validation_cooling_start_T.csv` | 100 × 5, as above, rows as `pbf_validation_inputs.csv` | stored data, first frame only (`Validation_data/allTemperature_50_50/…`) |
+
+The CSVs are plain comma-separated numbers after two `#` lines (a description with the credit, and the column names with units), so `np.loadtxt(path, delimiter=',')` reads them. The numbers keep the source's text: inputs written as `%.18e`, stresses with four to six significant digits as Abaqus exported them. Row order is the source's. The quantity of interest, σ_max, is not stored separately: the notebook computes it as the maximum of each stress row, which is the paper's definition (Sect. 4.2.4).
+
+**Column order.** The source files have no header. The input columns follow from their ranges (v in [100.15, 995.76], P in [20.24, 198.96], T0 in [585.59, 714.28], Y in [742.53, 907.04], E in [99.13, 120.90], ρ in [3989.3, 4866.7]) and from column 4: in the 57 training runs that yield, the largest stress equals column 4 to within 6.5 × 10⁻⁵ of it, as it must for the yield strength of an elastic–perfectly plastic model. The order of the 448 stress columns on the 32 × 14 grid is not documented; σ_max does not depend on it. The location of the maximum is the same column (`vm_320`) in 86 of the 120 training runs.
+
+**Source archive.** `Supplementary_material_data.zip` in https://github.com/yulin-g/BPOF-optimization-AM, commit `29367be258eaf89a56e72c680a56d5aa488ae94c` (2025-05-13, the repository's only file), cloned on 2026-10-31. Size 1,599,864 bytes. SHA-256 `1a1402a602e325bcc401e3131cecb55651359b3148466ae6fe69c5c857357bf6`. Its contents (macOS `__MACOSX` and `.DS_Store` entries aside):
+
+| member | what it is | used here |
+|---|---|---|
+| `Training_data/Input_120.csv` (SHA-256 `01113272…`) | 120 × 12 inputs | yes |
+| `Training_data/allStress_120.csv` (`30ee6d04…`) | 120 × 448 stress fields | yes |
+| `Validation_data/Input_50_50.csv` (`2d4bedf1…`) | 100 × 12 inputs | yes |
+| `Validation_data/allStress_50_50.csv` (`699ee6ee…`) | 100 × 448 stress fields | yes |
+| `Training_data/allTemperature_120/TempCV_<i>_Step_4_all_frames.csv`, i = 1…120 | temperature (°C) histories of the **cooling step** (Step-4, 0–0.05 s, 31 to 166 frames per run) at five points: element 3780 of the bulk at (1, 0.75, 0.2992) mm and elements 12, 1452, 1524, 2988 of the powder layer at (1.9375, 0.75, 0.65), (1, 0.75, 0.65), (1, 0.75, 0.6125), (0, 0.75, 0.65) mm | first frame only |
+| `Validation_data/allTemperature_50_50/…`, i = 1…100 | the same for the validation runs (78 to 93 frames) | first frame only |
+| `Abaqus_input_files_example/ther.inp`, `mech.inp` | Abaqus/CAE 2017 decks of one example run (described in the EMA notes kept outside the repository) | no |
+
+The full temperature histories are not shipped, because the paper's temperature outputs come from the moving-heat step (Step-3): T_max (Sect. 3.5) and the 31-point snapshot of Sect. 4.2.3 cannot be computed from cooling-step histories. Their **first frame** is shipped, because it is the temperature at the end of the moving-heat step and so a lower bound on each point's peak temperature (used for context in the notebook). `convert_data.py` checks that every file has the same five points in the same order and a first time of 0.0, and copies the five first-frame values with their original text (the source files have CRLF line endings; the CSVs here use LF). The source does not say which input row a file belongs to. File i is matched to row i − 1, which the data confirm: under this mapping the temperature at x = 0 (element 2988) follows T0 with correlation 1.000 and the temperature at element 12 follows log(P/v) with correlation 0.917 (training runs; under the lexicographic file order the latter is near 0).
+
+## Model
+
+Content of the paper card. Page, section, equation, figure and table numbers refer to the published article: Y. Guo and B. Kramer, Struct. Multidisc. Optim. 68(9):179, 2025, doi:10.1007/s00158-025-04120-w (open access, CC BY 4.0; read from the publisher's PDF).
+
+- **Simulator** (Sects. 3.3–3.5, 5.1). Abaqus (the decks say Abaqus/CAE 2017) runs a transient heat-transfer model and then a quasi-static mechanical model driven by its temperature field (one-way coupling) for one electron-beam scan along x over a 2 × 1.5 × 0.65 mm Ti–6Al–4V part: a 50 µm powder layer on 0.6 mm of bulk material. Heat equation ρ C_p(T) ∂T/∂t = ∇·(κ(T)∇T) + Q_e (Eq. 2) with C_p = a0 + a1 T + a2 T², κ = b0 + b1 T + b2 T²; Gaussian beam flux Q_e = (2AP/(π r² z0)) exp(−2((x − vt)² + y²)/r²) · (1/5)[−3(z/z0)² − 2 z/z0 + 5] (Eq. 3) with absorptivity A = 0.203 (the spot radius r and penetration depth z0 are not given). Radiation from the top surface to the chamber at T_c = 650 °C with emissivity 0.35; latent heat 365,000 J/kg between the solidus 1605 °C and liquidus 1650 °C. Mechanics: ∇·σ + f = 0 (Eq. 4), σᵉ = ℂεᵉ (Eq. 5), ε = εᵉ + εᵖ + εᵗ, elastic–perfectly plastic, Poisson's ratio 0.41, thermal expansion 1 × 10⁻⁵. Boundary conditions: x- and y-faces fixed in x and y, bottom fixed. Mesh: 13,200 nodes and 10,752 elements (DC3D8 thermal, C3D8R mechanical), refined in the powder. Four steps: preheating, laying powder (activating the powder elements), moving heat, cooling. The paper cites validations of this kind of model against experiments (Vastola et al. 2016; Vohra et al. 2020).
+- **Inputs** (m = 6, independent, uniform; Sect. 5.1, Table 1 p. 12, distributions from Vohra et al. 2020, Sect. 4.1):
+
+  | name | symbol | units | nominal | range used here (samples) | range in the paper | source |
+  |---|---|---|---|---|---|---|
+  | `v` | scanning speed v | mm/s | not reported | U[100, 1000] | U[100, 1000] | Sect. 5.1, p. 11 |
+  | `P` | beam power P | W | not reported | U[20, 200] | U[20, 200] | Sect. 5.1, p. 11 |
+  | `T0` | preheating temperature T₀ | °C | 650 (chamber T_c) | U[585, 715] | U[585, 715] | Table 1, p. 12 |
+  | `Y` | yield strength Y | MPa | 825 | U[742.5, 907.5] | U[742.5, 907.5] | Table 1; nominal Sect. 5.1, p. 12 |
+  | `E` | elastic modulus E | GPa | 110 | **U[99, 121]** | U[100, 120] | Table 1; nominal Sect. 5.1 |
+  | `rho` | bulk density ρ | kg/m³ | 4428 (bulk); 4300 "volume-averaged" | **U[3985.2, 4870.8]** | U[3870, 4730] | Table 1; Sect. 5.1, p. 12 |
+
+  Held: a0 = 540 J/(kg K), a1 = 0.43 J/(kg K²), a2 = −3.2 × 10⁻⁵ J/(kg K³), b0 = 7.2 W/(m K), b1 = 0.011 W/(m K²), b2 = 1.4 × 10⁻⁶ W/(m K³) (Sect. 5.1, from Fu and Guo 2014); the stored runs carry exactly these values.
+
+  **The E and ρ ranges of the data differ from Table 1.** Every input column of the training runs has exactly one point in each of 120 equal strata of [99, 121] GPa and [3985.2, 4870.8] kg/m³, which are 110 ± 10 % and 4428 ± 10 %, and in each of 50 strata for the validation runs. Shrinking either range by 0.1 GPa or 2.8 kg/m³ at each end puts two points in one stratum, so these bounds are determined by the data. Under Table 1's bounds, 11 training values of E and 19 of ρ lie outside, and the lowest 119 kg/m³ of Table 1's ρ range holds no sample. Table 1's ρ range is 4300 ± 10 %, the "volume-averaged" density of the text; the samples use the bulk density 4428. The notebook uses the bounds of the samples (an inference, listed as an open question).
+- **Quantity of interest** (Sects. 3.5, 4.2.4). σ_max (MPa): the maximum von Mises stress at the end of the cooling step over the 448 integration points of the C3D8R elements that intersect the x_c–z_c plane through the part centroid (32 points along the length, 14 along the height; Fig. 2b). It is the limit-state function of the paper's buffered-probability-of-failure constraint (Eq. 17). The second output, T_max (°C, the peak temperature at the centroid of the top surface during the moving-heat step, constrained to T_liq < T_max < 1.1 T_liq), is not in the published files.
+- **Gradients.** None. The paper does not say how it estimates the active-subspace matrix C from its 120 runs.
+- **Sampling design in the paper.** 120 training runs from an "optimal symmetric Latin hypercube" over the six inputs (p. 12); 50 validation runs at each of two optimal designs with random (T0, Y, E, ρ) (Sect. 5.4). No seed. The stored training design is a Latin hypercube (one point per stratum, positions within strata spread over [0.0007, 0.9991] of a stratum, so not centred). It is not mirror-symmetric: no run's mirror stratum (119 − k in every column) is occupied. The validation inputs are a 50-point Latin hypercube in (T0, Y, E, ρ) at each design.
+- **Cost per run.** Not reported. Each run is a transient thermal and a quasi-static plastic Abaqus analysis of 13,200 nodes.
+- **Published results** (no eigenvalues or eigenvectors). Fig. 5: SVD truncation errors; err_S(5) = 10.37 %, err_S(6) = 9.28 % (p. 14). Table 2: number of active variables, polynomial and R² for stress features 1–5 (1, parabola, 0.9665; 2, fifth degree, 0.9074; 2, fifth degree, 0.8869; 3, sixth degree, 0.8118; 2, fifth degree, 0.8493). Fig. 6: temperature features 1–2 against one active variable each (R² 0.9245, 0.9836). Fig. 7: stress features 1–2 against their active variables. Tables 3–5: optimal designs; Table 4: 0.95-superquantiles of σ_max from the validation runs, 768.12 and 790.69 MPa.
+
+**Physical meaning.** All 220 × 448 stresses are positive (smallest 2.436 MPa), as von Mises stresses must be non-negative. With a temperature-independent yield stress, σ_max cannot exceed Y except by the solver's tolerance. 27 training runs (4 validation runs) exceed Y, by at most 6.48 × 10⁻⁵ Y, and 57 training runs (15 validation runs) reach 0.999 Y. All values are kept. No run is flagged as failed and all values are finite. The smallest σ_max, 5.27 MPa (training row 106, P = 26.1 W, v = 634 mm/s), is a run with little energy input (P/v = 0.041 J/mm) that may not melt the powder: its temperature at the end of the moving-heat step is 1018 °C at element 12 (near the end of the scan track) and 772 °C at the centroid, both below the solidus, though as lower bounds they do not prove it; T_max is not available.
+
+**Temperature context** (lower bounds; notebook, "Temperature context"). The paper constrains designs by T_liq < T_max < 1.1 T_liq (Eq. 17), with T_max at the centroid of the top surface (element 1452). At the end of the moving-heat step that point has cooled to at most 1452 °C in every training run, below the solidus, so its bound says nothing. At element 12, 62.5 µm before the end of the track, the end-of-step temperature is 895 to 3404 °C (median 1910): 84 of the 120 training runs are at or above the solidus (1605 °C), 82 at or above T_liq (1650 °C) and 66 at or above 1.1 T_liq (1815 °C). All 57 yielded runs are among the 84; none of the other 36 yielded. These are lower bounds at element 12 and **not** bounds on T_max: at the paper's two optimal designs, chosen subject to Eq. (17), element 12 reaches 1.1 T_liq in 25 and 50 of the 50 validation runs, so the track end runs hotter than the centroid. The training box therefore spans runs whose track end stays below the solidus and runs heated far beyond 1.1 T_liq there; whether the authors meant to keep both kinds in the training set is an open question.
+
+## Regenerating
+
+```bash
+python convert_data.py --zip /path/to/Supplementary_material_data.zip           # writes the six CSVs (0.3 s)
+python convert_data.py --zip /path/to/Supplementary_material_data.zip --check   # rebuilds them in memory and compares
+```
+
+The script refuses a zip or a stress/input member whose SHA-256 differs from the recorded one (the temperature members are covered by the zip's SHA-256). It checks each member's shape, finiteness and line endings, and that each CSV reads back with `np.loadtxt` equal to the source member bit for bit (compared as uint64). The four stress and input files were written on 2026-10-31 with numpy 2.5.4 and Python 3.13.18, the two temperature files the same day after the review; `--check` reports all six identical. There is no randomness. The Abaqus runs cannot be repeated here: Abaqus needs a commercial licence, and the beam heat flux is a user subroutine (`*Dflux`, `BFNU`) that the repository does not include; neither do the post-processing scripts that pick the 448 points. The EMA notes kept outside the repository describe what a rerun would need.
+
+## Accuracy
+
+- **Conversion:** exact (bit for bit, as above; the text of every number is unchanged).
+- **Outputs:** the paper reports no mesh-convergence study or solver tolerance for these runs. The stresses that exceed Y by up to 6.48 × 10⁻⁵ Y indicate the size of the plasticity return-mapping tolerance. There are no gradients to check.
+- **The subspace:** estimated from values by a global quadratic (QPHD), which fits σ_max with LOO R² = 0.8093, because σ_max saturates at Y in about half of the runs. Local linear gradients and a global linear fit give the same first direction (|w₁ᵀw₁| = 0.991 and 0.995). The pairs bootstrap (300 replicates) gives λ₁/λ₂ = 28.1 with 95 % interval [5.6, 45.8] and median 14.6 (0.26 of the replicates below 10); the second direction is not resolved. Checks of n = 1 in the notebook: QPHD on the 63 runs below yield gives λ₁/λ₂ = 64.5 and |w₁ᵀw₁| = 0.966; on σ_max/Y and log σ_max, 0.999 and 0.991; with Table 1's bounds for E and ρ, λ₁/λ₂ = 26.3 and 0.999. A quadratic capped at the yield strength, min(Y, q), has LOO R² = 0.956 (plain quadratic 0.809) and validation RMSE 43.5 MPa (degree-4 polynomial in y₁: 51.9 MPa); its C, by Monte Carlo, has λ₁/λ₂ = 58.0 and |w₁ᵀw₁| = 0.989. At each validation design, a linear fit in (T0, Y, E, ρ) gives a direction with |cos| = 0.984 and 0.996 to w₁'s components in those inputs.
+
+## How these files relate to the paper
+
+- **They are the paper's runs.** The notebook's err_S(5) = 10.37 % and err_S(6) = 9.28 % equal the printed values, the inputs match Sect. 5.1 except for the E and ρ bounds, and feature 1 against its active variable has the range of Fig. 7(a) (lowest point about −1.25 × 10⁴ at η ≈ 1.2 in the figure, −12,518 at y₁ = 1.21 here).
+- **Table 2.** With QPHD subspaces, feature 1 gets R² = 0.9260 with a parabola in one active variable (paper 0.9665) and feature 2 R² = 0.9321 with a fifth-degree surface in two (paper 0.9074). The paper's estimator for C is unknown, which may explain the differences.
+- **Table 4 is not reproduced.** The empirical 0.95-superquantile of the stored validation σ_max is 790.9 MPa at (417.3, 82.97) (paper 768.12) and 860.4 MPa at (614.5, 115.8) (paper 790.69). None of 13 estimators and variants tried gives either value (eight quantile conventions, 790.8–791.0 and 859.3–861.7; Eq. (9) with the paper's ζ*, 897.1 and 1062.7; α = 0.90 and 0.975; the mean of the top 3 of 50; the rank-5 SVD reconstruction, 721.2 and 828.1 MPa); the closest is 9.6 MPa and 37.4 MPa away. If the stored validation runs are the paper's, a bootstrap interval does not explain the gap; the paper's 768.12 lies in the bootstrap interval [761.9, 823.6] only in the weak sense that a fresh 50-run sample could give it, and 790.69 lies outside [815.3, 881.7].
+- **Not reproducible from these files:** the temperature snapshot surrogates (Figs. 5a, 6), T_max and the temperature constraint, and the optimization results (Tables 3, 5), which need both surrogates.
+
+## Open questions for the authors
+
+1. Were E and ρ sampled from U[99, 121] GPa and U[3985.2, 4870.8] kg/m³ (110 ± 10 %, 4428 ± 10 %), as the stored runs indicate, rather than Table 1's ranges?
+2. How were the active subspaces of Table 2 estimated from 120 runs without gradients?
+3. How were the Table 4 superquantiles computed, and from which runs? The stored validation runs give 790.9 and 860.4 MPa, and no standard superquantile estimator applied to them gives 768.12 or 790.69.
+4. Can the DFLUX user subroutine (with the beam radius r and penetration depth z0), the step-3 time period rule, and the scripts that extract the 448 stress points and the 31-point temperature snapshot be published? Can the moving-heat-step temperature histories be added, so that T_max can be studied?
+5. Is the training design meant to be symmetric? The stored one is a Latin hypercube with no mirror pairs.
+6. Is the beam flux of Eq. (3) meant to deposit 0.6 AP? Its depth profile integrates to 3 z0/5 over [0, z0], so the printed formula puts 0.6 AP into the part, not AP; is a normalization missing?
+7. Were runs that did not melt the powder, or that exceeded 1.1 T_liq, kept in the 120 training runs on purpose? The end-of-step temperatures near the end of the track (lower bounds) suggest both kinds are present: 36 runs below the solidus and at least 66 at or above 1.1 T_liq there.
+
+## License and credit
+
+The source repository, yulin-g/BPOF-optimization-AM, states **no licence**: it holds only the zip file, without a LICENSE or README (checked on 2026-10-31 at commit `29367be`). The article (CC BY 4.0) says that the input files and "the complete data sets used to generate the results are available to download" there. The repository owner (P. Constantine) decided on 2026-10-30 that data without a licence may be hosted here. The four CSV files are therefore redistributed with their values unchanged, with credit to Y. Guo and B. Kramer and to the repository https://github.com/yulin-g/BPOF-optimization-AM (`Supplementary_material_data.zip`, SHA-256 `1a1402a602e325bcc401e3131cecb55651359b3148466ae6fe69c5c857357bf6`). This repository's CC BY 4.0 data licence (`LICENSE-DATA`) does not apply to them, since their owners have not licensed them. If the authors object or attach a licence, follow it. Code here (`convert_data.py`, the notebook): MIT (`LICENSE`).
+
+Cite: Y. Guo and B. Kramer, "Risk-based design optimization for powder bed fusion metal additive manufacturing", Structural and Multidisciplinary Optimization 68(9):179, 2025, doi:10.1007/s00158-025-04120-w.
