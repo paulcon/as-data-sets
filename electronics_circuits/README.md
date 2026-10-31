@@ -2,4 +2,6 @@
 
 Circuit, device and electronic system models.
 
-No data sets yet. See [Contributing](../README.md#contributing) to add one.
+Data sets (descriptions and papers are in the [top-level README](../README.md#data-sets)):
+
+- [Two_Stage_CMOS_Op_Amp](Two_Stage_CMOS_Op_Amp/)
