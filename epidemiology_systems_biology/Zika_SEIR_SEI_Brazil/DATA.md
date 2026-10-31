@@ -80,7 +80,7 @@ python generate_data.py --out /tmp/zika --check           # regenerate elsewhere
 python generate_data.py --fd-check 20                     # gradients vs. independent central differences
 ```
 
-The run that wrote the shipped files (2026-10-30, Python 3.13.18, numpy 2.5.4, scipy 1.18.1, one core of the build container) took 38 s. A rerun with `--check` reproduced the files to a relative 5.2 × 10⁻¹⁶ (outputs) and 4.2 × 10⁻¹⁶ (gradients), with identical inputs. `--fd-check 20` took 211 s.
+The run that wrote the shipped files (2026-10-30, Python 3.13.18, numpy 2.5.4, scipy 1.18.1, one core of the build container) took 38 s. A rerun with `--check` reproduced the files to a relative 5.2 × 10⁻¹⁶ (outputs) and 4.2 × 10⁻¹⁶ (gradients), with identical inputs. In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31) `--check` gives 6.4 × 10⁻¹³ (outputs) and 2.7 × 10⁻¹² (gradients), with identical inputs. `--fd-check 20` took 211 s.
 
 ## Accuracy
 

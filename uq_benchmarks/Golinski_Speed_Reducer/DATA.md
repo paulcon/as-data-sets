@@ -68,12 +68,12 @@ python generate_data.py                                   # writes the three CSV
 python generate_data.py --out /tmp/gs --check             # writes elsewhere and compares
 ```
 
-The 2026-10-30 run (numpy 2.5.4, Python 3.13.18) took 0.03 s for the 1000 samples (0.17 s including start-up). A rerun reproduces the files exactly: `--check` prints 0.0e+00 for inputs, outputs and gradients.
+The 2026-10-30 run (numpy 2.5.4, Python 3.13.18) took 0.03 s for the 1000 samples (0.17 s including start-up). A rerun on that platform reproduces the files exactly: `--check` prints 0.0e+00 for inputs, outputs and gradients. In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31) it prints maximum absolute differences of 0.0e+00 (inputs), 9.1e-13 (outputs; that is V in cm³, a relative 3.0e-16) and 4.4e-16 (gradients): rounding error, not a change in the model.
 
 ## Accuracy
 
 - **Gradients.** Against central differences with step 1e-6 times the input range, on 50 samples (in the notebook), the largest relative errors of the gradient vectors are 1.6e-9 (V), 1.6e-9 (g3) and 1.5e-9 (g5), the size of the rounding error in the differences.
-- **Volume.** The expanded closed form and the term-by-term geometric sum of Fig. 11 (`volume_geometric`) agree to a relative 6.1e-16. g3 and g5 agree with the expressions printed in psdr to 4.4e-16 (scratch check; psdr not installed or imported).
+- **Volume.** The expanded closed form and the term-by-term geometric sum of Fig. 11 (`volume_geometric`) agree to a relative 6e-16. g3 and g5 agree with the expressions printed in psdr to 4.4e-16 (scratch check; psdr not installed or imported).
 
 ## How these files relate to the paper
 

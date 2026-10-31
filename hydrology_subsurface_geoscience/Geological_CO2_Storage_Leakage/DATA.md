@@ -1,6 +1,6 @@
 # Geological_CO2_Storage_Leakage: data
 
-Kind: **Python model**. The model is `co2_leakage_model.py`, a closed form reimplemented in numpy from the paper. `generate_data.py` draws the inputs with saved seeds and writes all six CSVs, and a rerun reproduces them bit for bit.
+Kind: **Python model**. The model is `co2_leakage_model.py`, a closed form reimplemented in numpy from the paper. `generate_data.py` draws the inputs with saved seeds and writes all six CSVs, and a rerun on the same platform reproduces them bit for bit (on another, to rounding error; see below).
 
 ## Files
 
@@ -98,11 +98,11 @@ python generate_data.py                           # writes the six CSVs here
 python generate_data.py --out /tmp/co2 --check    # writes elsewhere and compares
 ```
 
-The run takes 0.3 s (0.7 s with Python start-up) and also prints the gradient check. `--check` on 2026-10-30 (numpy 2.5.4, Python 3.13.18) reported the six files identical to the shipped ones. The notebook runs in about 9 s (13 s with kernel start-up under nbconvert).
+The run takes 0.3 s (0.7 s with Python start-up) and also prints the gradient check. `--check` on 2026-10-30 (numpy 2.5.4, Python 3.13.18) reported the six files identical to the shipped ones. In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31) the inputs are identical and the outputs and gradients differ by rounding error: at most a relative 1.1e-15 (outputs) and 4.3e-15 absolute (gradients). The notebook runs in about 9 s (13 s with kernel start-up under nbconvert).
 
 ## Accuracy
 
-- **Values.** Closed form in double precision; the model reproduces the CSVs exactly (difference 0, printed in the notebook).
+- **Values.** Closed form in double precision; the model reproduces the CSVs to rounding error (printed in the notebook: 0 on the platform that wrote them, at most a relative 1.1e-15 in the repo's `.venv`).
 - **Gradients.** Exact. Checked against central finite differences with step 10⁻⁶ of each input's range, at all 2000 samples per site: largest relative error (row 2-norm) 8.2 × 10⁻¹⁰ (log₁₀ t_total) and 8.0 × 10⁻¹⁰ (log₁₀ V̇_soft) for Ketzin, 1.4 × 10⁻⁹ and 1.0 × 10⁻⁹ for Quest, the size expected from rounding in the differences.
 - **Against the paper.** The sample statistics agree with Tables 5 and 6 within the sampling error of 500 samples (one exception, below), and total Sobol' indices of the raw outputs (Jansen's estimator, 20 000 base samples) agree with the MOP indices of Figs. 7 and 9 within 10 percentage points (largest difference: log K₃ for the Quest V̇_min, 57 % against 67.3 %).
 

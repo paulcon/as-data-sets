@@ -61,12 +61,12 @@ python generate_data.py --rows 40 --out /tmp/vp --check    # first 40 rows of ea
 python generate_data.py --studies global --out /tmp/vp --check
 ```
 
-The 2026-10-30 run (numpy 2.5.4, scipy 1.18.1, Python 3.13.18, Linux container, 2 processes) took 143 s (243 s of CPU, about 19 ms a sample). A rerun with `--rows 40 --check` reproduced every number bit for bit (maximum relative difference 0). The samples are independent; `--workers` changes only the run time.
+The 2026-10-30 run (numpy 2.5.4, scipy 1.18.1, Python 3.13.18, Linux container, 2 processes) took 143 s (243 s of CPU, about 19 ms a sample). A rerun with `--rows 40 --check` reproduced every number bit for bit (maximum relative difference 0). In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31) the same check gives maximum relative differences from 2.4e-14 to 1.7e-11, depending on the study. The samples are independent; `--workers` changes only the run time.
 
 ## Accuracy
 
-- **Gradients vs finite differences** (scratch script, not committed): central differences of the model in normalized coordinates (step 1e-5) at 60 random rows of each file agree with the stored implicit-function gradients to a relative error (2-norm of the gradient vector) with medians from 8.5e-10 to 9.3e-9 and maxima of 6e-9 (global), 4e-8 (Double Beam), 6e-8 (Bump-on-Tail), 1.1e-7 (Bump-on-Tail σ² = 0.25) and 3e-8 (Two-Stream). The notebook repeats this at 5 rows (2.8e-9).
-- **Outputs**: Newton converges to a step of 1e-13 |u| with a residual |k² ε| < 1e-9; recomputing gamma at those rows reproduces the files exactly.
+- **Gradients vs finite differences** (scratch script, not committed): central differences of the model in normalized coordinates (step 1e-5) at 60 random rows of each file agree with the stored implicit-function gradients to a relative error (2-norm of the gradient vector) with medians from 8.5e-10 to 9.3e-9 and maxima of 6e-9 (global), 4e-8 (Double Beam), 6e-8 (Bump-on-Tail), 1.1e-7 (Bump-on-Tail σ² = 0.25) and 3e-8 (Two-Stream). The notebook repeats this at 5 rows (3.4e-9).
+- **Outputs**: Newton converges to a step of 1e-13 |u| with a residual |k² ε| < 1e-9; recomputing gamma at those rows reproduces the files exactly on the platform that wrote them. In the repo's `.venv` the notebook's 5 re-solved rows still match exactly, but other rows differ by up to a relative 1.7e-11 (see `--check` above).
 - **Z function**: checked against quadrature of the dispersion integral (above).
 - **Validation against the paper**: the Two-Stream maximum growth rate is 0.2649 (paper Fig. 1: 0.2649), at k = 0.4280 rather than the paper's 0.4241; the curve is flat at its peak, so the k of the maximum is sensitive to the grid the paper used. Baseline growth rates: Two-Stream 0.25925 and Double Beam 0.18486, against the intercepts 0.2592 and 0.1848 of the paper's 1 % fits.
 

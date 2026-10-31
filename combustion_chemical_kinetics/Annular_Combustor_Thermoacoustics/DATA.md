@@ -80,7 +80,7 @@ Seeds are saved in `generate_data.SEEDS`; a rerun reproduces the files to the di
 
 - **Roots.** Last Newton correction ≤ 2.6×10⁻¹² rad/s, residual |D| ≤ 10⁻¹⁵, root count 2 to 10⁻⁹ in every sample (generate_data.py log).
 - **Gradients.** Against central differences of the model with step 10⁻⁵ of each input's range, 10 samples per case, all 38 components: relative error (2-norm) at most 8.0×10⁻¹⁰ (weak) and 1.9×10⁻⁹ (strong).
-- **Change of variables.** The notebook checks the chain-rule gradient in Fourier coordinates against central differences through the inverse map: 2.5×10⁻⁹ (weak), 9.9×10⁻⁹ (strong).
+- **Change of variables.** The notebook checks the chain-rule gradient in Fourier coordinates against central differences through the inverse map: 2.2×10⁻⁹ (weak), 9.8×10⁻⁹ (strong).
 
 ## How these files relate to the paper and to the 2016 files
 

@@ -1,6 +1,6 @@
 # Sulfur_Aerosol_Radiative_Forcing: data
 
-Kind: **Python model**. The model is `sulfur_model.py`, a closed form. `generate_data.py` draws the inputs with a saved seed and writes all three CSVs, and a rerun reproduces them bit for bit.
+Kind: **Python model**. The model is `sulfur_model.py`, a closed form. `generate_data.py` draws the inputs with a saved seed and writes all three CSVs, and a rerun on the same platform reproduces them bit for bit (on another, to rounding error; see below).
 
 ## Files
 
@@ -58,14 +58,14 @@ python generate_data.py                          # writes the three CSVs here
 python generate_data.py --out /tmp/sulfur --check   # writes elsewhere and compares
 ```
 
-The run takes 0.02–0.04 s (0.2 s with Python start-up) and also prints the gradient check. `--check` on 2026-10-30 (numpy 2.5.4, Python 3.13) reported the three files identical to the shipped ones. The notebook runs in about 3 s.
+The run takes 0.02–0.04 s (0.2 s with Python start-up) and also prints the gradient check. `--check` on 2026-10-30 (numpy 2.5.4, Python 3.13) reported the three files identical to the shipped ones. In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31) they differ by rounding error: at most a relative 2.2e-16 (inputs) and 8.9e-16 (outputs and gradients). The notebook runs in about 3 s.
 
 ## Accuracy
 
 - **Values.** Closed form, evaluated in double precision; `sulfur_model.forcing` reproduces `outputs.csv` exactly (relative difference 0, printed in the notebook).
 - **Gradients.** Exact. Checked against central finite differences in z with step 10⁻⁶ at all 1000 samples: largest relative error (row 2-norm) 2.3 × 10⁻¹⁰, the size expected from rounding in the differences.
 - **Moments.** `sulfur_model.moments()` gives mean −1.2741 and variance 1.70897 W² m⁻⁴, matching UQTestFuns' analytic −1.2741 and 1.7089 (which confirms the constants S₀ = 1361, A = 5.1 × 10¹⁴, 3, 10¹² and 365). The 1000-sample mean and variance are −1.2586 and 1.4944.
-- **Rounding in the eigenvalues.** λ₂, …, λ₉ come out between 10⁻³¹ and 10⁻⁶⁴ instead of 0. Three pairs of inputs share a σ (Y and L; Ψ_e and T²; f_Ψ and (1 − R_s)²), so their normalized gradient columns are identical and three directions are exactly null, which is why λ₇–λ₉ are near 10⁻⁶⁴.
+- **Rounding in the eigenvalues.** λ₂, …, λ₉ come out at about 10⁻³¹ or smaller instead of 0; the printed values change with the machine and the linear-algebra library. Three pairs of inputs share a σ (Y and L; Ψ_e and T²; f_Ψ and (1 − R_s)²), so their normalized gradient columns are identical and three directions are exactly null, which is why λ₇–λ₉ are near 10⁻⁶⁴ or smaller.
 
 ## How these files relate to the paper
 

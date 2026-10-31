@@ -92,7 +92,7 @@ These checks were made with scratch scripts, not committed:
 - **Outputs.** At 5 samples (rows 0, 200, 400, 600, 800), the shipped outputs agree with the same solve at rtol = atol = 1e-12 to a relative 4.6e-9 at worst.
 - **Gradients against tighter sensitivities.** At the same 5 samples, the shipped gradients agree with the sensitivity solve at rtol = atol = 1e-12 to a relative 2.7e-9 (row norm, worst output).
 - **Gradients against independent central differences.** Central differences of `qoi` (plain solves at rtol = atol = 1e-12) with step h = 1e-3 in ξ, 12 extra solves per sample, at the same 5 samples: relative error (row norm) 1.0e-7 to 5.6e-7 for `pSTAT5A_rel_mean`, and at most 9.5e-5 over all 48 outputs (the largest values are for outputs whose gradients are tiny). At the best fit the error for `pSTAT5A_rel_mean` falls from 1.5e-4 at h = 1e-2 to 1.3e-5, 1.5e-6 and 1.3e-7 at h = 3e-3, 1e-3, 3e-4, as O(h²), so the differences converge to the sensitivities.
-- The notebook re-solves 3 samples with sensitivities and prints the largest absolute differences from the files: about 5e-12 % (outputs) and at most 4.3e-9 % (gradients, which are up to about 120 % per decade).
+- The notebook re-solves 3 samples with sensitivities and prints the largest absolute differences from the files: 5e-12 % to 7e-10 % (outputs) and at most 4.3e-9 % (gradients, which are up to about 120 % per decade).
 
 ## How these files relate to the paper
 
