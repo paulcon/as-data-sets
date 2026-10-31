@@ -64,7 +64,7 @@ Every data set is one of two kinds, and the kind decides what the port must deli
 | Atacamac (excluded from main; Annular_Combustor_Thermoacoustics replaces it) | stored data | — | ATACAMAC annular-combustor model runs (Bauerheim et al., JFM 2016) |
 | Reentry_freestream_conditions (excluded from main) | stored data | — | EXPERT reentry simulations |
 
-The 14 data sets added in October 2026 ([#56](https://github.com/paulcon/as-data-sets/pull/56)) have no spec in this directory; their DATA.md files record the kind. They are listed by directory name.
+The 15 data sets added in October 2026 (14 in [#56](https://github.com/paulcon/as-data-sets/pull/56), Transonic_Fan_Blade_Performance_Maps in [#60](https://github.com/paulcon/as-data-sets/pull/60)) have no spec in this directory; their DATA.md files record the kind. They are listed by directory name.
 
 | Data set (directory) | Kind | Model in the repo | Outside generating code (stored data) |
 |---|---|---|---|
@@ -80,6 +80,7 @@ The 14 data sets added in October 2026 ([#56](https://github.com/paulcon/as-data
 | STAT5_Dimerization_Signaling | Python model | `STAT5_model.py`; `generate_data.py` writes the CSVs | — |
 | Steel_Arch_Inplane_Buckling | Python model | `arch_buckling_model.py` (closed form); `generate_data.py` writes the CSVs | — |
 | Sulfur_Aerosol_Radiative_Forcing | Python model | `sulfur_model.py` (closed form); `generate_data.py` writes the CSVs | — |
+| Transonic_Fan_Blade_Performance_Maps | stored data | — | Rolls-Royce Hydra RANS runs by Seshadri, Shahpar, Constantine, Parks and Adams (equadratures/data-sets); `convert_data.py` converts them losslessly |
 | Vlasov_Poisson_Instability_Growth_Rate | Python model | `plasma_dispersion_model.py`; `generate_data.py` writes the CSVs | — |
 | Zika_SEIR_SEI_Brazil | Python model | `zika_model.py`; `generate_data.py` writes the CSVs | the weekly case counts the model is fitted to (`data_cases.csv`, Brazilian Ministry of Health) are stored data |
 
