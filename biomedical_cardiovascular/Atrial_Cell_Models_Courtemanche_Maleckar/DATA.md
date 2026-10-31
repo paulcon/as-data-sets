@@ -21,7 +21,7 @@ The CSVs are comma-separated numbers after two `#` lines (a description with the
 
 Output columns (all files; Sec. 2.2, p. 4, Fig. 1): `dVdt_max` maximum upstroke slope; `Vmax` peak voltage; `V20`, `V40`, `V60`, `V80` membrane voltage at 20, 40, 60 and 80 % of APD90; `APD50`, `APD90` action potential duration at 50 and 90 % repolarization; `RestVm` resting potential (mean over 10 ms, 100 ms before the upstroke); `Ca_min`, `Ca_max` minimum and maximum intracellular Ca²⁺. **Units are not stated** in the paper or the files. From the values they are V/s (= mV/ms) for `dVdt_max` (55–344), mV for the voltages, ms for the durations (APD90 75–509), and mM for calcium (`Ca_min` 7e-6 to 2.4e-4, `Ca_max` 1.1e-4 to 3.1e-3, i.e. 7 nM to 3 µM).
 
-**Source.** R. Clayton and S. Coveney, "Design data for sensitivity analysis of human atrial myocyte models", The University of Sheffield, Dataset, figshare article 11309756, version 1, published 2019-12-03, doi:10.15131/shef.data.11309756.v1, licence CC BY 4.0 (figshare API record read 2026-10-31). The files were downloaded by P. Constantine's browser (figshare is not reachable from the build container) and their MD5s match the figshare listing:
+**Source.** R. Clayton and S. Coveney, "Design data for sensitivity analysis of human atrial myocyte models", The University of Sheffield, Dataset, figshare article 11309756, version 1, published 2019-12-03, doi:10.15131/shef.data.11309756.v1, licence CC BY 4.0 (figshare API record read 2026-10-31). The files were downloaded by P. Constantine's browser, and their MD5s match the figshare listing:
 
 | file | bytes | MD5 (figshare) | SHA-256 |
 |---|---|---|---|
@@ -117,7 +117,7 @@ python convert_data.py --src /path/to/figshare_11309756            # writes the 
 python convert_data.py --src /path/to/figshare_11309756 --check    # rebuilds them in memory and compares
 ```
 
-The script refuses a source file whose MD5 or SHA-256 differs from the table above, checks the column counts, writes each source token unchanged with commas between, and checks that the CSV read with `np.loadtxt(..., delimiter=',')` equals the source read with `np.loadtxt` bit for bit (as uint64). The shipped files were written on 2026-10-31 with Python 3.13.18 and numpy 2.5.4, and `--check` reports all eight identical. There is no randomness in the conversion. The notebook's bootstrap uses `SEED = 2020`; the notebook runs in 25.6 s (its last cell; about 29 s wall-clock with `nbconvert`). Rerunning the cell models is a different matter: see the EMA notes kept outside the repository (`Atrial_Cell_Models_Courtemanche_Maleckar.ema/MODEL_NOTES.md`).
+The script refuses a source file whose MD5 or SHA-256 differs from the table above, checks the column counts, writes each source token unchanged with commas between, and checks that the CSV read with `np.loadtxt(..., delimiter=',')` equals the source read with `np.loadtxt` bit for bit (as uint64). The shipped files were written on 2026-10-31 in a Linux container. In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, macOS; 2026-10-31), with the eight files downloaded again from figshare (checksums as above), `--check` reports all eight CSVs identical. There is no randomness in the conversion. The notebook's bootstrap uses `SEED = 2020`; in `.venv` the notebook runs in about 40 s, and two runs give the same printed values apart from timings. The cell models themselves are not in this repository; rerunning them needs the authors' MATLAB/CellML set-up.
 
 ## Accuracy
 

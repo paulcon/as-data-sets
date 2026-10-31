@@ -74,7 +74,7 @@ is generic and Sect. S4 keeps "the same SMRT configurations", so it is taken as 
 **Inputs** (independent uniform; the paper states that its EFAST sampling assumes uniform distributions on
 the ranges, Sect. 3.3, p. 6162):
 
-| name | symbol | units | range | nominal (EMA) | source |
+| name | symbol | units | range | nominal (midpoint) | source |
 |---|---|---|---|---|---|
 | depth | d | m | [0, 0.6] | 0.3 (midpoint) | Table 1, p. 6163 |
 | density | ρ | kg m⁻³ | [150, 500] | 325 | Table 1, p. 6163 |
@@ -82,7 +82,7 @@ the ranges, Sect. 3.3, p. 6162):
 | radius | r | mm | [0.1, 0.4] | 0.25 | Table 1, p. 6163 |
 | stickiness | τ | – | [0.1, 0.3] | 0.2 | Table 1, p. 6163 |
 
-The paper gives no nominal point; the midpoints are used where one is needed (EMA). SMRT's lower limit on
+The paper gives no nominal point; the midpoints are used where one is needed. SMRT's lower limit on
 stickiness, τ_min(ρ/916.7), is 0.096 at 150 kg m⁻³ and negative above 409 kg m⁻³ (and for the inverted
 medium above the dense-snow threshold), so every point of the box, and every stencil point, is valid. The
 Supplement (Sect. S3, Table S3) repeats the EFAST analysis with bounded Gaussian inputs fitted to MOSAiC and
@@ -139,7 +139,7 @@ the 24 printed indices agree to within 0.1.
 
 ```bash
 # a separate venv for SMRT (the notebook's venv does not need it)
-python3.13 -m venv svenv && svenv/bin/pip install smrt==1.5.1
+python3 -m venv svenv && svenv/bin/pip install smrt==1.5.1
 svenv/bin/python generate_data.py                                         # 400 samples, 2 processes
 svenv/bin/python generate_data.py --rows 173:178 --out /tmp/snow --check  # a subset, compared with the files here
 ```

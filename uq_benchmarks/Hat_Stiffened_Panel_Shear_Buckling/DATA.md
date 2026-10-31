@@ -1,6 +1,6 @@
 # Hat_Stiffened_Panel_Shear_Buckling: data
 
-Kind: **Python model**. The model is `panel_model.py`, a closed form. `generate_data.py` draws the inputs with a saved seed and writes all three CSVs, and a rerun reproduces them bit for bit.
+Kind: **Python model**. The model is `panel_model.py`, a closed form. `generate_data.py` draws the inputs with a saved seed and writes all three CSVs, and a rerun reproduces them to rounding error (see Regenerating).
 
 **Thickness (author decision, 2026-10-31).** The shipped data use a thickness t uniform on [8.02e-4, 8.181e-4] m (0.0316–0.0322 in), **ten times the range coded in the OpenTURNS benchmark** (8.02e-5 to 8.181e-5 m). The OpenTURNS benchmark's thickness range appears to be a factor-10 slip: with it the formula gives 1.13 lb/in at the midpoint, 797 times below the memorandum's 900 lb/in, while the range used here gives 1107 lb/in, slightly above 900 lb/in, as the memorandum says of its closed-form prediction (evidence under "The thickness" below). The data here follow the memorandum's panel. The OpenTURNS-as-coded thickness is kept as a documented variant: `panel_model` takes `variant='openturns'`, the notebook recomputes that variant from the same draws (check (b)), and `python generate_data.py --variant openturns --out <dir>` writes its CSVs (not shipped).
 
@@ -56,7 +56,7 @@ The page also gives the general form with different face-sheet and hat materials
   - 0.032 in is a standard gauge of titanium sheet, and E = 110 GPa is a titanium alloy (Ti-6Al-4V).
 
   We could not read the memorandum's dimensions, so the exact thickness, and which closed form (with or without Q) the memorandum used, remain open; the evidence settles the factor of ten, not the last 20 %. The active subspace does not depend on the choice (with the OpenTURNS thickness, λ₁/λ₂ = 1153 and |w₁·w₁| = 0.999904; notebook, check (b)); the level of the load does, by a factor of 980.2 on average.
-- `NOMINAL` in `panel_model.py` is the midpoint of every range (also the mean of E). It is a reference point for EMA, not a value from either source.
+- `NOMINAL` in `panel_model.py` is the midpoint of every range (also the mean of E). It is a reference point, not a value from either source.
 
 **Quantity of interest.** (N_xy)_cr in N/m, smooth on the whole support. Over the 5000 samples it ranges from 160849 to 230534 N/m (918 to 1316 lb/in; mean 194195 N/m, sd 12803 N/m); the hat correction Q is between 1.2368 and 1.3841.
 
@@ -80,18 +80,18 @@ The page also gives the general form with different face-sheet and hat materials
 
 ```bash
 python generate_data.py                           # writes the three CSVs here
-python generate_data.py --out /tmp/panel --check  # writes elsewhere and compares
+python generate_data.py --out /tmp/panel --check  # writes elsewhere and compares (refuses to write here)
 ```
 
 ```bash
 python generate_data.py --variant openturns --out /tmp/panel_ot   # OpenTURNS-as-coded thickness (not shipped)
 ```
 
-The run takes 0.08 s (under 1 s with Python start-up) and also prints the gradient checks and the count of unphysical samples. `--check` on 2026-10-31 (numpy 2.5.4, scipy 1.18.1, Python 3.13.18) reported the three files identical to the shipped ones. The notebook runs in about 3 s (7 s with kernel start-up under nbconvert).
+The run takes 0.08 s (under 1 s with Python start-up) and also prints the gradient checks and the count of unphysical samples. The shipped files were written on 2026-10-31 in a Linux container. In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31), `--check` reports maximum relative differences of 0 (inputs), 4.9e-16 (outputs) and 7.5e-16 (gradients) from the shipped files: rounding error, not a change in the model. The notebook runs in about 4 s, and two runs print the same values apart from timings.
 
 ## Accuracy
 
-- **Values.** Closed form in double precision; `panel_model.buckling_load` reproduces `outputs.csv` exactly (difference 0, printed in the notebook).
+- **Values.** Closed form in double precision; `panel_model.buckling_load` reproduces `outputs.csv` to rounding error (in `.venv`, at most 8.7e-11 N/m on loads of about 2e5 N/m; printed in the notebook).
 - **Gradients.** Exact. Checked at all 5000 samples against central finite differences with step 10⁻⁶ standard deviations of each input (largest relative error, row 2-norm, 3.4 × 10⁻⁸, the size expected from rounding in the differences) and against a complex step of 10⁻³⁰ times each input (largest relative error 1.0 × 10⁻¹⁵).
 - **Moments.** The mean and covariance in `mean_and_cov` are closed form (truncated-normal moments; Pearson correlation (6/π) arcsin(r/2) = −0.8 of uniform marginals under a normal copula with r = −0.8135). The shipped samples agree: their sample Spearman correlation is −0.7971 against −0.8.
 

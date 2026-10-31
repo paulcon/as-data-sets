@@ -2,7 +2,7 @@
 * Circuit: Settaluri et al., DATE 2020, Fig. 6 (AutoCkt two-stage op-amp, 45 nm BPTM).
 * Adapted for as-data-sets from AutoCkt's netlist two_stage_opamp.cir (github.com/ksettaluri6/AutoCkt,
 * no licence stated; element and source lines are AutoCkt's). Values written $$name are filled by
-* string.Template (opamp_spice.py, or EMA's command_line interface).
+* string.Template (opamp_spice.py).
 .include "45nm_bulk.txt"
 
 * sizing: all devices W = 0.5 um, L = 90 nm; m = parallel multiplier (real-valued here)

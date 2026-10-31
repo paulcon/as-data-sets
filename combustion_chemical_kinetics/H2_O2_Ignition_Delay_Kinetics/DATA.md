@@ -4,11 +4,12 @@ Kind: **stored data (generated with Cantera 3.2.0), with a regeneration script.*
 Cantera, an outside code, so it is not a numpy/scipy "Python model" in the repository's sense (CLAUDE.md,
 "Two kinds of data sets"), even though the Cantera driver is a Python module (`h2o2_ignition_model.py`). A port
 to numpy/scipy (a stiff 9-species ODE with Troe falloff, reverse rates from NASA polynomials, and dense output
-for the ignition time) was judged not worth the risk of a second, unchecked kinetics code. Following decision 1
-of the build brief, Cantera was installed in the build container, the data were generated there, and the full
+for the ignition time) was judged not worth the risk of a second, unchecked kinetics code. Cantera was
+installed in a separate environment (a Linux container), the data were generated there, and the full
 provenance (tool, version, mechanism file, settings, seeds, date, run time) is recorded below. The shipped CSVs
-are the record. `h2o2_ignition_model.py` and `generate_data.py` need Cantera (tested with 3.2.0) and reproduce
-the files bit for bit (`--check`). The notebook needs only numpy, because it reads the shipped files and the
+are the record. `h2o2_ignition_model.py` and `generate_data.py` need Cantera (tested with 3.2.0); where the
+files were written, `--check` reproduced the first 20 rows of each file bit for bit. This cannot be checked in
+the repo's `.venv`, which has no Cantera. The notebook needs only numpy, because it reads the shipped files and the
 module's constants.
 
 ## Files
@@ -51,7 +52,7 @@ build is the publisher's version.
   (paper Eq. 4) with **no diluent**: the paper names none (an assumption; listed under open questions).
 - **Mechanism (departure from the paper).** The paper used the rate parameters of Yetter, Dryer and Rabitz,
   Combust. Sci. Technol. 79 (1991) 97–128 (its ref. [18]) in TChem. The paper does not print them, and they
-  could not be obtained here (that paper is not open, and three web fetches were allowed). We use the
+  could not be obtained here (that paper is not open access). We use the
   **same 19 reactions in the same order** (R4 written in the opposite direction; see the next bullet) with the rate parameters of J. Li, Z. Zhao, A. Kazakov, F. L. Dryer,
   Int. J. Chem. Kinet. 36(10) (2004) 566–575, doi:10.1002/kin.20026, Table I. These were transcribed as printed
   (3 significant figures, cm-mol-s-kcal-K) from the copy on the Princeton combustion group's site. Li et al.
@@ -157,7 +158,7 @@ regression runs), plus 10^4 cross-validation samples. The paper reports no seeds
 
 ```bash
 # Cantera environment (Python 3.13 was used)
-python3.13 -m venv cantvenv && cantvenv/bin/pip install cantera==3.2.0 numpy scipy
+python3 -m venv cantvenv && cantvenv/bin/pip install cantera==3.2.0 numpy scipy
 cantvenv/bin/python generate_data.py                                        # all files
 cantvenv/bin/python generate_data.py --case 36 --rows 0:20 --out /tmp/h2 --check   # subset vs shipped files
 ```
@@ -168,12 +169,12 @@ with other jobs; load average about 5), Python 3.13.18, Cantera 3.2.0, numpy 2.5
 (10 000 τ values); 1041 s in all. The measured cost of one ignition, about 15 ms, implies about 0.6 s of CPU per
 19-input sample (39 runs), 1.1 s per 36-input sample (73 runs) and 150 s for the 10 000 single runs: about 1850 s of
 CPU in all. There is no randomness after
-the seeded draws, and the runs are deterministic: `--rows 0:20 --check` reproduces all eight files bit for bit
-(maximum difference 0 for every file and case).
+the seeded draws, and the runs are deterministic: there, `--rows 0:20 --check` reproduced the first 20 rows of all
+eight files bit for bit (maximum difference 0 for every file and case). The other rows were not rerun.
 
 ## Accuracy
 
-Scratch checks (in the build's `_work` folder, not shipped):
+Checks made when the data were generated (their scripts are not in the repository):
 
 - **τ.** Re-solving at rtol = 1e-12, atol = 1e-22 changes τ by 3.7e-9 to 2.5e-8 relative (six shipped rows).
 - **Gradients** at six random shipped rows (3 per case), against an independent central difference at

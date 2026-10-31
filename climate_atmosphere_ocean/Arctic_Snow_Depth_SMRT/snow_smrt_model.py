@@ -73,7 +73,7 @@ class SnowOnFYI:
     def __init__(self, n_max_stream=32, theta_deg=None, ice_temperature=None, ice_bvf=None,
                  ice_radius_mm=None, ice_stickiness=None):
         """Defaults (None) are the CONFIG values used for the shipped data; the keywords exist so
-        that the EMA entry point can expose the held settings as parameters."""
+        that a caller can vary the held settings."""
         make_ice_column, make_model, make_snowpack, sensor_list = _smrt()
         self._make_snowpack = make_snowpack
         c = CONFIG

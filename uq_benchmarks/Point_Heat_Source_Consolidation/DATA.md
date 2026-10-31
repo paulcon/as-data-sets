@@ -8,13 +8,13 @@ Kind: **Python model**. The model is `heat_source_model.py` (numpy and scipy onl
 |---|---|---|
 | `Point_Heat_Source_Consolidation.ipynb` | the case study (Python 3, active_subspaces v1) | executed top to bottom with `SEED = 1985`; outputs committed |
 | `heat_source_model.py` | `fields(X, r, t)`, `fields_and_grads(X, r, t)`, `headline(X)`, `derived(X)`, `sample`, `ppf`, `mean_and_sd`, `bounds`, `to_gaussian`, `dx_dz`, checks `u_r_by_quadrature`, `pde_residuals`; constants `NAMES`, `UNITS`, `DISTRIBUTIONS`, `NOMINAL`, `Q`, `A_W`, `MU_W`, `R_GRID`, `T_GRID`, `R_STAR`, `T_STAR` | the model |
-| `generate_data.py` | writes the four CSVs | regenerates the data |
+| `generate_data.py` | writes the four CSVs; `--out DIR --check` compares a rerun with the shipped files | regenerates the data |
 | `inputs.csv` | 1000 × 8 physical inputs K, C, rho, E, a_s, k_s, nu, phi (units in the header) | model input |
 | `outputs.csv` | 1000 × 3: ΔT (K), p (Pa), u_r (m) at r = 6 m, t = 365 d | model output |
 | `gradients.csv` | 1000 × 24: column 8 k + j is ∂(QoI k)/∂x_j with respect to the **physical** inputs (k = 0 ΔT, 1 p, 2 u_r) | model output |
 | `fields.csv` | 1000 × 300: column 100 k + 10 i + j is field k at r = `R_GRID[i]`, t = `T_GRID[j]` | model output (6.1 MB) |
 
-The CSVs are comma-separated numbers after two `#` lines (a description; column names with units), so `np.loadtxt(path, delimiter=',')` reads them. Values are written with 17 significant digits, so the notebook's check that the model reproduces the files is exact (`np.array_equal`).
+The CSVs are comma-separated numbers after two `#` lines (a description; column names with units), so `np.loadtxt(path, delimiter=',')` reads them. Values are written with 17 significant digits, so they round-trip exactly; the notebook's check prints the largest relative difference between the model and the files.
 
 Grid (UQTestFuns parameter set `Chaudhry2021`, commit `82d5c8b`, see Model): r = 2, 4, 6, 8, 10, 12, 15, 20, 25, 30 m; t = 1, 7, 30, 90, 180, 365, 730, 1095, 1460, 1825 days (1 y = 365 d).
 
@@ -57,10 +57,11 @@ Held: Q = 3000 W (source power), α_w = 4e-4 1/K (water expansion), μ_w = 1e-3 
 ## Regenerating
 
 ```bash
-python generate_data.py
+python generate_data.py                            # writes the four CSVs here (about 1 s)
+python generate_data.py --out /tmp/phs --check      # writes elsewhere and compares (refuses to write here)
 ```
 
-Run time 0.5 s (this container, numpy 2.5.4, scipy 1.18.1, Python 3.13). The draws are fixed by the seed, so a run reproduces the files bit for bit on the same numpy/scipy versions; the inverse CDFs come from `scipy.stats`, so a different scipy version could change the last digits of the inputs. The notebook runs in about 30–65 s wall clock in this container (two runs: 32 s and 64 s, the spread due to other load), including a 50,000-sample Monte Carlo Sobol' estimate over the whole grid and a 200,000-sample estimate for u_r.
+The shipped files were written on 2026-10-30 in a Linux container. The draws are fixed by the seed; the inverse CDFs come from `scipy.stats`, so another platform or scipy version can change the last digits. In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31) a run takes 0.7 s, and `--check` reports maximum relative differences of 2.3e-15 (inputs), 1.2e-15 (outputs), 7.9e-13 (gradients) and 9.1e-13 (fields) from the shipped files: rounding error, not a change in the model. The notebook runs in about 45 s in `.venv`, and two runs print the same values apart from timings; this includes a 50,000-sample Monte Carlo Sobol' estimate over the whole grid and a 200,000-sample estimate for u_r.
 
 ## Accuracy
 
@@ -69,7 +70,7 @@ Checked with scratch scripts (not committed), on the 1000 shipped samples unless
 - **Against UQTestFuns** (GitHub `dev`, commit `82d5c8b`, unreleased; `evaluate` of `SaturatedPointHeatSource`, an independent implementation that uses a Taylor expansion near c = κ): largest relative difference over all 300 000 nonzero field values 2.8e-13 (ΔT), 1.5e-12 (p), 1.2e-11 (u_r); the same values underflow to 0 in both.
 - **Against the 1985 Eq. (23)** typed directly from the scan (its Y, Z form, no special treatment of c = κ), for the 842 samples with |1 − c/κ| > 0.2: 4.4e-16 (ΔT), 1.1e-14 (p), 2.2e-13 (u_r).
 - **Field equations.** u_r agrees with an independent radial integration of M ∇·u = p + b′ΔT (Gauss–Legendre, 400 nodes) to 2.7e-14 (45 cases: 5 samples × r ∈ {2, 6, 25} m × t ∈ {7 d, 1 y, 5 y}). The residuals of ∂T/∂t = κ∇²T and ∂p/∂t = c∇²p + X ∂T/∂t by central differences (45 cases) fall with the step h (relative): 9.7e-3, 9.8e-5, 3.5e-6 (heat) and 6.5e-3, 6.5e-5, 6.5e-7 (pressure) for h = 1e-2, 1e-3, 1e-4, i.e. the truncation error of the differences.
-- **Gradients against central differences** (step h·sd_j per input; error measured as ‖FD − G‖/‖G‖ with both scaled by the input standard deviations): for the three QoIs at (6 m, 1 y), worst sample 6.4e-10, 3.0e-7, 5.0e-8 at h = 1e-4 (truncation), 1.0e-9, 3.1e-9, 6.9e-10 at h = 1e-5, and 8.6e-9, 3.4e-9, 5.6e-9 at h = 1e-6 (round-off). Over all 1000 samples and every analysed grid cell at h = 1e-5: worst 1.9e-9 (ΔT), 2.3e-8 (p), 1.7e-8 (u_r); median 1.7e-10, 1.1e-10, 1.5e-10. The notebook's check cell repeats the headline check and prints 1.0e-09, 3.1e-09, 6.9e-10.
+- **Gradients against central differences** (step h·sd_j per input; error measured as ‖FD − G‖/‖G‖ with both scaled by the input standard deviations): for the three QoIs at (6 m, 1 y), worst sample 6.4e-10, 3.0e-7, 5.0e-8 at h = 1e-4 (truncation), 1.0e-9, 3.1e-9, 6.9e-10 at h = 1e-5, and 8.6e-9, 3.4e-9, 5.6e-9 at h = 1e-6 (round-off). Over all 1000 samples and every analysed grid cell at h = 1e-5: worst 1.9e-9 (ΔT), 2.3e-8 (p), 1.7e-8 (u_r); median 1.7e-10, 1.1e-10, 1.5e-10. The notebook's check cell repeats the headline check; in `.venv` it prints 1.0e-09, 3.1e-09, 6.0e-10.
 - **Linear trend vs. mean gradient** (a coordinate check): the least-squares slope of each QoI on the normalized inputs (x − mean)/sd and the mean normalized gradient point the same way (cosines 0.99991 ΔT, 0.9953 p, 0.9772 u_r) and differ in norm by 1.6 %, 23 % and 28 % relative to the mean gradient; the larger gaps for p and u_r come from their strong curvature, not from a scaling error.
 - **Divided differences.** Compared with composite Gauss–Legendre quadrature of h′ and h″ (400 panels × 30 nodes; 1500 random cases per function over the diffusivities and grid of this study, both branches): the value and both partial derivatives agree to ≤ 3.2e-13 (relative) for f, and the value and κ-derivative to ≤ 5.2e-14 for g. The c-derivative of g agrees to ≤ 4.1e-13 wherever c ∂D/∂c is at least 1e-3 of κ ∂D/∂κ; far ahead of the front, where it is exponentially small, its relative error grows (up to 100 % where it underflows), but its absolute error stays below 2e-15 of κ ∂D/∂κ, so the gradient is unaffected.
 

@@ -1,6 +1,6 @@
 # Simply_Supported_Tube_Deflection: data
 
-Kind: **Python model**. The model is `tube_model.py`, three closed-form beam formulas. `generate_data.py` draws the inputs with a saved seed and writes all three CSVs, and a rerun reproduces them bit for bit.
+Kind: **Python model**. The model is `tube_model.py`, three closed-form beam formulas. `generate_data.py` draws the inputs with a saved seed and writes all three CSVs, and a rerun reproduces them to rounding error (see Regenerating).
 
 ## Files
 
@@ -26,7 +26,7 @@ The CSVs have two `#` lines (a description and the column names) and are read by
 - v′(L) = F a (L² − a²) / (6 E L I) (slope at the right support)
 - I = π (De⁴ − di⁴) / 64 (second moment of area of a circular tube about a diameter).
 
-**The factor of two.** OpenTURNS writes I = π (De⁴ − di⁴)/32 (on the page and in the code), which is the polar moment of the section, not the bending second moment of area. Its outputs are therefore exactly half of ours (`tube_model.outputs(X, openturns_convention=True)`; the notebook prints the ratio 0.5). We ship the textbook (Euler–Bernoulli) values. A constant factor multiplies every eigenvalue by 4 and changes no eigenvector, active variable or R². The /32 looks like a genuine slip (J used for I = J/2); it is still in the OpenTURNS source on the `master` branch (`python/src/usecases/deflection_tube.py`, checked 2026-10-31), and is worth reporting upstream. The page also uses b in the right-slope formula without defining it; the source defines it (`var b:=L - a`), as we do.
+**The factor of two.** OpenTURNS writes I = π (De⁴ − di⁴)/32 (on the page and in the code), which is the polar moment of the section, not the bending second moment of area. Its outputs are therefore exactly half of ours (`tube_model.outputs(X, openturns_convention=True)`; the notebook prints the ratio 0.5). We ship the textbook (Euler–Bernoulli) values. A constant factor multiplies every eigenvalue by 4 and changes no eigenvector, active variable or R². The /32 looks like a genuine slip (J used for I = J/2); it is still in the OpenTURNS source on the `master` branch (`python/src/usecases/deflection_tube.py`, checked 2026-10-31), and is worth reporting upstream. The page also uses b without defining it; the source defines it (`var b:=L - a`), as we do.
 
 **Range of validity (disclosure).** Both conventions are Euler–Bernoulli values, and this tube is far too stubby for that theory to be accurate: L/De = 1.875 at the means, whereas Euler–Bernoulli theory needs a span of roughly ten depths or more. Timoshenko beam theory (shear strain V/(κGA), G = E/(2(1 + ν)), A = π(De² − di²)/4) leaves the bending moment and the cross-section rotations unchanged (the beam is statically determinate) and adds F a b/(κ G A L) to the deflection under the load, a fraction 3EI/(κGA a b) of the bending deflection. With ν = 0.3 (assumed; the benchmark gives none) and Cowper's shear coefficient for a hollow circular section (κ = 0.852 at the means; Cowper 1966), the fraction is 0.712 at the input means (0.684 with the solid-section κ = 0.886), so a shear-deformable tube deflects 1.712 times the Euler–Bernoulli value, which is short by 0.416; over the 1000 samples the fraction runs from 0.590 to 1.142. The centreline end slopes gain 0.382 (left) and 0.552 (right) of their bending values at the means. The notebook prints these numbers (section *The model*). **The data are the Euler–Bernoulli benchmark as posed, not a physically accurate prediction for this tube**; we keep the model Euler–Bernoulli on purpose, as a test function with the product structure of beam theory. The factor of two between conventions is a departure of the same order.
 
@@ -64,11 +64,11 @@ python generate_data.py                            # writes the three CSVs here
 python generate_data.py --out /tmp/tube --check    # writes elsewhere and compares
 ```
 
-The run takes about 0.05 s (0.85 s with Python start-up) and prints the two checks. `--check` on 2026-10-31 (numpy 2.5.4, scipy 1.18.1, Python 3.13.18) reported the three files identical to the shipped ones. The notebook runs in 3–5 s by its own timer and 7–11 s wall time under `nbconvert`, depending on machine load (3.4 s and 7.1 s in the last run, 2026-10-31).
+The run takes about 0.05 s (0.85 s with Python start-up) and prints the two checks. The shipped files were written on 2026-10-31 in a Linux container. In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31), `--check` reports maximum relative differences of 0 (inputs), 4.9e-16 (outputs) and 7.4e-16 (gradients) from the shipped files: rounding error, not a change in the model. The notebook runs in about 4 s by its own timer, and two runs print the same values apart from timings.
 
 ## Accuracy
 
-- **Values.** Closed form in double precision; `tube_model` reproduces `outputs.csv` exactly (printed in the notebook).
+- **Values.** Closed form in double precision; `tube_model` reproduces `outputs.csv` to rounding error (in `.venv` a largest relative difference of 4.4e-16, printed in the notebook).
 - **Formulas.** Checked against the unit-load (virtual-work) method, numerical quadrature of the bending moment with `scipy.integrate.quad` (`tube_model.virtual_work`), which does not use the tabulated formulas: largest relative difference 5.6e−16 at the first 20 samples (`generate_data.py`) and 6.7e−16 at the first 50 (notebook).
 - **Gradients.** Exact. Against central finite differences with relative step 10⁻⁶ per input at all 1000 samples, the largest relative error (row 2-norm) is 5.1e−10 (deflection), 4.9e−10 (left slope), 5.0e−10 (right slope), the size of the differencing error.
 

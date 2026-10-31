@@ -1,6 +1,6 @@
 # Two_DOF_Equipment_Structure_Oscillator: data
 
-Kind: **Python model**. The model is `oscillator_model.py`, a closed form (the paper's Eq. 37) plus an exact Lyapunov solve used only for checking. `generate_data.py` draws the inputs with a saved seed and writes all three CSVs, and a rerun reproduces them bit for bit.
+Kind: **Python model**. The model is `oscillator_model.py`, a closed form (the paper's Eq. 37) plus an exact Lyapunov solve used only for checking. `generate_data.py` draws the inputs with a saved seed and writes all three CSVs, and a rerun reproduces them to rounding error (see Regenerating).
 
 ## Files
 
@@ -53,7 +53,7 @@ At the input means ω_p = 0.8165, ω_s = 1, β = −0.202, γ = 0.00667, E[x_s²
 
 **Gradients.** Exact: forward-mode chain rule through ω_p, ω_s, ω_a, ζ_a, β, γ, N, D, hand-coded in `grad_log_mean_square`; ∂rms/∂z = ½ rms ∂ln E/∂z; ∂G/∂z_j = −3 k_s ∂rms/∂z_j, plus −3 k_s rms for k_s and F_s for F_s. Physical gradients are these divided by x_j.
 
-**Structure.** E[x_s²] depends on (m_p, m_s, k_p, k_s) only through ω_p, ω_s, γ, and is S_0 times a function of the frequencies homogeneous of degree −3, so in z it has two exact null directions (all four of m_p, m_s, k_p, k_s scaled together; frequencies scaled by c with S_0 by c³). For G two combinations are null (masses by c⁻², S_0 by c³; stiffnesses by c², S_0 by c⁻¹). These show as eigenvalues at rounding level (1e-28 to 1e-32).
+**Structure.** E[x_s²] depends on (m_p, m_s, k_p, k_s) only through ω_p, ω_s, γ, and is S_0 times a function of the frequencies homogeneous of degree −3, so in z it has two exact null directions (all four of m_p, m_s, k_p, k_s scaled together; frequencies scaled by c with S_0 by c³). For G two combinations are null (masses by c⁻², S_0 by c³; stiffnesses by c², S_0 by c⁻¹). These show as eigenvalues at rounding level (1e-28 and smaller).
 
 **Sampling design.** M = 1000 independent Monte Carlo draws (not Latin hypercube), x = exp(μ + σ ⊙ ξ), ξ = `numpy.random.default_rng(1985).standard_normal((1000, 8))`. M ≥ 10 m and ≥ 300. The sample kurtoses of the normalized log inputs are 2.73–3.64. The largest, for ζ_p, is 4.1 standard errors above 3: it is a rare draw (0.46 % of simulated normal samples of this size reach it), driven by one draw at −4.21 standard deviations, and it is 3.43 without that draw. It is a property of this sample, not of the transform, and we keep it; see the notebook's data-check cell.
 
@@ -66,11 +66,11 @@ python generate_data.py                           # writes the three CSVs here
 python generate_data.py --out /tmp/osc --check    # writes elsewhere and compares
 ```
 
-The run takes 0.3 s (0.4 s with Python start-up; 0.25 s of it is the 1000 Lyapunov solves) and prints the gradient check. `--check` on 2026-10-30 (numpy 2.5.4, scipy 1.18.1, Python 3.13.18) reported the three files identical to the shipped ones. The notebook runs in 5–8 s (12.6 s under `nbconvert`).
+The run takes 0.3 s (0.4 s with Python start-up; 0.25 s of it is the 1000 Lyapunov solves) and prints the gradient check. The shipped files were written on 2026-10-30 in a Linux container. In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31), `--check` reports maximum relative differences of 2.2e-16 (inputs, from `exp`), 6.5e-14 (outputs; the largest is in the Lyapunov check column `rms_exact`, 7e-16 in `rms` and `G`) and 6.5e-14 (gradients; at most 3e-15 relative to each column's largest entry) from the shipped files: rounding error, not a change in the model. The notebook runs in about 7 s, and two runs print the same values apart from timings.
 
 ## Accuracy
 
-- **Values.** Closed form in double precision; `oscillator_model` reproduces `outputs.csv` exactly (printed in the notebook).
+- **Values.** Closed form in double precision; `oscillator_model` reproduces `outputs.csv` to rounding error (in `.venv` a largest relative difference of 3.3e-16, printed in the notebook).
 - **Gradients.** Exact. Against central finite differences in z with step 10⁻⁶ at all 1000 samples, the largest relative error (row 2-norm) is 4.3 × 10⁻¹⁰ for rms and 2.7 × 10⁻¹⁰ for G, the size of the differencing error.
 - **Eq. 37 against the exact 2-DOF response** (a property of the published model, not a numerical error): relative error in the mean-square spring deformation, median 1.4 %, 1st/99th percentiles −8.1 % / +3.8 %, largest 18.5 % at the sample with the largest ζ_p (0.224). The data set uses Eq. 37, as the benchmark does; `rms_exact` is shipped so users can compare.
 - **Benchmark moments and P_f** (notebook, 10⁶ fresh samples, seed 1985): RMS mean 188.41 ± 0.24 and variance 14 575 ± 50 (95 %), against UQTestFuns' 188.48 and 14 628 (10⁷ samples; the variance differs by about two standard errors; their 10⁶-sample 14 596 is inside our interval). P_f = 3.81 × 10⁻⁷, 95 % interval [3.77, 3.86] × 10⁻⁷, by importance sampling (10⁶ samples) at the FORM design point, which contains OpenTURNS' 3.78 × 10⁻⁷. FORM alone gives 3.89 × 10⁻⁶ (10.2 times too high): the failure domain wraps around perfect tuning (design point β = −0.0012).
