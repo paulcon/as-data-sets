@@ -116,7 +116,7 @@ None.
 ## 10. Prototype results
 Run in `.venv` (scripts in `prototypes/g5/wind1.py`, `wind2.py`):
 - Loading: `np.loadtxt` 0.2 s, (50000, 13). Input statistics as in §5. 724 rows lie outside [−1,1]⁵.
-- `ac.local_linear_gradients(..., space=ac.Uniform.reference(5))` → `InputError input.out_of_space`.
+- `ac.local_linear_gradients(..., space=ac.Uniform.reference(5))` → `InputError input.out_of_space`. Since V1-10 the message reads `X: 724 of 50000 rows lie outside the support; first: row 7, input 'PlatformDir' (column 4) = 1.0389279698213882 > upper 1.0 [input.out_of_space]`, with `details["n_outside"] == 724` and `details["name"] == "PlatformDir"` ([#43](https://github.com/paulcon/as-data-sets/pull/43)).
 - With the data-bounds box, 2000 centers, p = 60, `nboot=100`: eigenvalues per output (v1 vs a re-implementation of the legacy 81-center version):
   - RootMxc1: [8.94e5, 4.63e3, 4.50e3, …] vs [7.86e5, 7.92e3, 5.63e3, …]; w₁ = [1.00, .01, .01, 0, 0].
   - TwrBsMxt: [2.53e8, 2.00e8, 3.10e7, …] vs [3.66e8, 1.28e8, …]; w₁ = [.57, .20, .80, −.02, 0] vs [.73, .21, .65, …]. w₁ is not stable because λ₁ ≈ λ₂, which matches the legacy figure (WaveDir-dominated).
