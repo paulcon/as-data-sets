@@ -75,7 +75,7 @@ fit_surrogate(*, X, f, space=None, subspace, kind="rbf", degree=2, ...,
 **Acceptance tests.**
 - Elliptic β = 1, data of `proto_long2.py`, `f_variance=f0.var()`: n = 1 mean relative error ≤ 0.12 (measured 0.095; paper 0.178); n = 2 ≤ 0.33 (0.300).
 - β = 0.01: unchanged, ≤ 0.01 (0.008), with `accuracy.empty_bounds` issued.
-- The n = 1 default call without `f_variance` issues `accuracy.flat_objective`.
+- The n = 1 default call without `f_variance` issues `accuracy.flat_objective`. **Superseded (D-212):** the Elliptic n = 1 default plateau reaches the lower end of the η grid, so it no longer warns; `prototypes/v1report/accept_surrogates.py` expects no warning ([ACTIVE_SUBSPACES_V1_RESPONSE.md](ACTIVE_SUBSPACES_V1_RESPONSE.md)).
 - The `surrogates/rbf_scale` baseline (D-172) keeps its equivariance check.
 
 **Amend.** target/09 §3.3, §5.2, §7, §9; target/16 (traceability of D-100); `design-specs/references.md:36` (remove "RBF length-scale heuristic" from the unpublished list; cite ConstantineDowWang2014 §4.2–4.3); new D-entry amending D-100 and D-101; surrogates.py docstring at :1548; `docs/theory/surrogates_and_designs.md:50`, `:87`; `docs/user_guide/surrogates.md:127`; `docs/migration.md` "Method choices ruled by the author".

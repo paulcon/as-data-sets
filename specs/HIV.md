@@ -21,7 +21,7 @@ The model equations (Eq. 1, p.711), all 27 names, nominal values and units (Tabl
    - Because the regenerated gradients are verified to about 1e-5, the paper's tails and its t = 2000 λ2 are most likely FD/solver noise (ode23s with a 1e-6 forward step). This is likely, not proven.
    - The notebook must not import the paper's t = 2000 "2-D" statement. The notebook data come from `generate_data.py` (scipy vode, FD step 1e-7·half-range). The text implies the two are the same analysis.
 4. **Citations and README.** The README says 21 parameters (it is 27), the journal name is wrong, the CDW 2014 title is wrong, and there are typos.
-5. **Migration.** Shipped gradients are w.r.t. normalized inputs, so divide by (xu − xl)/2 and pass them with `ac.Uniform(xl, xu)`, or pass them with `Uniform.reference(27)`. Both were tested and give identical results. The hand sign flip has to act on a copy, because v1 `W1` is read-only.
+5. **Migration.** Shipped gradients are w.r.t. normalized inputs, so divide by (xu − xl)/2 and pass them with `ac.Uniform(xl, xu)`, or pass them with `Uniform.reference(27)`. Both were tested and give identical results. The hand sign flip has to act on a copy, because v1 `W1` is read-only. **Superseded (V1-05, [#51](https://github.com/paulcon/as-data-sets/pull/51)):** `ac.orient` returns a new result, so no hand flip is needed.
 
 ## 2. Inventory
 
@@ -80,7 +80,7 @@ The model equations (Eq. 1, p.711), all 27 names, nominal values and units (Tabl
 - **Fixed ICs.** `M0 = .15/.005` and `CTL0 = 5/.015` are hard-coded at nominal values, not `s2/d4`, `s3/d6` of the sample. Keep this, since it reproduces the shipped data, but document it.
 - **Randomness.** `np.random.uniform` is unseeded in cell 3 and in `generate_data.py`. The shipped data cannot be regenerated bit-for-bit. Use `np.random.default_rng(seed)`.
 - **State across cells.** `ss` is reused across cells 7–19, as are `weights` (from 13 to 19) and `times`. Cell 9 does `ss.W1 *= -1.0`, which mutates shared state; v1 `W1` is read-only, so use `w = sub.W1[:, 0].copy()`.
-- **Sign rule (cells 9, 13, 17, 19).** "enforce downward trend" via `f[argmin(y)] < f[argmax(y)]` compares two single points and is fragile. Use `s = -np.sign(np.corrcoef(y, f)[0, 1])`. This is needed for the weight-vs-time plot, because v1's largest-component rule can flip between times.
+- **Sign rule (cells 9, 13, 17, 19).** "enforce downward trend" via `f[argmin(y)] < f[argmax(y)]` compares two single points and is fragile. Use `s = -np.sign(np.corrcoef(y, f)[0, 1])`. This is needed for the weight-vs-time plot, because v1's largest-component rule can flip between times. **Superseded (V1-05, [#51](https://github.com/paulcon/as-data-sets/pull/51)):** t = 24 is oriented with `ac.orient(by="covariance")` against −f (downward trend), and each later time `by="reference"` against the previous one.
 - **py2.** `print '...'.format` in `generate_data.py`. `np.linspace(1, times[i], times[i])` works in numpy 2, since an `np.int64` count is accepted.
 - **pandas.** `pn.DataFrame.from_csv` and `.as_matrix()` were removed in pandas 1.0.
 - **Hard-coded paths.** Relative CSV names only.
@@ -116,7 +116,7 @@ G = df.reshape(1000, 21, 27)                                        # G[:, i, :]
 | `ss.compute(df=df[:, 27*i:27*(i+1)])` on shipped data | `ac.active_subspace(space=space, grads=G[:, i, :] / ((xu-xl)/2))`, or `ac.active_subspace(space=ac.Uniform.reference(27), grads=G[:, i, :])` | the shipped gradients are already normalized: divide by the half-range or use the reference space, **never both** and never neither. Both variants were tested and give identical eigenvalues |
 | `ss.partition(2)` | `ac.with_dimension(sub, 2)` | EVG picks n = 1 at all 21 times |
 | `ss.eigenvals`, `ss.W1` | `sub.eigenvalues` (27,), `sub.W1` (read-only) | |
-| `ss.W1 *= -1.0` | `w1 = s * sub.W[:, 0]` (copy), with `s = -sign(corr(y, f))` | v1 sign rule: largest-magnitude component positive |
+| `ss.W1 *= -1.0` | `w1 = s * sub.W[:, 0]` (copy), with `s = -sign(corr(y, f))` | v1 sign rule: largest-magnitude component positive. **Superseded (V1-05, [#51](https://github.com/paulcon/as-data-sets/pull/51)):** `ac.orient`, as in §4 "Sign rule". |
 | `ac.utils.plotters.eigenvalues/eigenvectors/sufficient_summary` | `ac.plotting.plot_eigenvalues(sub)`, `plot_eigenvectors(sub, indices=[0] or [0,1], labels=in_labels)`, `plot_sufficient_summary(sub, X=X_phys, f=f[:, i], dims=1 or 2)` | the summary plot takes **physical** X. For the 7×3 grid and the weight-vs-time plot, keep hand matplotlib with the oriented `w1` |
 
 ## 7. Associated .py files

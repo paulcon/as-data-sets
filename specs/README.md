@@ -46,9 +46,9 @@ Every data set is one of two kinds, and the kind decides what the port must deli
 
 | Data set (spec) | Kind | Model in the repo | Outside generating code (stored data) |
 |---|---|---|---|
-| Ebola | Python model | closed-form R0 and its gradient, in the notebook until the port moves them to `ebola_model.py`; no data files | — |
+| Ebola | Python model | `ebola_model.py` (closed-form R0 and its gradient); no data files | — |
 | HIV | Python model | `HIV_model.py` (ODE); `generate_data.py` writes the CSVs | — |
-| MHD | both | Hartmann problem: closed-form `gradients.py` (renamed `hartmann_model.py` in the port) | 3-D MHD generator: Drekar (Sandia), 483 runs with adjoint gradients |
+| MHD | both | Hartmann problem: closed-form `hartmann_model.py` (was `gradients.py`) | 3-D MHD generator: Drekar (Sandia), 483 runs with adjoint gradients |
 | Elliptic_PDE | Python model | `pde_model.py` (shared solver); KL bases `kl-*.npz` are stored | — |
 | MCMC | Python model | `pde_model.py` (shared solver); `generate_data.py` writes the chains | — |
 | HyShotII | stored data | — | HyShot II scramjet simulations (JCP 2015; book §5.1) |
@@ -60,9 +60,28 @@ Every data set is one of two kinds, and the kind decides what the port must deli
 | Subsurface_Permeability | stored data | — | ParFlow |
 | Lithium_Battery | stored data | — | Newman-model runs by Hadigol et al. |
 | NREL_Wind | stored data | — | FAST runs by Graf (NREL) |
-| SingleDiodePV | stored data | `single_diode.py`, to be added to check the data | Campanelli's MATLAB code |
-| Atacamac (excluded from main) | stored data | — | ATACAMAC annular-combustor model runs (Bauerheim et al., JFM 2016) |
+| SingleDiodePV | stored data | `single_diode.py`, which checks the data | Campanelli's MATLAB code |
+| Atacamac (excluded from main; Annular_Combustor_Thermoacoustics replaces it) | stored data | — | ATACAMAC annular-combustor model runs (Bauerheim et al., JFM 2016) |
 | Reentry_freestream_conditions (excluded from main) | stored data | — | EXPERT reentry simulations |
+
+The 14 data sets added in October 2026 ([#56](https://github.com/paulcon/as-data-sets/pull/56)) have no spec in this directory; their DATA.md files record the kind. They are listed by directory name.
+
+| Data set (directory) | Kind | Model in the repo | Outside generating code (stored data) |
+|---|---|---|---|
+| Annular_Combustor_Thermoacoustics | Python model | `annular_combustor_model.py` (a new implementation of the ATACAMAC dispersion relation); `generate_data.py` writes the CSVs | — |
+| Fire_Satellite_Coupled_System | Python model | `fire_satellite_model.py`; `generate_data.py` writes the CSVs | — |
+| Geological_CO2_Storage_Leakage | Python model | `co2_leakage_model.py` (closed form); `generate_data.py` writes the CSVs | — |
+| Golinski_Speed_Reducer | Python model | `golinski_model.py` (closed form); `generate_data.py` writes the CSVs | — |
+| Hodgkin_Huxley_Action_Potential | Python model | `HH_model.py`; `generate_data.py` writes the CSVs | — |
+| Lillgrund_FLORIS_Wake_Model | Python model | `lillgrund_model.py` (numpy port of FLORIS 2.0.1); `generate_data.py` writes the CSVs | — |
+| LS89_Turbine_Blade_Envelopes | stored data | — | SU2 runs by Wong, Seshadri, Scillitoe, Duncan and Parks (equadratures/data-sets); `convert_data.py` converts them losslessly |
+| Luo_Rudy_Cardiac_Action_Potential | stored data | — | MATLAB LR1991 runs by Chang, Strong and Clayton (PLOS ONE 2015, S1 and S2 Data); `convert_data.py` converts them losslessly |
+| River_Flood_Dyke_Overflow | Python model | `flood_model.py` (closed form); `generate_data.py` writes the CSVs | — |
+| STAT5_Dimerization_Signaling | Python model | `STAT5_model.py`; `generate_data.py` writes the CSVs | — |
+| Steel_Arch_Inplane_Buckling | Python model | `arch_buckling_model.py` (closed form); `generate_data.py` writes the CSVs | — |
+| Sulfur_Aerosol_Radiative_Forcing | Python model | `sulfur_model.py` (closed form); `generate_data.py` writes the CSVs | — |
+| Vlasov_Poisson_Instability_Growth_Rate | Python model | `plasma_dispersion_model.py`; `generate_data.py` writes the CSVs | — |
+| Zika_SEIR_SEI_Brazil | Python model | `zika_model.py`; `generate_data.py` writes the CSVs | the weekly case counts the model is fitted to (`data_cases.csv`, Brazilian Ministry of Health) are stored data |
 
 ## Specs
 
@@ -83,8 +102,8 @@ Every data set is one of two kinds, and the kind decides what the port must deli
 | Lithium_Battery | stored data | 19 | One run silently dropped; 67 MB text data | [Lithium_Battery.md](Lithium_Battery.md) |
 | NREL_Wind | stored data | 5 | Text says ~500,000 samples, file has 50,000; inputs not on [−1, 1] | [NREL_Wind.md](NREL_Wind.md) |
 | SingleDiodePV | stored data | 5 | Stored gradients are normalized; passing them to v1 as physical scales them twice | [SingleDiodePV.md](SingleDiodePV.md) |
-| Atacamac (dev) | stored data | 38 | Chain-rule sign error changes eigenvalue ratios and R² | [Atacamac.md](Atacamac.md) |
-| LM104X (dev) | stored data | 105 | Data release unconfirmed; notebook says 50 inputs | [LM104X.md](LM104X.md) |
+| Atacamac (excluded from main) | stored data | 38 | Chain-rule sign error changes eigenvalue ratios and R² | [Atacamac.md](Atacamac.md) |
+| LM104X | stored data | 105 | Data release unconfirmed (cleared 2026-10-30); notebook says 50 inputs | [LM104X.md](LM104X.md) |
 
 Papers: the published versions used for these checks are in `../papers/` (not for redistribution).
 

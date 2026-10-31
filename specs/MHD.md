@@ -94,7 +94,7 @@ Xu, idx = np.unique(Xu, axis=0, return_index=True); u, du = u[idx], du[idx]  # o
 | `ac.subspaces.Subspaces().compute(df=du, nboot=500)` | `ac.active_subspace(space=space_g, X=np.log(Xu), grads=Xu*du, nboot=500, rng=rng)` | drop the hand `.5*(ub-lb)*Xu*du` and `XXu = 2*(...)-1`; pass `X` only for plotting |
 | `.partition(2)`, `.W1` | `ac.with_dimension(sub, 2).W1`, or `plot_eigenvectors(sub, indices=[0,1])` | the EVG default picks n = 1 for all four cases |
 | `ac.utils.plotters.eigenvalues(ss.eigenvals, ss.e_br, label)` | `ac.plotting.plot_eigenvalues(sub, interval="minmax")` | `"minmax"` reproduces the 2016 band; the default percentile band is narrower |
-| `ac.utils.plotters.eigenvectors(W1, in_labels=)` | `ac.plotting.plot_eigenvectors(sub, indices=[0,1], labels=in_labels)` | sign: v1 flips Hartmann-u w1 relative to legacy (largest is log ∂p0/∂x, +0.80; legacy had log μ first and positive). Generator w1 has the same sign as legacy |
+| `ac.utils.plotters.eigenvectors(W1, in_labels=)` | `ac.plotting.plot_eigenvectors(sub, indices=[0,1], labels=in_labels)` | sign: v1 flips Hartmann-u w1 relative to legacy (largest is log ∂p0/∂x, +0.80; legacy had log μ first and positive). Generator w1 has the same sign as legacy. **Superseded (V1-05, [#45](https://github.com/paulcon/as-data-sets/pull/45)):** `ac.orient` sets the 2016 / paper rule (first component of w1 and w2 positive). |
 | `ac.utils.plotters.sufficient_summary(xx[mask].dot(W1), u[mask])` | `ac.plotting.plot_sufficient_summary(sub, X=X[mask], f=u[mask], dims=1)` and `dims=2` | physical (log) X; mask from a seeded `rng.choice` |
 | `pn.DataFrame.from_csv(...).as_matrix()` | `np.loadtxt(..., delimiter=',', skiprows=1)[:,1:]` | tested |
 
