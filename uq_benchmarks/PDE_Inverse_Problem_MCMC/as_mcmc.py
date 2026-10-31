@@ -68,6 +68,11 @@ def random_walk_metropolis(misfit, x0, N, prop_std, rng, progress=None):
     return X, F, accept
 
 
+def _step(prop, e):
+    """Proposal increment: prop * e for a scalar standard deviation, prop @ e for a matrix."""
+    return prop @ e if np.ndim(prop) == 2 else prop * e
+
+
 class ActiveSubspaceMCMC:
     """Metropolis-Hastings on the active variables, for a misfit f(x) and a N(0, I) prior on x.
 
@@ -112,7 +117,7 @@ class ActiveSubspaceMCMC:
         Z, w = self.z_rule
         return float(w @ self.evaluate(self._points(y, Z)))
 
-    def sample_active_variables(self, y0, N, M, prop_std, rng, recompute=True, progress=None):
+    def sample_active_variables(self, y0, N, M, prop, rng, recompute=True, progress=None):
         """Random-walk Metropolis-Hastings on y with the misfit estimate ghat.
 
         recompute=True (the default; the 2016 code, which produced the paper's
@@ -132,6 +137,10 @@ class ActiveSubspaceMCMC:
         With z_rule, ghat is deterministic and both settings give the same
         chain; the cached path is used.
 
+        prop is the proposal: a scalar standard deviation (y' = y + prop * e)
+        or an (n, n) matrix L (y' = y + L e), with e ~ N(0, I_n); the proposal
+        covariance is then L L^T.
+
         Returns
         -------
         Y : array, shape (N, n)
@@ -149,7 +158,7 @@ class ActiveSubspaceMCMC:
         if not noisy:
             gy = self.ghat(y, M, rng)
         for k in range(N):
-            yp = y + prop_std * rng.standard_normal(self.n)
+            yp = y + _step(prop, rng.standard_normal(self.n))
             if noisy:
                 Zc = rng.standard_normal((M, self.m - self.n))
                 Zp = rng.standard_normal((M, self.m - self.n))
@@ -188,3 +197,52 @@ def batch_means_se(x, theta=2/3):
     a = N // b
     means = x[:a * b].reshape((a, b) + x.shape[1:]).mean(axis=1)
     return np.sqrt(b * means.var(axis=0, ddof=1) / (a * b))
+
+
+def _autocov(x):
+    """Autocovariance at lags 0..N-1 of each column of x, shape (N, k), via FFT."""
+    N = x.shape[0]
+    xc = x - x.mean(axis=0)
+    f = np.fft.rfft(xc, n=2 * N, axis=0)
+    return np.fft.irfft(f * np.conj(f), n=2 * N, axis=0)[:N] / N
+
+
+def chain_diagnostics(chains):
+    """Effective sample size, autocorrelation time and split R-hat of the mean.
+
+    chains : array, shape (m, N) or (m, N, k): m chains of N steps (burn-in
+    removed) of k scalar quantities.
+
+    The autocorrelations are combined across chains as in Stan (Gelman et al.,
+    Bayesian Data Analysis, 3rd ed., section 11.5) and summed with Geyer's
+    initial monotone sequence estimator. Returns a dict with arrays of shape
+    () or (k,): 'mean', 'se' (= sd / sqrt(ess)), 'ess', 'tau' (= m N / ess,
+    in steps of one chain) and 'rhat' (split R-hat: each chain cut in halves;
+    nan for a single chain shorter than 4 steps).
+    """
+    c = np.asarray(chains, dtype=float)
+    squeeze = c.ndim == 2
+    if squeeze:
+        c = c[..., None]
+    m, N, k = c.shape
+    h = N // 2
+    s = np.concatenate([c[:, :h], c[:, h:2 * h]], axis=0)
+    W_s = s.var(axis=1, ddof=1).mean(axis=0)
+    B_s = h * s.mean(axis=1).var(axis=0, ddof=1)
+    rhat = np.sqrt(((h - 1) / h * W_s + B_s / h) / W_s)
+    acov = np.stack([_autocov(ci) for ci in c])            # (m, N, k)
+    W = c.var(axis=1, ddof=1).mean(axis=0)
+    var_plus = (N - 1) / N * W
+    if m > 1:
+        var_plus = var_plus + c.mean(axis=1).var(axis=0, ddof=1)
+    rho = 1 - (W - acov.mean(axis=0)) / var_plus             # (N, k)
+    tau = np.empty(k)
+    for j in range(k):
+        pairs = rho[:N - N % 2, j].reshape(-1, 2).sum(axis=1)   # rho_2t + rho_2t+1
+        n_pos = int(np.argmax(pairs <= 0)) if np.any(pairs <= 0) else len(pairs)
+        g = np.minimum.accumulate(pairs[:n_pos])
+        tau[j] = max(-1 + 2 * g.sum(), 1 / np.log10(m * N))
+    ess = m * N / tau
+    out = {'mean': c.mean(axis=(0, 1)), 'se': np.sqrt(var_plus / ess), 'ess': ess, 'tau': tau,
+           'rhat': rhat}
+    return {key: v[0] for key, v in out.items()} if squeeze else out

@@ -229,7 +229,7 @@ Spaces:
 ## 9. Acceptance criteria
 
 - **Headless run.** `cd MCMC && jupyter nbconvert --to notebook --execute MCMC.ipynb` succeeds in .venv in < 10 min, using the stored chain file for the long chains. Imports only numpy, scipy, matplotlib, active_subspaces, and the local modules. No numpad, pandas or py2 prints.
-- **Seeding.** All randomness comes from seeded `default_rng`. A rerun reproduces the outputs exactly.
+- **Seeding.** All randomness comes from seeded `default_rng`. A rerun reproduces the outputs exactly. `generate_data.py` reproduces the chain file exactly on the same platform, and elsewhere to rounding with the same accept/reject decisions (checked 2026-10-31: the file was made on Linux and rerun on macOS).
 - **Quadratic example.**
   - vanilla acceptance 0.12 ± 0.01 (paper 12%; legacy 0.1193);
   - AS acceptance 0.13 ± 0.02 (paper 13%; legacy 0.1346);
@@ -237,21 +237,32 @@ Spaces:
   - the AS-chain KDE shows the two posterior lobes.
 - **PDE subspace.** Eigenvalues show gaps after λ1 and λ2, with λ2/λ3 > 5. Legacy data give 1093/222/24.6/7.8; prototype with fresh data (seed 1510) gives 2081/262/20.5/15.8.
 - **Stored chain file.**
-  - ≤ 10 MB;
+  - ~~≤ 10 MB~~ lifted (author, 2026-10-31) for the 16 added vanilla chains; the file is 24 MB;
   - loaded with `np.load` only;
   - contains x_true, d, σ², seed, X_grad, G, W;
   - `W[:, :2].T @ W[:, :2] = I` to 1e-12;
   - recomputing the subspace from `G` reproduces `W[:, :2]` up to sign (\|cos\| > 1 − 1e-10).
-- **AV chain vs the approximate posterior** (rewritten 2026-10-30 with the author's sampler decision, PR #52). The AV chain does not sample the posterior, so it is tested against what it approximates:
-  - **Reference.** π_M ∝ E[exp(−ĝ_M(y))] ρ(y) with M = 10: the average over the Monte Carlo noise of the likelihood estimate. Algorithm 1 as printed (ĝ kept with the state) is a pseudo-marginal method and samples π_M exactly. The 2016 variant (ĝ recomputed at every step, the shipped chain) is the noisy approximation of it called Monte Carlo within Metropolis (Andrieu & Roberts 2009), with no closed-form target.
-  - **Grid.** Compute the mean of y under π_M on a 15 × 15 grid covering ±4 AV standard deviations around the AV mean. Use the same 40 prior draws of z at every grid point, and estimate E[exp(−ĝ_10)] by averaging over 400 random 10-draw subsets of the 40.
-  - **SE_grid** is the standard deviation over 200 bootstrap resamples of the 40 draws. It is about 0.03 for y2, consistent with the 0.04–0.06 spread between two independent 40-draw grids. A two-halves estimate (one degree of freedom) gave 0.001 and is too small to use.
-  - **SE_chain** is the consistent batch-means standard error of the AV mean after burn-in (Flegal, Haran & Jones 2008, b = ⌊N^{2/3}⌋).
-  - **Pass** if |mean_AV − mean_π_M| ≤ 3 (SE_chain² + SE_grid²)^{1/2} for each of y1, y2. Three standard errors give a two-sided false-alarm rate of about 0.3% per component if both errors are roughly normal.
-  - **Expected deviation.** The 2016 variant's chain is shifted from π_M toward the posterior and is wider, because the noise in the acceptance test lets it visit states that π_M weights less. A failure in that direction is the variant's noise bias, not a bug. The notebook reports whichever happens, together with the π_ε grid mean (exp(−g_ε) with the exact conditional mean).
-  - **Vanilla.** The vanilla chain's projected mean is reported, not tested. π_ε and π_M differ from the posterior by the bias that Theorem 3.1 bounds (λ3 + … + λ100 = 124 for the shipped data), and the gap is several standard errors.
-  - **Original criterion.** AV within 3 SEs of the vanilla projected mean. It fails for both shipped variants for this reason (5 combined SEs with ĝ cached, 3.1 and 2.3 with ĝ recomputed). The legacy files failed it without the sign fix (y2: +1.36 vs −1.46).
-- **Acceptance rates are reported.** Vanilla is expected near 0.55 (paper 60%). AV is expected near 0.6 at std 0.1 (paper 62%) with ĝ recomputed at every step (author, 2026-10-30), but near 0.29 with ĝ kept with the state (Algorithm 1 as printed; `generate_data.py --cached-ghat`).
+- **Chains, mixing and standard errors** (rewritten 2026-10-30 with the author's decisions, PR #52):
+  - Three samplers run as independent chains with their own saved seeds, started at prior draws, 20% burn-in: 20 vanilla chains (4 at first; 16 added by the author, 2026-10-31, after the 4-chain run gave split R-hat 1.011 for y2 and a chain-mean spread twice the computed SE) and 4 chains for each active-variable sampler:
+    - vanilla (proposal std 0.1, as in the paper);
+    - cached ĝ (Algorithm 1 as printed, a pseudo-marginal method, exact for π_M);
+    - recompute ĝ (the 2016 code behind the paper's results, a noisy Metropolis–Hastings).
+  - The active-variable proposal is s·L e, with L L^T the posterior covariance of y from vanilla chain 1 and s chosen by a pilot (`tune_proposal.py`) to minimize the autocorrelation time. The proposal is fixed during the stored runs.
+  - Each active-variable sampler must reach ESS ≥ 1000 for y1 and y2 (4 chains together) and split R-hat < 1.01. The vanilla ESS for y1, y2 and for the 100 x-moments is reported.
+  - Standard errors are sd/√ESS, with ESS from the autocorrelation combined across chains (Geyer's initial monotone sequence, as in Stan). They are not computed from batch means with batches shorter than many autocorrelation times.
+- **Grid references.** π_ε ∝ exp(−g_ε)ρ and π_M ∝ E[exp(−ĝ_10)]ρ, on a grid stored by `generate_data.py`:
+  - 21 × 21 points with 160 common draws of z, and 2560 draws at the 11 × 11 coarse points; ±5 cached-chain standard deviations;
+  - the mean of y by the trapezoid rule, with SE_grid from a bootstrap over the draws.
+  - A convergence table is printed: halving the spacing and shrinking the extent to ±4 SD must each change the means by much less than the chains' SEs. Doubling the draws must change them by no more than about SE_grid: that change is the grid's own Monte Carlo error, which the test below includes (rewritten 2026-10-31; the earlier wording, "much less than the chains' SEs" for all three, cannot hold for the draws, whose change is about SE_grid ≈ the chains' SEs).
+- **Test: cached chains vs π_M.** Pass if |mean − mean_π_M| ≤ 3 (SE_chain² + SE_grid²)^{1/2} for y1 and y2. With roughly normal errors, the two-sided false-alarm rate is about 0.3% per component.
+- **Reported, not asserted.** The offsets, in combined SEs, are printed and discussed for:
+  - the recompute chains vs π_M (no closed-form target);
+  - both active-variable samplers vs the vanilla posterior (they differ by the approximation bias that Theorem 3.1 bounds; λ3 + … + λ100 = 124 here);
+  - π_ε vs the vanilla posterior.
+
+  A clear disagreement is stated with its size.
+- **Superseded.** "AV within 3 batch-means SEs of the vanilla projected mean" is replaced by the criteria above. It failed for the earlier chains because of the approximation bias, and its SEs used batches barely longer than τ. The legacy files failed it without the sign fix (y2: +1.36 vs −1.46).
+- **Acceptance rates are reported**, beside the paper's 60% (vanilla) and 62% (recompute, std 0.1).
 - **Figures.**
   - quadratic: eigenvalues, subspace error, sufficient summary, 2 trace plots, 2 KDE contour plots, 1-D y density;
   - PDE: eigenvalues, subspace error, eigenvectors, 2 log-coefficient sensitivity maps, trace plots (vanilla x₁₀/x₉₀, AV y, AV-reconstructed x), 3×3 bivariate KDE of Wᵀx (vanilla).
