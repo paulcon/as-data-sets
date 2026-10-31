@@ -20,17 +20,28 @@ The data sets are grouped by application area, one directory per category. Each 
 * **[N2_Supersonic_Jet](aerospace_cfd/N2_Supersonic_Jet/):** a 105-parameter shape-design model of a Lockheed Martin N+2 supersonic passenger jet (lift, drag, equivalent area; adjoint gradients). [[dissertation]](https://purl.stanford.edu/xx611nd3190) _Stored data._
 * **[NACA0012_Airfoil](aerospace_cfd/NACA0012_Airfoil/):** an 18-parameter model for a two-spatial-dimensional airfoil. [[chapter 5]](https://doi.org/10.1137/1.9781611973860) _Stored data._
 * **[ONERA_M6_Wing](aerospace_cfd/ONERA_M6_Wing/):** a 50-parameter model for a three-spatial-dimensional transonic wing. [[paper]](https://doi.org/10.2514/6.2014-1171) _Stored data._
+* **[Transonic_Airfoil_Shape_Parameterizations](aerospace_cfd/Transonic_Airfoil_Shape_Parameterizations/):** transonic lift and drag of perturbed NACA 0012 airfoils under two global shape parameterizations, PARSEC (11 parameters) and CST (10 parameters) (SU2 runs). [[paper]](https://doi.org/10.2514/1.J056054) _Stored data; `convert_data.py` regenerates the design inputs._
 * **[Transonic_Fan_Blade_Performance_Maps](aerospace_cfd/Transonic_Fan_Blade_Performance_Maps/):** a 25-parameter shape-design model of the efficiency and pressure ratio of Rolls-Royce transonic research fan blades (Hydra RANS runs, three blades). [[paper]](https://doi.org/10.1115/1.4038839) _Stored data._
 
 ## Hydrology, subsurface and geoscience (`hydrology_subsurface_geoscience/`)
 
 * **[Geological_CO2_Storage_Leakage](hydrology_subsurface_geoscience/Geological_CO2_Storage_Leakage/):** a one-dimensional Darcy model of long-term CO2 leakage from two geological storage sites, with 22 (Ketzin) and 30 (Quest) parameters. [[preprint]](https://doi.org/10.20944/preprints202609.2139.v1) _Python model (`co2_leakage_model.py`)._
+* **[Karst_Aquifer_LuKARS_Calibration](hydrology_subsurface_geoscience/Karst_Aquifer_LuKARS_Calibration/):** the Bayesian data misfit of the 21-parameter LuKARS lumped karst model calibrated to the discharge of the Kerschbaum spring (Austria). [[paper]](https://doi.org/10.1029/2019WR024739) _Python model (`lukars_model.py`); the measured forcing data are stored data._
 * **[Land_Surface_Energy_Fluxes](hydrology_subsurface_geoscience/Land_Surface_Energy_Fluxes/):** a 19-parameter integrated surface/subsurface hydrologic model. [[paper]](https://doi.org/10.1016/j.cageo.2015.07.001) _Stored data._
 * **[Photosynthesis_Stomatal_Resistance](hydrology_subsurface_geoscience/Photosynthesis_Stomatal_Resistance/):** a 20-parameter model of stomatal resistance in an integrated surface/subsurface hydrologic model. [[paper]](https://doi.org/10.1175/JHM-D-16-0053.1) [[thesis]](http://hdl.handle.net/11124/170080) _Stored data._
 * **[Runoff_Permeability_Field](hydrology_subsurface_geoscience/Runoff_Permeability_Field/):** a 100-parameter model for subsurface permeability for groundwater flow. [[paper]](https://doi.org/10.1016/j.advwatres.2016.03.020) _Stored data._
 
+## Climate, atmosphere and ocean (`climate_atmosphere_ocean/`)
+
+* **[Arctic_Snow_Depth_SMRT](climate_atmosphere_ocean/Arctic_Snow_Depth_SMRT/):** a 5-parameter SMRT microwave radiative transfer model of the brightness temperatures of dry snow on Arctic sea ice in the 12 AMSR2 channels, used to judge how well snow depth can be retrieved. [[paper]](https://doi.org/10.5194/tc-20-6157-2026) _Stored data, generated with SMRT 1.5.1; `generate_data.py` regenerates it when SMRT is installed._
+
+## Ecology and agriculture (`ecology_agriculture/`)
+
+* **[SIPNET_Ecosystem_Carbon_Flux](ecology_agriculture/SIPNET_Ecosystem_Carbon_Flux/):** two-year totals of net ecosystem exchange, evapotranspiration and gross primary production from the SIPNET ecosystem model over 8 calibration parameters, in a substitute set-up (the Niwot Ridge driver and template parameter values, not the paper's Bartlett Experimental Forest runs). [[paper]](https://doi.org/10.5194/bg-15-5801-2018) _Stored data, generated with SIPNET v2.2.0; `generate_data.py` regenerates it with a compiled SIPNET binary._
+
 ## Energy: batteries, PV, wind, nuclear, power grids (`energy/`)
 
+* **[HTGR_Microreactor_Control_Drums](energy/HTGR_Microreactor_Control_Drums/):** k<sub>eff</sub> and the quadrant powers of the HOLOS-Quad gas-cooled microreactor as functions of its 8 control-drum angles (751 Serpent Monte Carlo runs). [[paper]](https://doi.org/10.1016/j.nucengdes.2022.111776) _Stored data._
 * **[Lillgrund_FLORIS_Wake_Model](energy/Lillgrund_FLORIS_Wake_Model/):** a 6-parameter FLORIS wake model of the 48-turbine Lillgrund offshore wind farm. [[paper]](https://doi.org/10.3390/en14051293) _Python model (`lillgrund_model.py`)._
 * **[Lithium_Ion_Battery](energy/Lithium_Ion_Battery/):** a 19-parameter model of a lithium-ion battery. [[paper]](https://doi.org/10.1002/sam.11347) [[arXiv]](https://arxiv.org/abs/1606.08770) _Stored data._
 * **[Offshore_Wind_Turbine_Fatigue](energy/Offshore_Wind_Turbine_Fatigue/):** a 5-parameter model of offshore wind turbine fatigue. [[model]](https://doi.org/10.1002/we.1870) _Stored data._
@@ -50,27 +61,36 @@ The data sets are grouped by application area, one directory per category. Each 
 
 ## Biomedical and cardiovascular (`biomedical_cardiovascular/`)
 
+* **[Atrial_Cell_Models_Courtemanche_Maleckar](biomedical_cardiovascular/Atrial_Cell_Models_Courtemanche_Maleckar/):** 11 action-potential biomarkers of the Courtemanche (20 parameters) and Maleckar (22 parameters) human atrial cell models (MATLAB runs published with the paper). [[paper]](https://doi.org/10.3389/fphys.2020.00364) _Stored data._
 * **[Hodgkin_Huxley_Action_Potential](biomedical_cardiovascular/Hodgkin_Huxley_Action_Potential/):** an 11-parameter Hodgkin–Huxley model of the nerve action potential. [[paper]](https://doi.org/10.1186/2190-8567-5-3) _Python model (`HH_model.py`)._
 * **[Luo_Rudy_Cardiac_Action_Potential](biomedical_cardiovascular/Luo_Rudy_Cardiac_Action_Potential/):** a 6-parameter Luo–Rudy 1991 model of the ventricular cardiac action potential (MATLAB runs published with the paper). [[paper]](https://doi.org/10.1371/journal.pone.0130252) _Stored data._
 
 ## Combustion and chemical kinetics (`combustion_chemical_kinetics/`)
 
 * **[Annular_Combustor_Thermoacoustics](combustion_chemical_kinetics/Annular_Combustor_Thermoacoustics/):** a 38-parameter model of the azimuthal thermoacoustic modes of an annular combustor with 19 burners. [[paper]](https://doi.org/10.1017/jfm.2015.730) _Python model (`annular_combustor_model.py`)._
+* **[H2_O2_Ignition_Delay_Kinetics](combustion_chemical_kinetics/H2_O2_Ignition_Delay_Kinetics/):** the ignition delay of a fuel-rich hydrogen/oxygen mixture as a function of the uncertain rate parameters of a 19-reaction mechanism (19 and 36 parameters). [[paper]](https://doi.org/10.1016/j.combustflame.2019.03.006) _Stored data, generated with Cantera 3.2.0; `generate_data.py` regenerates it when Cantera is installed._
 
 ## Structural, materials and additive manufacturing (`structural_materials_manufacturing/`)
 
+* **[Powder_Bed_Fusion_Residual_Stress](structural_materials_manufacturing/Powder_Bed_Fusion_Residual_Stress/):** the maximum residual stress after one electron-beam scan of a Ti–6Al–4V powder layer, over 6 process and material parameters (Abaqus runs published with the paper). [[paper]](https://doi.org/10.1007/s00158-025-04120-w) _Stored data._
 * **[Steel_Arch_Inplane_Buckling](structural_materials_manufacturing/Steel_Arch_Inplane_Buckling/):** a 7-parameter closed-form model of the in-plane elastic buckling load of shallow pinned and fixed steel arches. [[paper]](https://doi.org/10.48084/etasr.3833) _Python model (`arch_buckling_model.py`)._
+
+## Electronics and circuits (`electronics_circuits/`)
+
+* **[Two_Stage_CMOS_Op_Amp](electronics_circuits/Two_Stage_CMOS_Op_Amp/):** the gain, unity-gain bandwidth, phase margin and bias current of a 45 nm two-stage CMOS operational amplifier over 7 design parameters (six transistor sizes and a compensation capacitor). [[paper]](https://doi.org/10.23919/DATE48585.2020.9116200) _Stored data, generated with ngspice 42; `generate_data.py` regenerates it when ngspice is installed._
 
 ## UQ benchmark collections (`uq_benchmarks/`)
 
 * **[Elliptic_PDE_Random_Coefficients](uq_benchmarks/Elliptic_PDE_Random_Coefficients/):** a 100-parameter elliptic PDE whose log-coefficient is a Karhunen–Loève expansion, at two correlation lengths. [[paper]](https://doi.org/10.1137/130916138) _Python model (`pde_model.py`)._
 * **[Fire_Satellite_Coupled_System](uq_benchmarks/Fire_Satellite_Coupled_System/):** a 9-parameter coupled three-discipline model of a fire-detection satellite (orbit, attitude control, power). [[paper]](https://doi.org/10.1115/1.4005619) _Python model (`fire_satellite_model.py`)._
 * **[Golinski_Speed_Reducer](uq_benchmarks/Golinski_Speed_Reducer/):** the volume and two shaft constraints of Golinski's 6-parameter speed reducer (gearbox). [[paper]](https://doi.org/10.1016/0022-2569(70)90064-9) _Python model (`golinski_model.py`)._
+* **[Hat_Stiffened_Panel_Shear_Buckling](uq_benchmarks/Hat_Stiffened_Panel_Shear_Buckling/):** a 10-parameter closed-form model of the shear buckling load of a hat-stiffened panel (NASA TM 4644, by way of the OpenTURNS use case, with its thickness range corrected). [[report]](https://ntrs.nasa.gov/citations/19950011075) _Python model (`panel_model.py`)._
 * **[PDE_Inverse_Problem_MCMC](uq_benchmarks/PDE_Inverse_Problem_MCMC/):** exploiting active subspaces to apply MCMC in a 100-parameter PDE model. [[paper]](https://doi.org/10.1137/15M1042127) _Python model (`pde_model.py`)._
+* **[Point_Heat_Source_Consolidation](uq_benchmarks/Point_Heat_Source_Consolidation/):** an 8-parameter closed-form model of the temperature, excess pore pressure and displacement around a point heat source buried in saturated soil or rock. [[paper]](https://doi.org/10.1002/nag.1610090206) _Python model (`heat_source_model.py`)._
 * **[River_Flood_Dyke_Overflow](uq_benchmarks/River_Flood_Dyke_Overflow/):** an 8-parameter closed-form river flood model of the overflow above a dyke. [[paper]](https://doi.org/10.1016/j.matcom.2013.02.002) _Python model (`flood_model.py`)._
+* **[Simply_Supported_Tube_Deflection](uq_benchmarks/Simply_Supported_Tube_Deflection/):** a 6-parameter closed-form model of the deflection and support slopes of a simply supported tube under an off-center point load. [[benchmark]](https://openturns.github.io/openturns/1.22/usecases/use_case_deflection_tube.html) _Python model (`tube_model.py`)._
 * **[Sulfur_Aerosol_Radiative_Forcing](uq_benchmarks/Sulfur_Aerosol_Radiative_Forcing/):** a 9-parameter box model of the direct climate forcing by anthropogenic sulfate aerosols. [[paper]](https://doi.org/10.1126/science.255.5043.423) _Python model (`sulfur_model.py`)._
-
-Categories with no data sets yet: climate, atmosphere and ocean (`climate_atmosphere_ocean/`); ecology and agriculture (`ecology_agriculture/`); electronics and circuits (`electronics_circuits/`).
+* **[Two_DOF_Equipment_Structure_Oscillator](uq_benchmarks/Two_DOF_Equipment_Structure_Oscillator/):** an 8-parameter closed-form model of the response of light equipment mounted on a structure under white-noise base excitation, with a reliability limit state on the equipment's spring. [[paper]](https://doi.org/10.1061/(ASCE)0733-9399(1985)111:1(1)) _Python model (`oscillator_model.py`)._
 
 # Contributing
 

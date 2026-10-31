@@ -1,0 +1,51 @@
+* Two-stage CMOS op-amp, open-loop AC and DC operating point (ngspice batch deck)
+* Circuit: Settaluri et al., DATE 2020, Fig. 6 (AutoCkt two-stage op-amp, 45 nm BPTM).
+* Adapted for as-data-sets from AutoCkt's netlist two_stage_opamp.cir (github.com/ksettaluri6/AutoCkt,
+* no licence stated; element and source lines are AutoCkt's). Values written $$name are filled by
+* string.Template (opamp_spice.py, or EMA's command_line interface).
+.include "45nm_bulk.txt"
+
+* sizing: all devices W = 0.5 um, L = 90 nm; m = parallel multiplier (real-valued here)
+.param mp1=$mp1 mn1=$mn1 mp3=$mp3 mn3=$mn3 mn4=$mn4 mn5=$mn5
+.param cc=${cc_pF}p
+* held settings
+.param ibias=${ibias_uA}u cload=${cload_pF}p vcm=$vcm vsupply=$vdd
+
+* first stage: PMOS mirror load (mp1, mp2), NMOS input pair (mn1, mn2), tail mn3
+mp1 net4 net4 VDD VDD pmos w=0.5u l=90n m={mp1}
+mp2 net5 net4 VDD VDD pmos w=0.5u l=90n m={mp1}
+mn1 net4 net2 net3 net3 nmos w=0.5u l=90n m={mn1}
+mn2 net5 net1 net3 net3 nmos w=0.5u l=90n m={mn1}
+mn3 net3 net7 VSS VSS nmos w=0.5u l=90n m={mn3}
+* bias: diode-connected mn4 fed by the reference current ibias
+mn4 net7 net7 VSS VSS nmos w=0.5u l=90n m={mn4}
+* second stage: PMOS common source mp3, NMOS current-source load mn5
+mp3 net6 net5 VDD VDD pmos w=0.5u l=90n m={mp3}
+mn5 net6 net7 VSS VSS nmos w=0.5u l=90n m={mn5}
+* Miller compensation (no nulling resistor) and load
+cc net5 net6 {cc}
+CL net6 0 {cload}
+ibias VDD net7 {ibias}
+
+* differential input around the common-mode level
+vin in 0 dc=0 ac=1.0
+ein1 net1 cm in 0 0.5
+ein2 net2 cm in 0 -0.5
+vcm cm 0 dc={vcm}
+vdd VDD 0 dc={vsupply}
+vss 0 VSS dc=0
+
+.options reltol=$reltol
+.ac dec $points_per_decade 1 10G
+
+.control
+run
+set wr_vecnames
+set wr_singlescale
+set numdgt=15
+wrdata ac.txt v(net6)
+op
+wrdata op.txt i(vdd)
+.endc
+
+.end
