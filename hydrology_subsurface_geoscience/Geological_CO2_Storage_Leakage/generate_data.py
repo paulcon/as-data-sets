@@ -92,6 +92,8 @@ def main():
     ap.add_argument('--out', default=HERE, help='output directory (default: this directory)')
     ap.add_argument('--check', action='store_true', help='compare with the CSVs in this directory')
     args = ap.parse_args()
+    if os.path.abspath(args.out) == HERE and args.check:
+        ap.error('--check needs --out DIR outside this directory, so that the shipped files are not overwritten')
     os.makedirs(args.out, exist_ok=True)
 
     for site in SEEDS:
@@ -107,9 +109,10 @@ def main():
         print(f'  exact gradients vs central differences (step 1e-6 range): max relative error '
               f'log10 t_total {eT:.1e}, log10 V_soft {eV:.1e}')
     if args.check:
-        same = [np.array_equal(read_csv(os.path.join(args.out, n)), read_csv(os.path.join(HERE, n)))
-                for n in FILES]
-        print('files identical to the shipped ones:', dict(zip(FILES, same)))
+        for n in FILES:
+            a, b = read_csv(os.path.join(args.out, n)), read_csv(os.path.join(HERE, n))
+            rel = np.max(np.abs(a - b) / np.maximum(np.abs(b), 1e-300))
+            print(f'{n}: max relative difference from the shipped file {rel:.1e}')
 
 
 if __name__ == '__main__':

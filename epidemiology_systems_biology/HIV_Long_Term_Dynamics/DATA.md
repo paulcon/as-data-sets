@@ -8,7 +8,7 @@ Kind: **Python model**. The model is `HIV_model.py`, and `generate_data.py` writ
 |---|---|---|
 | `HIV_Long_Term_Dynamics.ipynb` | the case study (Python 3, active_subspaces v1) | executed top to bottom with seed 2017; outputs committed |
 | `HIV_model.py` | `Tcells(p, times)`, `trajectory(q, times)`; `NAMES`, `NOMINAL`, `LOWER`, `UPPER`, `Y0`, `T_FLOOR` | the model |
-| `generate_data.py` | writes `outputs.csv` and `gradients.csv` (and rewrites `inputs.csv`) from `inputs.csv` | regenerates the data |
+| `generate_data.py` | writes `outputs.csv` and `gradients.csv` from `inputs.csv` (never rewrites `inputs.csv` here; `--check` and `--rows` need `--out` elsewhere) | regenerates the data |
 | `inputs.csv` | 1000 × 27 physical parameters, columns in the order of `NAMES` | stored inputs |
 | `outputs.csv` | 1000 × 19: T(t) in cells mm⁻³ at the 19 times | model output |
 | `gradients.csv` | 1000 × 513: column 27 i + j is ∂T(t_i)/∂x_j, with x the **normalized** inputs | model output |

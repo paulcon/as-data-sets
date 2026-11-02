@@ -38,6 +38,8 @@ def main():
     ap.add_argument('--out', default=HERE, help='output directory (default: this directory)')
     ap.add_argument('--check', action='store_true', help='compare with the CSVs in this directory')
     args = ap.parse_args()
+    if os.path.abspath(args.out) == HERE and args.check:
+        ap.error('--check needs --out DIR outside this directory, so that the shipped files are not overwritten')
     t0 = time.perf_counter()
 
     X = am.sample(M, SEED)
