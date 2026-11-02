@@ -141,7 +141,7 @@ The interview decisions that touch the 13 data sets of #64 and the repository ru
 Left open from this step:
 - [x] Point_Heat: `check_accuracy.py` check 1 (UQTestFuns at commit 82d5c8b) was not run in `.venv` (package not installed); DATA.md quotes the earlier values. **No re-run needed** (author, 2026-11-02)
 - [x] CMOS review E3 C5: cell 20 now says the second-stage mirror term m_n5/m_n4 carries little weight (the full formula's direction has |cos| 0.899 with w₁ on the box, against 0.959 for the tail ratio m_n3/m_n4 alone; m_n5 +0.122 in w₁), verified in `.venv` (2026-11-02)
-- [ ] Annular_Combustor and Fire_Satellite (on main) print warnings with the kernel's temporary path (`/var/folders/...`); fix with the existing-notebook PR (B23–B34)
+- [x] Annular_Combustor and Fire_Satellite (on main) printed warnings with the kernel's temporary path (`/var/folders/...`): fixed in [#66](https://github.com/paulcon/as-data-sets/pull/66) (2026-11-02; re-executed twice, text outputs unchanged)
 
 ### Author interview, 2026-10-30
 
