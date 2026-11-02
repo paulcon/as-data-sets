@@ -2,10 +2,14 @@
 
 Usage (see DATA.md):
   python generate_data.py --raven /path/Raven.exe --obs /path/xSSA/examples/data_in/data_obs/08KC001 \
-      --cache ./_cache --rows 0:1024          # run (or resume) a block of rows
-  python generate_data.py ... --cache ./_cache --assemble   # write the CSVs when every row is done
-  python generate_data.py ... --rows 0:8 --check            # rerun a subset, compare with the CSVs here
-  python generate_data.py ... --fd                          # finite-difference gradients at rows 0, 1, 2
+      --cache /tmp/raven_cache --rows 0:1024  # run (or resume) a block of rows
+  python generate_data.py ... --assemble    # write the CSVs here when every row is done
+  python generate_data.py ... --rows 0:8 --check   # rerun a subset, compare with the CSVs here (writes nothing)
+  python generate_data.py ... --fd          # rewrite fd_gradients_meanQ.csv (rows 0, 1, 2)
+
+--cache defaults to a folder in the system temp directory, outside the repository.
+Without Raven (--raven / RAVEN_EXE) and the xSSA streamflow folder (--obs / XSSA_OBS_DIR)
+every mode except --assemble exits with an install message.
 
 The Raven input deck is filled from the xSSA template file (LGPL-3.0), which
 raven_salmon.fetch_templates downloads once from GitHub at a pinned commit into
@@ -38,6 +42,9 @@ MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", 
 OUT_NAMES = ["mean_Q", "NSE", "KGE"] + [f"Q_{m}" for m in MONTHS]
 FD_ROWS = (0, 1, 2)      # design rows of the finite-difference check
 FD_STEP = 1e-3           # step in normalized units (fraction of each half-range)
+INSTALL = ("Raven is not available. Build commit cb745e1 of github.com/CSHS-CWRA/RavenHydroFramework as "
+           "described in DATA.md (\"Raven build\"), clone github.com/julemai/xSSA for the forcing and "
+           "streamflow files, set RAVEN_EXE and XSSA_OBS_DIR (or pass --raven and --obs), and rerun this script.")
 
 
 def design():
@@ -148,7 +155,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--raven", default=os.environ.get("RAVEN_EXE"))
     ap.add_argument("--obs", default=os.environ.get("XSSA_OBS_DIR"))
-    ap.add_argument("--cache", default="./_cache")
+    ap.add_argument("--cache", default=os.path.join(tempfile.gettempdir(), "raven_salmon_cache"))
     ap.add_argument("--templates", default=None,
                     help="folder for the downloaded xSSA template file (default <cache>/templates)")
     ap.add_argument("--rows", default=f"0:{N_SAMPLES}")
@@ -160,6 +167,8 @@ def main():
     if args.assemble:
         assemble(X, args)
         return
+    if not args.raven or not os.path.exists(args.raven) or not args.obs or not os.path.isdir(args.obs):
+        sys.exit(INSTALL)
     templates = rs.load_templates(args.templates or os.path.join(args.cache, "templates"))
     print(f"deck templates: {rs.XSSA_REPO}@{rs.XSSA_COMMIT} {rs.XSSA_TEMPLATE_FILE} (SHA-256 verified)")
     if args.fd:
