@@ -153,7 +153,7 @@ archives (atrial cell model, CircAdapt, passive mechanics, tissue electrophysiol
 
 In the repo's `.venv` (2026-11-02) `convert_data.py <folder> --check` runs in under 1 s and prints "identical"
 for all four files: the shipped CSVs equal the text the script builds from the archives, so every value is
-the deposited one. The notebook takes 5–7 min in `.venv` (301, 352 and 433 s in three runs on 2026-11-02, with other jobs sharing the machine);
+the deposited one. The notebook takes about 3 min in `.venv` (173 s on a quiet machine on 2026-11-02; 301–433 s with other jobs sharing it);
 most of it is the QPHD bootstrap of the second study, the null replicates and subsamples of the penalized
 quadratic, and the leave-one-out refits of the OLS direction.
 

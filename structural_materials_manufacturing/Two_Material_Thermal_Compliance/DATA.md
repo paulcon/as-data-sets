@@ -6,7 +6,7 @@ Kind: **Python model**. The model is `thermal_model.py` (numpy/scipy), and `gene
 
 | file | contents | role |
 |---|---|---|
-| `Two_Material_Thermal_Compliance.ipynb` | the case study (Python 3, active_subspaces v1) | executed top to bottom in `.venv` with seed 2025; outputs committed; run time in `.venv` 195 and 198 s in two runs (290–440 s on a busier machine), most of it the 200-replicate bootstrap |
+| `Two_Material_Thermal_Compliance.ipynb` | the case study (Python 3, active_subspaces v1) | executed top to bottom in `.venv` with seed 2025; outputs committed; run time in `.venv` about 3 min (158 s on a quiet machine, 195–198 s in two other runs, 290–440 s on a busy one), most of it the 200-replicate bootstrap |
 | `thermal_model.py` | `ThermalCompliance(nx=16, k1=2, k2=1, boundary='paper')` with `energy`, `grad`, `energy_and_grad`, `volume`; `source`, `mesh`, `boundary_nodes`; `K1`, `K2`, `E_MAX`, `M_INPUTS` | the model |
 | `generate_data.py` | writes `thermal_compliance.npz`; `--check` (optionally with `--rows a:b`), `--fd-check`, `--casm DIR` | regenerates and checks the data |
 | `check_accuracy.py` | recomputes the numbers below that neither the notebook nor `generate_data.py` prints (numpy and scipy only, about 1 s) | accuracy checks |
