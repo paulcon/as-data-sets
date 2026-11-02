@@ -3,16 +3,19 @@
 Kind: **stored data**. The files were computed on 2026-10-31 with the authors' simulator
 [pyloric](https://github.com/mackelab/pyloric) (MIT licence), commit
 89dd27d769fa2652d21bca1dbbc098c85e40244a, an outside code that is not part of this repository
-and does not run in the repository's `.venv` (it needs pandas, Cython and a C compiler).
-`generate_data.py` is the script that wrote them, kept for provenance and for reruns in an
-environment that has pyloric; the values in the CSVs are the record and are not to be edited.
+and is not installed in the repository's `.venv` (it needs Cython and a C compiler besides numpy,
+scipy and pandas). `generate_data.py` is the script that wrote them, kept for provenance and for
+reruns where pyloric is installed; without pyloric it exits with status 1 and says what to install.
+The values in the CSVs are the record and are not to be edited; pyloric is rerun only if a problem
+is found in them.
 
 ## Files
 
 | file | contents | role |
 |---|---|---|
-| `Pyloric_Circuit_Energy_Consumption.ipynb` | the case study (Python 3, active_subspaces v1) | executed top to bottom with seed 401; outputs committed |
+| `Pyloric_Circuit_Energy_Consumption.ipynb` | the case study (Python 3, active_subspaces v1) | executed top to bottom in `.venv` with seed 401; outputs committed |
 | `generate_data.py` | draws the design, runs pyloric on a block of rows (`--rows`), merges blocks (`--merge`), compares with the files (`--check`) | wrote the CSVs; needs a pyloric clone |
+| `check_accuracy.py` | reruns a few rows with other noise seeds and time steps (Accuracy below) | check; needs a pyloric clone |
 | `inputs.csv` | 1100 × 31 physical inputs: 24 membrane conductances (mS/cm²; AB/PD, LP, PY × Na, CaT, CaS, A, KCa, Kd, H, leak), then 7 synaptic conductances (nS; AB→LP, PD→LP, AB→PY, PD→PY, LP→PD, LP→PY, PY→LP) | stored inputs |
 | `outputs.csv` | 1100 × 9: energy per second of AB/PD, LP, PY and of the circuit (µJ s⁻¹ cm⁻²); spike counts of AB/PD, LP, PY in 10 s; `pyloric_like` (0/1); `finite` (0/1) | stored outputs |
 
@@ -56,8 +59,10 @@ calcium.
 
 The bounds are pyloric's `prior_bounds()`: Prinz's ranges padded by
 [100, 2.5, 2, 10, 5, 25, 0.01, 0.01] and clipped at 0. They agree with the paper's Methods except
-the AB/PD ḡ_H upper bound, which the paper prints as 0.2 and the code computes as 0.02. The files
-use the code's value (open question below).
+the AB/PD ḡ_H upper bound: the preprint prints "phigh = [500, 7.5, 8, 60, 15, 150, 0.2, 0.01] mS cm−2
+for the maximal membrane conductances of the AB neuron" (p. 15, line 446), while the code's `prior_bounds()`
+gives 0.02. The files use the code's value, the one the
+authors' simulator samples; the printed 0.2 is taken to be a misprint (open question below).
 
 **Quantity of interest** (Eq. 2, p. 16, after Moujahid et al., Phys. Rev. E 83:031912, 2011): for
 each neuron E = ∫ Σ_m g_m (V − E_m)² + Σ_s g_s (V − E_s)² dt over the 10 s after a 1 s burn-in,
@@ -91,14 +96,14 @@ check.
 
 **Sampling design.** Simple Monte Carlo: 1100 independent samples, `numpy.random.default_rng(401)`,
 uniform in the membrane conductances and in ln of the synaptic conductances (pyloric's
-coordinates), then stored with the synapses converted to nS (exp(θ)·10⁶). 1100 meets the QPHD rule
-M ≥ 2·(m+1)(m+2)/2 = 1056 for m = 31. All 1100 runs gave finite traces; none were dropped.
+coordinates), then stored with the synapses converted to nS (exp(θ)·10⁶). 1100 is about twice the
+(m+1)(m+2)/2 = 528 coefficients of a quadratic in m = 31 inputs. All 1100 runs gave finite traces; none were dropped.
 Nothing outside physical meaning occurs: every conductance is ≥ 0, every energy > 0
 (minimum 0.026).
 
 **Study region.** The whole prior box. The paper's active-subspace analysis is over its posterior
 (below), whose samples and simulations are on the Hugging Face Hub (see "How these files relate to
-the paper") but were not reachable from the build machine; on the prior, 7 of the 1100 circuits
+the paper") and are not used here; on the prior, 7 of the 1100 circuits
 (0.64 %) are pyloric-like by pyloric's flag, and the rhythm features are undefined for most
 circuits, but the energy is defined for every run.
 
@@ -128,39 +133,48 @@ git clone https://github.com/mackelab/pyloric && git -C pyloric checkout 89dd27d
 python3 -m venv pyl && pyl/bin/pip install numpy pandas scipy cython setuptools tqdm matplotlib
 # one block of rows per call (each call is one process; pyximport compiles the simulator into ~/.pyxbld on first use)
 for r in $(seq 0 100 1000); do
-  pyl/bin/python generate_data.py --pyloric pyloric --rows $r:$((r+100)) --out chunks
+  pyl/bin/python generate_data.py --pyloric pyloric --rows $r:$((r+100)) --out CHUNKDIR
 done
-pyl/bin/python generate_data.py --merge chunks          # writes inputs.csv and outputs.csv here
-pyl/bin/python generate_data.py --pyloric pyloric --rows 500:505 --out /tmp/x --check
+pyl/bin/python generate_data.py --merge CHUNKDIR        # writes inputs.csv and outputs.csv here
+pyl/bin/python generate_data.py --pyloric pyloric --rows 500:505 --out OTHERDIR --check
+pyl/bin/python check_accuracy.py --pyloric pyloric
 ```
 
+`--out` is required for a run and must be outside this directory (the chunk files are not shipped).
 torch and sbi are not needed: pyloric imports them in its package `__init__`, but only
 `create_prior()` uses them; `generate_data.py` never calls it and puts empty stand-ins for `torch`
 and `sbi.utils` in `sys.modules` before importing pyloric. The design and the noise are seeded, so a
-rerun reproduces the files. The run that wrote them (2026-10-31; Python 3.13.18, numpy 2.5.4,
-pandas 3.1.0, scipy 1.18.1, Cython 3.3.0, setuptools 84.2.1, tqdm 4.70.1, matplotlib 3.11.2; Linux,
-gcc) took 1737 s of CPU in 11 blocks of 100 rows (1.58 s per run), one process at a time, and 3856 s
-of wall time on a 2-CPU container shared with other jobs (2.2–8.6 s per run). This exceeds the
-20-minute budget of a single run, so the design was run in blocks of under 15 minutes each.
-`--rows 500:505 --check` on 2026-11-01 reproduced those rows exactly (maximum relative difference
-0 for inputs and outputs).
+rerun reproduces the files. Without a pyloric clone (or without pandas or Cython), `generate_data.py`
+and `check_accuracy.py` exit with status 1 and a message that names pyloric, its commit and the
+packages to install (checked in `.venv` on 2026-11-02).
+
+The shipped files were written on 2026-10-31 in a Linux container (Python 3.13.18, numpy 2.5.4,
+pandas 3.1.0, scipy 1.18.1, Cython 3.3.0, setuptools 84.2.1, tqdm 4.70.1, matplotlib 3.11.2; gcc).
+That run of `generate_data.py` took 1737 s of CPU in 11 blocks of 100 rows (1.58 s per run), one
+process at a time, and 3856 s (64 min) of wall time on 2 CPUs shared with other jobs (2.2–8.6 s per
+run). In the same environment `--rows 500:505 --check` reproduced those rows exactly (maximum relative
+difference 0 for inputs and outputs, 2026-11-01). pyloric is not installed in `.venv`, so neither
+script was run there. The design alone (inputs) regenerates from `default_rng(401)` and pyloric's
+bounds; the notebook checks this (largest relative difference of order 1e−15, rounding).
 
 ## Accuracy
 
-Checked with the same pyloric setup (scratch scripts, not committed):
+`E_total` equals the sum of the three neurons' energies exactly in every row (checked in the
+notebook), and pyloric's integrated energies equal the sum of its trace to a relative 1e−12 (an
+assert in `generate_data.py`, which holds for every shipped row). The other numbers below need
+pyloric. They come from the original run in the Linux container named above (2026-10-31 and
+2026-11-01), and `check_accuracy.py` recomputes them where pyloric is installed (it was not run
+here); it also reruns rows 0 and 1, which reproduced the files exactly in the original run.
 
-- **Bookkeeping:** `E_total` equals the sum of the three neurons' energies exactly in every row
-  (checked in the notebook), and pyloric's integrated energies equal the sum of its trace to 1e−12
-  (assert in `generate_data.py`). The EMA driver (`pyloric_run.py`, outside this directory)
-  reproduces rows 0 and 1 exactly.
-- **Simulator noise.** Rows 0–7 rerun with noise seeds 2, 3 and 4: the relative standard deviation
-  of the circuit energy over the four seeds is 0.07 %–10.2 % (median 1.7 %); the largest are for
-  circuits whose spike counts change with the noise (row 6: 28–40 AB/PD spikes). The mean noise
-  variance is 0.25 % of the variance of the energy over the 1100 samples, so the noise does not limit
-  the active-subspace estimate; it would matter for finite-difference gradients. No pyloric-like
-  flag changed in those 32 runs (all 0).
-- **Time step.** Rows 0–2 with the noise switched off, at dt = 0.025 ms and 0.0125 ms: the circuit
-  energy differs by 1.2 %, 0.02 % and 1.8 % (relative). The paper and the files use 0.025 ms.
+- **Simulator noise** (`check_accuracy.py`, check 2). Rows 0–7 rerun with noise seeds 2, 3 and 4:
+  the relative standard deviation of the circuit energy over the four seeds is 0.07 %–10.2 %
+  (median 1.7 %); the largest are for circuits whose spike counts change with the noise (row 6:
+  28–40 AB/PD spikes). The mean noise variance is 0.25 % of the variance of the energy over the 1100
+  samples, so the noise does not limit the active-subspace estimate; it would matter for
+  finite-difference gradients. No pyloric-like flag changed in those runs (all 0).
+- **Time step** (`check_accuracy.py`, check 3). Rows 0–2 with the noise switched off, at
+  dt = 0.025 ms and 0.0125 ms: the circuit energy differs by 1.2 %, 0.02 % and 1.8 % (relative).
+  The paper and the files use 0.025 ms.
 
 ## How these files relate to the paper
 
@@ -169,15 +183,15 @@ Checked with the same pyloric setup (scratch scripts, not committed):
   the stg_energy README (github.com/mackelab/stg_energy) says its `results/` folder (simulation
   outputs, trained density estimators, analysis artifacts) is the public Hugging Face dataset
   [mackelab/STG_energy](https://huggingface.co/datasets/mackelab/STG_energy) (revision a428509,
-  last modified 2026-07-28; no licence is stated on the dataset). The 35,939-circuit database that
+  last modified 2026-07-28; no licence is stated on the dataset). The revision, the date and the
+  file sizes below were read from the Hugging Face API on 2026-11-02; the files were not downloaded. The 35,939-circuit database that
   the Supp. Fig. 5 notebook reads is
   `simulation_data_Tube_MLslurm_cluster/close_to_xo_circuit_parameters.pkl` (4,457,695 bytes),
   `close_to_xo_simulation_outputs.pkl` (9,776,820 bytes) and `close_to_xo_seeds.npy` (287,640 bytes,
   35,939 int64 seeds); the trained regression network is `regression_nets/210717_total_energy.npy`
   with `210717_sensitivity_total_energy.npy`, and the posterior
-  `trained_neural_nets/inference/posterior_11deg.pickle`. huggingface.co was not reachable from the
-  build machine, so none of these were used; they are pandas/dill pickles, to be opened only in an
-  isolated environment. Reproducing Supp. Fig. 5 from them is a follow-up.
+  `trained_neural_nets/inference/posterior_11deg.pickle`. None of these are used here; they are
+  pandas/dill pickles, to be opened only in an isolated environment. Reproducing Supp. Fig. 5 from them is a follow-up.
 - **Different region.** The paper's active subspace (Supp. Fig. 5) is over its posterior, where every
   circuit matches the experimental rhythm and the energy is nearly linear in the parameters; here it
   is over the full prior box, where the energy is far from linear (linear leave-one-out R² 0.426).
@@ -194,7 +208,8 @@ Checked with the same pyloric setup (scratch scripts, not committed):
 
 ## Open questions (for the authors)
 
-- AB/PD ḡ_H upper bound: 0.2 mS/cm² (paper, p. 15) or 0.02 (pyloric `prior_bounds()`)?
+- AB/PD ḡ_H upper bound: 0.2 mS/cm² (preprint, p. 15) or 0.02 (pyloric `prior_bounds()`, used
+  here)? We take 0.2 to be a misprint.
 - Supp. Fig. 5: the authors' notebook suggests gradients scaled by the prior SD and 1000 posterior
   samples (Methods: 10,000). Which prior object was attached to the posterior (box or
   classifier-restricted), and which sample count was used for the published figure?
@@ -207,7 +222,9 @@ Checked with the same pyloric setup (scratch scripts, not committed):
 
 ## License and credit
 
-Data (the CSVs): CC BY 4.0 (`LICENSE-DATA`); code (`generate_data.py`): MIT (`LICENSE`). The
+Data (the CSVs): CC BY 4.0 (`LICENSE-DATA`); they were generated here by running pyloric, and no
+data of the authors are included. Code (`generate_data.py`, `check_accuracy.py`) and the notebook:
+MIT (`LICENSE`). The
 simulator is pyloric by M. Deistler and the Macke lab (MIT licence, Copyright (c) 2020 mackelab),
 which was run, not copied. Model and energy measure: Prinz, Bucher and Marder (2004) and Deistler,
 Macke and Gonçalves (2022). Cite M. Deistler, J. H. Macke, P. J. Gonçalves, "Energy-efficient network

@@ -13,10 +13,13 @@ in sys.modules before pyloric is imported. pyloric's simulate() and summary_stat
 run unchanged.
 
 Usage
-  python generate_data.py --pyloric /path/to/pyloric --rows 0:100 --out chunks
+  python generate_data.py --pyloric /path/to/pyloric --rows 0:100 --out CHUNKDIR
   ...                                                  (one call per block of rows)
-  python generate_data.py --merge chunks              # writes inputs.csv, outputs.csv
-  python generate_data.py --pyloric ... --rows 0:5 --out /tmp/x --check
+  python generate_data.py --merge CHUNKDIR            # writes inputs.csv, outputs.csv here
+  python generate_data.py --pyloric ... --rows 0:5 --out OTHERDIR --check
+
+CHUNKDIR and OTHERDIR must be outside this directory. Without pyloric (or without pandas or
+Cython, which it needs) the script exits with status 1 and says what to install.
 """
 import argparse
 import glob
@@ -33,7 +36,8 @@ M = 1100              # number of samples
 DT = 0.025            # ms (paper Methods; pyloric default)
 T_MAX = 11000         # ms; the first T_BURN ms are discarded, leaving 10 s (pyloric defaults)
 T_BURN = 1000
-NOISE_STD = 0.001     # mV per step (paper: 0.001 mV ms^-0.5; pyloric default)
+NOISE_STD = 0.001     # pyloric's noise_std (default): SD of a Gaussian current added at every step,
+                      # in the units of the ionic currents (see DATA.md); the paper writes 0.001 mV ms^-0.5
 
 NEURONS = ["AB/PD", "LP", "PY"]
 CHANNELS = ["Na", "CaT", "CaS", "A", "KCa", "Kd", "H", "Leak"]
@@ -44,10 +48,24 @@ OUT_COLS = ["E_ABPD", "E_LP", "E_PY", "E_total", "spikes_ABPD", "spikes_LP", "sp
             "pyloric_like", "finite"]
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+PYLORIC_COMMIT = "89dd27d769fa2652d21bca1dbbc098c85e40244a"
+INSTALL = (f"{os.path.basename(sys.argv[0])} needs the pyloric simulator (github.com/mackelab/pyloric, commit "
+           f"{PYLORIC_COMMIT[:7]}) with numpy, pandas, scipy, Cython, setuptools and a C compiler. Clone it "
+           f"(git clone https://github.com/mackelab/pyloric && git -C pyloric checkout {PYLORIC_COMMIT[:7]}), "
+           "install the packages (DATA.md, 'Regenerating'), and rerun "
+           f"{os.path.basename(sys.argv[0])} with --pyloric PATH.")
 
 
 def import_pyloric(path):
-    """Import pyloric from a clone at `path`, with stand-ins for torch and sbi."""
+    """Import pyloric from a clone at `path`, with stand-ins for torch and sbi. Exits with
+    status 1 and the install message if pyloric, pandas or Cython cannot be imported."""
+    if not path or not os.path.isfile(os.path.join(path, "pyloric", "__init__.py")):
+        sys.exit(f"pyloric not found{'' if not path else ' at ' + path}. " + INSTALL)
+    try:
+        import pandas  # noqa: F401
+        import Cython  # noqa: F401
+    except ImportError as err:
+        sys.exit(f"{err.name} is not installed. " + INSTALL)
     t = types.ModuleType("torch")
     t.Tensor = type("Tensor", (), {})          # only used in an isinstance() check
     sbi_utils = types.ModuleType("sbi.utils")
@@ -56,10 +74,13 @@ def import_pyloric(path):
     sys.modules.setdefault("sbi", types.ModuleType("sbi"))
     sys.modules.setdefault("sbi.utils", sbi_utils)
     sys.path.insert(0, os.path.abspath(path))
-    import pyloric
-    from pyloric import simulate, summary_stats
-    from pyloric.prior import prior_bounds
-    from pyloric.utils import select_names
+    try:
+        import pyloric
+        from pyloric import simulate, summary_stats
+        from pyloric.prior import prior_bounds
+        from pyloric.utils import select_names
+    except ImportError as err:
+        sys.exit(f"pyloric could not be imported ({err}). " + INSTALL)
     return pyloric, simulate, summary_stats, prior_bounds, select_names
 
 
@@ -83,18 +104,21 @@ def to_physical(theta):
     return X
 
 
-def run_one(theta, simulate, summary_stats, tn, cn):
+def run_one(theta, simulate, summary_stats, tn, cn, dt=DT, noise_std=NOISE_STD, seed=NOISE_SEED):
+    """One pyloric run at theta (pyloric coordinates); returns the 9 outputs of outputs.csv.
+    dt, noise_std and seed default to the settings of the shipped files (check_accuracy.py
+    varies them)."""
     import pandas as pd
     df = pd.DataFrame([theta], columns=pd.MultiIndex.from_arrays([tn, cn]))
-    out = simulate(df.loc[0], dt=DT, t_max=T_MAX, noise_std=NOISE_STD,
-                   track_energy=True, seed=NOISE_SEED)
+    out = simulate(df.loc[0], dt=dt, t_max=T_MAX, noise_std=noise_std,
+                   track_energy=True, seed=seed)
     finite = bool(np.all(np.isfinite(out["voltage"])) and np.all(np.isfinite(out["energy"])))
     ss = summary_stats(out, stats_customization={"energies": True, "num_spikes": True,
                                                  "pyloric_like": True}, t_burn_in=T_BURN)
     # pyloric's "energies": sum of the power trace (nW/cm^2) over the 10 s, times dt/1000,
     # i.e. nJ/cm^2 per neuron. Divide by 10 s and by 1000: microJ s^-1 cm^-2.
     e = np.array([ss["energies"][k].iloc[0] for k in ["PM", "LP", "PY"]], float)
-    e_check = out["energy"][:, int(T_BURN / DT):int(T_MAX / DT)].sum(axis=1) * DT / 1000
+    e_check = out["energy"][:, int(round(T_BURN / dt)):int(round(T_MAX / dt))].sum(axis=1) * dt / 1000
     assert np.allclose(e, e_check, rtol=1e-12, equal_nan=True)
     e = e / ((T_MAX - T_BURN) / 1000) / 1000
     spikes = [ss["num_spikes"][k].iloc[0] for k in ["PM", "LP", "PY"]]
@@ -134,7 +158,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--pyloric", help="path to a clone of github.com/mackelab/pyloric")
     ap.add_argument("--rows", default=f"0:{M}")
-    ap.add_argument("--out", default="chunks")
+    ap.add_argument("--out", help="directory for the chunk files (outside this directory)")
     ap.add_argument("--merge", metavar="CHUNKDIR")
     ap.add_argument("--check", action="store_true",
                     help="compare the rows computed with the shipped CSVs")
@@ -142,6 +166,8 @@ def main():
     if a.merge:
         merge(a.merge, HERE)
         return
+    if not a.out or os.path.abspath(a.out) == HERE:
+        ap.error("--out DIR is required and must be outside this directory (the chunk files are not shipped)")
     _, simulate, summary_stats, prior_bounds, select_names = import_pyloric(a.pyloric)
     lo, hi = prior_bounds(pyloric_setups())
     tn, cn = select_names(pyloric_setups())

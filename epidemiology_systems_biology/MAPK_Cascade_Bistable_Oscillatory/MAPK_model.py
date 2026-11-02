@@ -16,8 +16,10 @@ Nominal values, initial conditions, ranges, time windows and the limit-cycle thr
 are those of the authors' code (github.com/RangamaniLabUCSD/CIUKF-MCMC, commit 11a4f1e,
 `MAPK/sensitivity_analysis_RUN.m`, `utils/limitCycleFeatures.m`); the code itself is not
 copied (the repository states no licence). Time is in seconds, as in that code
-(t = 1800 s is the paper's 30 min); concentrations and rate constants carry the code's
-unstated units.
+(t = 1800 s is the paper's 30 min); concentrations are in nM, and the units of the rate
+constants (1/s and 1/(nM s)) are inferred from the equations (the paper's S2 Table prints
+nM/s for all of them; see DATA.md). The range of k1 is the code's [0, 0.1]; the S2 Table
+gives [0, 0.05].
 
 Public functions:
 
@@ -66,7 +68,8 @@ T_END_BISTABLE = 1800.0      # s (30 min); the QoI is the state at this time
 T_END_OSC = 5400.0           # s
 DT_OSC = 20.0                # s, output grid of the oscillatory run
 START_OSC = 49               # 0-based index of t = 980 s (MATLAB startIdx = 50)
-PEAK_THRESHOLD = 17.0        # max - min of the peak heights must be below this
+PEAK_THRESHOLD = 17.0        # max - min of the peak heights must be below this (the code's full
+                             # spread, limitCycleFeatures.m; the paper's text, p. 23, says one half)
 LCA_THRESHOLD = 1.0          # amplitude must exceed this
 DECAY_THRESHOLD = 5.0        # range of the cycle amplitudes must be below this
 RTOL = ATOL = 1e-10          # bistable runs

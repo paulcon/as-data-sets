@@ -10,8 +10,8 @@ infectious period tau_inf = 1/gamma (days), so beta = R0 / tau_inf, sigma = 1 / 
 gamma = 1 / tau_inf. The outputs (Eq. (4.2)) are the time t_peak (days) at which I is largest and
 the peak number of infectious individuals I_peak = I(t_peak).
 
-Choices not stated in the paper (see DATA.md, which shows that they reproduce the paper's
-published moments to 0.1 day and 0.01 %):
+Choices not stated in the paper (see DATA.md: with them the paper's published means agree to
+within 0.1 day (t_peak) and 0.01 x 10^3 (I_peak)):
 
 - Initial state (S, E, I, R)(0) = (N - 1, 0, 1, 0): one infectious individual at t = 0.
 - The table on p. 10 gives "mean" and "variance" (0.025^2, 0.25^2, 0.25^2); we read them as the
@@ -175,19 +175,21 @@ def trajectory(x, t, y0=Y0, n=N_POP, rtol=RTOL, atol=ATOL):
     return sol.y
 
 
-def gauss_hermite_moments(npts, qoi=None):
+def gauss_hermite_moments(npts, mu=MU, sigma=SIGMA, **kw):
     """Mean, standard deviation and first-order/total Sobol indices of (t_peak, I_peak) by a
-    tensor Gauss-Hermite rule with npts points per input in xi = (ln x - MU)/SIGMA (the paper's
+    tensor Gauss-Hermite rule with npts points per input in xi = (ln x - mu)/sigma (the paper's
     gPC design: npts = 3 gives 27 runs, npts = 10 gives 1000), and a tensor Hermite expansion of
-    degree npts - 1 per input. Returns a dict of arrays indexed [qoi]."""
+    degree npts - 1 per input. mu and sigma default to MU and SIGMA (other readings of the
+    input table can be passed); further keywords (y0, rtol, ...) go to `peak`. Returns a dict of
+    arrays indexed [qoi]."""
     from itertools import product
     from math import factorial
     xi, w = np.polynomial.hermite_e.hermegauss(npts)
     w = w / w.sum()
     idx = list(product(range(npts), repeat=3))
-    X = np.array([np.exp(MU + SIGMA * xi[list(k)]) for k in idx])
+    X = np.array([np.exp(mu + sigma * xi[list(k)]) for k in idx])
     W = np.array([np.prod(w[list(k)]) for k in idx])
-    f = peaks(X)
+    f = peaks(X, **kw)
     # orthonormal probabilists' Hermite polynomials at the nodes: P[d, q] = He_d(xi_q)/sqrt(d!)
     P = np.array([np.polynomial.hermite_e.hermeval(xi, [0] * d + [1]) / np.sqrt(factorial(d))
                   for d in range(npts)])

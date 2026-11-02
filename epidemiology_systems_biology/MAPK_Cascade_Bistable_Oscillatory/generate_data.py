@@ -2,33 +2,30 @@
 
     python generate_data.py                          # all three studies, 512 samples each, writes here
     python generate_data.py --study bistable_log     # one study
-    python generate_data.py --out /tmp/mapk --rows 0:16 --check   # a subset, compared with the files here
+    python generate_data.py --out DIR --rows 0:16 --check   # a subset in DIR, compared with the files here
     python generate_data.py --fd-check 5             # gradients vs. central differences, 5 rows per study
 
 Three studies. The first two are the designs of the Sobol' analysis of Linden, Kramer and
-Rangamani (2022), Fig. 4; the third is ours.
+Rangamani (2022), Fig. 4, in which every free parameter is uniform on its range; the third
+is this data set's own choice, not the paper's.
 
-- bistable: the seven free parameters (k1..k6, alpha) uniform on the ranges of the
-  authors' code, the other seven at the bistable nominal values. Outputs x2 and x3 at
-  t = 1800 s (30 min) from the paper's high- and low-steady-state initial conditions;
-  gradients by forward sensitivities.
+- bistable (the notebook's headline): the seven free parameters (k1..k6, alpha) uniform on
+  the ranges of the authors' code (k1: [0, 0.1]; the paper's S2 Table gives [0, 0.05]), the
+  other seven at the bistable nominal values. Outputs x2 and x3 at t = 1800 s (30 min) from
+  the paper's high- and low-steady-state initial conditions; gradients by forward sensitivities.
 - oscillatory: the same parameters (k5 >= 1e-5), the other seven at the oscillatory
   nominal values. Outputs the time-mean of x3 over 980 <= t <= 5400 s (gradient by
   forward sensitivities) and the limit-cycle amplitude and period of x3 (no gradients;
   0 = no limit cycle) with a 0/1 flag.
-- bistable_log: as `bistable`, but ln(theta) uniform on [ln(U/100), ln(U)], U = the upper
-  bounds of the paper's (the authors' code's) ranges, so the box lies inside the paper's
-  box and contains the bistable nominal point (log-uniform inputs: the convention of the
-  paper's S4 Table for its third model; our choice for this model). Inputs and gradients
-  are stored in physical units, like the other studies. (An earlier version of this study
-  used [theta*/10, 10 theta*], which reaches up to 9.8 times beyond U; it was dropped.)
+- bistable_log (secondary): as `bistable`, but ln(theta) uniform on [ln(U/100), ln(U)], U = the
+  upper bounds of the bistable ranges, so the box lies inside the paper's box and contains
+  the bistable nominal point. The paper uses uniform inputs throughout; the log-uniform
+  design is ours. Inputs and gradients are stored in physical units, like the other studies.
 
 Design: a scrambled Sobol' sequence (scipy.stats.qmc.Sobol, scramble=True) of 2^9 = 512
 points per study, seeds 570, 571 and 572, mapped linearly to the ranges (to the log
 ranges for bistable_log). `--rows a:b` evaluates only those rows of the same design.
-One process. The runs that wrote the files (2026-11-01, shared 2-CPU container) took
-142 s (bistable), 881 s (oscillatory) and 79 s (bistable_log, in-bounds design) of wall time;
-the CPU time was about a third to a half of that.
+One process; the run time is in DATA.md ("Regenerating").
 
 Only numpy, scipy and the standard library are imported.
 """
@@ -134,13 +131,20 @@ def check(out, study, rows):
 
 
 def _fd(q, x, rel=1e-5):
+    """Central differences of q at x with step rel*x[j]; a forward difference with step
+    rel*1e-3 where x[j] = 0 (the parameters must stay nonnegative)."""
     g = np.empty(len(x))
     for j in range(len(x)):
-        h = rel*max(abs(x[j]), 1e-3) if x[j] > 1e-3 else rel*x[j]
         a, b = x.copy(), x.copy()
-        a[j] += h
-        b[j] -= h
-        g[j] = (q(a) - q(b))/(2*h)
+        if x[j] > 0:
+            h = rel*x[j]
+            a[j] += h
+            b[j] -= h
+            g[j] = (q(a) - q(b))/(2*h)
+        else:
+            h = rel*1e-3
+            a[j] += h
+            g[j] = (q(a) - q(x))/h
     return g
 
 

@@ -1,7 +1,7 @@
 """Write inputs.csv, outputs.csv and gradients.csv for the SEIR epidemic-peak model.
 
     python generate_data.py                        # writes the three CSVs here
-    python generate_data.py --out /tmp/seir --check  # writes elsewhere, compares with the files here
+    python generate_data.py --out DIR --check       # writes to DIR, compares with the files here
 
 Draws M = 1000 independent samples of the three lognormal inputs of `seir_model`
 (R0, tau_inc, tau_inf; ln x ~ N(MU, diag(SIGMA^2))) with numpy's default generator seeded with
