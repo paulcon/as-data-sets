@@ -167,10 +167,11 @@ this, a cached simulation would start each run from the previous run's paced sta
 
 ## Accuracy
 
-The checks that rerun the model need Myokit, which is not installed in `.venv`. Numbers marked "original run"
-come from runs with Myokit 1.39.2 (CVODES) in the container that wrote the data; `check_accuracy.py`
-recomputes them where Myokit, SUNDIALS and a C compiler are installed (checks 4 and 5 were not rerun here).
-Numbers marked "scipy run" come from `check_accuracy.py --scipy` (Myokit 1.39.2 parses the model file, scipy
+The checks that rerun the model need Myokit, which is not installed in `.venv`. Numbers marked "CVODES run"
+come from `check_accuracy.py` checks 1-5 with Myokit 1.39.2 and SUNDIALS 6.4.1 (Ubuntu 24.04 `libsundials-dev`;
+Python 3.12.3, numpy 2.4.6, scipy 1.17.1; an AWS c7a.4xlarge, 2026-11-02; 257 s wall), the solver of the
+shipped data. Checks 4 and 5 there reproduced the original run's numbers quoted below exactly. Numbers
+marked "scipy run" come from `check_accuracy.py --scipy` (Myokit 1.39.2 parses the model file, scipy
 1.17.1's LSODA integrates it, rtol 1e-6, atol 1e-8; Python 3.11 on macOS, a separate environment from
 `.venv`, 2026-11-02), an integrator independent of the shipped data's.
 
@@ -201,29 +202,33 @@ Numbers marked "scipy run" come from `check_accuracy.py --scipy` (Myokit 1.39.2 
   so the check says little about Na loading in the box.
 - **An independent integrator** (scipy run, `check_accuracy.py --scipy`, check 1). Row 0 rerun with scipy's
   LSODA instead of CVODES reproduces the CSV's eight biomarkers to a relative 4.8e-4 at beat 500 and 1.8e-3
-  at beat 1000 (A90 86.4 ms, Vmax 17.3 mV, A30 47.5 ms, as in the CSV), 714 s CPU. So the CSV is a faithful
-  run of the model file, and the biomarker code and pacing do what is stated.
-- **pNaK one at a time** (scipy run, check 2; the other 14 factors at 1). A90 (ms) and [Na]i at the end of the
+  at beat 1000 (A90 86.4 ms, Vmax 17.3 mV, A30 47.5 ms, as in the CSV), 714 s CPU. The CVODES run of check 1
+  (the shipped pacing sequence) agrees with the CSV to 5.6e-4 and 1.7e-3, the same size: these are the
+  run-to-run differences of a 1000-beat train between platforms. So the CSV is a faithful run of the model
+  file, and the biomarker code and pacing do what is stated.
+- **pNaK one at a time** (CVODES run, check 2; the other 14 factors at 1). A90 (ms) and [Na]i at the end of the
   beat (mM; 8.81 initially):
 
   | beat | pNaK 0.1 | pNaK 0.5 | pNaK 1.0 |
   |---|---|---|---|
   | 5 | 308.5 (8.98) | 265.4 (8.93) | 231.1 (8.87) |
   | 20 | 292.1 (9.53) | 255.2 (9.28) | 228.8 (9.02) |
-  | 100 | 208.5 (12.06) | 204.9 (10.73) | 207.9 (9.60) |
-  | 500 | 118.1 (20.31) | 157.0 (13.34) | 204.9 (9.69) |
-  | 1000 | 86.7 (26.95) | no AP (Vmax −53.9 mV; 13.48) | 204.7 (9.68) |
+  | 100 | 208.5 (12.06) | 205.0 (10.73) | 207.8 (9.59) |
+  | 500 | 118.1 (20.31) | 156.9 (13.33) | 198.7 (9.93) |
+  | 1000 | 86.6 (26.94) | 152.1 (13.79) | 199.3 (9.90) |
 
   The paper's Fig 2(a) (p. 12; read by eye: about 290, 245 and 205 ms at pNaK 0.1, 0.5 and 1.0) falls with
   pNaK, as beats 5–20 do here; at beat 1000 a weak pump has loaded the cell with Na and gives the shortest
-  APs, so the positive pNaK effect of the design is present one at a time too. The failed beat 1000 at
-  pNaK 0.5 contradicts the paper's normal response for pNaK < 1.07; it is near threshold and may depend on
-  the solver (not checked with CVODES).
-- **The fixed E_Na_SL** (scipy run, check 3), beat 1000: at the nominal point the file gives Vmax 26.2 mV,
-  A90 204.7 ms and A30 157.2 ms; with the Nernst E_Na_SL of the published model, Vmax 42.9 mV, A90 188.7 ms and A30 108.6 ms
-  ([Na]i 10.42 against 9.68 mM). At row 0 the
+  APs, so the positive pNaK effect of the design is present one at a time too. The scipy run (LSODA) of the
+  same check agrees to 0.1 ms through beat 100 and at pNaK 0.1, but at beat 1000 it gives a failed beat at
+  pNaK 0.5 (Vmax −53.9 mV) and 204.7 ms at pNaK 1.0: near the stimulus threshold the late beats depend on the
+  integrator (see "Near-threshold stimulus"). With CVODES every beat of the sweep is normal, as the paper
+  reports for pNaK < 1.07.
+- **The fixed E_Na_SL** (CVODES run, check 3), beat 1000: at the nominal point the file gives Vmax 25.8 mV,
+  A90 199.3 ms and A30 152.7 ms; with the Nernst E_Na_SL of the published model, Vmax 42.9 mV, A90 188.7 ms and A30 108.5 ms
+  ([Na]i 10.42 against 9.90 mM; the scipy run gives the same to within 0.4 mV and 5.4 ms). At row 0 the
   file gives Vmax 17.3 mV, A90 86.4 ms and A30 47.5 ms (the CSV's values); with the Nernst form, Vmax 49.2 mV, A90 73.8 ms and A30
-  12.4 ms. Checks 1-3 took 66 min wall time (about 6-12 min of CPU per 1000-beat run).
+  12.4 ms (the same in both runs). With CVODES checks 1-5 took 257 s; the scipy run of checks 1-3 took 66 min (about 6-12 min of CPU per 1000-beat run).
   The paper's Fig 2(d) (baseline AP peak near 26 mV) matches the file.
 - **[Na]i loading** (original run; external, not reproducible from the repository, because the 14 rows
   were not recorded): 14 design rows spread over the normal rows (pNaK 0.24-1.03) were rerun with
@@ -231,7 +236,7 @@ Numbers marked "scipy run" come from `check_accuracy.py --scipy` (Myokit 1.39.2 
   Beat 1000 matched the CSV (A90 to 0.02 ms). [Na]i at the end of beat 1000 was 12.0-25.8 mM (median
   15.9), against 8.81 mM in the initial state; median 9.2 mM at beat 10, 11.8 at beat 100 and 15.2 at
   beat 500. Check 2 below shows the same loading one factor at a time.
-- **Near-threshold stimulus** (original run; `check_accuracy.py` check 4). At the nominal point (all p = 1) the 9.5 A/F stimulus occasionally fails,
+- **Near-threshold stimulus** (original run, reproduced exactly by the CVODES run of check 4). At the nominal point (all p = 1) the 9.5 A/F stimulus occasionally fails,
   and which beat fails depends on how the integration is split into `pre`/`run` calls: one 498-beat
   `pre` gives a failed beat 499 (A90 19.4 ms) and recovering beats 152.8 and 178.9 ms; 250 + 249 beats
   give 198.2 ms. With the shipped sequence, beats 999 and 1000 at the nominal point are normal (198.7
@@ -239,7 +244,7 @@ Numbers marked "scipy run" come from `check_accuracy.py --scipy` (Myokit 1.39.2 
   rerunning the first 10 normal rows with two other splits (one 998-beat `pre`, or a check at beat 250)
   reproduced A90 of beat 1000 to within 0.03 % for 9 rows and 1.9 % for one (row 5: 49.18 vs 50.12 ms).
   The `b500_*` columns can carry such a recovering beat at some rows (1 normal row has `b500_Vmax` < 0).
-- **Solver tolerance** (original run; `check_accuracy.py` check 5). At the nominal point (one 998-beat `pre`), rel/abs tolerances 1e-3/1e-5 instead
+- **Solver tolerance** (original run, reproduced exactly by the CVODES run of check 5). At the nominal point (one 998-beat `pre`), rel/abs tolerances 1e-3/1e-5 instead
   of 1e-4/1e-6 changed A90 of beat 1000 from 199.19 to 199.79 ms (0.3 %). Tighter tolerances were not
   tried.
 - **Gradients:** none, so no gradient check.
@@ -273,7 +278,7 @@ Numbers marked "scipy run" come from `check_accuracy.py --scipy` (Myokit 1.39.2 
   setting (Myokit defaults) and `pre(999 * 500)` + one logged beat, and the same Table 4 box with the same
   factor-to-current mapping as here. **But the paper's Fig 2(a) matches the first 5–20 beats of this file, not
   the 1000-beat train** (check 2 above): varying pNaK alone, A90 at small pNaK is about 300 ms in Fig 2(a) and
-  at beats 5–20 here, and 86.7 ms at beat 1000. The stored biomarkers here are those of beat 1000, the paper's
+  at beats 5–20 here, and 86.6 ms at beat 1000. The stored biomarkers here are those of beat 1000, the paper's
   stated protocol, and are kept as they are; which train and file produced Fig 2 and the Saltelli runs is
   asked of the authors (open). The evidence points to the authors' cells being less Na-loaded:
   in the 14-row rerun, the median ratio (or difference) of each biomarker at beat k to beat 1000,

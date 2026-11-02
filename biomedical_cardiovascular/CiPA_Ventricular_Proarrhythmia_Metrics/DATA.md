@@ -196,7 +196,9 @@ named recompute them where Myokit is installed.
 - **Reproducibility and solver tolerance** (original runs, 2026-11-01). Rerunning rows 0 and 223 at the exact
   design inputs reproduced the eight features to a relative 2.0e-10 (the 10 significant digits written;
   `generate_data.py --check` and `check_accuracy.py`). Rerunning from the CSV's 10-digit inputs instead
-  changed them by up to 1.9e-4 (rows 0, 112, 223; `check_accuracy.py`), the level at which CVODES's adaptive
+  changed them by up to 1.9e-4 (rows 0, 112, 223; `check_accuracy.py`). `check_accuracy.py` reproduced both
+  numbers on 2026-11-02 with Myokit 1.39.2 and SUNDIALS 6.4.1 (Ubuntu 24.04, Python 3.12.3, numpy 2.4.6, an AWS
+  c7a.4xlarge; 105 s): 1.3e-10 to 2.0e-10 from the exact design, 2.8e-5 to 1.9e-4 from the CSV inputs. This is the level at which CVODES's adaptive
   steps at rel_tol 1e-4 respond to a 1e-10 perturbation of the inputs; this is the numerical noise of the
   data. Tightening rel_tol to 1e-6 (`generate_data.py --check`) (the paper's lsoda tolerance) changed
   the features by at most 3.7e-4 relative (row 0: qNet 48.8162 vs 48.8342 nC/µF, APD90 429.107 vs 429.097
