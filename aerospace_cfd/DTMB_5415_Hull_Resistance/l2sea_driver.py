@@ -42,12 +42,13 @@ DIAG_NAMES = ("Rw_wc", "Rf_ittc")
 BAD_T = {7: (-5.70, -5.60), 6: (-5.65, -5.60)}
 #: Friction check: R_f / Rf_ittc (both as the code prints them) of valid runs follows
 #: FRICTION_LINE[0] + FRICTION_LINE[1] * Fr to within FRICTION_TOL. Fitted to the 34 valid G7
-#: reruns of design_diagnostics.csv (residuals -0.0034 .. 0.0070); valid runs of the shape study
-#: (G7) and the G6 reruns stay within 0.009, the flagged rows are 0.021 or more away.
+#: reruns of design_diagnostics.csv (residuals -0.0034 .. 0.0070); the shape study stays within
+#: 0.0071, the flagged design rows are 0.0216 or more away (check_accuracy.py).
 FRICTION_LINE = (1.0160, 0.0635)
 FRICTION_TOL = 0.015
-#: Wave-cut check: valid runs have Rw_wc <= WAVECUT_MAX_RATIO * R_w (valid G7 and G6 runs here:
-#: 0.27 .. 1.79; flagged design rows 4.8 and more).
+#: Wave-cut check: valid runs have Rw_wc <= WAVECUT_MAX_RATIO * R_w (valid runs in the shipped
+#: files: 0.27 .. 1.22, and 1.60 for one run inside the draft band; flagged design rows 4.8 and
+#: more; check_accuracy.py).
 WAVECUT_MAX_RATIO = 2.0
 
 
@@ -60,6 +61,8 @@ def failure_reason(x, out, fidelity, band=True):
     the draft band BAD_T of the fidelity; friction R_f / Rf_ittc off the line FRICTION_LINE by more
     than FRICTION_TOL; the wave-cut wave resistance larger than WAVECUT_MAX_RATIO times R_w or
     negative resistances. They were calibrated on G7 and checked on G6 only; see DATA.md.
+    generate_data.py applies it to no run: the shipped values are stored as the code printed
+    them, and the notebook applies the rule when it reads them.
     """
     fidelity = int(fidelity)
     if band and fidelity in BAD_T:
@@ -106,7 +109,9 @@ def run(x, l2sea_home, fidelity=7, sinkoff="y", trimoff="y", timeout=1800, keep_
     R_f     frictional resistance, flat-plate (local Reynolds number), N (force-dyn.out Rf)
     S_wet   wetted hull surface, model scale, m^2 (panca.out)
     displacement  displaced volume, model scale, m^3 (panca.out)
-    cpu_s   the program's own CPU-time report, s (elapsed_CPUtime.out)
+    cpu_s   the program's own time report, s (elapsed_CPUtime.out). It is not CPU time: the
+            program reads SYSTEM_CLOCK (wall time) and divides the count by 10000, which under
+            gfortran (1000 counts per second) gives a tenth of the wall time; see DATA.md
     Rw_wc, Rf_ittc  diagnostics: wave-cut wave resistance and ITTC-1957 friction, N
     """
     x = [float(v) for v in x]

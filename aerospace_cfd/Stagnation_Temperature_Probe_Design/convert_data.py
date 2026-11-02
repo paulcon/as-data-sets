@@ -31,8 +31,10 @@ companion repository (github.com/ascillitoe/probe-subspaces, commit 072a0b0,
 Example_Notebooks/Yp_subspace.joblib and Rr_subspace.joblib, whose 7 x 7 subspace matrices were
 read from the raw bytes, never unpickled): under this map their loss direction equals Eq. 12
 (cosine 0.99997) and their recovery subspace gives the vectors of Fig. 11. The code's baseline
-vector (dim_red.py, line 28) is Table 1's x0 under the same map. Details in DATA.md. With x
-the normalized value in the paper's
+vector (dim_red.py, line 28) is Table 1's x0 under the same map. Details in DATA.md;
+check_accuracy.py recomputes the subspace numbers. Eq. 4 as intended is
+x = (2 x_phys - x_U - x_L) / (x_U - x_L); the paper prints the numerator as 2 x_phys - (x_U - x_L),
+a misprint that does not map Table 1 to [-1, 1]. With x the normalized value in the paper's
 convention, Eq. 4 inverted gives the physical value
     x_phys = x_L + (x + 1) (x_U - x_L) / 2
 with x_L, x_U from Table 1 (LOWER, UPPER). The physical values are deltas or scale factors
@@ -97,12 +99,12 @@ def to_paper_normalized(X_archive):
 
 
 def to_physical(Z):
-    """Eq. 4 inverted: normalized (Table 1 order) -> physical."""
+    """Eq. 4 (as intended) inverted: normalized (Table 1 order) -> physical."""
     return LOWER + (Z + 1.0) * (UPPER - LOWER) / 2.0
 
 
 def to_normalized(Xphys):
-    """Eq. 4: physical -> normalized (Table 1 order)."""
+    """Eq. 4 as intended, (2 x - x_U - x_L) / (x_U - x_L): physical -> normalized (Table 1 order)."""
     return (2.0 * Xphys - UPPER - LOWER) / (UPPER - LOWER)
 
 

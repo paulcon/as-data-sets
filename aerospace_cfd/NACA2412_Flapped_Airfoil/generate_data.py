@@ -1,7 +1,7 @@
 """Write the data files of NACA2412_Flapped_Airfoil by running XFOIL 6.99.
 
 Kind: stored data. The numbers come from XFOIL (M. Drela and H. Youngren, MIT, GPL), an
-outside program that this script drives through xfoil_run.py; see DATA.md for the build of
+outside program that this script drives through xfoil_driver.py; see DATA.md for the build of
 the executable that wrote the shipped files. numpy is the only Python dependency.
 
     python generate_data.py --xfoil /path/to/xfoil             # all XFOIL files (about 10 min)
@@ -21,10 +21,15 @@ Files written (all CSV with two '#' header lines, read with np.loadtxt(path, del
   convergence_ladder.csv                      how each point that needed the retry ladder
                                               (status 3 or 4) or failed (status -1) went
 A point where XFOIL does not converge is kept, with nan outputs and status -1. The status
-column of every output file says how each point converged (xfoil_run.STATUS_NOTE).
+column of every output file says how each point converged (xfoil_driver.STATUS_NOTE).
+
+Without an XFOIL executable the script stops with exit status 1 and a message that says what to
+build (only the --davis-src copy runs without it). --check reruns XFOIL and compares; it writes
+nothing. The shipped files are the record: rerun XFOIL only if a problem is found in them.
 """
 import argparse
 import os
+import shutil
 import sys
 import tempfile
 import time
@@ -33,7 +38,7 @@ import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-import xfoil_run  # noqa: E402
+import xfoil_driver  # noqa: E402
 
 SEED_PRIMARY = 2412
 SEED_EXTENSION = 24120
@@ -58,7 +63,7 @@ REFERENCE = [  # set (0 calibration, 1 prediction), alpha, flap, Re
 
 OUT_COLS = "CL (-),CD (-),CDp (-),CM (-),xtr_top_out (x/c),xtr_bot_out (x/c),status"
 OUT_FMT = ["%.4f", "%.5f", "%.5f", "%.4f", "%.4f", "%.4f", "%d"]
-STATUS_NOTE = xfoil_run.STATUS_NOTE
+STATUS_NOTE = xfoil_driver.STATUS_NOTE
 
 # Re sensitivity (labelled check, not a design): the paper's printed range 665,000-735,000
 # (Sec. 1.2.1, p. 3), the code's range 696,500-703,500, and the nominal 700,000
@@ -93,11 +98,11 @@ def run_rows(X, names, exe, label, ladder=None):
         kw = dict(zip(names, x))
         seq = None
         try:
-            r = xfoil_run.run(exe=exe, **kw)
+            r = xfoil_driver.run(exe=exe, **kw)
             out[i] = [r["cl"], r["cd"], r["cdp"], r["cm"], r["xtr_top_out"],
                       r["xtr_bot_out"], r["status"]]
             seq = r.get("seq")
-        except xfoil_run.XfoilFailure:
+        except xfoil_driver.XfoilFailure:
             out[i, 6] = -1
         if ladder is not None and (out[i, 6] >= 3 or out[i, 6] < 0):
             if seq:
@@ -121,7 +126,7 @@ def save(path, data, fmt, line1, line2):
 
 
 def xfoil_names(bounds):
-    return [b[0].lower() for b in bounds]   # xfoil_run.run keyword names
+    return [b[0].lower() for b in bounds]   # xfoil_driver.run keyword names
 
 
 def save_ladder(fname, rows):
@@ -136,7 +141,7 @@ def save_ladder(fname, rows):
     allr = np.vstack([old, new])
     allr = allr[np.lexsort((allr[:, 1], allr[:, 0]))]
     save(path, allr, LADDER_FMT,
-         "Points of the XFOIL files that needed the retry ladder of xfoil_run.py (status 3 = "
+         "Points of the XFOIL files that needed the retry ladder of xfoil_driver.py (status 3 = "
          "ITER 100 directly, 4 = ITER 100 continuation) or failed every attempt (-1); seq_* "
          "describe the continuation path of status 4 rows", LADDER_COLS)
 
@@ -266,6 +271,11 @@ def main():
         if a.part == "all" and not a.check:
             print("copied; rerun without --davis-src for the XFOIL files")
             return
+    if shutil.which(a.xfoil) is None:
+        sys.exit("XFOIL not found (%r). Build XFOIL 6.99 as DATA.md describes (\"XFOIL build\": Ubuntu's "
+                 "source package 6.99.dfsg+1-3, double precision, without -ffpe-trap; the packaged "
+                 "binary cannot deflect a flap), then rerun generate_data.py with --xfoil PATH "
+                 "(or set XFOIL_EXE)." % a.xfoil)
     if a.check:
         ok = check(a.xfoil, a.check)
         print("check %s in %.1f s" % ("passed" if ok else "FAILED", time.time() - t0))

@@ -2,10 +2,11 @@
 
 Kind: **stored data**. XFOIL 6.99 (M. Drela and H. Youngren, MIT, GPL) wrote every
 aerodynamic number here. It is an outside Fortran program, so its outputs are the record.
-`generate_data.py` and `xfoil_run.py` (MIT, written for this data set, standard library and numpy)
-drive XFOIL with the command sequence of the paper's code and write the CSVs. They reproduce
-the shipped files exactly given the same XFOIL build (see Regenerating). `davis_training_98.csv`
-holds the authors' own XFOIL runs, copied as text.
+`generate_data.py` and `xfoil_driver.py` (MIT, written for this data set, standard library and numpy)
+drive XFOIL with the command sequence of the paper's code and write the CSVs. They reproduced
+the shipped files exactly with the same XFOIL build (see Regenerating); without an XFOIL executable
+`generate_data.py` stops with an error that says what to build. XFOIL is rerun only if a problem is
+found in the shipped data. `davis_training_98.csv` holds the authors' own XFOIL runs, copied as text.
 
 ## Files
 
@@ -20,9 +21,10 @@ holds the authors' own XFOIL runs, copied as text.
 | `davis_training_98.csv` | 98 × 6: Re, alpha, flap, CL, CD, CM | the authors' `training/training_100.csv`, values copied as text |
 | `davis_rerun_outputs.csv` | 98 × 7, as `outputs.csv` | our XFOIL at the 98 inputs of the authors' file |
 | `re_sensitivity.csv` | 35 × 10: alpha, flap, Re, then the 7 output columns | XFOIL at the 7 calibration points for Re = 665,000, 696,500, 700,000, 703,500 and 735,000: a labelled sensitivity check of the paper's printed Re range (p. 3), not a design |
-| `convergence_ladder.csv` | 47 × 8: file, row, status, then the continuation path (side, start angle, smallest step, steps, XFOIL processes) | one row for every point of the XFOIL files that needed the retry ladder (status 3 or 4) or failed every attempt (−1) |
-| `generate_data.py` | writes all of the above; `--check N` reruns the first N rows of each design plus every retry-ladder row, and compares | regenerates the data |
-| `xfoil_run.py` | `run(alpha, flap, re, ncrit=0.01, xtr_top=1, xtr_bot=1, ...)`: one XFOIL analysis with the convergence protocol below | the XFOIL driver |
+| `convergence_ladder.csv` | 47 × 8: file, row, status, then the continuation path (side, start angle, smallest step, steps, XFOIL processes) | one row for every point of the XFOIL files that needed the retry ladder (status 3 or 4) or failed every attempt (−1); its first header line names the driver module by its former file name, `xfoil_run.py` (now `xfoil_driver.py`) |
+| `generate_data.py` | writes all of the above; `--check N` reruns the first N rows of each design plus every retry-ladder row, and compares (writes nothing) | regenerates the data (needs XFOIL; exits with status 1 and a build message without it) |
+| `xfoil_driver.py` | `run(alpha, flap, re, ncrit=0.01, xtr_top=1, xtr_bot=1, ...)`: one XFOIL analysis with the convergence protocol below | the XFOIL driver |
+| `check_accuracy.py` | recomputes the numbers below marked with its name, from the shipped files (numpy only; does not run XFOIL; under 1 s); `--davis-src FILE` also compares `davis_training_98.csv` with the authors' file | check |
 
 Every CSV is plain comma-separated numbers after two `#` lines (a description and the column
 names with units), so `np.loadtxt(path, delimiter=",")` reads it. Status: 0 = converged
@@ -48,11 +50,14 @@ It contains no active-subspace analysis.
 100-panel baseline setup that accompanied the challenge problem", for the NACA 2412 airfoil with
 a 30 % chord flap at a nominal Re = 700,000, sea level, incompressible. The full command sequence
 is in the authors' code (github.com/csdlpsu/uqchallenge2, commit `73eaec9`, `uqlib.py`, class
-`XFOIL`), and `xfoil_run.py` uses it unchanged:
-`NACA 2412`; `GDES` `FLAP` with hinge x/c = 0.70, y given as 0.5 of the local thickness
+`XFOIL`), and `xfoil_driver.py` uses it with two departures that change no number (below):
+`PLOP` `G F` (graphics off); `NACA 2412`; `GDES` `FLAP` with hinge x/c = 0.70, y given as 0.5 of the local thickness
 (`999`, `0.5`), deflection β (deg, + down), `EXEC`; `PPAR` `N` 100; `OPER`, `MACH 0`,
 `VISC Re`, `VPAR` `N` 0.01; `PACC`; `ALFA α`. XFOIL's defaults apply otherwise: 20 viscous
-iterations (`xfoil.f`, ITMAX = 20; raised to 100 only in our retry ladder), no trip (x_tr = 1). The paper does not state N_crit = 0.01 (XFOIL's default is 9);
+iterations (`xfoil.f`, ITMAX = 20; raised to 100 only in our retry ladder), no trip (x_tr = 1).
+The departures: `xfoil_driver.py` writes the trip setting out (`XTR 1 1`, XFOIL's default) so that the
+extension can vary it, and it switches `PACC` on just before the last `ALFA`, where the authors switch
+it on before the first (see the reader, below). The paper does not state N_crit = 0.01 (XFOIL's default is 9);
 it says only that "the internal XFOIL settings are fixed" (p. 5). With N_crit = 0.01, transition
 falls at x/c ≤ 0.0419 in every converged run, so the boundary layer is in effect turbulent.
 
@@ -76,18 +81,21 @@ XFOIL process:
    converged state. Every angle of the path must appear in the polar file (XFOIL writes only
    converged points), in order, ending at α. `convergence_ladder.csv` records each path.
 
-Attempts 1–3 are unchanged, and 4–5 run only after they fail, so every point that converged
-before the ladder was added has exactly the same numbers: rerunning all four XFOIL files with
-the ladder reproduced every previously converged row as identical text (961 of `outputs.csv`,
-994 of `extension_outputs.csv`, 11 of `reference_points.csv`, 96 of `davis_rerun_outputs.csv`).
+Attempts 4–5 run only after 1–3 fail, so every point that converges in attempts 1–3 has the
+numbers it would have without the ladder: in the original run, running the four XFOIL files with
+attempts 1–3 only gave identical text for every such row (961 of `outputs.csv`, 994 of
+`extension_outputs.csv`, 11 of `reference_points.csv`, 96 of `davis_rerun_outputs.csv`; the counts by
+`check_accuracy.py`, the comparison an external run, not reproducible from the repository).
 
 **Why the ladder.** The points that fail attempts 1–3 are mostly not stalled. With N_crit =
 0.01 transition sits at the leading edge (x/c ≤ 0.0419), and XFOIL's Newton iteration there can
 settle into a limit cycle that 20 iterations do not leave. In XFOIL's trace of the failed point
 (α, β) = (−2.456°, −2.943°) the largest boundary-layer residual is at station 3 (next to the
 leading edge) in all 20 iterations, and the rms residual repeats a four-iteration cycle
-between 0.008 and 0.056 over the last 10 iterations instead of falling. Point (7.286°, 10.573°), one of the high-lift failures, converges directly with
-`ITER 100` (CL 1.4251, CD 0.02848, CM −0.0994), well below the file's largest CL of 1.6405.
+between 0.008 and 0.056 over the last 10 iterations instead of falling (external run, not
+reproducible from the repository). Point (7.286°, 10.573°), one of the high-lift failures, converges
+directly with `ITER 100` (row 15 of `outputs.csv`, status 3: CL 1.4251, CD 0.02848, CM −0.0994),
+well below the file's largest CL of 1.6405 (`check_accuracy.py`).
 In the extension, where N_crit ∈ [0.01, 9] moves transition back, only 6 of 1000 points fail
 attempts 1–3.
 
@@ -98,19 +106,19 @@ protocol excludes. A point that fails every attempt is written as `nan` with sta
 dropped from a file.
 
 **Inputs.** The challenge study uses α ∈ [−5°, 10°] and β ∈ [−5°, 15°] (p. 3), and Re ∈
-[696,500, 703,500] = 7e5 × [0.995, 1.005] (`xfoil_training.py`, `uqlib.DEFAULT_BOUNDS`).
-**The paper prints 665,000–735,000** (±5 %, p. 3; the same text is in the authors' AIAA
-Journal source, `paper/aiaa_journal_submission/main_aiaa_journal.tex`, line 168). We use the
-code's range, as a documented decision:
-- the authors' 98 training rows fall in 98 different Re strata of a 100-point Latin hypercube on
-  ±0.5 % (as they do in α and β), but in only 10 strata on ±5 % (notebook, comparison section),
-  so their design was drawn on ±0.5 %;
-- the paper's own Tables 3–5 (p. 23) bound the latent Re by 696,500 and 703,500;
-- Table 1 (p. 2) gives the truth data's input uncertainty as Re ± 3500, and the challenge truth
-  files in the authors' repository (`given_truths.csv`,
-  `uq_challenge_ground_truth_epistemic_bounds.xlsx`) give no other Re interval.
-The printed range is most likely a factor-10 misprint; whether it is stays an open question for
-the authors. `re_sensitivity.csv` runs XFOIL at the printed range too (Accuracy, below). The inputs are independent
+[696,500, 703,500] = 7e5 × [0.995, 1.005] (`xfoil_training.py` line 11, `re_range = [7e5*.995,
+7e5 * 1.005]`; `uqlib.py` lines 25–26, `DEFAULT_BOUNDS`; read at commit 73eaec9 on 2026-11-02).
+**The paper prints 665,000–735,000** (±5 %, p. 3: "and Reynolds number from 665000 to 735000"; the
+same text is in the authors' AIAA Journal source, `paper/aiaa_journal_submission/main_aiaa_journal.tex`,
+line 168). We use the code's range (author's decision, 2026-11-02). The independent evidence is the
+code and the authors' data: their 98 training rows fall in 98 different Re strata of a 100-point Latin
+hypercube on ±0.5 % (as they do in α and β), but in only 10 strata on ±5 % (notebook, comparison
+section), and their Re values lie between 696,565 and 703,451 (`check_accuracy.py`), so their design was
+drawn on ±0.5 %. This is consistent with the truth data's input uncertainty, Re ± 3500 in Table 1
+(p. 2), which the paper's Tables 3–5 (p. 23) also use to bound the latent Re (696,500–703,500); the
+challenge truth files in the authors' repository (`given_truths.csv`,
+`uq_challenge_ground_truth_epistemic_bounds.xlsx`) give no other Re interval. The printed range is
+probably a factor-10 misprint; that is unconfirmed and remains an open question for the authors. `re_sensitivity.csv` runs XFOIL at the printed range too (Accuracy, below). The inputs are independent
 uniforms on the box, the distribution a Latin hypercube samples.
 
 | name | symbol | units | nominal | range | source |
@@ -154,8 +162,8 @@ all 7).
 12 in ours, 35 directly with `ITER 100`, 1 in an `ITER 100` continuation (row 12, from 5° to
 5.142° at β = −4.868°), and 3 (0.3 %) not at all. Of the 39 points that fail attempts 1–3, 21
 lie in the corner α > 5°, β > 10° (80 design points); the largest CL among the 36 the ladder
-converges is 1.6200, below the file's largest, 1.6405, so they are not post-stall. Before the
-ladder the failures were missing not at random: 40.5 % (17 of 42) of the points with
+converges is 1.6200, below the file's largest, 1.6405, so they are not post-stall. With attempts
+1–3 alone the failures are missing not at random: 40.5 % (17 of 42) of the points with
 y1 = w1(CL)ᵀx ≥ 1.0 failed, against 0 % for y1 ∈ [−0.2, 0.2) (notebook). The 3 remaining
 failures are rows 370 (−2.456°, −2.943°, Re 699,921), 552 (3.835°, 7.906°, 700,460) and
 893 (−2.048°, −4.254°, 697,595), all at moderate lift: isolated XFOIL non-convergences, not
@@ -176,16 +184,25 @@ python generate_data.py --davis-src /path/to/uqchallenge2/training/training_100.
 python generate_data.py --xfoil /path/to/xfoil --check 25            # 25 rows of each design + ladder rows
 ```
 
-The run that wrote the shipped files with the retry ladder (2026-11-01, Ubuntu 24.04.5 x86-64,
-Python 3.13.18, numpy 2.5.4, one process under `nice -n 10` on a heavily shared 2-CPU
-container) took 717 s of wall time and 150 s of user CPU: 425 s for the 1000 challenge runs,
+Without an XFOIL executable (`--xfoil PATH` or `XFOIL_EXE`) the script stops with exit status 1 and a
+message that says what to build and to rerun it (checked in `.venv`); only the `--davis-src` copy runs
+without XFOIL. `--check` writes nothing. XFOIL is not installed in `.venv`, so the script was not run
+there.
+
+**Run time of `generate_data.py`** (the original run that wrote the shipped files, 2026-11-01, in a
+Linux container with Python 3.13, Ubuntu 24.04.5 x86-64, one process under `nice -n 10` on a heavily
+shared 2-CPU machine): 717 s of wall time and 150 s of user CPU: 425 s for the 1000 challenge runs,
 190 s for the extension, 2.5 s for the reference points, 93 s for the 98 reruns and 6 s for the
 35 Re-sensitivity runs. A run takes 0.1–0.2 s on average and a sweep up to about 1 s; a ladder
 point a few seconds; a point that fails every attempt 30–60 s (about 35 s on an idle CPU).
-(The first version, without the ladder, took 231 s on a quieter container.) `--check 25`
-reproduced the first 25 rows of each design and all 42 ladder rows (36 + 6) exactly, status
-included, and both input files from their seeds, in 63 s. The failed rows are not rerun by
-`--check`.
+In that run `--check 25` reproduced the first 25 rows of each design and all 42 ladder rows (36 + 6)
+exactly, status included, and both input files from their seeds, in 63 s. The failed rows are not
+rerun by `--check`.
+
+**In `.venv`** (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, matplotlib 3.11.2, active_subspaces
+1.0.0.dev0): the notebook checks that both input files are the stated Latin hypercubes
+(`generate_data.latin_hypercube` from the seeds; exact) and runs in about 35 s (35.1 and 32.9 s in two runs on 2026-11-02, other jobs sharing the machine; their text outputs are identical); `check_accuracy.py` runs in
+under 1 s.
 
 **XFOIL build** (the executable is not shipped; SHA-256 of the one used:
 `eaed247a63d802556bddcd11243d29ea5397d1a5a1178b8dd0bd2b9836903907`):
@@ -199,17 +216,20 @@ included, and both input files from their seeds, in 63 s. The failed rows are no
   `make xfoil FFLAGS="-O2 -fbounds-check -fallow-argument-mismatch -fdefault-real-8" FFLOPT="<same>"`,
   with gfortran 13.3.0 and libX11 (needed to link plotlib; graphics are switched off at run time).
   This is double precision, as in Debian's package.
-- Why not the packaged binary: Ubuntu's `xfoil` package (`apt-get install xfoil`, 6.99.dfsg+1-3)
-  is built with `-ffpe-trap=invalid,zero` and dies with SIGFPE on entering `GDES`, so it cannot
-  deflect a flap. A first build that kept `-finit-real=inf` ran but returned NaN in the boundary
-  layer at easy points (e.g. α = −0.787°, β = −1.264°) and had failed at 24 of the authors' inputs, all of which the authors converged, when the test was stopped.
-  A single-precision build (no `-fdefault-real-8`) failed 5 of the 98 instead of 2 and matched
-  the authors' rounded values less often (CL 37 % against 49 % of converged rows), so double precision was kept.
+- Why not the packaged binary, and why these flags (external runs, not reproducible from the
+  repository): Ubuntu's `xfoil` package (`apt-get install xfoil`, 6.99.dfsg+1-3) is built with
+  `-ffpe-trap=invalid,zero` and dies with SIGFPE on entering `GDES`, so it cannot deflect a flap. A
+  build that kept `-finit-real=inf` ran but returned NaN in the boundary layer at easy points (e.g.
+  α = −0.787°, β = −1.264°) and had failed at 24 of the authors' inputs, all of which the authors
+  converged, when the test was stopped. A single-precision build (no `-fdefault-real-8`) failed 5 of
+  the 98 instead of 2 and matched the authors' rounded values less often (CL 37 % against 49 % of
+  converged rows), so double precision was kept.
 
 ## Accuracy
 
-- **Repeatability.** XFOIL is deterministic: `--check 25`, the full regeneration with the ladder (every previously converged row identical) and EMA's 3-repeat point run give
-  identical values.
+- **Repeatability** (original run; external, not reproducible from the repository without XFOIL).
+  XFOIL is deterministic: `--check 25`, three repeats of single points, and running the files with
+  attempts 1–3 only (for every row those attempts converge) gave identical values.
 - **Against the authors' runs** (notebook, comparison section). At the 98 inputs of
   `davis_training_98.csv` this build converges at 97. It fails at (7.94°, 10.42°), which the
   authors converged. (5.04°, 11.20°) fails attempts 1–3 and converges in the ladder's
@@ -246,21 +266,27 @@ included, and both input files from their seeds, in 63 s. The failed rows are no
   validation points are not. Our 1000-point designs are new runs of the same XFOIL setup with
   this build. They are not the paper's data, and they agree with it to the last printed digit
   where both converge (above).
-- The authors' file holds 16 significant digits per value, while XFOIL 6.99's polar file prints
-  4 or 5 decimals and the authors' reader parses that file. How their file got its extra
-  digits is unknown.
+- The authors' file holds 13 to 15 significant digits per value (`check_accuracy.py`), while XFOIL
+  6.99's polar file prints 4 or 5 decimals and the authors' reader parses that file. How their file
+  got its extra digits is unknown.
+- `davis_training_98.csv` is the authors' `training/training_100.csv` at commit 73eaec9 (SHA-256
+  `c0bf52ce10b4c0ef555f71ad292e6d571ea629d2f74e7b4bcd5de987b94e6216`) with its header line replaced by
+  two `#` lines: its 98 data lines are identical text (`check_accuracy.py --davis-src`, against a copy
+  downloaded from GitHub on 2026-11-02).
 - The extension design, the negative-α sweep, the retry ladder (status 3 and 4), the
   Re-sensitivity file and the 1000-point designs are ours. The authors' driver uses XFOIL's
   default 20 iterations only.
 
 ## License and credit
 
-Code (`generate_data.py`, `xfoil_run.py`, the notebook): MIT (`LICENSE`). Data written here
-(all CSVs except `davis_training_98.csv`): CC BY 4.0 (`LICENSE-DATA`). XFOIL is © Mark Drela
+Code (`generate_data.py`, `xfoil_driver.py`, `check_accuracy.py`, the notebook): MIT (`LICENSE`). Data
+written here (all CSVs except `davis_training_98.csv`): CC BY 4.0 (`LICENSE-DATA`). XFOIL is © Mark Drela
 and Harold Youngren, MIT, GPL; it is run as an outside program and none of its code is in this
 directory. `davis_training_98.csv` is from github.com/csdlpsu/uqchallenge2 (G. Davis and
-A. Renganathan, Penn State), commit `73eaec9`. **That repository states no licence**; it is
-hosted here with credit, following the repository author's decision of 2026-10-30. Cite
+A. Renganathan, Penn State), commit `73eaec9`. **That repository states no licence**, so the file
+is not under CC BY 4.0: it is hosted here with the source credited (decision of 2026-10-30) and is
+listed in the exceptions list of `LICENSE-DATA`. Whether the authors will release it under CC BY 4.0
+is an open question; if they attach a licence or object, that takes precedence. Cite
 G. Davis and A. Renganathan, arXiv:2606.28871 (2026), doi:10.48550/arXiv.2606.28871; the
 challenge problem, A. W. Cary et al., AIAA 2026-0091, doi:10.2514/6.2026-0091; and XFOIL,
 M. Drela, in *Low Reynolds Number Aerodynamics*, Springer, 1989, pp. 1–12,

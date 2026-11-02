@@ -27,7 +27,7 @@ RAW/check.jsonl and RAW/reference.jsonl.
 nodes in each) at fidelity 6, for the paper's second reference value of App. A.3.3 (E[R]
 with Fr and T uniform, fidelity 6). It appends to RAW/quadrature.jsonl.
 
-Steps added after the review (2026-11-01), each resumable and stopped cleanly by --max-minutes:
+Four further steps, each resumable and stopped cleanly by --max-minutes:
 `sweep` runs the parent hull at closely spaced drafts (DRAFT_SWEEPS; RAW/draft_sweep.jsonl),
 `shape` the shape-only study (SHAPE_N Sobol' points in s at Fr = 0.28, T = -6.16, fidelity 7;
 RAW/shape_f7.jsonl), `g6` reruns rows G6_ROWS of the design on G6 (RAW/check.jsonl), and `diag`
@@ -39,11 +39,15 @@ relative difference from the stored outputs (0 when reproduced exactly).
 uq_uniform_quadrature.csv from the JSON lines, and, when their raw files exist, draft_sweep.csv,
 shape_inputs.csv, shape_outputs.csv and design_diagnostics.csv. A run that raised is written as a
 row of NaN outputs; runs that returned numbers are written as printed, also those that fail the
-per-run rule of l2sea_run.failure_reason (DATA.md, Accuracy).
+per-run rule of l2sea_driver.failure_reason (DATA.md, Accuracy).
 
-DIR is a built copy of github.com/MAORG-CNR-INM/NATO-AVT-331-L2-Sea-Benchmark (GPL-3.0),
-with bin/L2-Sea compiled by `make` (DATA.md, Regenerating). Imports: numpy, scipy and
-the standard library, plus l2sea_run.py beside this file.
+DIR is a built copy of github.com/MAORG-CNR-INM/NATO-AVT-331-L2-Sea-Benchmark (GPL-3.0) at
+commit 100da62, with bin/L2-Sea compiled by `make` (DATA.md, Regenerating); it is given by
+--l2sea-home or the environment variable L2SEA_HOME. Without it every step but `assemble`
+stops with an error that says what to build (exit status 1). `assemble` needs the RAW files
+that the other steps write. The shipped files are the record: rerun L2-Sea only if a problem is
+found in them. Imports: numpy, scipy and the standard library, plus l2sea_driver.py beside this
+file.
 """
 import argparse
 import json
@@ -56,7 +60,7 @@ from scipy.stats import qmc
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-import l2sea_run  # noqa: E402
+import l2sea_driver  # noqa: E402
 
 NAMES = ["Fr", "T"] + ["s%d" % k for k in range(1, 15)]
 #: Bounds from the paper, App. A.1.2 (pp. 18-19), and the UM-Bridge model page.
@@ -84,7 +88,7 @@ REFERENCE = ([("parent", f, [0.28, -6.16] + [0.0] * 14) for f in (7, 6, 5, 4, 3,
              + [("optimum", f, [0.28, -6.16] + S_OPT) for f in (7, 1)])
 
 #: Reruns of a full 128-point Sobol' net of the design (rows 0-127) on G6, for the grid check of
-#: the subspace (review fix, 2026-11-01). Pairs already in RAW/check.jsonl are not rerun.
+#: the subspace. Pairs already in RAW/check.jsonl are not rerun.
 G6_ROWS = list(range(128))
 
 #: Rows of the design rerun on G7 to record the two diagnostics (wave-cut wave resistance, ITTC
@@ -93,12 +97,12 @@ G6_ROWS = list(range(128))
 DIAG_ROWS = sorted(set(range(0, 384, 12)) | {3, 63, 189, 207, 305, 323, 343, 71, 101})
 
 #: Draft sweeps at the parent hull (s = 0) mapping the band of silent G7 failures:
-#: (fidelity, Fr, T values). Review fix, 2026-11-01.
+#: (fidelity, Fr, T values).
 DRAFT_SWEEPS = ([(7, 0.28, T) for T in np.round(np.linspace(-5.70, -5.58, 49), 6).tolist()]
                 + [(7, 0.36, T) for T in np.round(np.linspace(-5.70, -5.58, 25), 6).tolist()]
                 + [(6, 0.28, T) for T in np.round(np.linspace(-5.70, -5.58, 25), 6).tolist()])
 
-#: Shape-only study (review fix, 2026-11-01): the 14 shape coefficients on [-1, 1]^14 at the
+#: Shape-only study: the 14 shape coefficients on [-1, 1]^14 at the
 #: optimization benchmark's Fr = 0.28 and T = -6.16 (App. A.4.1), fidelity 7; the first
 #: SHAPE_N points of a 14-dimensional scrambled Sobol' sequence (seed SHAPE_SEED).
 SHAPE_SEED = 14
@@ -108,7 +112,7 @@ SHAPE_FR, SHAPE_T = 0.28, -6.16
 GL_NODES = (6, 3)      # Gauss-Legendre nodes in Fr and in T
 GL_FIDELITY = 6
 
-OUT_NAMES = [n for n in l2sea_run.OUTPUT_NAMES if n != "cpu_s"]
+OUT_NAMES = [n for n in l2sea_driver.OUTPUT_NAMES if n != "cpu_s"]
 OUT_UNITS = {"R_T": "N", "g1": "-", "g2": "-", "g3": "-", "g4": "-", "R_w": "N",
              "R_f": "N", "S_wet": "m^2", "displacement": "m^3"}
 
@@ -131,7 +135,7 @@ def _check_subset(path, k, home):
     pick = [recs[j] for j in np.unique(np.linspace(0, len(recs) - 1, k).round().astype(int))]
     worst = 0.0
     for r in pick:
-        new = l2sea_run.run(r["x"], home, fidelity=r["fidelity"])
+        new = l2sea_driver.run(r["x"], home, fidelity=r["fidelity"])
         d = max(abs(new[n] - r["out"][n]) / max(abs(r["out"][n]), 1e-12) for n in OUT_NAMES)
         worst = max(worst, d)
         print("check", os.path.basename(path), r.get("i", r.get("T")), r["fidelity"],
@@ -204,7 +208,7 @@ def _done(path, key):
 def _one(x, home, fidelity):
     t = time.time()
     try:
-        out = l2sea_run.run(x, home, fidelity=fidelity)
+        out = l2sea_driver.run(x, home, fidelity=fidelity)
         err = None
     except Exception as e:  # recorded, never silently dropped
         out, err = None, "%s: %s" % (type(e).__name__, e)
@@ -295,7 +299,7 @@ def _outrow(r, names=None):
     return [r["out"][k] if r["out"] else np.nan for k in names]
 
 
-DIAG = list(l2sea_run.DIAG_NAMES)
+DIAG = list(l2sea_driver.DIAG_NAMES)
 
 
 def _save(path, A, desc, cols, fmt):
@@ -336,7 +340,8 @@ def cmd_assemble(a):
             + [r["out"]["cpu_s"] if r["out"] else np.nan, r["wall_s"]] for r in ref]
     _save(os.path.join(a.out, "reference_runs.csv"), np.array(rows),
           "L2-Sea reference runs: hull 0 = parent DTMB 5415, 1 = optimized hull of the paper"
-          " (App. A.4.1); cpu_s = the code's own CPU report; wall_s on a shared 2-CPU container",
+          " (App. A.4.1); cpu_s = the code's own time report (a tenth of the wall time under gfortran;"
+          " DATA.md); wall_s on a shared 2-CPU container",
           ["hull (-)", "fidelity (-)"] + NAMES + ["%s (%s)" % (k, OUT_UNITS[k]) for k in OUT_NAMES]
           + ["cpu_s (s)", "wall_s (s)"], "%.9g")
     P, W = gl_grid()
@@ -357,7 +362,7 @@ def cmd_assemble(a):
 
 
 def _assemble_new(a):
-    """The review-fix files (2026-11-01): draft_sweep.csv, shape_inputs.csv, shape_outputs.csv."""
+    """design_diagnostics.csv, draft_sweep.csv, shape_inputs.csv and shape_outputs.csv."""
     cols = ["%s (%s)" % (k, OUT_UNITS[k]) for k in OUT_NAMES] + ["Rw_wc (N)", "Rf_ittc (N)"]
     p = os.path.join(a.raw, "design_diag_f7.jsonl")
     if os.path.exists(p):
@@ -402,12 +407,29 @@ def _assemble_new(a):
               "@100da62, fidelity %d, sinkoff=trimoff='y'" % FIDELITY, cols, "%.9g")
 
 
+INSTALL_MSG = (
+    "L2-Sea not found%s. Build it (gfortran, LAPACK and BLAS): git clone "
+    "https://github.com/MAORG-CNR-INM/NATO-AVT-331-L2-Sea-Benchmark.git L2SEA; cd L2SEA; "
+    "git checkout 100da62; mkdir -p lib; make (DATA.md, Regenerating, gives the details), then rerun "
+    "generate_data.py with --l2sea-home L2SEA (or set L2SEA_HOME).")
+
+
+def require_l2sea(home):
+    """Exit with status 1 and an install message unless HOME holds a built L2-Sea."""
+    if not home:
+        sys.exit(INSTALL_MSG % " (no --l2sea-home given and L2SEA_HOME not set)")
+    exe = os.path.join(home, "bin", "L2-Sea")
+    case = os.path.join(home, "examples", "DTMB-5415")
+    if not (os.path.isfile(exe) and os.access(exe, os.X_OK) and os.path.isdir(case)):
+        sys.exit(INSTALL_MSG % (" in %s (no executable bin/L2-Sea or no examples/DTMB-5415)" % home))
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    sub = p.add_subparsers(dest="cmd", required=True)
+    sub = p.add_subparsers(dest="cmd")
     for name in ("design", "check", "reference", "quadrature", "g6", "sweep", "shape", "diag"):
         q = sub.add_parser(name)
-        q.add_argument("--l2sea-home", required=True)
+        q.add_argument("--l2sea-home", default=os.environ.get("L2SEA_HOME"))
         q.add_argument("--raw", required=True)
         if name in ("g6", "sweep", "shape", "diag"):
             q.add_argument("--max-minutes", type=float, default=1e9)
@@ -428,8 +450,19 @@ def main():
     q.add_argument("--n", type=int, default=384)
     q.add_argument("--out", default=HERE)
     a = p.parse_args()
+    if a.cmd is None:
+        require_l2sea(os.environ.get("L2SEA_HOME"))
+        p.print_help()
+        sys.exit(2)
     if a.cmd != "assemble":
+        require_l2sea(a.l2sea_home)
         os.makedirs(a.raw, exist_ok=True)
+    else:
+        need = [os.path.join(a.raw, f) for f in ("design_f%d.jsonl" % FIDELITY, "check.jsonl",
+                                                  "reference.jsonl", "quadrature.jsonl")]
+        if not all(os.path.exists(f) for f in need):
+            sys.exit("assemble needs the RAW files (%s) that the other steps write with L2-Sea; run "
+                     "them first (DATA.md, Regenerating)." % ", ".join(os.path.basename(f) for f in need))
     {"design": cmd_design, "check": cmd_check, "reference": cmd_reference,
      "quadrature": cmd_quadrature, "g6": cmd_g6, "sweep": cmd_sweep, "diag": cmd_diag, "shape": cmd_shape,
      "assemble": cmd_assemble}[a.cmd](a)

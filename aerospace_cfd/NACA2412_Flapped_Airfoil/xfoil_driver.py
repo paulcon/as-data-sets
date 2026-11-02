@@ -7,9 +7,14 @@ keyboard input and reads its polar file; no XFOIL code is copied here. The comma
 follows the challenge workflow of Davis and Renganathan (github.com/csdlpsu/uqchallenge2,
 uqlib.py, class XFOIL, commit 73eaec9):
 
-    NACA 2412; GDES FLAP, hinge x/c = 0.70, hinge y at 0.5 of the local thickness,
-    deflection beta (deg, + trailing edge down); PPAR N = 100 panel nodes;
+    PLOP G F (graphics off); NACA 2412; GDES FLAP, hinge x/c = 0.70, hinge y at 0.5 of the
+    local thickness, deflection beta (deg, + trailing edge down); PPAR N = 100 panel nodes;
     OPER, MACH 0, VISC Re, VPAR N = Ncrit (0.01 in the challenge), PACC, ALFA alpha.
+
+Two departures, neither of which changes a number: VPAR also sets XTR 1 1 (XFOIL's default,
+no trip; written out so that the extension can vary it), and PACC is switched on just before
+the last ALFA, so only the target angle is written to the polar file (the authors switch it
+on before the first ALFA of a sweep and read the last matching row).
 
 Convergence protocol, each attempt in a fresh XFOIL process. Attempts 1-3 are those of the
 authors' driver (xfoil_training.py) plus one negative-alpha sweep, with XFOIL's default limit
@@ -117,14 +122,6 @@ def _as_result(row, alpha):
     if not all(math.isfinite(v) for v in vals.values()):
         return None
     return vals
-
-
-def _read_polar(path, alpha):
-    """Return the last data row of an XFOIL polar file if its alpha matches."""
-    rows = _polar_rows(path)
-    if not rows:
-        return None
-    return _as_result(rows[-1], alpha)
 
 
 def _xfoil(exe, deck, timeout):
