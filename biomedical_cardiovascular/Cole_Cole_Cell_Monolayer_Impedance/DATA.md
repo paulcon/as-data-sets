@@ -9,6 +9,7 @@ Kind: **Python model**. The model is `cole_model.py` (closed form), and `generat
 | `Cole_Cole_Cell_Monolayer_Impedance.ipynb` | the case study (Python 3, active_subspaces v1) | executed top to bottom with seed 5861; outputs committed |
 | `cole_model.py` | `impedance(X, omega)`, `impedance_and_grad(X, omega)`, `is_physical(X)`; `NAMES`, `UNITS`, `MEAN`, `SD` (Table 1), `LOG_MU`, `LOG_SIGMA` | the model |
 | `generate_data.py` | draws the inputs and writes the three CSVs; `OMEGA`, `SEED`, `N`; `--check` | regenerates the data |
+| `check_accuracy.py` | recomputes the numbers of the Accuracy section below, with an implementation of the model independent of `cole_model.py` | check |
 | `inputs.csv` | 1100 × 4: R_inf (Ω), R_0 (Ω), alpha (–), tau (s), physical units, all draws | model input |
 | `outputs.csv` | 1100 × 62: Re Z at the 31 frequencies, then Im Z at the 31 frequencies (Ω) | model output |
 | `gradients.csv` | 1100 × 248: exact ∂Re Z/∂x_j and ∂Im Z/∂x_j w.r.t. the **physical** inputs; column 124 p + 4 k + j for part p (0 Re, 1 Im), frequency k, input j, so `G.reshape(N, 2, 31, 4)` | model output |
@@ -69,20 +70,23 @@ The 74 physical rows with α > 0.9 (7.2 %) contribute 25.9 % of λ2 of Im Z(2·1
 ## Regenerating
 
 ```bash
-python generate_data.py                       # writes the three CSVs here (< 1 s)
-python generate_data.py --out /tmp/cole --check
+python generate_data.py                       # writes the three CSVs here
+python generate_data.py --out DIR --check     # writes to DIR (outside this directory) and compares
 ```
 
-The run that wrote the shipped files (2026-10-31, Linux container, Python 3.13.18, numpy 2.5.4) took 0.47 s. `--check` writes to the given directory and compares with the files here; it printed max relative difference 0.0e+00 and identical text for all three files.
+The shipped files were written on 2026-10-31 in a Linux container. In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, macOS; 2026-11-02) `generate_data.py` takes under 1 s (0.3–0.5 s for the draws, the model and the writing; under 1 s with the start of Python). `--check` refuses to run without an `--out` directory other than this one, so the shipped files are never overwritten. It compares every entry of the new files with the shipped ones and passes if the largest relative difference is at most 1e-10 (`RTOL`). In `.venv` it passes: `inputs.csv` is reproduced exactly (the design comes from the seed, rounded to 12 significant digits), and `outputs.csv` and `gradients.csv` differ in the last of their 13 digits in a few entries (20 of 68,200 and 218 of 272,800), with largest relative differences of order 1e-13 and 1e-11 (the larger value is a small gradient entry that loses digits to cancellation). The text of these two files is therefore not identical to the shipped text on every platform.
 
 ## Accuracy
 
-- **Model values.** An independent implementation with numpy's complex power, `R_inf + (R_0 − R_inf)/(1 + (1j*ω*τ)**α)`, agrees with `outputs.csv` to a relative 5.0·10⁻¹³ (all 1100 rows, 31 frequencies; the files hold 13 significant digits).
-- **Gradients.** Against central differences of that independent implementation in the log inputs (relative step h in each x_j), the relative error of the 4-vector x ⊙ ∇f over all 1100 rows, both parts and 31 frequencies is at most 8.5·10⁻⁷ (h = 10⁻⁴), 8.5·10⁻⁹ (h = 10⁻⁵) and 4.5·10⁻¹⁰ (h = 10⁻⁶; median 9.4·10⁻¹¹): truncation error falling as h² down to round-off. The notebook repeats the check on the 1022 physical rows with h = 10⁻⁶ (max 6.8·10⁻¹⁰).
+`check_accuracy.py` recomputes these numbers in `.venv` (about 1 s). They are at the rounding level, so they are given as orders of magnitude.
+
+- **Model values** (`check_accuracy.py`). An implementation independent of `cole_model.py`, with numpy's complex power, `R_inf + (R_0 − R_inf)/(1 + (1j*ω*τ)**α)`, agrees with `outputs.csv` to a relative error of order 1e-13 (|model − file| / |Z|, all 1100 rows, 31 frequencies, both parts; the files hold 13 significant digits). The notebook compares `cole_model.py` with the file and finds the same order.
+- **Gradients** (`check_accuracy.py`). Against central differences of that implementation in the log inputs (step h in ln x_j), the relative error of the 4-vector x ⊙ ∇f over all 1100 rows, both parts and 31 frequencies is at most of order 1e-6 for h = 10⁻⁴, 1e-8 for h = 10⁻⁵ and 1e-9 for h = 10⁻⁶ (median of order 1e-10): truncation error falling as h² down to round-off. The notebook repeats the check on the 1022 physical rows with h = 10⁻⁶ and finds the same orders.
 
 ## How these files relate to the paper
 
 - **Not the paper's computation.** The paper's results come from polynomial chaos under Gaussian inputs, with unreported order, samples and code. The data here are an independent Monte Carlo computation of the same formula under lognormal inputs with the same means and sds, restricted to α < 1. The notebook compares with the paper under the paper's Gaussians (Monte Carlo, marginals truncated only to α > 0 and τ > 0): the imaginary peak location, its mean (−247 Ω), the low-frequency mean and sd of Re Z (996/299 Ω) and the Re Z band at 10⁷ (126–386 Ω, matching Fig. 1a; the text says 200–400) agree. Not reproduced: **the paper's finding that τ is negligible** (the first-order index of τ reaches 0.20 for Re Z and 0.19 for Im Z, where the paper reports values near 0 and below 0.1); the sd of Re Z near 10⁵ (221 Ω against about 270 in Fig. 1a); the Re Z indices at 2 MHz (S_Rinf 0.24 ± 0.01, S_R0 0.13 ± 0.01 against 0.2 and 0.19; our crossover is between 5.6·10⁵ and 10⁶); and the paper's large total-minus-first-order gaps (Fig. 3b: R_inf for Im Z 0.21 vs 0.03; ours 0.02 vs 0.01). The active-subspace numbers (λ1/λ2 = 138.3 and 16.1) are for the lognormals restricted to α < 1, whose α has mean 0.657 and sd 0.158, not the Table 1 values.
+- **Two readings of the paper, kept.** The inputs are lognormal for all four parameters, with Table 1's means and standard deviations, and the rows with α ≥ 1 are not analysed, so the analysed α has standard deviation 0.158 against Table 1's 0.21 (see "Model"). The paper's axis label "ω Hz" is read as ω in rad/s, so its "200 kHz" and "2 MHz" are ω = 2·10⁵ and 2·10⁶ rad/s (see "Frequency axis"). Both are choices of this data set; the open questions below ask the authors about them.
 - **Electrode term.** Left out (no values in the paper). With it, the impedance at low frequency would be dominated by electrode polarization and the low-frequency results would change.
 - **Measured data.** The paper's spectra and fitted Cole parameters (Figs. 4–6) are "available on request from the corresponding author" and are not used.
 
@@ -97,4 +101,4 @@ The run that wrote the shipped files (2026-10-31, Linux container, Python 3.13.1
 
 ## License and credit
 
-Code: MIT (`LICENSE`). Data (the CSVs): CC BY 4.0 (`LICENSE-DATA`); they are computed here from the published formula and Table 1, and no outside data are included. Model and parameter values: J. Zhuang, C. Zhu, R. Han, A. Steuer, J. F. Kolb and F. Shi (article CC BY 4.0). Cite Zhuang et al., *Molecules* 27(18):5861, 2022, doi:10.3390/molecules27185861.
+Code (the `.py` files) and the notebook: MIT (`LICENSE`). Data (the CSVs): CC BY 4.0 (`LICENSE-DATA`); they are computed here from the published formula and Table 1, and no outside data are included. Model and parameter values: J. Zhuang, C. Zhu, R. Han, A. Steuer, J. F. Kolb and F. Shi (article CC BY 4.0). Cite Zhuang et al., *Molecules* 27(18):5861, 2022, doi:10.3390/molecules27185861.

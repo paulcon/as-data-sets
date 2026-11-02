@@ -5,8 +5,9 @@
 #
 # in.csv rows (comma separated, no header):
 #   idx, Vd [V], mdot_a [kg/s], PB [Torr], Vcc [V], Tec [eV], alpha_anom, beta_anom, z_anom,
-#   L_anom, dz_anom, u_n [m/s], c_w, f_n [, ncells, duration [s], avg_start [s]]
-# The three optional held settings default to 100 cells, 1 ms and 0.5 ms (the data set's values).
+#   L_anom, dz_anom, u_n [m/s], c_w, f_n [, ncells, duration [s], avg_start [s] [, ion_wall_losses (1/0)]]
+# The optional held settings default to 100 cells, 1 ms, 0.5 ms and ion wall losses on (the data set's
+# values); check_accuracy.py uses them for its reruns.
 # out.csv rows (appended, one per run, flushed after each):
 #   idx, status (0 ok, 1 HallThruster retcode not success, 2 exception, 3 non-finite output),
 #   ID [A], IB [A], T [N], u_exit [m/s], ID_std [A], T_std [N], ID_a [A], ID_b [A], T_a [N], T_b [N], wall_s
@@ -43,6 +44,7 @@ end
 function run_one(thruster, row)
     Vd, mdot, PB, Vcc, Tec, alpha, beta, zan, Lan, dzan, un, cw, fn = row[1:13]
     ncells, duration, avg_start = length(row) >= 16 ? (Int(row[14]), row[15], row[16]) : (NCELLS, DURATION, AVG_START)
+    iwl = length(row) >= 17 ? row[17] != 0 : true
     anom = het.SimpleLogisticShift(;
         model = het.ScaledGaussianBohm(; anom_scale = alpha, barrier_scale = beta, center = zan, width = Lan),
         shift_length = dzan, midpoint_pressure = 25.0e-6, slope = 2.0,
@@ -58,7 +60,7 @@ function run_one(thruster, row)
         cathode_Tev = Tec,
         anom_model = anom,
         wall_loss_model = het.WallSheath(het.BNSiO2, cw),
-        ion_wall_losses = true,
+        ion_wall_losses = iwl,
         background_pressure_Torr = PB,
         neutral_ingestion_multiplier = fn,
         neutral_velocity = un,

@@ -10,24 +10,31 @@ Pipeline per sample (all at one fixed operating condition, see OPERATING below):
   3. semi-empirical plume -> divergence angle, Tc = T cos(phi_d), centreline j_ion at 1 m
                                                           (spt100_components.py, numpy)
 
-Usage:
-  python generate_data.py design     # write the Latin hypercube design and the Julia input file
-  python generate_data.py run        # run HallThruster.jl on all rows not yet done (resumable)
-  python generate_data.py assemble   # combine into hall_thruster_spt100.csv
-  python generate_data.py            # all three
-  python generate_data.py check      # no Julia: redraw the design and recompute the cathode and plume
-                                     # columns and the oscillation flag from the stored discharge
-                                     # outputs; compare with the CSV
+Usage (DIR is a working directory outside this one; every file the stages write goes there):
+  python generate_data.py design --out DIR     # the Latin hypercube design and the Julia input file
+  python generate_data.py run --out DIR        # run HallThruster.jl on all rows not yet done (resumable)
+  python generate_data.py assemble --out DIR   # combine into DIR/hall_thruster_spt100.csv
+  python generate_data.py --out DIR            # all three
+  python generate_data.py check                # no Julia: redraw the design and recompute the cathode and
+                                               # plume columns and the oscillation flag from the stored
+                                               # discharge outputs; compare with the shipped CSV (read only)
+
+The shipped CSV is the record of the runs: the stages never write into this directory, and
+`assemble` writes a new file in DIR for comparison. The `run` stage needs Julia and HallThruster.jl
+v0.18.7; without them the script exits with status 1 and says what to install (DATA.md has the
+versions of the shipped runs).
 
 Oscillation flag (last CSV column, `oscillating`): 1 if the standard deviation over the averaging
 window of the discharge current I_D(t), divided by its mean, exceeds OSC_THRESHOLD = 1 %; else 0
 (NaN for failed runs). The flag is derived from the stored columns ID_std and ID; no value is dropped.
 
-Environment: JULIA (path to julia >= 1.10) and JULIA_PROJECT (an environment with HallThruster
-v0.18.7) must be set for the `run` stage; BFIELD is the path to the SPT-100 magnetic-field file
-(bfield_spt100.csv from HallThrusterPEM, see DATA.md).
+Environment for the `run` stage: JULIA (path to julia >= 1.10; default: julia on the PATH),
+JULIA_PROJECT (a Julia environment with HallThruster v0.18.7) and BFIELD (path to the SPT-100
+magnetic-field file bfield_spt100.csv from HallThrusterPEM, see DATA.md).
 """
+import argparse
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -42,10 +49,43 @@ M = 440
 OSC_THRESHOLD = 0.01   # std/mean of I_D(t) over the averaging window above which a run is "oscillating"
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-DESIGN = os.path.join(HERE, "design_unit.csv")
-JL_IN = os.path.join(HERE, "julia_inputs.csv")
-JL_OUT = os.path.join(HERE, "julia_outputs.csv")
-OUT = os.path.join(HERE, "hall_thruster_spt100.csv")
+CSV = "hall_thruster_spt100.csv"               # the shipped file (in HERE); `assemble` writes one in --out
+HALLTHRUSTER_VERSION = "0.18.7"
+INSTALL = ("HallThruster.jl v" + HALLTHRUSTER_VERSION + " is needed to run the thruster model (the `run` stage "
+           "of generate_data.py, checks 5-8 of check_accuracy.py). Install Julia (>= 1.10; "
+           "the shipped runs used Julia 1.13.3) and, in a Julia environment ENV, HallThruster.jl v"
+           + HALLTHRUSTER_VERSION + ": julia --project=ENV -e 'using Pkg; Pkg.add(name=\"HallThruster\", version=\""
+           + HALLTHRUSTER_VERSION + "\")'. Then set JULIA (the julia executable, if not on the PATH), "
+           "JULIA_PROJECT=ENV and BFIELD (the SPT-100 magnetic-field file; DATA.md says where to get it), "
+           "and rerun this script.")
+
+
+def paths(out):
+    return {"design": os.path.join(out, "design_unit.csv"), "jl_in": os.path.join(out, "julia_inputs.csv"),
+            "jl_out": os.path.join(out, "julia_outputs.csv"), "csv": os.path.join(out, CSV)}
+
+
+def require_julia():
+    """Exit with status 1 and an install message unless Julia, HallThruster.jl and the B-field file are there.
+    Returns the julia executable."""
+    julia = os.environ.get("JULIA") or "julia"
+    exe = julia if os.path.isfile(julia) else shutil.which(julia)
+    problem = None
+    if exe is None:
+        problem = f"Julia not found ({julia!r})."
+    elif not os.path.isfile(os.environ.get("BFIELD", "")):
+        problem = "BFIELD is not set to an existing file."
+    else:
+        r = subprocess.run([exe, "--startup-file=no", "-e", "using HallThruster; print(pkgversion(HallThruster))"],
+                           capture_output=True, text=True)
+        if r.returncode != 0:
+            problem = "HallThruster.jl cannot be loaded in JULIA_PROJECT."
+        elif r.stdout.strip() != HALLTHRUSTER_VERSION:
+            print(f"warning: HallThruster.jl {r.stdout.strip()} found; the shipped runs used v{HALLTHRUSTER_VERSION}",
+                  file=sys.stderr)
+    if problem:
+        sys.exit(f"{problem} {INSTALL}")
+    return exe
 
 # Fixed operating condition: Diamant et al. (2014) L3 facility, condition 4 (300 V, 5.665 mg/s total
 # flow with anode:cathode flow ratio 12, background pressure 12.3 uTorr-Xe).
@@ -84,9 +124,9 @@ def unit_to_physical(U):
     return X
 
 
-def design():
+def design(P):
     U = qmc.LatinHypercube(d=len(PARAMS), seed=SEED).random(M)
-    np.savetxt(DESIGN, U, delimiter=",", fmt="%.12f")
+    np.savetxt(P["design"], U, delimiter=",", fmt="%.12f")
     X = unit_to_physical(U)
     p = dict(zip(NAMES, X.T))
     Vcc, clipped = cathode_coupling_voltage(OPERATING["PB_Torr"], p["Tec"], p["Vvac"], p["PT"], p["Pstar"],
@@ -96,14 +136,14 @@ def design():
         np.full(M, OPERATING["PB_Torr"]), Vcc, p["Tec"], p["alpha_anom"], p["beta_anom"], p["z_anom"],
         p["L_anom"], p["dz_anom"], p["u_n"], p["c_w"], p["f_n"],
     ])
-    np.savetxt(JL_IN, rows, delimiter=",", fmt="%.12e")
+    np.savetxt(P["jl_in"], rows, delimiter=",", fmt="%.12e")
     print(f"design: M = {M}, Vcc clipped to [0, Vd] in {int(clipped.sum())} samples")
 
 
-def run():
-    julia = os.environ.get("JULIA", "julia")
+def run(P):
+    julia = require_julia()
     bfield = os.environ["BFIELD"]
-    cmd = [julia, "--startup-file=no", os.path.join(HERE, "run_hallthruster.jl"), bfield, JL_IN, JL_OUT]
+    cmd = [julia, "--startup-file=no", os.path.join(HERE, "run_hallthruster.jl"), bfield, P["jl_in"], P["jl_out"]]
     t0 = time.time()
     subprocess.run(cmd, check=True, env={**os.environ, "JULIA_NUM_THREADS": "1"})
     print(f"run stage wall time {time.time() - t0:.0f} s")
@@ -117,13 +157,15 @@ def oscillation_flag(status, ID, ID_std):
     return flag
 
 
-def assemble():
-    U = np.loadtxt(DESIGN, delimiter=",")
+def assemble(P):
+    U = np.loadtxt(P["design"], delimiter=",")
     X = unit_to_physical(U)
     p = dict(zip(NAMES, X.T))
     Vcc, _ = cathode_coupling_voltage(OPERATING["PB_Torr"], p["Tec"], p["Vvac"], p["PT"], p["Pstar"],
                                       OPERATING["Vd"])
-    raw = np.loadtxt(JL_OUT, delimiter=",", ndmin=2)
+    if not os.path.isfile(P["jl_out"]):
+        sys.exit(f"{P['jl_out']} not found: run the `run` stage first")
+    raw = np.loadtxt(P["jl_out"], delimiter=",", ndmin=2)
     raw = raw[np.argsort(raw[:, 0])]
     if raw.shape[0] != M or np.any(raw[:, 0] != np.arange(M)):
         raise RuntimeError("julia_outputs.csv is incomplete; rerun the `run` stage")
@@ -145,15 +187,15 @@ def assemble():
     header = ("SPT-100 coupled cathode/HallThruster.jl v0.18.7/plume model (Marks et al. 2025, "
               f"doi:10.1063/5.0283796); LHS M={M} seed={SEED}; Vd=300 V, PB=1.23e-5 Torr, "
               "mdot_a=5.229e-6 kg/s; NaN = failed run; oscillating = std/mean of ID(t) > 1 %\n" + ", ".join(units))
-    np.savetxt(OUT, data, delimiter=",", fmt="%.10e", header=header)
-    print(f"assembled {OUT}: {ok.sum()} ok, {(~ok).sum()} failed "
+    np.savetxt(P["csv"], data, delimiter=",", fmt="%.10e", header=header)
+    print(f"assembled {P['csv']}: {ok.sum()} ok, {(~ok).sum()} failed "
           f"(status counts {np.bincount(status, minlength=4).tolist()}); "
           f"HallThruster.jl wall time {np.nansum(wall):.0f} s; oscillating (ID_std/ID > {OSC_THRESHOLD:g}): "
           f"{int(np.nansum(data[:, -1]))}")
 
 
 def check():
-    data = np.loadtxt(OUT, delimiter=",")
+    data = np.loadtxt(os.path.join(HERE, CSV), delimiter=",")
     m = len(PARAMS)
     U = qmc.LatinHypercube(d=m, seed=SEED).random(M)
     X = unit_to_physical(U)
@@ -174,7 +216,30 @@ def check():
           f"({int(np.nansum(data[:, -1]))} runs)")
 
 
-if __name__ == "__main__":
-    stages = sys.argv[1:] or ["design", "run", "assemble"]
+def main():
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap.add_argument("stages", nargs="*", help="design, run, assemble or check (default: design run assemble)")
+    ap.add_argument("--out", help="working directory for design, run and assemble (not this directory)")
+    args = ap.parse_args()
+    stages = args.stages or ["design", "run", "assemble"]
+    bad = [s for s in stages if s not in ("design", "run", "assemble", "check")]
+    if bad:
+        ap.error(f"unknown stage(s) {bad}")
+    if any(s != "check" for s in stages):
+        if not args.out:
+            ap.error("design, run and assemble need --out DIR (a directory outside this one)")
+        if os.path.abspath(args.out) == HERE:
+            ap.error("--out must not be this directory: the shipped CSV is the record of the runs")
+        os.makedirs(args.out, exist_ok=True)
+    if "run" in stages:
+        require_julia()                 # before any stage writes, so a missing Julia stops the script at once
+    P = paths(args.out) if args.out else None
     for s in stages:
-        {"design": design, "run": run, "assemble": assemble, "check": check}[s]()
+        if s == "check":
+            check()
+        else:
+            {"design": design, "run": run, "assemble": assemble}[s](P)
+
+
+if __name__ == "__main__":
+    main()

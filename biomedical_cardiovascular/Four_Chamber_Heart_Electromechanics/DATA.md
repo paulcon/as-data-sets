@@ -2,7 +2,8 @@
 
 Kind: **stored data**. The values were computed by Strocchi et al. (2023) with their four-chamber heart
 electromechanics simulator (CARP coupled to CircAdapt) and with the ToR-ORd cell model, and deposited at
-Zenodo, [doi:10.5281/zenodo.7405335](https://doi.org/10.5281/zenodo.7405335) (CC BY 4.0). They were not
+Zenodo, [doi:10.5281/zenodo.7405335](https://doi.org/10.5281/zenodo.7405335) (CC BY 4.0; record and archives
+under "Regenerating"). They were not
 regenerated (one four-chamber run costs about 3,250 core-hours on a cluster) and are not altered:
 `convert_data.py` copies every number character for character into the CSV layout of this repository.
 
@@ -16,6 +17,7 @@ regenerated (one four-chamber run costs about 3,250 core-hours on a cluster) and
 | `torord_ionic_inputs.csv` | 2175 × 29: ToR-ORd conductances and calcium-handling parameters (model units) | Zenodo `ventricular_cell_model/ionic/parameters.csv` (second study) |
 | `torord_ionic_outputs.csv` | 2175 × 4: Ca_diast (µM), Ca_ampl (µM), TTP_Ca (ms), RT90_Ca (ms) | Zenodo `ventricular_cell_model/ionic/outputs.csv` |
 | `convert_data.py` | reads the deposited `.tar.xz` archives without extracting them, checks their SHA-256, writes the four CSVs; `--check` compares | the conversion (standard library only) |
+| `check_accuracy.py` | recomputes the numbers of this file that neither the notebook nor `convert_data.py` prints (stored precision, CV range, strata of the ToR-ORd design) | check |
 
 The CSVs are plain comma-separated numbers after two `#` lines (a description, then the column names with
 units), so `np.loadtxt(path, delimiter=',')` reads them. Deposited label → column name: `[TRPN]` → `TRPN_v`,
@@ -76,7 +78,7 @@ CircAdapt), pp. 14–15.
 Held values of the other 72 parameters are in Tables 1–3 (e.g. BCL 854 ms, $b_{f,v}$ = 8.0, $b_{ft}$ = 4.0).
 **Units.** The paper gives units only for the entries so marked; "model units" are those of the ToR-ORd,
 Courtemanche and Land implementations in CARP, not stated. The CV unit (m/s) is inferred from the values
-(0.38–1.03). The stored $k_{peri}$ equals the paper's kPa/mm value times $10^{-3}$, consistent with kPa/µm
+(0.38–1.03; `check_accuracy.py`). The stored $k_{peri}$ equals the paper's kPa/mm value times $10^{-3}$, consistent with kPa/µm
 (CARP's length unit is µm); this is an inference.
 
 **Quantities of interest** (p. 16, Table 4). 20 features of the last beat: for LV and RV, EDV, EDP, ESV,
@@ -113,7 +115,8 @@ concentrate at low passive stiffness and short AV delay, and any analysis of the
 conditional on a run succeeding. The 30 HM inputs are not uniform (kurtosis up to 3.88)
 and are correlated (CVf_v–kFEC r = −0.86, Iup_max_a–Trpn_max_a +0.76; 13 of 990 pairs with |r| > 0.3).
 AVdelay takes whole ms (97 values). ToR-ORd ionic: uniform marginals (kurtosis 1.80–1.82); the 2175 rows
-are not one Latin hypercube of 2175 points (at most 2019 of 2175 equal-width strata per input are occupied),
+are not one Latin hypercube of 2175 points (at most 2019 of 2175 equal-width strata per input are occupied;
+`check_accuracy.py`),
 consistent with a Latin hypercube with failed or filtered runs or a union of designs (S2 File not read).
 
 **Published results.** No active subspace. Emulator accuracy (Table 4: GPE 5-fold R² 0.7627–0.9852, ISE
@@ -127,34 +130,51 @@ pressures dominate ventricular EDV; cell active-tension parameters matter for dp
 
 ## Regenerating
 
-The data cannot be regenerated here (cluster model; see the `.ema` notes). The CSV files are regenerated from
-the deposited archives, with a SHA-256 check of each archive:
+The data cannot be regenerated from the repository: they are the authors' runs of a cluster model (one
+four-chamber run took 3247 core-hours on 512 cores, p. 17). The CSV files are regenerated from the deposited
+archives, with a SHA-256 check of each archive:
 
 ```
 python convert_data.py <folder with fourchamber.tar.xz and ventricular_cell_model.tar.xz>
 python convert_data.py <same folder> --check      # prints "identical" for the four files
 ```
 
-Archives (Zenodo 10.5281/zenodo.7405335, fetched 2026-11-01): `fourchamber.tar.xz` SHA-256
-`d6c710dbdfdb7ddcd4ea86775fd024bfe3287f0d39262cf12ea77086e553a87d`; `ventricular_cell_model.tar.xz`
-`53396893097e6ddc58353b5b960c5df1b293d2864e6f0c1fcb2fda5532140358`. Run time < 2 s. The check was run on
-2026-11-01 and printed "identical" for all four files; `np.loadtxt` of each file equals a float parse of the
-deposited CSV exactly. The notebook runs in about 4–5 min (254 s in the final run, 2026-11-01) on a shared 2-CPU container (most
-of it the QPHD bootstrap of the second study, the null replicates and subsamples of the penalized quadratic,
-and the leave-one-out refits of the OLS direction).
+**Source.** Zenodo record 7405335, "Cell to Whole Organ Global Sensitivity Analysis on a Four-chamber Heart
+Electromechanics Model Using Gaussian Processes Emulators - Training Datasets", published 2022-12-06, CC BY 4.0:
+DOI [10.5281/zenodo.7405335](https://doi.org/10.5281/zenodo.7405335), the record's only version (concept DOI
+10.5281/zenodo.7405334, which resolves to the latest version). This is the DOI the paper's Data Availability
+statement gives. Both archives used here are files of that record: `fourchamber.tar.xz` (80,364 bytes, SHA-256
+`d6c710dbdfdb7ddcd4ea86775fd024bfe3287f0d39262cf12ea77086e553a87d`, MD5 `665a1dc951ca21c3f0415f3e7893f955`)
+and `ventricular_cell_model.tar.xz` (544,168 bytes, SHA-256
+`53396893097e6ddc58353b5b960c5df1b293d2864e6f0c1fcb2fda5532140358`, MD5 `3fb2b6ee5112ce9f846e259b62ea7073`);
+the sizes and MD5 sums equal those listed by the record (Zenodo API, checked 2026-11-02). The archives
+themselves carry no DOI (their members are the CSV files and their folders). The record has four more
+archives (atrial cell model, CircAdapt, passive mechanics, tissue electrophysiology), not used here.
+
+In the repo's `.venv` (2026-11-02) `convert_data.py <folder> --check` runs in under 1 s and prints "identical"
+for all four files: the shipped CSVs equal the text the script builds from the archives, so every value is
+the deposited one. The notebook takes 5–7 min in `.venv` (301, 352 and 433 s in three runs on 2026-11-02, with other jobs sharing the machine);
+most of it is the QPHD bootstrap of the second study, the null replicates and subsamples of the penalized
+quadratic, and the leave-one-out refits of the OLS direction.
 
 ## Accuracy
 
-- Conversion: lossless (above).
+`check_accuracy.py` recomputes the numbers marked with its name, in `.venv` in under 1 s.
+
+- Conversion: lossless (`convert_data.py --check`, above).
 - Simulator settings: the reduced Newton iterations and tolerance change the pressure and volume features by
   < 3 % (paper, S1 File).
-- Stored precision: 0.01 mL / 0.01 mmHg; dp/dt in whole mmHg/s (1 mmHg/s against standard deviations of
-  28–291 mmHg/s); ToR-ORd TTP and RT90 in whole ms (against sd 19.7 and 68.4 ms).
+- Stored precision (`check_accuracy.py`): 0.01 mL / 0.01 mmHg (at most 2 decimals written); dp/dt in whole
+  mmHg/s (1 mmHg/s against standard deviations of 28–292 mmHg/s); ToR-ORd TTP and RT90 in whole ms (against sd
+  19.7 and 68.4 ms).
 - No gradients, so no gradient check. The notebook's linear fits have leave-one-out R² 0.731–0.963 for the
   four-chamber outputs (each fold refits the direction), close to (and mostly below) the paper's emulator R²,
   and a ridge-penalized quadratic 0.788–0.975 at its LOO-best penalty. With 407 rows and 1081 quadratic
-  coefficients, eigenvalue ratios beyond the first direction are set by the penalty, not by the data; the
-  notebook reports none for the four-chamber study.
+  coefficients, eigenvalue ratios beyond the first direction are set by the penalty, not by the data.
+  **The four-chamber study has no eigenvalue gap that can be quoted**: OLS gives one direction per output and
+  no second eigenvalue, and the penalized quadratic's λ₁/λ₂ follows the penalty (for LV peak pressure
+  140.6–684.7 at equally good LOO error). The notebook reports the directions, not a gap; its eigenvalue
+  ratios are for the ToR-ORd study only.
 - Physical plausibility: ESV < EDV in all rows and chambers; 48 rows have LV peak pressure below 80 mmHg
   (min 58.0) and 35 rows an LA maximum v-wave volume below the LA EDV. The paper kept such runs (p. 17); so
   does the notebook (no rows dropped).
@@ -188,5 +208,5 @@ This is the only organ-scale (electromechanics plus circulation) data set among 
 ## License and credit
 
 Data: © Strocchi et al., Zenodo 10.5281/zenodo.7405335, CC BY 4.0 (as stated for the record); article CC BY.
-Cite the paper and the Zenodo record when using these files. `convert_data.py` and the notebook: MIT
+Cite the paper and the Zenodo record when using these files. `convert_data.py`, `check_accuracy.py` and the notebook: MIT
 (this repository). No code of the authors' repository (no licence stated) is included.

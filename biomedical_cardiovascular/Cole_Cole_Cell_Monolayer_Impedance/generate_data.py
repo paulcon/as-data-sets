@@ -1,7 +1,7 @@
 """Write inputs.csv, outputs.csv and gradients.csv for the Cole-Cole cell-monolayer model.
 
     python generate_data.py                  # writes the three CSVs next to this script
-    python generate_data.py --out /tmp/cole --check
+    python generate_data.py --out DIR --check     # DIR outside this directory
 
 Draws N = 1100 independent samples of (R_inf, R_0, alpha, tau) from lognormals with the
 means and standard deviations of the paper's Table 1 (cole_model.LOG_MU, LOG_SIGMA), with
@@ -13,7 +13,12 @@ removed in the notebook by `cole_model.is_physical` (DATA.md gives the counts).
 For every row the script writes Re Z and Im Z (ohm) at the 31 angular frequencies OMEGA,
 and their exact gradients with respect to the physical inputs. Run time: well under 1 s.
 
-`--check` compares the new files with the ones next to this script.
+`--check` compares the new files with the ones next to this script: for each file it prints the
+largest relative difference of an entry, |new - shipped| / |shipped|, the number of entries that
+differ, and whether every entry is within the tolerance RTOL (relative 1e-10); it exits with status 1
+if not. The files hold 13 significant digits, and a different numpy or platform changes the last
+digit of a few entries (relative differences of order 1e-13 for the outputs and 1e-11 for the
+gradients, whose small entries lose digits to cancellation), so the text of the files need not be identical.
 Only numpy and the standard library are imported.
 """
 import argparse
@@ -29,6 +34,7 @@ import cole_model as cm  # noqa: E402
 
 SEED = 5861
 N = 1100
+RTOL = 1e-10      # --check: largest allowed relative difference of an entry from the shipped files
 #: angular frequencies in rad/s: 10^(k/4), k = 0..28 (1 to 1e7), plus 2e5 and 2e6,
 #: the two values the paper's text singles out (p. 3 and p. 5).
 OMEGA = np.sort(np.r_[10.0**(np.arange(29) / 4), 2e5, 2e6])
@@ -88,13 +94,18 @@ def main():
           f'R_0 <= R_inf: {(X[:, 1] <= X[:, 0]).sum()}), {K} frequencies, '
           f'{time.perf_counter() - t0:.2f} s')
     if args.check:
-        for name, new in (('inputs.csv', X), ('outputs.csv', f), ('gradients.csv', g)):
+        ok_all = True
+        for name in ('inputs.csv', 'outputs.csv', 'gradients.csv'):
             old = read_csv(os.path.join(HERE, name))
             back = read_csv(os.path.join(args.out, name))
-            rel = np.max(np.abs(back - old) / (np.abs(old) + 1e-300))
-            print(f'{name}: shape {old.shape}, max relative difference from the shipped file '
-                  f'{rel:.1e}; identical text: '
-                  f'{open(os.path.join(HERE, name)).read() == open(os.path.join(args.out, name)).read()}')
+            rel = np.abs(back - old) / (np.abs(old) + 1e-300)
+            ok = old.shape == back.shape and bool(np.all(rel <= RTOL))
+            ok_all &= ok
+            print(f'{name}: shape {old.shape}, max relative difference from the shipped file {rel.max():.1e} '
+                  f'({int(np.sum(back != old))} of {old.size} entries differ); within the tolerance '
+                  f'(relative {RTOL:.0e}): {ok}')
+        if not ok_all:
+            sys.exit(1)
 
 
 if __name__ == '__main__':
