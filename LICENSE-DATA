@@ -59,3 +59,64 @@ licence or objects, that takes precedence.
     Rate parameters from J. Li, Z. Zhao, A. Kazakov, F. L. Dryer (2004), no
     licence stated; thermodynamic data from Cantera's h2o2.yaml, BSD 3-clause
     (LICENSE-cantera.txt, kept beside the file). The CSVs are CC BY 4.0.
+
+  aerospace_cfd/NACA2412_Flapped_Airfoil/
+    davis_training_98.csv
+    Source: csdlpsu/uqchallenge2 (commit 73eaec9), training/training_100.csv
+    (G. Davis, A. Renganathan). No licence stated. The other CSVs are CC BY 4.0.
+
+  aerospace_cfd/Stagnation_Temperature_Probe_Design/
+    inputs.csv, inputs_normalized.csv, outputs.csv
+    Source: equadratures/data-sets (commit 62e0a429), probes/probes.npz
+    (A. D. Scillitoe, B. Ubald, P. Seshadri, S. Shahpar; Rolls-Royce plc).
+    No licence stated. inputs.csv is derived from the archive's X.
+
+  biomedical_cardiovascular/CiPA_Ventricular_Proarrhythmia_Metrics/
+    cipaord_endo.mmt, LICENSE-ORd
+    A Myokit re-expression of CiPAORdv1.0 made for this repository. Its ORd core
+    follows the O'Hara-Rudy reference code as distributed in FDA/CiPA
+    (AP_simulation/models/newordherg_qNet.c, commit 539ff80): BSD 3-clause,
+    T. O'Hara and Y. Rudy, Washington University in St. Louis (notice in
+    LICENSE-ORd and the file header). The other parts are MIT. Parameter values
+    and the initial state are numbers from FDA/CiPA (GPL-3.0), credited.
+    cipaord_virtual_drugs.csv is CC BY 4.0.
+
+  biomedical_cardiovascular/Rabbit_Ventricular_Action_Potential/
+    shannon_wang_puglisi_weber_bers_2004_a_p.mmt
+    Source: ZhechaoYanggla/Sobol_paper, "Code for Sobol analysis/", commit
+    f11c5e6 (Z. Yang, H. Gao, G. L. Smith, R. D. Simitev): Myokit's import of
+    the CellML Model Repository encoding (M. Fink) of Shannon et al. 2004, with
+    E_Na_SL fixed at -15 mV. No licence stated. rabbit_ap_samples.csv is CC BY 4.0.
+
+  plasma_fusion/EU_DEMO_PROCESS_Major_Radius/
+    demo_template_IN.DAT, baseline_warmstart.json
+    Source: PROCESS v3.4.2 (UKAEA, https://github.com/ukaea/PROCESS): the deck
+    is derived from examples/data/large_tokamak_IN.DAT (J. Morris, UKAEA), and
+    the warm start is PROCESS output run for this repository. MIT licence
+    (PROCESS_LICENSE.txt, kept beside the files). demo_runs.csv is CC BY 4.0.
+
+  energy/Lithium_Ion_DFN_Drive_Cycle/
+    US06.csv
+    Source: ezonta/TDGSA (E. Zonta et al.), which took it from PyBaMM.
+    BSD 3-clause (US06_LICENSE.txt, kept beside the file). The other CSVs
+    are CC BY 4.0.
+
+  hydrology_subsurface_geoscience/Kurchatov_Sr90_Groundwater_Migration/
+    marthedata.txt, and its lossless conversion inputs.csv, outputs.csv
+    Source: Virtual Library of Simulation Experiments (S. Surjanovic, D. Bingham),
+    https://www.sfu.ca/~ssurjano/marthe.html, from the GdR MASCOT-NUM benchmark page;
+    MARTHE runs of E. Volkova, B. Iooss, F. Van Dorpe (2008). No licence stated.
+
+  hydrology_subsurface_geoscience/HyMod_Leaf_River_Rainfall_Runoff/
+    forcing.csv, forcing_other_years.csv
+    Source: LeafCatch.txt of SAFE-python (commit 72c64e5) and SAFE-matlab (commit dc157e1)
+    (F. Pianosi, F. Sarrazin, T. Wagener); data of S. Sorooshian, V. K. Gupta, J. L. Fulton
+    (1983). The file states no licence; the repositories are GPL-3.0.
+    inputs.csv, outputs.csv and gradients.csv are CC BY 4.0.
+
+  hydrology_subsurface_geoscience/CO2_Injection_Benchmark_Saturation/
+    benchmark_input_samples.csv, mc_reference_mean_std.csv
+    Source: Zenodo 10.5281/zenodo.933827, uqBenchmarkData.zip (F. Franzelin,
+    M. Koeppel, I. Kroeker, S. Oladyshkin, G. Santin, D. Wittwar). BSD 3-clause
+    (LICENSE-uqBenchmarkData.txt, kept beside the files). The saturation files,
+    computed here with the archive's executable, are CC BY 4.0.
