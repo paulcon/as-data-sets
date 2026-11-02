@@ -1,7 +1,10 @@
 """Generate the stored data: impedance misfits of the grouped SPMe and their gradients.
 
-This script needs PyBaMM and PyBOP (tested with Python 3.13, PyBaMM 26.10.1.1,
-PyBOP 26.3, CasADi 3.8.1, numpy 2.3.5, scipy 1.18.1); the notebook does not.
+This script needs PyBaMM and PyBOP (the shipped files were written with Python 3.13,
+PyBaMM 26.10.1.1, pybammsolvers 0.11.1, PyBOP 26.3, CasADi 3.8.1, numpy 2.3.5, scipy 1.18.1;
+install recipe in DATA.md); the notebook does not. Without PyBaMM or PyBOP the script stops
+with an error that says what to install; it also stops if other versions are installed,
+unless --any-version is given.
 
     python generate_data.py --rows 0:400   --partial /tmp/eis_partial    # resumable chunks
     python generate_data.py --rows 400:800 --partial /tmp/eis_partial
@@ -19,6 +22,9 @@ Phi (Eq. 7) and its exact gradient (adjoint, see spme_eis.py) against synthetic 
 spectra at the true parameters of Table 3, plus the nine per-SOC terms Phi_m and their
 gradients. inputs.csv is the source of truth for the inputs (written with %.17g, checked
 to round-trip exactly). Rows already in --partial are skipped (resume). One process.
+--rows and --assemble need --partial, a directory outside this one. --check, --gradcheck and
+--meshcheck print and write nothing; --reference, --jacobian, --assemble and --checkpoints
+rewrite shipped files in this directory.
 """
 import argparse
 import os
@@ -29,9 +35,28 @@ import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-import spme_eis as se  # noqa: E402
+import spme_eis_driver as se  # noqa: E402
 
 SEED = 20261101
+VERSIONS = {"pybamm": "26.10.1.1", "pybop": "26.3", "casadi": "3.8.1"}
+INSTALL = 'pip install "pybop==26.3" "pybamm==26.10.1.1" "pybammsolvers==0.11.1" "casadi==3.8.1"'
+
+
+def require_packages(any_version=False):
+    """Stop with an install message (exit status 1) unless PyBaMM, PyBOP and CasADi of the
+    versions that wrote the shipped files are importable."""
+    have = {}
+    for name in VERSIONS:
+        try:
+            have[name] = __import__(name).__version__
+        except ImportError:
+            sys.exit(f"{name} is not installed. This script needs PyBaMM 26.10.1.1, pybammsolvers 0.11.1, "
+                     f"PyBOP 26.3 and CasADi 3.8.1 (Python 3.13: {INSTALL}; recipe in DATA.md). "
+                     "Install them and rerun this script.")
+    wrong = {k: v for k, v in have.items() if v != VERSIONS[k]}
+    if wrong and not any_version:
+        sys.exit(f"installed {wrong}; the shipped data use {VERSIONS} ({INSTALL}). "
+                 "Install those versions and rerun this script, or pass --any-version.")
 N = 1000
 FMT = "%.17g"
 
@@ -157,14 +182,11 @@ def check(rows):
               f"per-SOC grad rel {rel(gmi.ravel(), gm[i]):.2e} ({dt:.1f} s)")
 
 
-def jacobian(steps=(1e-5, 1e-3)):
-    """dZ_m(w_k)/dtheta at the true parameters by central differences (step h*(upper-lower)).
-
-    Writes impedance_jacobian.csv from the first step and prints the largest difference
-    from the second step (relative to the largest entry, in normalized coordinates)."""
+def jacobian_fd(steps=(1e-5, 1e-3)):
+    """dZ_m(w_k)/dtheta at the true parameters by central differences (step h*(upper-lower)),
+    one (9, 60, 18) complex array per step. Writes nothing."""
     eis = se.SPMeImpedance()
     th = se.true_theta()
-    half = (se.UPPER - se.LOWER) / 2
     Js = []
     for h in steps:
         J = np.empty((len(se.SOCS), len(se.FREQUENCIES), se.M_INPUTS), complex)
@@ -175,6 +197,14 @@ def jacobian(steps=(1e-5, 1e-3)):
             for m, s in enumerate(se.SOCS):
                 J[m, :, j] = (eis.impedance(th + e, s) - eis.impedance(th - e, s)) / (2 * d)
         Js.append(J)
+    return Js
+
+
+def jacobian(steps=(1e-5, 1e-3)):
+    """Write impedance_jacobian.csv from the first step of jacobian_fd and print the largest
+    difference from the second step (relative to the largest entry, in normalized coordinates)."""
+    half = (se.UPPER - se.LOWER) / 2
+    Js = jacobian_fd(steps)
     a, b = Js[0] * half, Js[1] * half
     print(f"impedance Jacobian at theta_true: steps {steps}, max |difference| / max |entry| "
           f"(normalized coordinates) = {np.max(np.abs(a - b)) / np.max(np.abs(a)):.2e}")
@@ -282,7 +312,8 @@ def checkpoints():
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--rows", help="a:b, rows to run into --partial")
-    ap.add_argument("--partial", default=os.path.join(HERE, "_partial"))
+    ap.add_argument("--partial", help="directory for the per-row files of --rows and --assemble "
+                                      "(required with them; outside this directory)")
     ap.add_argument("--assemble", action="store_true")
     ap.add_argument("--reference", action="store_true",
                     help="write reference_impedance.csv and true_parameters.csv")
@@ -293,7 +324,14 @@ if __name__ == "__main__":
     ap.add_argument("--meshcheck", help="comma-separated rows: paper mesh vs 2x refined mesh")
     ap.add_argument("--checkpoints", action="store_true",
                     help="write check_parameters.csv and check_spectra.csv (Table 3 fit, H directions)")
+    ap.add_argument("--any-version", action="store_true",
+                    help="run with PyBaMM/PyBOP/CasADi versions other than those of the shipped files")
     a = ap.parse_args()
+    if (a.rows or a.assemble) and (a.partial is None
+                                   or os.path.abspath(a.partial).startswith(HERE + os.sep)
+                                   or os.path.abspath(a.partial) == HERE):
+        ap.error("--rows and --assemble need --partial DIR outside this directory")
+    require_packages(a.any_version)
     if a.reference:
         write_reference()
     if a.rows:

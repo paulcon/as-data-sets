@@ -1,8 +1,9 @@
-"""PyBaMM DFN model of a lithium-ion cell under a scaled US06 drive cycle.
+"""Driver for the PyBaMM DFN model of a lithium-ion cell under a scaled US06 drive cycle.
 
 Rebuilds the setup of Zonta et al., "Time-dependent global sensitivity analysis of
 the Doyle-Fuller-Newman model", J. Energy Storage (2026), doi:10.1016/j.est.2026.121751,
-Sections 3.1-3.3 and Table A.2. Running the model needs PyBaMM (the paper used v24.9.0; the
+Sections 3.1-3.3 and Table A.2. PyBaMM is an outside code, not a numpy/scipy model, so this
+module only sets it up and runs it. Running the model needs PyBaMM (the paper used v24.9.0; the
 stored data were made with PyBaMM 24.9.0 and casadi 3.6.7). PyBaMM is imported only inside
 `parameter_values` and `voltage`, so the constants (INPUTS, NAMES, LOWER, UPPER, LOG, SCALE, ...)
 can be imported with numpy alone.
@@ -135,12 +136,13 @@ def parameter_values(x, peak_current_density=PEAK_CURRENT_DENSITY):
     return pv
 
 
-def voltage(x, rtol=1e-6, atol=1e-6, peak_current_density=PEAK_CURRENT_DENSITY):
+def voltage(x, rtol=1e-6, atol=1e-6, peak_current_density=PEAK_CURRENT_DENSITY, solver=None):
     """Terminal voltage [V] at t = 0, 1, ..., 600 s. Raises RuntimeError on failure.
 
     PyBaMM's DFN with its default mesh (20 points in each of the three x-subdomains and
     in r of each particle), CasADi solver in "fast" mode (no event detection, so no
-    voltage cut-off is applied, as in the TDGSA example), tolerances rtol, atol.
+    voltage cut-off is applied, as in the TDGSA example), tolerances rtol, atol. `solver`
+    replaces the CasADi solver by another PyBaMM solver (used only by check_accuracy.py).
     """
     import pybamm
 
@@ -148,7 +150,7 @@ def voltage(x, rtol=1e-6, atol=1e-6, peak_current_density=PEAK_CURRENT_DENSITY):
     sim = pybamm.Simulation(
         model,
         parameter_values=parameter_values(x, peak_current_density),
-        solver=pybamm.CasadiSolver(mode="fast", rtol=rtol, atol=atol),
+        solver=solver if solver is not None else pybamm.CasadiSolver(mode="fast", rtol=rtol, atol=atol),
     )
     sol = sim.solve(T_EVAL)
     t = sol["Time [s]"].entries

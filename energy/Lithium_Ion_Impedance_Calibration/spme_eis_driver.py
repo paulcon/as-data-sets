@@ -1,4 +1,7 @@
-"""Impedance misfit of the grouped-parameter SPMe (Hallemans et al., JES 2025).
+"""Driver for the impedance misfit of the grouped-parameter SPMe (Hallemans et al., JES 2025).
+
+PyBaMM and PyBOP are outside codes, not numpy/scipy models; this module sets them up and adds
+the impedance solve and its adjoint gradient.
 
 The model is PyBOP's ``GroupedSPMe`` with double-layer capacitance (Appendix C of the
 paper), discretised by PyBaMM with the paper's mesh (100 radial points in each particle,
@@ -18,8 +21,8 @@ against synthetic reference spectra Z_m(w_k) computed at the true parameters of 
 Gradients of Phi with respect to the 18 grouped parameters are exact (to round-off):
 an adjoint solve at every frequency, A^T lam = g, gives dZ = lam^T dJ x + (output
 terms), and one reverse-mode CasADi sweep through J(y0(theta), theta) and the output
-Jacobian gives the whole gradient for each SOC. ``check_gradient`` compares it with
-central finite differences.
+Jacobian gives the whole gradient for each SOC. ``generate_data.py --gradcheck`` compares it
+with central finite differences.
 
 Every failure (singular system, non-finite impedance, out-of-range input) raises.
 Running the model requires pybamm and pybop (tested with PyBaMM 26.10.1.1, PyBOP 26.3,

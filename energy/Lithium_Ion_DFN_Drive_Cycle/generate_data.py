@@ -5,19 +5,21 @@
     python generate_data.py --rows 0,300,649 --out /tmp/dfn --check   # rerun some rows and compare
     python generate_data.py --oat                              # one-at-a-time effects quoted in DATA.md
 
-Needs PyBaMM 24.9.0 (casadi 3.6.7), numpy and the model module dfn_us06.py next to this
-script. The design is i.i.d. Monte Carlo (as in the paper): row i is the i-th draw of
+Needs PyBaMM 24.9.0 (casadi 3.6.7), numpy and the driver module dfn_us06_driver.py next to
+this script. Without PyBaMM the script stops with an error that says what to install; it also
+stops if the installed PyBaMM is not 24.9.0, unless --any-pybamm is given. The design is i.i.d. Monte Carlo (as in the paper): row i is the i-th draw of
 numpy.random.default_rng(SEED).random((N_MAX, 24)), mapped to Table A.2 (uniform inputs
 linearly, log-uniform inputs linearly in log10). Rows are run in order, so the first n rows
 of any run are the same. `--budget` stops after the given wall time (s); the files then hold
 the rows completed so far. `--resume` reads the files already in `--out`, checks that their inputs
-are the first rows of the design (bit for bit), and continues after them, so a long design runs
+are the first rows of the design (to a relative tolerance of 1e-15, see below), and continues after them, so a long design runs
 in chunks. The shipped files were written in such chunks (see DATA.md).
 
 `inputs.csv` is the source of truth for the inputs. `10.0 ** z` can differ in the last bit
-between numpy builds (the files were written with numpy 1.26.4; numpy 2.5.4 gives 1116 entries
-that differ by at most 2.2e-16 relative), so `--resume` and `--check` compare the design with the
-stored inputs to a relative tolerance of 1e-15 and then use the stored values.
+between numpy builds (the files were written with numpy 1.26.4; under numpy 2.4.6, 1231 of the
+15,600 entries differ, by at most 2.2e-16 relative), so `--resume` and `--check` compare the
+design with the stored inputs to a relative tolerance of 1e-15 and then use the stored values.
+`--check` writes nothing.
 
 Every row is kept. A run that fails (solver error, or no solution up to t = 600 s) gets
 status 0 and NaN outputs; nothing is dropped here.
@@ -33,11 +35,25 @@ import numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 warnings.filterwarnings("ignore")
-import dfn_us06 as dfn  # noqa: E402
+import dfn_us06_driver as dfn  # noqa: E402
 
 SEED = 20261031
 N_MAX = 2000
 RTOL_INPUTS = 1e-15  # design vs. stored inputs: allows the last-bit differences of 10.0 ** z
+PYBAMM_VERSION = "24.9.0"
+INSTALL = f'pip install "pybamm=={PYBAMM_VERSION}" "casadi==3.6.7"'
+
+
+def require_pybamm(any_version=False):
+    """Stop with an install message (exit status 1) unless PyBaMM 24.9.0 is importable."""
+    try:
+        import pybamm
+    except ImportError:
+        sys.exit(f"PyBaMM is not installed. Install PyBaMM {PYBAMM_VERSION} with casadi 3.6.7, the "
+                 f"versions that wrote the shipped files (Python 3.9-3.12: {INSTALL}), then rerun this script.")
+    if pybamm.__version__ != PYBAMM_VERSION and not any_version:
+        sys.exit(f"PyBaMM {pybamm.__version__} is installed; the shipped data use PyBaMM {PYBAMM_VERSION} "
+                 f"({INSTALL}). Install it and rerun this script, or pass --any-pybamm.")
 
 
 def design(n):
@@ -81,7 +97,9 @@ def main():
     ap.add_argument("--rows", default="0,1,2", help="for --check: comma-separated row indices")
     ap.add_argument("--oat", action="store_true",
                     help="one-at-a-time runs at the box centre (each of four inputs at its bounds); prints, writes nothing")
+    ap.add_argument("--any-pybamm", action="store_true", help="run with a PyBaMM version other than 24.9.0")
     a = ap.parse_args()
+    require_pybamm(a.any_pybamm)
     os.makedirs(a.out, exist_ok=True)
     if a.check:
         return check(a)
@@ -148,7 +166,7 @@ OAT_INPUTS = ["sigma_pos", "Ds_pos", "L_pos", "R_pos"]
 
 
 def oat():
-    """Ū, U(600) and min U at the box centre (dfn_us06.nominal()) and with each of OAT_INPUTS
+    """Ū, U(600) and min U at the box centre (dfn_us06_driver.nominal()) and with each of OAT_INPUTS
     moved alone to its lower and upper bound. About 9 runs of 5 s."""
     x0 = dfn.nominal()
     v = dfn.voltage(x0)

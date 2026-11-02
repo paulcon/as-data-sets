@@ -1,18 +1,23 @@
 # Lithium_Ion_Impedance_Calibration: data
 
-Kind: **stored data**. The data were generated with PyBaMM 26.10.1.1 (its frequency-domain EIS method,
-formerly PyBaMM-EIS) and PyBOP 26.3 (the paper's grouped-parameter SPMe). The shipped files are the record of
-those runs and are never altered. `spme_eis.py` and `generate_data.py` regenerate them, given PyBaMM and PyBOP
-(see "Regenerating"). The notebook needs only numpy, scipy, matplotlib and active_subspaces; it imports
-`spme_eis.py` for its constants, which load without PyBaMM.
+Kind: **stored data, generated for this repository with outside codes (PyBaMM 26.10.1.1 and PyBOP 26.3);
+regeneration script included**. The data were generated with PyBaMM (its frequency-domain EIS method,
+formerly PyBaMM-EIS) and PyBOP (the paper's grouped-parameter SPMe). The shipped files are the record of
+those runs and are never altered. `spme_eis_driver.py` and `generate_data.py` regenerate them. **Regenerating
+the data, or rerunning the model part of the accuracy checks (`check_accuracy.py`), needs PyBaMM 26.10.1.1,
+pybammsolvers 0.11.1, PyBOP 26.3 and CasADi 3.8.1** (recipe under "Regenerating"); both scripts stop with an
+error that says what to install when they are missing. The repo's `.venv` has none of them. The notebook needs
+only numpy, scipy, matplotlib and active_subspaces; it imports `spme_eis_driver.py` for its constants, which
+load without PyBaMM. In `.venv` (Python 3.11) it runs in about 9 s (`jupyter nbconvert --execute`, 2026-11-02; the notebook's own timer prints 4 s).
 
 ## Files
 
 | file | contents | role |
 |---|---|---|
-| `Lithium_Ion_Impedance_Calibration.ipynb` | the case study (Python 3, active_subspaces v1) | executed top to bottom with seed 2025; outputs committed |
-| `spme_eis.py` | `PARAMETERS`, `NAMES`, `LOWER`, `UPPER`, `SOCS`, `FREQUENCIES`, `MESH`; `SPMeImpedance` (Eq. 9 with PyBaMM/PyBOP), `ImpedanceMisfit` (Eq. 7 with adjoint gradients) | the model setup (needs PyBaMM and PyBOP to run) |
-| `generate_data.py` | the design, the resumable runs, assembly, `--check`, `--gradcheck`, `--meshcheck`, `--reference`, `--jacobian` | regenerates and checks the data |
+| `Lithium_Ion_Impedance_Calibration.ipynb` | the case study (Python 3, active_subspaces v1) | executed top to bottom in `.venv` with seed 2025; outputs committed |
+| `spme_eis_driver.py` | `PARAMETERS`, `NAMES`, `LOWER`, `UPPER`, `SOCS`, `FREQUENCIES`, `MESH`; `SPMeImpedance` (Eq. 9 with PyBaMM/PyBOP), `ImpedanceMisfit` (Eq. 7 with adjoint gradients) | the model set-up (needs PyBaMM and PyBOP to run) |
+| `generate_data.py` | the design, the resumable runs, assembly, `--check`, `--gradcheck`, `--meshcheck`, `--reference`, `--jacobian`, `--checkpoints` | regenerates and checks the data (needs PyBaMM and PyBOP) |
+| `check_accuracy.py` | recomputes the numbers of "Accuracy" below; `--data-only` runs the numpy checks alone, `--skip-slow` leaves out the finite differences | accuracy check (checks 5–10 need PyBaMM and PyBOP) |
 | `inputs.csv` | 1000 × 18 grouped parameters, physical units, columns in the order of `NAMES` | design |
 | `outputs.csv` | 1000 × 10: Φ, then Φ_m for SOC 10 %, …, 90 % [Ω²] | model output |
 | `gradients.csv` | 1000 × 18: ∂Φ/∂θ_j with respect to the **physical** inputs [Ω² per input unit] | model output |
@@ -64,16 +69,15 @@ SOC_m. It is computed as in PyBaMM's `EISSimulation`:
 - one SuperLU factorization is done per frequency.
 
 At two random θ and two SOCs, Z agrees with a separate `pybamm.EISSimulation` that has numeric parameter
-values to 3e-15 relative. This checks the input ordering.
+values to 3.5e-15 relative (`check_accuracy.py` check 7; 3e-15 when the data were made). This checks the input ordering.
 
 **QoI** (Eq. 7, Section 6.1). Φ(θ) = Σ_{m=1}^{9} Σ_{k=1}^{60} |Z_m(ω_k) − Z_m(ω_k, θ)|² [Ω²]:
 
 - 9 SOCs: 10 %, 20 %, …, 90 %;
 - 60 frequencies, `logspace(log10(2e-4), 3, 60)` Hz, i.e. 200 µHz to 1 kHz;
 - the data Z_m(ω_k) are the model's spectra at the true θ: `reference_impedance.csv`, the paper's Fig. 7.
-- the data are **noise-free**, as in the paper (Section 6.1 adds no noise), so Φ(θ_true) = 0 is the global
-  minimum. The σ = 1 mΩ the notebook uses for local (Cramér–Rao) standard deviations is our assumption, not
-  the paper's.
+- the data are **noise-free**: the paper does not mention adding noise to its simulated spectra (Section 6.1),
+  so none is added here, and Φ(θ_true) = 0 is the global minimum.
 
 This is the paper's synthetic-data experiment (Section 6.1). The measured LG M50LT spectra of Section 7 are
 not deposited. Φ spans 2.43 decades over the box (1.26e-2 to 3.36 Ω²), so the notebook's QoI is f = log₁₀ Φ, with
@@ -122,12 +126,14 @@ not material.
 `default_rng(20261101)` (`generate_data.design`). This is not a Latin hypercube. `inputs.csv` is the source of
 truth: `generate_data.inputs()` checks that it equals the seeded design to 1e-15 relative.
 
-The data meet the sample-size rule for gradients, N ≥ max(10 m, 300) = 300.
-
 **Uniform, not log-uniform.** τ_ct± span a factor of 50 and τ_d± a factor of 20, where a log-uniform density
-is the usual alternative (the plan for this data set suggested it). The density is uniform because that is
-the paper's search space (PyBOP's particle swarm on the Table 3 box), and because R₀ and C± have lower bound 0
-and cannot be log-uniform. The choice affects the size of the gap, not the direction: under the uniform design
+is the usual alternative. The density is uniform because the paper's search space is the Table 3 box, and
+because R₀ and C± have lower bound 0 and cannot be log-uniform. In PyBOP 26.3 with PINTS 0.6.1 (source read,
+`pybop/optimisers/base_pints_optimiser.py` and `pints/_optimisers/_pso.py`), the particle swarm starts one
+particle at the initial guess and draws the others uniformly between the bounds, in each parameter's
+transformed coordinates (the physical ones unless a transformation, such as a log transform, is set). The paper
+states neither its PyBOP version nor any transformation, so that its swarm searched uniformly in physical
+coordinates is unverified. The choice affects the size of the gap, not the direction: under the uniform design
 93 % of the samples have τ_ct+ above its true value and 9 % lie below the truth along w₁. Reweighting the
 same samples to log-uniform τ_d±, τ_ct± (importance weights ∝ 1/∏τ, gradients chain-ruled to ln τ;
 effective sample size 41 of 1000, so indicative only) gives λ₁/λ₂ = 5.2 (bootstrap 4.5–6.1) instead of
@@ -143,7 +149,7 @@ effective sample size 41 of 1000, so indicative only) gives λ₁/λ₂ = 5.2 (b
 All are kept. C = 0 itself, the lower bound of Table 3, makes the double-layer equation singular, and it was
 not drawn.
 
-**Gradients.** ∂Φ/∂θ is exact up to round-off and is computed by an adjoint method (`spme_eis.py`):
+**Gradients.** ∂Φ/∂θ is exact up to round-off and is computed by an adjoint method (`spme_eis_driver.py`):
 
 - at each SOC and frequency, the forward solve A x = b gives Z, and the adjoint solve Aᵀλ = g, with the same
   LU factors, gives dZ = λᵀ dJ x + (output-Jacobian terms), where A = jωM − J;
@@ -166,47 +172,68 @@ The notebook's "Comparison" section lists what can be compared.
 
 ## Regenerating
 
-The data need a separate Python environment with PyBaMM and PyBOP; the staged install is in
-`../Lithium_Ion_Impedance_Calibration.ema/MODEL_NOTES.md`. The environment used:
-
-- Python 3.13.18;
-- PyBaMM 26.10.1.1 and pybammsolvers 0.11.1;
-- PyBOP 26.3 and CasADi 3.8.1;
-- numpy 2.3.5 and scipy 1.18.1;
-- Linux x86-64, written 2026-11-01.
+The data need a separate Python environment with PyBaMM and PyBOP. The recipe used for the shipped files
+(written out here; the environment itself was an external run in a Linux container and is not part of the
+repository):
 
 ```bash
-python generate_data.py --reference --jacobian                     # reference_impedance.csv, true_parameters.csv, impedance_jacobian.csv
-python generate_data.py --rows 0:1000 --partial /tmp/eis_partial   # resumable: rerun until all rows exist
-python generate_data.py --assemble --partial /tmp/eis_partial      # writes inputs/outputs/gradients CSVs
-python generate_data.py --check 0,517,999                          # recompute rows and compare
-python generate_data.py --checkpoints                              # check_parameters.csv, check_spectra.csv
+python3.13 -m venv eis-venv          # Python 3.13.x; other Pythons with PyBaMM wheels should also work
+eis-venv/bin/pip install "pybop==26.3" "pybamm==26.10.1.1" "pybammsolvers==0.11.1" "casadi==3.8.1" "numpy==2.3.5" "scipy==1.18.1"
+eis-venv/bin/python -c "import pybamm, pybop; print(pybamm.__version__, pybop.__version__)"   # must print 26.10.1.1 26.3
+export PYBAMM_DISABLE_TELEMETRY=true   # PyBaMM 26 otherwise asks about telemetry on first import, which can stall a script
+export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
+eis-venv/bin/python check_accuracy.py --skip-slow   # checks 1-8, a few minutes; check 5 must print Phi = 0.294866279668775... Ohm^2 at the box centre
 ```
 
-**Run time.**
+`generate_data.py` and `check_accuracy.py` stop if the installed PyBaMM, PyBOP or CasADi versions differ from
+these (override with `--any-version`). `spme_eis_driver.py` uses PyBaMM internals (`sim._built_model`,
+`jac_rhs_algebraic_eval`, `y_slices`, `pybamm.BaseSolver().set_up`), so other versions may not run. Then:
 
-- The 945 runs with a CPU record took 1219 s of CPU, a median of 1.29 s per sample for Φ, its gradient and
-  the per-SOC gradients. Rows 0–54 have no CPU record, because the CPU timer was added after them; about
-  1290 s of CPU for all 1000 is the estimate.
-- Wall time was 2941 s in all, a median of 2.58 s per sample. The runs went in four resumable chunks of at
-  most 19 min each (the first, rows 0–54, was stopped by hand and resumed), one process, with `nice -n 10`,
-  on a 2-CPU container shared with other jobs.
+```bash
+eis-venv/bin/python generate_data.py --reference --jacobian                    # reference_impedance.csv, true_parameters.csv, impedance_jacobian.csv
+eis-venv/bin/python generate_data.py --rows 0:1000 --partial /tmp/eis_partial  # resumable: rerun until all rows exist
+eis-venv/bin/python generate_data.py --assemble --partial /tmp/eis_partial     # writes inputs/outputs/gradients CSVs
+eis-venv/bin/python generate_data.py --check 0,517,999                         # recompute rows and compare; writes nothing
+eis-venv/bin/python generate_data.py --checkpoints                             # check_parameters.csv, check_spectra.csv
+```
+
+`--rows` and `--assemble` need `--partial`, a directory outside the data-set directory.
+
+**Provenance and run time of the shipped files** (original run, Linux x86-64 container, 2026-11-01; Python
+3.13.18, PyBaMM 26.10.1.1, pybammsolvers 0.11.1, PyBOP 26.3, CasADi 3.8.1, numpy 2.3.5, scipy 1.18.1):
+
+- **Wall time 2941 s (49 min) for the 1000 samples**, a median of 2.58 s per sample for Φ, its gradient and
+  the per-SOC gradients. The runs went in four resumable chunks of at most 19 min each (the first, rows 0–54,
+  was stopped by hand and resumed), one process, with `nice -n 10`, on a 2-CPU container shared with other jobs.
+- CPU time: the 945 runs with a CPU record took 1219 s, a median of 1.29 s per sample; rows 0–54 have no CPU
+  record, and about 1290 s for all 1000 is the estimate.
 - `--reference --jacobian` took 6.5 min of wall time (1.5 min CPU); `--check 0,517,999` 35 s;
-  `--checkpoints` (six spectra sets, no gradients, run 2026-11-01) 33 s.
-- The paper's Table 1 timing is not comparable: it quotes 415 ms per SPMe spectrum
-  (one SOC, 60 frequencies, averaged over ten runs); here one spectrum takes about 0.1–0.2 s (9 spectra in
-  about 1 s), on a different machine.
-- The model set-up (build, discretise, reference spectra) takes about 3 s of CPU per process.
+  `--checkpoints` (six spectra sets, no gradients) 33 s.
+- The paper's Table 1 timing is not comparable: it quotes 415 ms per SPMe spectrum (one SOC, 60 frequencies,
+  averaged over ten runs); here one spectrum took about 0.1–0.2 s (9 spectra in about 1 s), on a different
+  machine. The model set-up (build, discretise, reference spectra) takes about 3 s of CPU per process.
 
 ## Accuracy
 
-All commands below were run in the environment above; logs are reproduced here.
+`check_accuracy.py` recomputes every number in this section that the notebook does not print, except the
+Table 3 fitting errors, which the notebook computes from `check_spectra.csv`. Checks 1–4 need only numpy and
+were run in `.venv` (Python 3.11, numpy 2.4.6; under 1 s). Checks 5–10 need PyBaMM and PyBOP: they were run
+with the versions above (PyBaMM 26.10.1.1, pybammsolvers 0.11.1, PyBOP 26.3, CasADi 3.8.1, numpy 2.3.5, scipy
+1.18.1 from PyPI; Python 3.13, macOS x86-64, 2026-11-02) in 1370 s of wall time on one core of a heavily shared
+machine (most of it checks 9–10; `--skip-slow` leaves them out), and
+printed the values below. Where the same quantity was printed when the data were made (Linux container), it
+agreed to the digits quoted unless stated.
 
-- **Reproduction.** `generate_data.py --check 0,517,999` (and `--check 0`) recomputes rows 0, 517 and 999
-  from `inputs.csv`. Φ, the 9 Φ_m, ∂Φ and the 162 per-SOC derivatives agree with the files exactly
-  (relative difference 0.0), and the reference spectra agree exactly.
-- **Gradients vs. finite differences** (`--gradcheck 3,400,871`). Central differences of Φ with step
-  h·(upper − lower), compared in normalized coordinates as max |FD − adjoint| / max |adjoint|:
+- **Box centre** (check 5). Φ at the centre of the Table 3 box is 0.29486627966877 Ω², 3.2e-15 relative to the
+  original run's 0.29486627966877590.
+- **Reproduction** (check 6, `generate_data.check`). Rows 0, 517 and 999 recomputed from `inputs.csv`: Φ and
+  the 9 Φ_m agree with the files to 2.6e-14, ∂Φ to 6.9e-14 and the 162 per-SOC derivatives to 5.9e-14
+  (largest difference relative to the largest entry), and the reference spectra to 5.2e-14. In the original
+  environment (Linux container) all agreed exactly; the differences here are rounding-level, from another
+  platform.
+- **Gradients vs. finite differences** (check 9, `generate_data.gradcheck`, rows 3, 400, 871). Central
+  differences of Φ with step h·(upper − lower), compared in normalized coordinates as
+  max |FD − adjoint| / max |adjoint|:
 
   | row | h = 1e-4 | h = 1e-6 |
   |---|---|---|
@@ -214,32 +241,38 @@ All commands below were run in the environment above; logs are reproduced here.
   | 400 | 1.5e-6 | 1.2e-8 |
   | 871 | 1.8e-5 | 1.8e-9 |
 
-  At h = 1e-6 all three agree to ≤ 1.2e-8. The larger differences at h = 1e-4 shrink with h, so they are
-  truncation error of the differences, not of the adjoint. Φ is smooth; finite differences would also have
-  worked, at 37 misfit evaluations per gradient.
-- **Gradient coordinates.** A linear regression of log₁₀ Φ on the normalized inputs gives slopes 0.650
-  (R₀), 0.397 (τ_ct−) and 0.243 (τ_ct+), against mean normalized gradients 0.567, 0.368 and 0.249. They
-  agree in sign and size, as expected for a curved but monotone trend, so the gradients are in physical
-  units and are not scaled twice.
-- **Impedance input ordering.** Z from the input-parameter build agrees with a separate
-  `pybamm.EISSimulation` with numeric parameters to 3e-15 relative (two θ, two SOCs, coarse mesh).
-- **Mesh** (`--meshcheck 3,400,871`). With every mesh doubled (845 states) the misfit, and its own
-  reference spectra, change log₁₀ Φ by −1.95e-4, −4.50e-4 and +1.72e-4. This is far below the 2.43-decade
+  At h = 1e-6 all three agree to ≤ 1.2e-8 (the same values, to the digits shown, as in the original run).
+
+  The larger differences at h = 1e-4 shrink with h, so they are truncation error of the differences, not of
+  the adjoint. Φ is smooth; finite differences would also have worked, at 37 misfit evaluations per gradient.
+- **Gradient coordinates** (check 2). A linear regression of log₁₀ Φ on the normalized inputs gives slopes
+  0.650 (R₀), 0.397 (τ_ct−) and 0.243 (τ_ct+), against mean normalized gradients 0.567, 0.368 and 0.249;
+  over all 18 inputs the two correlate at 0.995. They agree in sign and size, as expected for a curved but
+  monotone trend, so the gradients are in physical units and are not scaled twice.
+- **Impedance input ordering** (check 7). Z from the input-parameter build agrees with a separate
+  `pybamm.EISSimulation` with numeric parameters to 3.5e-15 relative (two θ, two SOCs, coarse mesh).
+- **Mesh** (check 8, `generate_data.meshcheck`). With every mesh doubled (845 states) the misfit, and its own
+  reference spectra, change log₁₀ Φ by −1.95e-4, −4.50e-4 and +1.72e-4 at rows 3, 400 and 871. This is far below the 2.43-decade
   spread over the box.
-- **Impedance Jacobian** (`--jacobian`). Central differences at steps 1e-5 and 1e-3 of each range differ by
-  1.3e-5 of the largest entry (normalized coordinates). The file uses 1e-5.
-- **Design.** Every column's kurtosis is 1.78–1.88 (uniform ≈ 1.8), and the 1000 rows are distinct.
-- **Table 3 fitting errors** (`--checkpoints`, case 0). At the printed θ̂, Φ = 1.12e-4 Ω² (log₁₀ −3.95,
-  two decades below the smallest sampled value, −1.90), and FE_m = 0.95, 1.07, 1.07, 1.08, 1.05, 1.06,
-  1.01, 0.97, 0.95 % against the paper's 0.87, 0.97, 0.96, 0.97, 0.94, 0.94, 0.90, 0.86, 0.84 % (1.09–1.13
-  times). R₀ shifts Z by exactly ΔR₀ (case 1 agrees with the shifted case 0 to 7e-18 Ω), and with
-  R̂₀ = 0.01006 Ω, inside the rounding interval of the printed 0.0101, every FE_m matches Table 3 to 0.005,
-  its print precision. Only R₀ was adjusted; the other printed θ̂ values are rounded too.
-- **Quadratic regime at the truth** (cases 2–5). Along the weakest eigenvector of the Gauss–Newton matrix,
-  Φ/t² is 2.1 λ_min(H) at t = 1e-3 and 112 λ_min(H) at t = 1e-2 (normalized coordinates): the local
-  standard deviations of the poorly identified groups (54–423 half-ranges at σ = 1 mΩ) are an order of
-  magnitude and a ranking only.
-- **EMA.** The model test at the box centre gives Φ = 0.294866 Ω², reproduced exactly by three repeats.
+- **Impedance Jacobian** (check 10). Central differences at steps 1e-5 and 1e-3 of each range differ by
+  1.3e-5 of the largest entry (normalized coordinates); the step-1e-5 result agrees with
+  `impedance_jacobian.csv` to 4.5e-9 of the largest entry.
+- **Design** (check 1). Every column's kurtosis is 1.78–1.88 (uniform ≈ 1.8), the 1000 rows are distinct, and
+  `inputs.csv` equals the seeded design exactly.
+- **True parameters** (check 3). `true_parameters.csv` agrees with Table 3's printed θ to 3.9e-4 relative or
+  better; only τ_e+ (409.06 vs 409.2, 3.3e-4) and τ_e− (634.53 vs 634.7, 2.7e-4) differ by more than the
+  4-digit print rounding.
+- **Table 3 fitting errors** (notebook, "The paper's best fit"; spectra from `generate_data.py --checkpoints`,
+  case 0). At the printed θ̂, Φ = 1.12e-4 Ω² (log₁₀ −3.95, two decades below the smallest sampled value, −1.90),
+  and FE_m = 0.95, 1.07, 1.07, 1.08, 1.05, 1.06, 1.01, 0.97, 0.95 % against the paper's 0.87, 0.97, 0.96, 0.97,
+  0.94, 0.94, 0.90, 0.86, 0.84 % (1.09–1.13 times). R₀ shifts Z by exactly ΔR₀ (case 1 agrees with the shifted
+  case 0 to 7e-18 Ω), and with R̂₀ = 0.01006 Ω, inside the rounding interval of the printed 0.0101, every FE_m
+  matches Table 3 to 0.005, its print precision. Only R₀ was adjusted; the other printed θ̂ values are rounded too.
+- **Quadratic regime at the truth** (notebook, cases 2–5). Along the weakest eigenvector of the Gauss–Newton
+  matrix, Φ/t² is 2.1 λ_min(H) at t = 1e-3 and 112 λ_min(H) at t = 1e-2 (normalized coordinates), so Φ is
+  quadratic only within about 1e-3 half-ranges of the truth. The Cramér–Rao bound would imply standard
+  deviations of tens to hundreds of half-ranges for the poorly identified groups, far outside that region, so
+  the notebook uses the local analysis **as a ranking only** and quotes no absolute standard deviations.
 
 ## How these files relate to the paper
 
@@ -259,10 +292,12 @@ All commands below were run in the environment above; logs are reproduced here.
     activity scores;
   - the global and local views of identifiability agree: the leading eigenvector of the Gauss–Newton matrix
     at the truth is w₁ (5.9° apart), the 6 weakest directions of C and the 5 weakest of H lie within 3.8° and
-    0.4° of the coordinates of τ_e±, τ_e^sep, ζ±, Q_e and t⁺, and the rankings agree (Spearman(local sd,
-    1/global share) = +0.63);
-  - both rankings follow Table 3's best-fit errors, the local standard deviations more closely (Spearman
-    +0.88) than the global shares (+0.59). Caveats: the 7-against-11 group split alone gives +0.78; five of
+    0.4° of the coordinates of τ_e±, τ_e^sep, ζ±, Q_e and t⁺ (the electrolyte-diffusion groups, which the
+    paper found hard to identify, and t⁺, which it estimated within 2 %), and the rankings agree
+    (Spearman(local sd, 1/global share) = +0.63);
+  - both rankings follow Table 3's best-fit errors, the local (Cramér–Rao) ranking more closely (Spearman
+    +0.88) than the global shares (+0.59). The local analysis is used as a ranking only (see "Quadratic
+    regime" under Accuracy); the noise-free data define no noise level. Caveats: the 7-against-11 group split alone gives +0.78; five of
     the seven poorly identified estimates sit on a box bound, so their errors reflect the box and the
     optimiser; the paper's practical non-identifiability is consistent with this structure, not proven by it;
   - Table 3's fitting errors are reproduced at the printed θ̂ (see "Accuracy").
@@ -273,7 +308,7 @@ All commands below were run in the environment above; logs are reproduced here.
   - the SPMe in 18 grouped, identifiable parameters;
   - a calibration misfit as the QoI, analogous to `uq_benchmarks/PDE_Inverse_Problem_MCMC`;
   - exact adjoint gradients.
-- **Open questions for the authors** (also in the report):
+- **Open questions for the authors:**
   - Was the true R₀ = 10 mΩ added as a contact resistance to Chen2020's own series resistance?
   - Which PyBaMM version gave Table 3's τ_e± values?
   - Can the measured LG M50LT spectra be shared?
@@ -282,7 +317,8 @@ All commands below were run in the environment above; logs are reproduced here.
 
 ## License and credit
 
-- **Data and notebook:** CC BY 4.0. **Code** (`spme_eis.py`, `generate_data.py`): MIT, as for the repository.
+- **Data:** CC BY 4.0 (`LICENSE-DATA`). **Notebook and code** (`Lithium_Ion_Impedance_Calibration.ipynb`,
+  `spme_eis_driver.py`, `generate_data.py`, `check_accuracy.py`): MIT (`LICENSE`), as for the repository.
   No PyBaMM or PyBOP source is copied; both are used as installed packages.
 - **The paper:** published under CC BY 4.0 (version of record, Crossref). Cite it when using these data:
   Hallemans et al., J. Electrochem. Soc. 172 (2025) 060507, doi:10.1149/1945-7111/add41b.
