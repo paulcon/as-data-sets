@@ -2,17 +2,20 @@
 
 Kind: **stored data**. The model needs Myokit (a Python package that compiles the model to C and
 integrates it with SUNDIALS CVODES), so it is not a numpy/scipy model. `generate_data.py` and
-`cipaord_driver.py` ran it in this repository's build container and wrote `cipaord_virtual_drugs.csv`;
-the CSV is the record, and the scripts reproduce it (checked below).
+`cipaord_driver.py` ran it in a Linux container, where the shipped `cipaord_virtual_drugs.csv` was
+written; the CSV is the record. Myokit is not installed in this repository's `.venv`, so the scripts that
+need it (`generate_data.py` except `--merge`, `check_accuracy.py`) stop there with an error that says what
+to install. The notebook needs only the CSV.
 
 ## Files
 
 | file | contents | role |
 |---|---|---|
-| `CiPA_Ventricular_Proarrhythmia_Metrics.ipynb` | the case study (Python 3, active_subspaces v1) | executed top to bottom with seed 1054; outputs committed |
+| `CiPA_Ventricular_Proarrhythmia_Metrics.ipynb` | the case study (Python 3, active_subspaces v1) | executed top to bottom in `.venv` (Python 3.11) with seed 1054; outputs committed |
 | `cipaord_virtual_drugs.csv` | 224 rows × 27 columns (below) | stored model runs |
 | `cipaord_driver.py` | `run(x, ...)`, `beat_metrics(...)`, `response_class(r)`; `INPUTS`, `NAMES`, `LOWER`, `UPPER`, `QOI_NAMES` | Myokit wrapper; the constants need only numpy |
 | `generate_data.py` | the design and the runs; `--chunk`, `--merge`, `--check` | regenerates the CSV (needs Myokit) |
+| `check_accuracy.py` | reruns three rows from the exact design and from the CSV's inputs | the accuracy numbers not printed elsewhere (needs Myokit) |
 | `cipaord_endo.mmt` | the CiPAORdv1.0 endocardial model as a Myokit file (ORd core after the O'Hara–Rudy reference code, BSD-3 notice in its header; hERG section new) | the model |
 | `LICENSE-ORd` | the BSD 3-clause notice and disclaimer of the O'Hara–Rudy code, as in the FDA C file's header | licence of the ORd-derived parts of `cipaord_endo.mmt` |
 
@@ -22,7 +25,10 @@ Columns of `cipaord_virtual_drugs.csv` (two `#` lines, then numbers; `np.loadtxt
 - 9–16: features of beat 1000: `qNet` (nC/uF), `APD90`, `APD50` (ms), `peakVm` (mV), `diastolicCa`,
   `peakCa` (nM), `CaTD50`, `CaTD90` (ms);
 - 17–18: `max_dv`, the largest dV/dt between 30 % repolarisation and APD90 of beat 1000 (mV/ms; > 0 is
-  an EAD, the FDA code's test), and `dVdt_max`, the upstroke velocity (mV/ms);
+  an EAD, the FDA code's test), and `dVdt_max`, the largest dV/dt of beat 1000 (mV/ms), the upstroke
+  velocity except in 4 rows (bINa 74–80 %), where the INa upstroke is slower than the stimulus and
+  `dVdt_max` is the stimulus slope, 80 mV/ms (printed by the notebook); there APD90 and APD50 are timed
+  from the stimulus onset, as the FDA definition (time of max dV/dt) gives;
 - 19–20: `n_EAD`, `n_norepol`: beats among 996–1000 with an EAD, or without full repolarisation;
 - 21–22: `qNet_spread`, `APD90_spread`: max − min over beats 996–1000;
 - 23–24: `qNet_b500`, `APD90_b500`: the same features of beat 500 (convergence check);
@@ -55,7 +61,8 @@ interface). `cipaord_endo.mmt` is a Myokit re-expression of CiPAORdv1.0 built ac
   order, many of its variable names and idioms (`vffrt`/`vfrt`, `dti_develop`/`dti_recover`, `a_rel`,
   `btp`, `Jupnp`/`Jupp`, `Bcai`/`Bcass`/`Bcajsr`, the 0.001 clamp of `tau_rel`), and many right-hand sides
   are the same as the C file's after normalising spaces and component prefixes (88 of 286 non-constant
-  assignments by our check, a lower bound; the reviewer counted at least 93). These parts are derived from
+  assignments, a lower bound, counted against the C file at commit 539ff80; an external run, not
+  reproducible from the repository). These parts are derived from
   BSD-3 code, so the notice and disclaimer are reproduced, exactly as in the C file's header, at the top of
   `cipaord_endo.mmt` and in `LICENSE-ORd`.
 - **hERG/drug-binding section** (`ikr`): written in flux form from Li et al. (2017), with named rates
@@ -68,13 +75,15 @@ interface). `cipaord_endo.mmt` is a Myokit re-expression of CiPAORdv1.0 built ac
 
 So no GPL-only code of the FDA repository is included: of the FDA's additions only numbers (parameter
 values, the initial state) and the published model equations are used. The initial state is the published control steady
-state at CL 2000 ms (`newordherg_states_CL2000.txt`, 49 numbers). **Equivalence check** (in the build
-scratch folder, not shipped): the FDA C file was compiled with its R headers removed and its `derivs`
+state at CL 2000 ms (`newordherg_states_CL2000.txt`, 49 numbers). **Equivalence check** (an external
+run in the container that wrote the data, not reproducible from the repository: the script was not
+kept, and it needs the GPL-3.0 C file): the FDA C file was compiled with its R headers removed and its `derivs`
 evaluated through ctypes at 300 random states (voltages in [−95, 45] mV, other states ±30 % of the steady
 state, random bound-drug states) and random virtual drugs, with the drug set as `get_pars.R` does
 (fold changes 1/((100 − b)/100) times the Dutta factors; Kmax = 2·sbIKr with D = n = halfmax = 1, so that
 Kmax·D^n/(D^n + halfmax) = sbIKr). The right-hand sides of the Myokit model agreed to a maximum relative
-difference of 1.5e-12 over all 49 states.
+difference of 1.5e-12 over all 49 states (FDA repository at commit
+539ff80d6616895de5d943e7bfb77b346d195db4).
 
 **Inputs** (paper Table 2, p. 3; uniform on a linear scale, as the paper's Saltelli sample of Virtual
 Drug Population I):
@@ -108,14 +117,18 @@ code's 1 ms output grid): qNet = ∫ (INaL + ICaL + Ito + IKr + IKs + IK1) dt ov
 state reset to 0 at the start of the beat); APDx = time from max dV/dt to the first crossing after the peak of
 Vrest + (1 − x)(Vmax − Vrest), Vrest = min V before the peak; peakVm = max V; diastolicCa and peakCa = min
 [Ca]i before the peak and max [Ca]i (nM); CaTDx = time from the first [Ca]i above 90 % of its rise to the
-crossing of Ca_rest + (1 − x)(Ca_max − Ca_rest) after the peak. The paper also studies an EAD threshold
+crossing of Ca_rest + (1 − x)(Ca_max − Ca_rest) after the peak. The CaTD start is the FDA code's:
+`AP_simulation/AP_simulation.R` (commit 539ff80, lines 265–266) sets `caup <- carest + (camax - carest)*0.9`
+and `t_up <- t[which(ca > caup)[1]]`, the first output time above 90 % of the rise; here that time is
+interpolated. Whether the paper's "minor modifications" changed it is not known. The paper also studies an EAD threshold
 ThEAD,hERG (an extra hERG reduction scan); it is not computed here.
 
 **The paper's unpublished "minor modifications."** Not known. Assumed here: (1) the virtual drug acts
 through Eq 3 on the six conductances and through the binding rate Ku·sbIKr of the Li et al. model;
 (2) Kt = 3.5e-5 /ms; (3) the features are those of the last beat. The FDA code instead keeps, of its last 250
 beats, the beat with the largest plateau dV/dt; the paper says "the last five beats were analyzed" (p. 4).
-Only beats 996–1000 and 500 are logged here. With no EADs in the design, the last five beats within
+Only beats 996–1000 and 500 are logged here; the file stores the EAD count of beats 996–1000 (`n_EAD`)
+and the plateau dV/dt of beat 1000 only (`max_dv`). With no EADs in the design, the last five beats within
 0.11 nC/µF and 0.67 ms of each other, and beat 500 within 0.50 nC/µF and 0.44 ms of beat 1000 (below), the
 choice of beat does not matter here.
 
@@ -123,13 +136,19 @@ choice of beat does not matter here.
 with the linear least-squares estimator (OLS).
 
 **Sampling design.** The first 224 points of one scrambled Sobol' sequence of 2^8 = 256 points in nine
-dimensions (`scipy.stats.qmc.Sobol(d=9, scramble=True, seed=1054)`), mapped linearly to the box. QPHD
-needs (m+1)(m+2)/2 = 55 rows; 224 is about 4× that. The paper used SALib's Saltelli design with n = 500
-(10,000 runs, p. 5) and a second population (10,000 kernel-density samples around the 28 CiPA drugs);
-its outputs are not published (the Data Availability statement points to the Supplemental Material).
+dimensions (`scipy.stats.qmc.Sobol(d=9, scramble=True, seed=1054)`), mapped linearly to the box. A prefix
+of 224 points is not a power of 2, so it lacks the full balance of a Sobol' net; the effect on these
+estimates is small. QPHD fits (m+1)(m+2)/2 = 55 coefficients; 224 rows are about 4× that. The paper used
+SALib's Saltelli design with n = 500 (10,000 runs, p. 5) and a second population (10,000 kernel-density
+samples around the 28 CiPA drugs). Its outputs are not published: the Data Availability statement (p. 17)
+says "The datasets analyzed for this study can be found in the Supplemental Material", but the
+Supplementary Material (Data Sheet 1, 21 pages) holds the drug parameters of the 28 CiPA drugs (Tables
+S1–S3), plots of the two virtual-drug populations' input distributions (Figs S2, S3), Sobol' indices of the
+other five features (Fig S5), the regression-vs-Sobol' comparison (Fig S6), the feature correlation heatmap
+(Fig S7), the classification thresholds and counts (Tables S4, S5), but no table of the 10,000 runs.
 
-**Abnormal runs.** None: all 224 runs have response 0 (no EAD, every beat repolarises); the largest plateau
-dV/dt over all runs and beats 996–1000 is −0.088 mV/ms. The design is therefore used whole, without
+**Abnormal runs.** None: all 224 runs have response 0 (no EAD in beats 996–1000, `n_EAD` = 0, and every
+beat repolarises); the largest plateau dV/dt of beat 1000 over all runs is −0.088 mV/ms (notebook). The design is therefore used whole, without
 exclusion skew. Two rows have qNet slightly below 0 (minimum −1.75 nC/µF); qNet is a signed charge, so
 they are physical and kept.
 
@@ -147,27 +166,39 @@ python generate_data.py --merge      # parts -> cipaord_virtual_drugs.csv
 python generate_data.py --check 3    # rerun 3 rows; compare with the CSV and with rel_tol 1e-6
 ```
 
-Provenance of the shipped file: 2026-11-01, Ubuntu 24.04 container, Python 3.13.18, Myokit 1.39.2,
+Without Myokit, SUNDIALS and a C compiler, `generate_data.py` (except `--merge`) stops with an error that
+says what to install and to rerun it. The shipped file is the record; it is regenerated only if a problem
+is found in it.
+
+Provenance of the shipped file: 2026-11-01, written in an Ubuntu 24.04 container, Python 3.13.18, Myokit 1.39.2,
 SUNDIALS 6.4.1 (Ubuntu `libsundials-dev`), numpy 2.5.4, scipy 1.18.1; one process at `nice -n 10` on 2
 shared CPUs; 14 chunks, each under 20 min wall time (longest 1180 s); the last chunk was interrupted by a
-container restart and resumed from its saved progress (12 of 16 points kept). **Cost:** 24.4 s CPU per run
-of 1000 beats (19.8–31.5 s), 91 min CPU for the 224 runs, 7284 s (121 min) wall time in all.
+container restart and resumed from its saved progress (12 of 16 points kept). **Run time of
+`generate_data.py`:** 24.4 s CPU per run of 1000 beats (19.8–31.5 s, printed by the notebook), 91 min CPU
+for the 224 runs, 7284 s (121 min) wall time in all (original run in the container).
 
 ## Accuracy
 
-- **Model equations:** right-hand sides equal to the FDA C code to 1.5e-12 (relative), see above.
+The checks that rerun the model need Myokit, which is not installed in `.venv`; their numbers below come from
+the original runs in the container that wrote the data (Python 3.13.18, Myokit 1.39.2), and the scripts
+named recompute them where Myokit is installed.
+
+- **Model equations:** right-hand sides equal to the FDA C code to 1.5e-12 (relative), see above (external
+  run, not reproducible from the repository).
 - **Control steady state.** Pacing the control model (no drug) 1000 beats from the distributed CL 2000 ms
   steady state changes the states by a median relative 2.0e-5 and at most 8.2e-3 (`ical.nca`, a state of
-  size 1.5e-3), so the initial state is the steady state of this implementation too (`--check`).
+  size 1.5e-3), so the initial state is the steady state of this implementation too (`generate_data.py
+  --check`, original run).
 - **Convergence of the 1000-beat train** (printed by the notebook): between beats 500 and 1000, qNet changes
   by a median 0.076 nC/µF (max 0.50, which is 2.1 % of its standard deviation over the rows; max relative
   2.2 %) and APD90 by a median 0.047 ms (max 0.44 ms, relative 6.9e-4). Over beats 996–1000 the spread is
   at most 0.11 nC/µF and 0.67 ms.
-- **Reproducibility and solver tolerance** (`generate_data.py --check`, 2026-11-01). Rerunning rows 0 and 223 at the exact
-  design inputs reproduced the eight features to a relative 2.0e-10 (the 10 significant digits written).
-  Rerunning from the CSV's 10-digit inputs instead changed them by up to 1.9e-4 (rows 0, 112, 223), the
-  level at which CVODES's adaptive steps at rel_tol 1e-4 respond to a 1e-10 perturbation of the inputs;
-  this is the numerical noise of the data. Tightening rel_tol to 1e-6 (the paper's lsoda tolerance) changed
+- **Reproducibility and solver tolerance** (original runs, 2026-11-01). Rerunning rows 0 and 223 at the exact
+  design inputs reproduced the eight features to a relative 2.0e-10 (the 10 significant digits written;
+  `generate_data.py --check` and `check_accuracy.py`). Rerunning from the CSV's 10-digit inputs instead
+  changed them by up to 1.9e-4 (rows 0, 112, 223; `check_accuracy.py`), the level at which CVODES's adaptive
+  steps at rel_tol 1e-4 respond to a 1e-10 perturbation of the inputs; this is the numerical noise of the
+  data. Tightening rel_tol to 1e-6 (`generate_data.py --check`) (the paper's lsoda tolerance) changed
   the features by at most 3.7e-4 relative (row 0: qNet 48.8162 vs 48.8342 nC/µF, APD90 429.107 vs 429.097
   ms; row 223: 6.1e-5), against standard deviations over the rows of about 24 nC/µF and 110 ms. Cost at
   rel_tol 1e-6: about 20 % more CPU.
@@ -177,7 +208,8 @@ of 1000 beats (19.8–31.5 s), 91 min CPU for the 224 runs, 7284 s (121 min) wal
 
 - **Not the paper's runs.** The authors' simulation outputs are not public; these are a new computation
   with a Myokit re-expression of the FDA CiPAORdv1.0 code (ORd core after the O'Hara–Rudy reference code,
-  hERG section written from Li et al. 2017; right-hand sides equal to the C code's to 1.5e-12), the paper's Table 2 box,
+  hERG section written from Li et al. 2017; right-hand sides equal to the C code's to 1.5e-12, an external
+  run), the paper's Table 2 box,
   protocol and features, on a smaller Sobol' design.
 - **Same as the paper:** model (CiPAORdv1.0 endo), nine inputs and ranges, Eq 3 conductance scaling,
   CL 2000 ms, 1000 beats from the control steady state, features of Table 3 with the FDA definitions,
@@ -193,24 +225,31 @@ of 1000 beats (19.8–31.5 s), 91 min CPU for the 224 runs, 7284 s (121 min) wal
   nor the FDA code's 1 ms output grid (≤ 1 ms against standard deviations of 71.5 and 81.6 ms) can explain
   it. The misfit is concentrated at high ICaL block and low INa block (bICaL > 60 %, bINa < 20 %: 14 rows,
   Ca transient 43.4–76.9 nM, 0.23 of the CaTD50 residual sum of squares, residuals down to −113 ms); adding
-  bINa·bICaL and the two squares raises R² to 0.857 (CaTD50) and 0.928 (CaTD90). Plausible causes: the
-  authors' unpublished CaTD definition (start time, baseline, beat) or their "minor modifications". The paper
+  bINa·bICaL and the two squares raises R² to 0.857 (CaTD50) and 0.928 (CaTD90). The CaTD definition here
+  is the FDA code's (start at 90 % of the rise, above), so plausible causes are the authors' "minor
+  modifications" of that code (which may include the CaTD definition) or the beat they analysed. The paper
   is itself inconsistent here: its p. 8 text says "CaTD90 and peakCa were the only features that had R²
-  values of less than 0.91", while Table 4 gives CaTD90 0.92, CaTD50 0.83 and peakVm 0.88. The
+  values of less than 0.91" (p. 8), while Table 4 (p. 8) gives CaTD90 0.92, CaTD50 0.83 and peakVm 0.88;
+  the same paragraph says that "qNet, APD50, APD90, and diastolicCa exhibited R2 values greater than 0.94",
+  while Table 4 gives 0.94 for APD90 and APD50; and the text on p. 3 gives the range of Vhalf as "(−1 to 200)",
+  against −200 to −1 in Table 2. The
   quadratic-surrogate Sobol' indices of qNet (bINaL 0.39, sbIKr 0.26, bICaL 0.15, bINa 0.13) match the
   paper's 40, 26, 16 and 13 %. Active subspaces (not in the paper): n = 1 for seven features by the largest
-  ratio λk/λk+1 among k = 1–3 (CaTD90 and peakVm borderline, λ1/λ2 8.3 vs λ2/λ3 6.4 and 8.8 vs 7.3); n = 2
-  for CaTD50 (λ2/λ3 12.7 > λ1/λ2 4.9). See the notebook's comparison table.
+  ratio λk/λk+1 among k = 1–3 (CaTD90 and peakVm borderline, λ1/λ2 8.3 vs λ2/λ3 6.4 and 8.8 vs 7.3;
+  diastolicCa has a second gap of 11.9 after a first of 24.9); n = 2 for CaTD50 (λ2/λ3 12.7 > λ1/λ2 4.9). See the notebook's comparison table.
 - **Not a duplicate of `Rabbit_Ventricular_Action_Potential`:** that data set is the Shannon 2004 rabbit
   model with 15 current scaling factors at 500 ms; this one is the human ORd-based CiPA model with
   drug-block inputs (including dynamic hERG binding) at 2000 ms and the CiPA metric qNet.
 
 ## License and credit
 
-Code: `cipaord_driver.py` and `generate_data.py` MIT. `cipaord_endo.mmt`: **MIT for the new parts; the
-ORd-derived parts BSD 3-clause (copyright T. O'Hara, Y. Rudy, Washington University in St. Louis)**; the
-notice and disclaimer are kept in the file's header and in `LICENSE-ORd`, as BSD-3 requires for
-redistributed source. Data (`cipaord_virtual_drugs.csv`): CC BY 4.0. The paper is CC BY 4.0. No GPL-only
+Code (the notebook, `cipaord_driver.py`, `generate_data.py`, `check_accuracy.py`): MIT (`LICENSE`).
+`cipaord_endo.mmt`: **MIT for the new parts; the ORd-derived parts BSD 3-clause (copyright T. O'Hara,
+Y. Rudy, Washington University in St. Louis)**; the notice and disclaimer are kept in the file's header
+and in `LICENSE-ORd`, as BSD-3 requires for redistributed source. Because they are not under CC BY 4.0,
+`cipaord_endo.mmt` and `LICENSE-ORd` are listed in the exceptions list of `LICENSE-DATA`. Its parameter
+values and initial state are numbers from the FDA CiPA repository (GPL-3.0), used as published facts and
+credited here. Data (`cipaord_virtual_drugs.csv`): CC BY 4.0. The paper is CC BY 4.0. No GPL-only
 code of the FDA CiPA repository (GPL-3.0) is included: its hERG/qNet section was re-expressed in flux form
 from Li et al. 2017, and its parameter values and published initial state (numbers) were used to check and
 initialise the model file. Credit: model, T. O'Hara, L. Virág, A. Varró and Y. Rudy (ORd), Z. Li et al. (hERG binding

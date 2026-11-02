@@ -2,7 +2,8 @@
 run with Myokit, at the first 320 points of one scrambled Sobol' sequence on the Table 4 box
 of Yang, Gao, Smith & Simitev (2025, PLOS ONE 20(7):e0328261).
 
-Needs Myokit (pip install myokit) with SUNDIALS CVODES (e.g. apt install libsundials-dev).
+Needs Myokit (pip install myokit; the shipped file used 1.39.2) with SUNDIALS CVODES (e.g. apt install
+libsundials-dev) and a C compiler; without them the script stops with an error that says what to install.
 One process; about 10 s of CPU per point (1000 beats), about 55 min of CPU in all.
 
     nice -n 10 python generate_data.py            # all 4 chunks (finished ones skipped), then merge
@@ -16,6 +17,7 @@ flagged in the `response` column (never dropped).
 """
 import argparse
 import os
+import sys
 import time
 
 import numpy as np
@@ -36,6 +38,22 @@ QUNITS = ["mV", "mV", "ms", "ms", "mV", "mV ms", "mM", "mM"]
 CLASSES = {"normal": 0, "no_AP": 1, "alternans_or_2to1": 2}
 COLS = (sm.NAMES + QOIS + ["A90_prev"] + ["b500_" + q for q in QOIS] + ["response", "cpu_s"])
 UNITS = ["-"] * 15 + QUNITS + ["ms"] + QUNITS + ["code", "s"]
+
+
+def need_myokit():
+    """Stop with an install message unless Myokit can compile and run the model."""
+    try:
+        import myokit  # noqa: F401
+    except ImportError:
+        sys.exit("Myokit is not installed. Install it (pip install myokit==1.39.2, the version that wrote the "
+                 "shipped file) together with SUNDIALS (e.g. apt install libsundials-dev or brew install sundials) "
+                 "and a C compiler, then rerun generate_data.py.")
+    try:
+        sm._sim()
+    except Exception as e:  # noqa: BLE001
+        sys.exit(f"Myokit cannot compile the model ({type(e).__name__}: {str(e).splitlines()[0]}). Install SUNDIALS "
+                 "(e.g. apt install libsundials-dev or brew install sundials) and a C compiler, then rerun "
+                 "generate_data.py.")
 
 
 def design():
@@ -125,6 +143,8 @@ if __name__ == "__main__":
     ap.add_argument("--check", type=int, metavar="N_POINTS")
     a = ap.parse_args()
     t0 = time.time()
+    if not a.merge:
+        need_myokit()
     if a.merge:
         merge()
     elif a.check:

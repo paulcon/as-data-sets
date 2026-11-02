@@ -3,7 +3,8 @@
 Sobol' sequence on the nine-input box of Parikh, Di Achille, Kozloski & Gurev (2019,
 Front. Pharmacol. 10:1054, Table 2).
 
-Needs Myokit (pip install myokit) with SUNDIALS CVODES (e.g. apt install libsundials-dev).
+Needs Myokit (pip install myokit; the shipped file used 1.39.2) with SUNDIALS CVODES (e.g. apt install
+libsundials-dev) and a C compiler; without them the script stops with an error that says what to install.
 One process; about 24 s of CPU per point (1000 beats), about 91 min of CPU in all.
 
     nice -n 10 python generate_data.py            # all chunks (finished ones skipped), then merge
@@ -18,6 +19,7 @@ flagged in the `response` column (never dropped).
 """
 import argparse
 import os
+import sys
 import time
 
 import numpy as np
@@ -37,6 +39,22 @@ EXTRA = ["max_dv", "dVdt_max", "n_EAD", "n_norepol", "qNet_spread", "APD90_sprea
 EXTRA_UNITS = ["mV/ms", "mV/ms", "count", "count", "nC/uF", "ms", "nC/uF", "ms"]
 COLS = cm.NAMES + cm.QOI_NAMES + EXTRA + ["response", "cpu_s"]
 UNITS = cm.UNITS + cm.QOI_UNITS + EXTRA_UNITS + ["code", "s"]
+
+
+def need_myokit():
+    """Stop with an install message unless Myokit can compile and run the model."""
+    try:
+        import myokit  # noqa: F401
+    except ImportError:
+        sys.exit("Myokit is not installed. Install it (pip install myokit==1.39.2, the version that wrote the "
+                 "shipped file) together with SUNDIALS (e.g. apt install libsundials-dev or brew install sundials) "
+                 "and a C compiler, then rerun generate_data.py.")
+    try:
+        cm._sim(ABS_TOL, REL_TOL)
+    except Exception as e:  # noqa: BLE001
+        sys.exit(f"Myokit cannot compile the model ({type(e).__name__}: {str(e).splitlines()[0]}). Install SUNDIALS "
+                 "(e.g. apt install libsundials-dev or brew install sundials) and a C compiler, then rerun "
+                 "generate_data.py.")
 
 
 def design():
@@ -132,6 +150,8 @@ if __name__ == "__main__":
     p.add_argument("--parts", default=os.path.join(HERE, "parts"))
     a = p.parse_args()
     t0 = time.time()
+    if not a.merge:
+        need_myokit()
     if a.check:
         check(a.check)
     elif a.merge:
