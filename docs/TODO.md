@@ -42,7 +42,7 @@ Questions from the review of the 13 data sets; details in the PR body.
 
 ### Author interview, 2026-11-02
 
-Answers to [docs/review-2026-11-01/INTERVIEW.md](review-2026-11-01/INTERVIEW.md) (questions numbered as there; evidence in the review's REPORT.md). Items marked "(author, 2026-11-02)" were decided here.
+Answers to the questions of the review of 2026-11-01 (all 68 data sets), numbered as in its interview list: A repository rules, B per data set, C facts, D letters to authors. The review (its report, the interview list and the detail reports) is kept outside the repository (author, 2026-11-02), so each item below states its question. Items marked "(author, 2026-11-02)" were decided here.
 
 Part A, repository rules:
 
@@ -57,7 +57,7 @@ Part A, repository rules:
 - [x] A9 (author, 2026-11-02): **there is no sample-size rule and no file-size rule** beyond "Zenodo above about 40 MB". Remove the citations ("10 MB limit" and "M ≥ 10m" in Two_Material, "2 × 231 = 462 runs this repository asks for" in Kurchatov, "max(10m, 300)" in EU_DEMO, the "build rule" in CO2_Injection); DATA.md states the actual sizes without citing a rule
 - [x] A10 (author, 2026-11-02): **each notebook chooses the subspace dimension itself and justifies that choice** in its text (gap, LOO or other criteria); no repository-wide rule
 - [x] A11 (author, 2026-11-02): the run time of `generate_data.py` is stated **in DATA.md**; change the rule in `docs/README.md`
-- [x] A12 (author, 2026-11-02): add to §6 only the errata of report §6 that were **confirmed on the page**; unverified ones stay as notes in DATA.md
+- [x] A12 (author, 2026-11-02): add to §6 only the errata listed in the review's report (§6 there) that were **confirmed on the page**; unverified ones stay as notes in DATA.md
 - [x] A13 (author, 2026-11-02): list each new data set in `README.md`, its category README and the `docs/README.md` table in the PR that ships it. **Move Pyloric_Circuit_Energy_Consumption to `biomedical_cardiovascular/`**, next to Hodgkin_Huxley
 - [x] A14 (author, 2026-11-02): ship **all 25 new data sets in one PR**, as #64 did for 13 (with A1, this PR also re-executes them in `.venv` and makes the C1–C6 fixes). It branches from `main` **after #64 merges**
 
@@ -119,7 +119,7 @@ Part B, per data set:
 
 Part D, letters to authors:
 
-- [ ] D1–D15 (author, 2026-11-02): **draft all fifteen letters** (INTERVIEW.md Part D table). The drafts are kept outside the repository, in `~/Documents/Claude/ActiveSubspacesDiscovered/letters/` (one file per letter); the author sends them. D13 (Davis et al.) and D15 (Equadratures and Rolls-Royce) ask for a licence or CC BY grant, which the author chose here in addition to A5's exceptions list. Until replies arrive, each question stays stated as open in its DATA.md. Drafted 2026-11-02; each file ends with "Notes for Paul" (evidence per question, unverified points, contacts to check). Before sending:
+- [ ] D1–D15 (author, 2026-11-02): **draft all fifteen letters** (D1 Seshadri, D2 Bauerheim, D3 Yang et al., D4 Grey, D5 Erdal and Cirpka, D6 Iooss, D7 Köppel and Rohde, D8 Morris, D9 Schuster and Sullivan, D10 Wong et al., D11 Zonta et al., D12 Marks et al., D13 Davis et al., D14 Linden et al., D15 Equadratures and Rolls-Royce). The drafts are kept outside the repository, in `~/Documents/Claude/ActiveSubspacesDiscovered/letters/` (one file per letter); the author sends them. D13 (Davis et al.) and D15 (Equadratures and Rolls-Royce) ask for a licence or CC BY grant, which the author chose here in addition to A5's exceptions list. Until replies arrive, each question stays stated as open in its DATA.md. Drafted 2026-11-02; each file ends with "Notes for Paul" (evidence per question, unverified points, contacts to check). Before sending:
   - D1 and D2 describe Transonic_Fan and Annular as B4 and B23 will leave them; send them after those fixes merge (main still quotes Eq. 11 as ⅓A² and says "weak case reproduced")
   - addresses missing or possibly out of date: Iooss (2006 CEA address), Grey and Davis (no e-mail in the paper), D15 recipients (2018/2021 papers)
 - [ ] Repository fixes found while drafting the letters (2026-11-02):
