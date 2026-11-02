@@ -2,7 +2,7 @@
 
 Kind: **stored data**. The model needs Myokit (a Python package that compiles the model to C and
 integrates it with SUNDIALS CVODES), so it is not a numpy/scipy model. `generate_data.py` and
-`shannon_model.py` ran it in this repository's build container and wrote `rabbit_ap_samples.csv`;
+`shannon_driver.py` ran it in this repository's build container and wrote `rabbit_ap_samples.csv`;
 the CSV is the record, and the scripts reproduce it (checked below).
 
 ## Files
@@ -11,7 +11,7 @@ the CSV is the record, and the scripts reproduce it (checked below).
 |---|---|---|
 | `Rabbit_Ventricular_Action_Potential.ipynb` | the case study (Python 3, active_subspaces v1) | executed top to bottom with seed 328261; outputs committed |
 | `rabbit_ap_samples.csv` | 320 rows × 34 columns (below) | stored model runs |
-| `shannon_model.py` | `run(p, n_beats, ...)`, `biomarkers(t, V, Cai)`; `INPUTS`, `NAMES`, `LOWER`, `UPPER` | Myokit wrapper; the constants need only numpy |
+| `shannon_driver.py` | `run(p, n_beats, ...)`, `biomarkers(t, V, Cai)`; `INPUTS`, `NAMES`, `LOWER`, `UPPER` | Myokit wrapper; the constants need only numpy |
 | `generate_data.py` | the design and the runs; `--chunk`, `--merge`, `--check` | regenerates the CSV (needs Myokit) |
 | `shannon_wang_puglisi_weber_bers_2004_a_p.mmt` | the Myokit model file, unchanged from the authors' repository | the model |
 
@@ -120,7 +120,7 @@ wall time. **Check:** `--check 2` (2026-11-01) reproduced rows 0 and 1 to a rela
 significant digits written) in 61 s.
 
 **Pacing sequence.** From the model file's initial state: 499 unlogged beats (Myokit `pre`), beat 500
-logged, 498 unlogged beats, beats 999 and 1000 logged. `shannon_model.run` restores the initial state
+logged, 498 unlogged beats, beats 999 and 1000 logged. `shannon_driver.run` restores the initial state
 explicitly before each run, because Myokit's `pre()` replaces the simulation's default state (without
 this, a cached simulation would start each run from the previous run's paced state).
 
@@ -152,7 +152,7 @@ this, a cached simulation would start each run from the previous run's paced sta
   pNaCa is outside the box ([0.6, 3]), and pNa = pNab = 1 while their means over the box are 5.5 and 5.0,
   so the check says little about Na loading in the box.
 - **[Na]i loading** (a check made while fixing the review, 2026-11-01, not part of the shipped files):
-  14 design rows spread over the normal rows (pNaK 0.24-1.03) were rerun with `shannon_model` and
+  14 design rows spread over the normal rows (pNaK 0.24-1.03) were rerun with `shannon_driver` and
   logged at beats 1, 2, 5, 10, 20, 50, 100, 200, 500 and 1000 (about 150 s CPU). Beat 1000 matched the
   CSV (A90 to 0.02 ms). [Na]i at the end of beat 1000 was 12.0-25.8 mM (median 15.9), against 8.81 mM
   in the initial state; median 9.2 mM at beat 10, 11.8 at beat 100 and 15.2 at beat 500.
@@ -216,7 +216,7 @@ this, a cached simulation would start each run from the previous run's paced sta
 
 ## License and credit
 
-Code (`shannon_model.py`, `generate_data.py`): MIT (`LICENSE`). Data (`rabbit_ap_samples.csv`): CC BY 4.0
+Code (`shannon_driver.py`, `generate_data.py`): MIT (`LICENSE`). Data (`rabbit_ap_samples.csv`): CC BY 4.0
 (`LICENSE-DATA`). The paper is CC BY 4.0. The model file `shannon_wang_puglisi_weber_bers_2004_a_p.mmt`
 is copied unchanged from https://github.com/ZhechaoYanggla/Sobol_paper; **that repository states no
 licence**. It is Myokit's import of the Shannon et al. (2004) model from the CellML Model Repository

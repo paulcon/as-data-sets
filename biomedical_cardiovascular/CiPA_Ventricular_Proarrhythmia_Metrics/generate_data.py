@@ -23,7 +23,7 @@ import time
 import numpy as np
 from scipy.stats import qmc
 
-import cipaord_model as cm
+import cipaord_driver as cm
 
 SEED = 1054
 N = 224              # first N points of a scrambled Sobol' sequence of 2^8 = 256 points

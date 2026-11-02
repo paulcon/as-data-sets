@@ -21,7 +21,7 @@ import time
 import numpy as np
 from scipy.stats import qmc
 
-import shannon_model as sm
+import shannon_driver as sm
 
 SEED = 20251031
 N = 320              # first N points of a scrambled Sobol' sequence of 2^9 = 512 points

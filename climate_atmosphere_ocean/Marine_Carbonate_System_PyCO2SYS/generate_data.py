@@ -20,7 +20,7 @@ import time
 
 import numpy as np
 
-import carbonate_model as cm
+import carbonate_driver as cm
 import PyCO2SYS as pyco2
 
 HERE = os.path.dirname(os.path.abspath(__file__))

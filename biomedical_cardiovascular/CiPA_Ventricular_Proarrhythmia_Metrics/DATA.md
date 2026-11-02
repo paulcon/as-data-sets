@@ -2,7 +2,7 @@
 
 Kind: **stored data**. The model needs Myokit (a Python package that compiles the model to C and
 integrates it with SUNDIALS CVODES), so it is not a numpy/scipy model. `generate_data.py` and
-`cipaord_model.py` ran it in this repository's build container and wrote `cipaord_virtual_drugs.csv`;
+`cipaord_driver.py` ran it in this repository's build container and wrote `cipaord_virtual_drugs.csv`;
 the CSV is the record, and the scripts reproduce it (checked below).
 
 ## Files
@@ -11,7 +11,7 @@ the CSV is the record, and the scripts reproduce it (checked below).
 |---|---|---|
 | `CiPA_Ventricular_Proarrhythmia_Metrics.ipynb` | the case study (Python 3, active_subspaces v1) | executed top to bottom with seed 1054; outputs committed |
 | `cipaord_virtual_drugs.csv` | 224 rows × 27 columns (below) | stored model runs |
-| `cipaord_model.py` | `run(x, ...)`, `beat_metrics(...)`, `response_class(r)`; `INPUTS`, `NAMES`, `LOWER`, `UPPER`, `QOI_NAMES` | Myokit wrapper; the constants need only numpy |
+| `cipaord_driver.py` | `run(x, ...)`, `beat_metrics(...)`, `response_class(r)`; `INPUTS`, `NAMES`, `LOWER`, `UPPER`, `QOI_NAMES` | Myokit wrapper; the constants need only numpy |
 | `generate_data.py` | the design and the runs; `--chunk`, `--merge`, `--check` | regenerates the CSV (needs Myokit) |
 | `cipaord_endo.mmt` | the CiPAORdv1.0 endocardial model as a Myokit file (ORd core after the O'Hara–Rudy reference code, BSD-3 notice in its header; hERG section new) | the model |
 | `LICENSE-ORd` | the BSD 3-clause notice and disclaimer of the O'Hara–Rudy code, as in the FDA C file's header | licence of the ORd-derived parts of `cipaord_endo.mmt` |
@@ -207,7 +207,7 @@ of 1000 beats (19.8–31.5 s), 91 min CPU for the 224 runs, 7284 s (121 min) wal
 
 ## License and credit
 
-Code: `cipaord_model.py` and `generate_data.py` MIT. `cipaord_endo.mmt`: **MIT for the new parts; the
+Code: `cipaord_driver.py` and `generate_data.py` MIT. `cipaord_endo.mmt`: **MIT for the new parts; the
 ORd-derived parts BSD 3-clause (copyright T. O'Hara, Y. Rudy, Washington University in St. Louis)**; the
 notice and disclaimer are kept in the file's header and in `LICENSE-ORd`, as BSD-3 requires for
 redistributed source. Data (`cipaord_virtual_drugs.csv`): CC BY 4.0. The paper is CC BY 4.0. No GPL-only
