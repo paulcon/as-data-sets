@@ -12,6 +12,7 @@ drawn from a stated seed.
 | `Lorenz96_Initial_State_Inference.ipynb` | the case study (Python 3, active_subspaces v1) | executed top to bottom with `SEED = 293`; outputs committed |
 | `lorenz96_model.py` | `rhs`, `trajectory`, `synthetic_data`, `misfit_and_grad`, `misfit`, `misfit_complex_step`, `leading_lyapunov`; constants `K`, `DT`, `NOISE_VAR`, `PRIOR_VAR`, `F_TRUE`, `NAMES` | the model |
 | `generate_data.py` | writes the five CSVs; `--rows a:b --out DIR --check` recomputes a subset and compares | regenerates the data |
+| `check_accuracy.py` | recomputes the numbers of this file that the notebook and `generate_data.py` do not print | checks |
 | `truth.csv` | 1 × 37: the synthetic ground truth (X_1(0), …, X_36(0), F) | data-generating input |
 | `observations.csv` | 1001 × 37: t, then d_1 … d_36 at t = 0, 0.01, …, 10 | synthetic observations |
 | `inputs.csv` | 1000 × 37 prior draws, columns in the order of `NAMES` (X1_0 … X36_0, F) | model input |
@@ -20,7 +21,7 @@ drawn from a stated seed.
 
 Every CSV has two `#` lines (a description and the column names) and is read by
 `np.loadtxt(path, delimiter=',')`. Values are written with 17 significant digits, so they round-trip exactly.
-All quantities are dimensionless (the Lorenz-96 state, forcing and time have no units). Total size 6.6 MB (6.3 MiB).
+All quantities are dimensionless (the Lorenz-96 state, forcing and time have no units). Total size 6.62 MB (6.32 MiB; `check_accuracy.py` check 4).
 
 ## Model
 
@@ -69,8 +70,8 @@ so 84.3 is a selected value). This data set is mainly a cautionary case:
   with |w1,F| = 0.988, and a quadratic in F alone LOO R² = 0.866.
 
 At
-the truth, Φ_1 = 1834.2 and Φ_10 = 18202.1, close to the noise-only expectation of half the number of
-observations (1818 and 18018).
+the truth, Φ_1 = 1834.18 and Φ_10 = 18202.15, close to the noise-only expectation of half the number of
+observations (1818 and 18018; `check_accuracy.py` check 1).
 
 **Solver.** Classical fourth-order Runge–Kutta, fixed step Δt = 0.01 (`lorenz96_model._step`). The paper
 used "a BDF method with a timestep of 0.01" and gives no order, tolerance or code. The data and the misfits
@@ -82,10 +83,10 @@ the RK4 scheme, propagating dX/dx (36 × 37) with the state (`misfit_and_grad`).
 the physical inputs. The notebook passes them with the Gaussian space, which scales them by 2.
 
 **Sampling design.** M = 1000 independent Monte Carlo draws from the prior N(0, 4 I_37),
-`default_rng(1712).standard_normal((1000, 37))` × 2. This exceeds max(10 m, 300) = 370 for the gradient
-estimator. The notebook uses the first 500 rows for the paper's posterior-covariance method (the paper's
+`default_rng(1712).standard_normal((1000, 37))` × 2. The notebook uses the first 500 rows for the paper's posterior-covariance method (the paper's
 "500 samples from the prior", p. 8). No input value lies outside physical meaning (all real values are
-admissible); F ranges over −6.31 … 6.70. All 1000 rows are distinct; none equals the prior mean.
+admissible); F ranges over −6.31 … 6.70. All 1000 rows are distinct; none equals the prior mean
+(`check_accuracy.py` check 4).
 
 **Published results.** Text only (p. 8): with 500 prior samples and the posterior-covariance method
 (Sec. 2.1.2), "the spectral gap was found between the 4th and 5th largest eigenvalues, making the active
@@ -100,20 +101,24 @@ Laplace (Gauss–Newton) posterior covariance at the truth, the matrix the paper
 near-Gaussian posterior, has no gap after the 4th eigenvalue (λ4/λ5 = 1.03 on [0, 1], 1.06 on [0, 10]) and
 no F in its leading directions (F components of eigenvectors 1–4 at most 0.108 and 0.000; posterior sd of F
 1.9e-2 and 8.9e-4, prior sd 2). The paper's Fig. 5.6 (p. 9; read from the figure) shows an eASMH marginal of
-F with its mode near 0–1 and spread over about −5 to 5, prior-like and far from the truth 8.
+F with its mode near 1, from about −6 to about 8, prior-like and centred far from the truth 8.
 
 ## Regenerating
 
 ```bash
 python generate_data.py                                       # all files, written here
-python generate_data.py --rows 0:20 --out /tmp/l96 --check    # 20 samples, compared with the files here
+python generate_data.py --out <scratch dir> --check           # all files, compared with the files here
+python generate_data.py --rows 0:20 --out <scratch dir> --check   # 20 samples only
 ```
 
-Two seeds (`SEED_DATA = 293` for truth and noise, `SEED_SAMPLES = 1712` for the prior draws) fix everything,
-so a run reproduces the files bit for bit. The run that wrote the shipped files (2026-10-31, Linux container,
-Python 3.13.18, numpy 2.5.4) took 311 s on one process of a 2-CPU container shared with other jobs. The
-`--rows 0:20 --check` run took 10 s and printed a largest difference of 0.0e+00 for all five files.
-Memory stays below 100 MB (samples are processed in batches of 250).
+`--check` and `--rows` refuse to run without `--out` pointing to another directory, so the shipped files are
+never overwritten. Two seeds (`SEED_DATA = 293` for truth and noise, `SEED_SAMPLES = 1712` for the prior
+draws) fix everything. The shipped files were written in a Linux container (2026-10-31). In `.venv`
+(Python 3.11, numpy 2.4.6, macOS, 2026-11-02) a full `generate_data.py --out <scratch dir> --check` took 259 s
+on one process and reproduced all five files byte for byte: the largest difference printed is 0.0e+00 for
+every file. Other numpy versions or platforms may change the last digits of `outputs.csv` and
+`gradients.csv` (rounding level, about 1e-16 relative). Memory stays below 100 MB (samples are processed in
+batches of 250).
 
 ## Accuracy
 
@@ -121,15 +126,15 @@ Memory stays below 100 MB (samples are processed in batches of 250).
   derivatives (step 1e-30, `misfit_complex_step`, an independent path through the forward code): largest
   relative error 2e-16 on [0, 1] and 5e-16 on [0, 10]; and with central differences of step 1e-6 in each
   physical input: 4e-9 on [0, 1] and 8e-9 on [0, 10].
-- **Time stepping.** Against `scipy.integrate.solve_ivp` (DOP853, rtol = atol = 1e-13) from the truth
-  (scratch check, not committed), the RK4 trajectory differs by at most 1.3e-5 on [0, 1] and 5.9e-5 on [0, 2]
-  (the state has standard deviation 3.58). The difference passes 1e-3 at t = 3.43 and 1 at t = 6.64: on the
+- **Time stepping** (`check_accuracy.py` check 2). Against `scipy.integrate.solve_ivp` (DOP853,
+  rtol = atol = 1e-13) from the truth, the RK4 trajectory differs by at most 1.32e-5 on [0, 1] and 5.93e-5 on
+  [0, 2] (the truth state has standard deviation 3.58 over [0, 10]). The difference passes 1e-3 at t = 3.43 and 1 at t = 6.64: on the
   chaotic attractor (leading Lyapunov exponent 2.10 along the truth trajectory, printed in the notebook) any
   two solvers part ways after a few time units. So Φ_T for T ≥ 5 is a property of this discrete map, as the
   paper's was of its BDF solver; the misfit is consistent because data and model use the same map.
-- **Failure.** For initial values far outside the prior (alternating ±100 in a test), RK4 at Δt = 0.01 is
-  unstable; the model raises `FloatingPointError` instead of returning a value. Alternating ±50 still runs.
-  No prior sample comes near this (largest |input| in `inputs.csv`: 9.24).
+- **Failure** (`check_accuracy.py` checks 3 and 4). For initial values far outside the prior (alternating
+  ±100, F = 8), RK4 at Δt = 0.01 is unstable; the model raises `FloatingPointError` instead of returning a
+  value. Alternating ±50 still runs. No prior sample comes near this (largest |input| in `inputs.csv`: 9.24).
 
 ## How these files relate to the paper
 
@@ -159,8 +164,9 @@ Memory stays below 100 MB (samples are processed in batches of 250).
    posterior covariance at the truth has no gap after the 4th eigenvalue, so we cannot see how a
    4-dimensional gap arose; were the weights tempered, normalized differently, or computed on a different
    likelihood?
-5. Fig. 5.6 (p. 9) puts the eASMH posterior mass for F near 0–1, with a prior-like width, while the stated
-   likelihood implies a posterior for F within about 1e-3 of the truth, 8. Was the likelihood scaled (tempered,
+5. Fig. 5.6 (p. 9) puts the eASMH posterior mode for F near 1, with mass from about −6 to about 8, a prior-like
+   width, while under a Laplace approximation at our truth the posterior standard deviation of F is about
+   1e-3 (8.9e-4 on [0, 10], printed in the notebook). Was the likelihood scaled (tempered,
    or a different noise variance), or did the chains not converge? Was the 4-D subspace built from degenerate
    weights?
 

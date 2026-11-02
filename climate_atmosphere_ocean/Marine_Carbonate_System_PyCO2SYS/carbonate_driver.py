@@ -5,12 +5,13 @@ as-data-sets: climate_atmosphere_ocean/Marine_Carbonate_System_PyCO2SYS. Code: M
 This module is a thin wrapper around PyCO2SYS v1.8.3 (Humphreys et al., Geosci. Model Dev. 15:15-43,
 2022, doi:10.5194/gmd-15-15-2022; https://github.com/mvdh7/PyCO2SYS). PyCO2SYS is GPLv3 and is NOT
 copied here: it is imported, and must be installed separately (`pip install PyCO2SYS==1.8.3 pandas`).
-The notebook does not need it; it reads the stored CSVs.
+The notebook does not need it; it reads the stored CSVs. Without PyCO2SYS this module still imports (its
+constants are usable), and `evaluate` and `gradients` raise ImportError with the install command.
 
 The model. From total alkalinity A_T and dissolved inorganic carbon T_C (the measured pair), salinity,
 temperature, pressure and nutrients, PyCO2SYS solves the carbonate system and returns pH (total scale),
-pCO2 and the aragonite and calcite saturation states. (The `_model.py` name follows the repo's naming;
-this is a stored-data set, and this module needs PyCO2SYS, not only numpy/scipy.) The 14 inputs are
+pCO2 and the aragonite and calcite saturation states. This is a stored-data set: the module drives an
+outside code (hence `_driver.py`), and the shipped CSVs are the record. The 14 inputs are
 
     0  alkalinity       A_T                       umol/kg
     1  dic              T_C                       umol/kg
@@ -43,7 +44,18 @@ import warnings
 
 import numpy as np
 
-import PyCO2SYS as pyco2
+try:
+    import PyCO2SYS as pyco2
+except ImportError:            # constants stay usable without PyCO2SYS
+    pyco2 = None
+
+INSTALL = ("PyCO2SYS is not installed. Install PyCO2SYS 1.8.3, the version that wrote the shipped files "
+           "(pip install PyCO2SYS==1.8.3 pandas; pandas is an undeclared import of PyCO2SYS 1.8.3), and rerun.")
+
+
+def _need_pyco2():
+    if pyco2 is None:
+        raise ImportError(INSTALL)
 
 NAMES = ("alkalinity", "dic", "temperature", "salinity", "total_silicate", "total_phosphate",
          "dpk_CO2", "dpk_carbonic_1", "dpk_carbonic_2", "dpk_borate", "dpk_water",
@@ -56,7 +68,7 @@ K_KEYS = ("k_CO2", "k_carbonic_1", "k_carbonic_2", "k_borate", "k_water", "k_ara
 OUTPUTS = ("pH_total", "pCO2", "saturation_aragonite", "saturation_calcite")
 OUTPUT_UNITS = ("1 (total scale)", "uatm", "1", "1")
 
-# Held settings: the conditions of Humphreys et al. (2022), Table 4 (p. 25), and the options of PyCO2SYS
+# Held settings: the conditions of Humphreys et al. (2022), Table 4 (p. 26), and the options of PyCO2SYS
 # v1.8.0, the version of the paper, whose defaults are the paper's "default parameterisation options"
 # (v1.8.3 changed some defaults, so they are set explicitly). The paper's round-robin script
 # (manuscript/round_robin.py in the v1.8.0 release) also adds two hypothetical acid-base systems
@@ -72,7 +84,8 @@ HELD = dict(
     opt_k_bisulfate=1,      # Dickson (1990); v1.8.0 default
     opt_k_fluoride=1,       # Dickson and Riley (1979); v1.8.0 default
     opt_gas_constant=3,     # 2018 CODATA; v1.8.0 default
-    opt_pressured_kCO2=0,   # no pressure correction of K0 and the fugacity factor (v1.8.3 option; v1.8.0 behaviour)
+    opt_pressured_kCO2=0,   # no pressure correction of K0 and the fugacity factor (v1.8.3 option; v1.8.0 behaviour):
+                            # pCO2 (and fCO2, xCO2) are then valid only for the surface ocean (paper p. 17, Sect. 5.3)
     opt_pH_scale=1,         # total scale
 )
 # The ocean-wide study is a surface-ocean study: pressure 0 dbar (temperatures 6-37 degC do not occur at
@@ -113,6 +126,7 @@ def evaluate(X, outputs=OUTPUTS, full=False, held=None):
     `held` overrides entries of HELD (e.g. {"pressure": 0.0}). With full=True also returns the
     PyCO2SYS results dict of the second (override) call.
     """
+    _need_pyco2()
     X, kw = _base_kwargs(X, held)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")

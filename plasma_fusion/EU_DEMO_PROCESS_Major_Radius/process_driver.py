@@ -1,9 +1,10 @@
 """Run one PROCESS v3.4.2 optimisation for one input vector and return scalar outputs.
 
-Part of the EU_DEMO_PROCESS_Major_Radius data set (code MIT). Used by generate_data.py. Runs in-process (process.main.SingleRun) so the ~6 s import and
-numba start-up are paid once per Python process.
+Part of the EU_DEMO_PROCESS_Major_Radius data set (code MIT). Used by generate_data.py and
+check_accuracy.py. Runs in-process (process.main.SingleRun) so the ~6 s import and numba start-up
+are paid once per Python process. Needs PROCESS v3.4.2 (imported only inside run_one).
 """
-import gzip, io, os, re, shutil, sys, time, contextlib
+import contextlib, gzip, importlib.util, io, os, re, shutil, sys, time
 import numpy as np
 
 NAMES = ["hfact", "psepbqar_max", "core_radius", "f_w", "kappa", "f_he"]
@@ -78,10 +79,13 @@ def run_one(template, x, workdir, tag, rmajor0=9.0, maxcal=40, warm=None, keep_m
 
 
 if __name__ == "__main__":
-    # One run from the command line (used by the EMA wrapper):
-    #   python process_runner.py <template IN.DAT> <out.json> hfact psepbqar_max core_radius f_w kappa f_he
+    # One run from the command line, e.g. the smoke test of DATA.md ("Regenerating"):
+    #   python process_driver.py <template IN.DAT> <out.json> hfact psepbqar_max core_radius f_w kappa f_he
     #       [warm.json]
     import json
+    if importlib.util.find_spec("process") is None:
+        sys.exit("PROCESS is not installed. Install PROCESS v3.4.2 (https://github.com/ukaea/PROCESS, tag v3.4.2; "
+                 "the recipe is in DATA.md, \"Regenerating\") and rerun process_driver.py.")
     tpl_path, out_json = sys.argv[1], sys.argv[2]
     x = [float(v) for v in sys.argv[3:9]]
     warm, r0 = None, 9.0
@@ -89,6 +93,6 @@ if __name__ == "__main__":
         b = json.load(open(sys.argv[9]))
         warm = {k: v for k, v in b["itv"].items() if k != "rmajor"}
         r0 = b["itv"]["rmajor"]
-    res, _ = run_one(open(tpl_path, encoding="utf-8").read(), x, os.getcwd(), "ema",
+    res, _ = run_one(open(tpl_path, encoding="utf-8").read(), x, os.getcwd(), "point",
                      rmajor0=r0, maxcal=50, warm=warm)
     json.dump(res, open(out_json, "w"))

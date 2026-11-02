@@ -2,7 +2,9 @@
 over the six input intervals of Miralles-Dolz et al. (2022), Table I.
 
 Kind: stored data. PROCESS (UKAEA, MIT licence, https://github.com/ukaea/PROCESS, tag v3.4.2)
-must be installed in the Python that runs this script; see DATA.md ("Regenerating").
+must be installed in the Python that runs this script; see DATA.md ("Regenerating"). Without it,
+run, check and baseline stop with an install message (assemble needs only numpy and scipy). The
+shipped demo_runs.csv is the record: rerun PROCESS only if a problem is found in it.
 
 Design: the first N points of one scrambled Sobol' sequence (scipy.stats.qmc.Sobol, d = 6,
 seed SEED) mapped linearly onto the Table I intervals. Each point is one PROCESS optimisation
@@ -12,7 +14,8 @@ baseline_warmstart.json (PROCESS v3.4.2 output, MIT; R0 = 8.356952988650034 m). 
 kept; a run that PROCESS does not declare converged (ifail != 1) stays in the file with
 converged = 0.
 
-Usage (one process; resumable; each call stops after --cpu-budget CPU seconds):
+Usage (one process; resumable; each call stops after --cpu-budget CPU seconds). --work is required:
+PROCESS writes its scratch files (results.jsonl, MFILEs, process.log) there, never in this directory.
     python generate_data.py run --n 128 --cpu-budget 1080 --work <scratch dir>
     python generate_data.py assemble --work <scratch dir>        # writes demo_runs.csv
     python generate_data.py check --rows 0,5 --work <scratch dir> # rerun rows, compare
@@ -21,14 +24,18 @@ Add --recompute-baseline to run/check to warm-start from a recomputed baseline (
 <scratch dir>/baseline.json) instead of the shipped baseline_warmstart.json; in another
 numpy/scipy the recomputed one need not be bitwise identical, and R0 depends on the start.
 """
-import argparse, json, os, sys, time, platform
+import argparse, importlib.util, json, os, sys, time, platform
 
 import numpy as np
 from scipy.stats import qmc
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-from process_runner import run_one, NAMES  # noqa: E402
+from process_driver import run_one, NAMES  # noqa: E402
+
+INSTALL = ("PROCESS is not installed. Install PROCESS v3.4.2 (https://github.com/ukaea/PROCESS, tag v3.4.2; "
+           "the recipe is in DATA.md, \"Regenerating\") in the Python that runs this script, and rerun "
+           "generate_data.py.")
 
 SEED = 675
 N_MAX = 128          # Sobol' sequence length drawn (2^7); runs use its first N points
@@ -164,12 +171,18 @@ if __name__ == "__main__":
     ap.add_argument("cmd", choices=["run", "assemble", "check", "baseline"])
     ap.add_argument("--n", type=int, default=N_MAX)
     ap.add_argument("--cpu-budget", type=float, default=1080.0)
-    ap.add_argument("--work", default=os.path.join(HERE, "_work"))
+    ap.add_argument("--work", required=True,
+                    help="scratch directory for PROCESS's files (results.jsonl, MFILEs, process.log), "
+                         "outside this directory")
     ap.add_argument("--rows", default="0")
     ap.add_argument("--recompute-baseline", action="store_true",
                     help="warm-start from a recomputed baseline instead of baseline_warmstart.json")
     a = ap.parse_args()
     a.work = os.path.abspath(a.work)
+    if os.path.commonpath([a.work, HERE]) == HERE:
+        ap.error("--work must be a scratch directory outside the data-set directory")
+    if a.cmd != "assemble" and importlib.util.find_spec("process") is None:
+        sys.exit(INSTALL)
     if a.cmd != "assemble":          # PROCESS writes process.log into the working directory
         os.makedirs(a.work, exist_ok=True)
         os.chdir(a.work)

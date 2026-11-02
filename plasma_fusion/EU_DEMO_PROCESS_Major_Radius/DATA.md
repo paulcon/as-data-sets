@@ -13,10 +13,11 @@ in the CSV was changed after it was written; the two runs that PROCESS did not c
 |---|---|---|
 | `EU_DEMO_PROCESS_Major_Radius.ipynb` | the case study (Python 3, active_subspaces v1) | executed top to bottom with seed 675; outputs committed |
 | `demo_runs.csv` | 64 × 21: `index`, the 6 inputs (physical units), `converged`, `ifail`, `R0`, `P_net`, `t_burn`, `P_fusion`, `B_T`, `q95`, `PsepBt_qAR`, `f_Xe`, `capcost`, `sqsumsq`, `n_iter`, `cpu` (names and units in the second header line) | stored data |
-| `generate_data.py` | the design (scrambled Sobol', seed 675), the PROCESS runs (resumable), the assembly of the CSV, and a `check` mode that reruns stored rows | regenerates the file (needs PROCESS; see below) |
-| `process_runner.py` | fills the input-deck template, runs one PROCESS optimisation in-process, reads the MFILE | helper |
-| `demo_template_IN.DAT` | the PROCESS input deck with placeholders `{hfact}` … `{f_he}`, `{rmajor0}`, `{maxcal}` | model file (derived from PROCESS's example deck, MIT) |
-| `baseline_warmstart.json` | the warm start of every row: PROCESS's optimum at the Table I baseline point (`res`: its outputs, R0 = 8.356952988650034 m; `itv`: the 17 iteration-variable values) | model file; read by `generate_data.py` (output of PROCESS v3.4.2, MIT) |
+| `generate_data.py` | the design (scrambled Sobol', seed 675), the PROCESS runs (resumable), the assembly of the CSV, and a `check` mode that reruns stored rows; PROCESS's scratch files go to the required `--work` directory | regenerates the file (needs PROCESS; see below) |
+| `check_accuracy.py` | recomputes the numbers of this file that the notebook does not print: from `demo_runs.csv` (`--csv-only`), and with PROCESS the reruns of "Accuracy" | checks |
+| `process_driver.py` | fills the input-deck template, runs one PROCESS optimisation in-process, reads the MFILE | driver of the outside code PROCESS (not a numpy/scipy model; needs PROCESS v3.4.2) |
+| `demo_template_IN.DAT` | the PROCESS input deck with placeholders `{hfact}` … `{f_he}`, `{rmajor0}`, `{maxcal}` | model file (derived from PROCESS's example deck; MIT, not CC BY: see License) |
+| `baseline_warmstart.json` | the warm start of every row: PROCESS's optimum at the Table I baseline point (`res`: its outputs, R0 = 8.356952988650034 m; `itv`: the 17 iteration-variable values) | model file; read by `generate_data.py` (output of PROCESS v3.4.2; MIT, not CC BY: see License) |
 | `make_template.py` | builds `demo_template_IN.DAT` from PROCESS v3.4.2 `examples/data/large_tokamak_IN.DAT` by a listed set of exact line edits | provenance of the deck |
 | `PROCESS_LICENSE.txt` | PROCESS's MIT licence (UKAEA) | licence of the deck it derives from |
 
@@ -103,7 +104,7 @@ gives R0 a change of +0.157 m across the interval; the W baseline is printed "50
 | `f_he` | `f_nd_alpha_thermal_electron` | – | 0.069 | U[0.06, 0.12] | Table I, item 6 |
 
 The W fraction is uniform, not log-uniform (p. 4442: "A uniform distribution was chosen for the
-uncertain input parameters"); the spreadsheet note "(log)" was wrong.
+uncertain input parameters").
 
 **Quantity of interest.** R0 [m], the optimised major radius (the paper's output). Chosen over net
 electric power (a constraint, equal to 400 MW at every converged run: 400.00 MW in all 62) and capital
@@ -117,8 +118,9 @@ estimator.
 scramble=True, seed=675).random_base2(7)`, of which the first 64 are used), mapped linearly onto the
 Table I box; not a Latin hypercube. A Sobol' prefix was chosen so the design can be extended (to 128
 points) by running more of the same sequence. 64 runs is the smallest power of two that leaves at
-least 2 × 28 = 56 converged runs for the 28-coefficient quadratic of QPHD; it is fewer than the brief's
-target of 300 because a run costs 70 s CPU (median) here, not "a few seconds". Every run is
+least 2 × 28 = 56 converged runs for the 28-coefficient quadratic of QPHD (two runs per coefficient, a
+common rule of thumb); more were not made because a run costs 70 s CPU (median) here, not "a few
+seconds". Every run is
 warm-started: the iteration variables start at the optimum of the paper's baseline point, itself
 solved from the deck's own starting values except R0, started at 9.0 m (the stock deck has `rmajor =
 8.0`): R0 = 8.356952988650034 m in 18 iterations. That optimum is shipped as
@@ -132,9 +134,12 @@ numpy/scipy that need not be bitwise identical (in a second environment the base
 row 28 (H 1.138, limit 8.789, core 0.760, f_W 6.36e-5, κ 1.835, f_He 0.0601) and row 58 (H 1.250, limit
 8.985, core 0.724, f_W 6.83e-5, κ 1.780, f_He 0.0634). Both are at the lowest He-4 fractions: 2 of the 5
 runs with f_He < 0.065 failed, none of the 59 others. Rerun from the deck's own starting values with R0
-started at 9.0 m (cold start), both fail again with `ifail = 5`, so the failures are not an artefact of the warm start. 9 more
+started at 9.0 m (cold start), both fail again with `ifail = 5`, so the failures are not an artefact of the
+warm start (original run; `check_accuracy.py` check 6 repeats it where PROCESS is installed). 9 more
 runs converged only after PROCESS's built-in retry (its first attempt hit 50 iterations or a failed QP,
-logged as CRITICAL): rows 3, 7, 15, 19, 20, 25, 32, 37, 63. No input is outside its physical meaning
+logged as CRITICAL): rows 3, 7, 15, 19, 20, 25, 32, 37, 63 (from the PROCESS log of the original run,
+which is not shipped; external run, not reproducible from the repository, although `generate_data.py run`
+logs the retries again). No input is outside its physical meaning
 (all fractions in (0, 1), elongation > 1).
 
 **Published results** (none is an active subspace):
@@ -148,11 +153,28 @@ logged as CRITICAL): rows 3, 7, 15, 19, 20, 25, 32, 37, 63. No input is outside 
 
 ## Regenerating
 
-Needs Python ≥ 3.11 and PROCESS v3.4.2 (staged install in
-`../EU_DEMO_PROCESS_Major_Radius.ema/MODEL_NOTES.md`; in short: `pip install "numpy==2.1.3"
-"scipy==1.14.1" "numba==0.61.2" ./PROCESS` after `git checkout v3.4.2`). Environment of the shipped
-runs: Python 3.12.3, Linux x86_64 (Ubuntu 24.04), process 3.4.2, numpy 2.1.3, scipy 1.14.1, numba
-0.61.2, cvxpy 1.7.5, PyVMCON 2.4.3, clarabel 0.11.1, CoolProp 8.0.0, pandas 3.1.0.
+The shipped file is the record; PROCESS is rerun only if a problem is found in it. PROCESS is not
+installed here, so nothing in this section was rerun for the repository; the commands and times are
+those of the original run (Linux x86_64, Ubuntu 24.04, Python 3.12.3, 2026-11-01), where the file was
+written.
+
+**Install recipe** (as used for the original run; stop at the first step that fails):
+
+1. `python3.12 -m venv procvenv && procvenv/bin/pip install --upgrade pip` (PROCESS needs Python ≥ 3.11).
+2. `git clone https://github.com/ukaea/PROCESS.git && git -C PROCESS checkout v3.4.2`
+   (`git ls-remote --tags https://github.com/ukaea/PROCESS v3.4.2` should print c0ae5b28…).
+3. `procvenv/bin/pip install "numpy==2.1.3" "scipy==1.14.1" "numba==0.61.2" ./PROCESS`, then check that
+   `procvenv/bin/python -c "import process.main"` works (about 6 s, mostly numba and cvxpy).
+4. Smoke test, from a scratch directory (PROCESS writes `process.log` into the working directory):
+   `procvenv/bin/python <data set>/process_driver.py <data set>/demo_template_IN.DAT r.json 1.1 9.2 0.75 5e-5 1.85 0.069 <data set>/baseline_warmstart.json`.
+   `r.json` should have `"ifail": 1.0` and `rmajor` 8.355522 (the warm start at the baseline point;
+   `check_accuracy.py` check 7). The first call compiles numba functions (about 1 extra minute) and caches
+   them in the site-packages tree; set `NUMBA_CACHE_DIR` to a writable folder if that tree is read-only.
+
+Environment of the shipped runs: Python 3.12.3, Linux x86_64 (Ubuntu 24.04), process 3.4.2, numpy 2.1.3,
+scipy 1.14.1, numba 0.61.2, cvxpy 1.7.5, PyVMCON 2.4.3, clarabel 0.11.1, CoolProp 8.0.0, pandas 3.1.0.
+Without PROCESS, `generate_data.py run`/`check`/`baseline` and `process_driver.py` stop with an install
+message (exit status 1).
 
 ```
 python generate_data.py run --n 64 --cpu-budget 960 --work <scratch>   # repeat until "all 64 done"
@@ -161,32 +183,43 @@ python generate_data.py check --rows 2,62 --work <scratch>             # rerun s
 python generate_data.py baseline --work <scratch>                      # optional: recompute the warm start
 ```
 
-`run` and `check` warm-start from the shipped `baseline_warmstart.json` unless `--recompute-baseline`
-is given.
+`--work` is required and must lie outside the data-set directory. `run` and `check` warm-start from the
+shipped `baseline_warmstart.json` unless `--recompute-baseline` is given.
 
 `run` is resumable (one JSON line per finished run in `<scratch>/results.jsonl`; gzipped MFILEs in
-`<scratch>/mfiles/`) and stops after `--cpu-budget` CPU seconds; it uses one process. Run time here:
-95.9 CPU minutes for the 64 runs (median 70 s, maximum 229 s per run; the baseline adds 54–70 s), in 6
-chunks of about 16 CPU minutes, about 2 h wall time on 2 shared CPUs (nice 10). `assemble` reproduces
-the shipped file byte for byte from `results.jsonl` (MD5 5754e8d197ae40a73faeeee114d9506d). Numerics:
-numpy 2.1.3/scipy 1.14.1 were used because they ran PROCESS about 25 % faster than numpy 2.5/scipy
-1.18; at the baseline both gave R0 = 8.3569529886500 m (differing in the 14th digit).
+`<scratch>/mfiles/`) and stops after `--cpu-budget` CPU seconds; it uses one process. Run time of the
+original run: 95.9 CPU minutes for the 64 runs (median 70 s, maximum 229 s per run; the baseline adds
+54–70 s), in 6 chunks of about 16 CPU minutes, about 2 h wall time on 2 shared CPUs (nice 10). `assemble`
+reproduced the shipped file byte for byte from `results.jsonl`; its MD5 is
+5754e8d197ae40a73faeeee114d9506d (`check_accuracy.py` check 1). Numerics: numpy 2.1.3/scipy 1.14.1 were
+used because they ran PROCESS about 25 % faster than numpy 2.5/scipy 1.18; at the baseline both gave
+R0 = 8.3569529886500 m (differing in the 14th digit).
 
 ## Accuracy
 
-- **Repeatability.** `generate_data.py check --rows 2,62` reran two stored rows with the same warm
-  start: R0 = 7.7746534604 and 8.0884532029 m, identical to the file (relative difference 0). EMA's
-  point run (4 runs at the baseline) also gave four identical values.
-- **Start-point dependence.** R0 is a local optimum. Rerun from the deck's own starting values (R0
-  started at 9.0 m, as for the baseline) instead of the baseline optimum: row 1 gave 7.985381 m against the stored 7.984470 m (+0.9 mm); row 5 (H 1.246,
-  κ 1.900) gave 7.487684 m against 7.672240 m (−0.185 m); and at the baseline itself the warm start
-  gives 8.355522 m against the cold-start 8.356953 m (−1.4 mm). So most runs agree to about a
-  millimetre, but at least one stored value is 0.185 m above an optimum PROCESS can reach from another
-  start, more than the 0.056 m standard deviation of R0 about its one-dimensional trend. Replacing the
-  two stored values by the cold-start ones changes λ1/λ2 from 53.2 to 55.4 and leaves w1 the same
-  (|w1·w1'| = 0.9999); the notebook shows this.
-- **Constraint residuals.** At the 62 converged runs `sqsumsq` (equality residuals) is at most 1.8e-8,
-  P_net is 399.999998 to 400.000036 MW and t_burn 7199.999996 to 7200.000047 s: both on their limits.
+`check_accuracy.py --csv-only` recomputes the numbers below that come from `demo_runs.csv` (in `.venv`,
+2026-11-02, about a second); its checks 5–7 rerun PROCESS and need it installed. PROCESS is not installed
+here, so the PROCESS numbers below are from the original run (Linux, 2026-11-01), not recomputed.
+
+- **Repeatability** (original run; `check_accuracy.py` check 5). `generate_data.py check --rows 2,62`
+  reran two stored rows with the same warm start: R0 = 7.7746534604 and 8.0884532029 m, identical to the
+  file (relative difference 0). Four further warm-started runs at the baseline point gave four identical
+  values, 8.355522324264236 m (`check_accuracy.py` check 7 repeats one).
+- **Start-point dependence** (original run; `check_accuracy.py` checks 6 and 7). R0 is a local optimum.
+  Two rows were rerun from the deck's own starting values (R0 started at 9.0 m, as for the baseline)
+  instead of the baseline optimum: row 1 gave 7.985381 m against the stored 7.984470 m (+0.9 mm); row 5
+  (H 1.246, κ 1.900) gave 7.487684 m against 7.672240 m (−0.185 m). At the baseline itself the warm start
+  gives 8.355522 m against the cold-start 8.356953 m (−1.4 mm). So of the two rows rerun from a cold
+  start, one agreed to 0.9 mm and one was 0.185 m lower, more than the 0.056 m standard deviation of R0
+  about its one-dimensional trend. The other 60 stored values were not rerun, and how much they depend on
+  the start is unknown. The iteration cap of those cold-start reruns is not recorded; `check_accuracy.py`
+  uses the stored runs' cap of 50 per attempt. Replacing the two stored values by the cold-start ones
+  changes λ1/λ2 from 53.2 to 55.4 and leaves w1 the same (|w1·w1'| = 0.9999; the notebook shows this), but
+  two rows cannot show that the other 60 values are start-independent.
+- **Constraint residuals** (`check_accuracy.py` check 4). At the 62 converged runs `sqsumsq` (equality
+  residuals) is at most 1.76e-8, P_net is 399.999998 to 400.000036 MW and t_burn 7199.999996 to
+  7200.000047 s: both on their limits. The achieved P_sep B_T/(q95 A R0) equals the input limit to within
+  2.1e-7 (relative).
 - No gradients, so no gradient check.
 
 ## How these files relate to the paper
@@ -199,23 +232,34 @@ m (the paper: [7.929, 10.322] m with 100 × more samples); and 21 of the 22 runs
 where the paper found none. The qualitative findings agree: R0 falls with H and κ, rises with f_He,
 and depends little on the divertor limit and core radius; infeasibility appears at low f_He. The
 ranking differs (He-4 first in the paper's pinching, third or fourth here). The paper reports no
-active subspace; the notebook finds a one-dimensional one (λ1/λ2 ≈ 53). λ2 to λ6 are at the noise
-floor of the 28-coefficient quadratic fit (a fit to pure noise with the residual standard deviation
-0.0385 m gives a leading eigenvalue with 95th percentile 6.87e-3, against λ2 = 7.26e-3), so the
-ratio's size is not well determined (bootstrap 8.5 to 55.4); the direction w1 is (leave-one-out
-λ1/λ2 43.0 to 61.3 with |w1·w1'| ≥ 0.99984; local-linear gradients λ1/λ2 = 84 and 152; |w1·w_OLS| =
-0.9996).
+active subspace; in these runs one direction dominates (λ1 holds 96.5 % of the trace). The size of
+λ1/λ2 is not a result of this data set: λ2 to λ6 are at the noise floor of the 28-coefficient quadratic
+fit (a fit to pure noise with the residual standard deviation 0.0385 m gives a leading eigenvalue with
+95th percentile 6.87e-3, against λ2 = 7.26e-3), the bootstrap interval is wide (8.5 to 55.4), and part of
+the scatter that sets that floor may be the optimiser's start dependence, which was checked at two rows
+only (Accuracy). The direction w1 is stable (leave-one-out |w1·w1'| ≥ 0.99984; local-linear gradients
+|w1·w1_LL| ≥ 0.99981; |w1·w_OLS| = 0.9996).
+
+## Open questions (only the authors can settle them)
+
+1. Input 3. Table I (p. 4441) names it "Core Radius" (0.6–0.8, baseline 0.75), but the prose of item 3
+   describes "the parameter representing the fraction of radiation that is released from the core",
+   a different PROCESS input (`f_p_plasma_core_rad_reduction`, old `coreradiationfraction`). This data
+   set follows Table I (`radius_plasma_core_norm`). Which one did the study vary?
+2. The W baseline printed "50^-5" in Table I, read here as 5e-5.
+3. The paper's input deck and PROCESS version, which are not published.
 
 ## License and credit
 
-Data and notebook: CC BY 4.0; code (`generate_data.py`, `process_runner.py`, `make_template.py`): MIT.
+Notebook and code (`generate_data.py`, `process_driver.py`, `make_template.py`, `check_accuracy.py`): MIT
+(`LICENSE`). Data (`demo_runs.csv`): CC BY 4.0 (`LICENSE-DATA`). Two model files are not CC BY:
 `demo_template_IN.DAT` is derived from PROCESS's `examples/data/large_tokamak_IN.DAT`, and
-`baseline_warmstart.json` is output of PROCESS v3.4.2 run here (both credit PROCESS, MIT licence,
-`PROCESS_LICENSE.txt`, which reads "Copyright (c) [2023] [United Kingdom Atomic Energy Authority]").
+`baseline_warmstart.json` is output of PROCESS v3.4.2 run here. Both are under PROCESS's MIT licence
+(`PROCESS_LICENSE.txt`, kept beside them, which reads "Copyright (c) [2023] [United Kingdom Atomic Energy
+Authority]"), are hosted with PROCESS credited, and are listed in the exceptions of `LICENSE-DATA`.
 Please cite the paper (doi:10.1109/TPS.2022.3180233) and PROCESS (Kovari et al. 2014, 2016, and the
 software release). The PROCESS README asks users of a release other than the latest to cite that
 release's own DOI from PROCESS's Zenodo page (concept DOI doi:10.5281/zenodo.8335291, which resolves to
-the latest release); the v3.4.2 record could not be looked up from this container (Zenodo not
-reachable), and v3.4.2's `CITATION.cff` still says version 3.2.1, so please use the v3.4.2 record
-listed under that concept DOI. The paper's funding: EPSRC and ESRC CDT in Risk
+the latest release); the v3.4.2 record was not looked up, and v3.4.2's `CITATION.cff` still says
+version 3.2.1, so please use the v3.4.2 record listed under that concept DOI. The paper's funding: EPSRC and ESRC CDT in Risk
 and Uncertainty, University of Liverpool (EP/L015927/1); EUROfusion (Euratom grant 101052200).

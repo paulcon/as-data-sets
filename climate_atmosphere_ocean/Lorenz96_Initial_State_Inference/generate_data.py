@@ -1,7 +1,7 @@
 """Write the synthetic truth, the observations, and the misfit samples with exact gradients.
 
-    python generate_data.py                                  # everything, written here (about 4-8 min)
-    python generate_data.py --rows 0:20 --out /tmp/l96 --check   # a subset, compared with the files here
+    python generate_data.py                                  # everything, written here (about 4-5 min)
+    python generate_data.py --rows 0:20 --out <scratch dir> --check   # a subset, compared with the files here
 
 The setting is Sec. 5.2 of Schuster, Constantine and Sullivan (2017): the one-level Lorenz-96 system
 with K = 36, inference variables x = (X_1(0), ..., X_36(0), F), prior N(0, 4 I_37), data at every
