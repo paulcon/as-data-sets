@@ -1,4 +1,4 @@
-# Step check: d output / d soilWHC (physical units) by central differences with steps 3e-05, 1e-05 in normalized inputs (one-sided near the lower bound), at the samples with normalized soilWHC < -0.8; SIPNET v2.2.0-11, Latin hypercube seed 514. Compare with gradients.csv (step 0.001)
+# Step check: d output / d soilWHC (physical units) by central differences with steps 3e-05, 1e-05 in normalized inputs (one-sided near the lower bound), at the samples with normalized soilWHC < -0.8; substitute set-up, not the paper's runs (see DATA.md); SIPNET v2.2.0-11, Latin hypercube seed 514. Compare with gradients.csv (step 0.001)
 # row (0-based, in inputs.csv),soilWHC [cm],dcum_nee/dsoilWHC h=3e-05 [g C m-2/cm],dtotal_et/dsoilWHC h=3e-05 [mm/cm],dtotal_gpp/dsoilWHC h=3e-05 [g C m-2/cm],dcum_nee/dsoilWHC h=1e-05 [g C m-2/cm],dtotal_et/dsoilWHC h=1e-05 [mm/cm],dtotal_gpp/dsoilWHC h=1e-05 [g C m-2/cm]
 2,1.564687267,-101.9814299,96.12172702,162.1624884,-101.9805014,96.12674095,162.1615599
 11,1.723576783,-80.64159703,92.90157846,108.8662953,-80.64066852,92.90584958,108.8662953

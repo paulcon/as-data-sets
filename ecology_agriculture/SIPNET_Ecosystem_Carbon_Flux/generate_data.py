@@ -1,9 +1,11 @@
 """Generate the SIPNET_Ecosystem_Carbon_Flux data with the compiled SIPNET model.
 
 This is the provenance script for the shipped files. It needs a compiled SIPNET binary
-(C code, github.com/PecanProject/sipnet, BSD 3-clause; built here from commit
-c3479bd681ad092e6be33fcf14272e23e0b3fcbf, version v2.2.0-11) and numpy + scipy. The
-notebook does not need it.
+(C code, github.com/PecanProject/sipnet, BSD 3-clause; the shipped files were made with
+commit c3479bd681ad092e6be33fcf14272e23e0b3fcbf, version v2.2.0-11, built with `make sipnet`)
+and numpy + scipy. The binary is taken from --sipnet, else from the environment variable
+SIPNET, else from `sipnet` on PATH; if none is found the script stops with an error that
+says how to build it. The notebook does not need it.
 
 For each of M Latin hypercube samples of the 8 SIPNET parameters calibrated by
 Fer et al. (2018) (uniform priors of their Table A2), it runs SIPNET on the shipped
@@ -14,6 +16,8 @@ physical parameters by central finite differences.
     python generate_data.py --sipnet /path/to/sipnet               # all M samples
     python generate_data.py --sipnet /path/to/sipnet --rows 0:10 --out /tmp/x --check
     python generate_data.py --sipnet /path/to/sipnet --fd-check [--out /tmp/x --check]
+
+The data are a substitute set-up, not the paper's runs (DATA.md); the header of every CSV says so.
 
 Outputs (CSV, two '#' header lines, np.loadtxt(path, delimiter=',')):
     inputs.csv     M x 8   physical parameters, columns in the order of NAMES
@@ -199,12 +203,26 @@ def fd_check(X, binary, workers, out_dir, check):
     write_csv(os.path.join(out_dir, "fd_check_soilWHC.csv"), A,
               f"Step check: d output / d soilWHC (physical units) by central differences with steps "
               f"{', '.join(f'{h:g}' for h in FD_CHECK_STEPS)} in normalized inputs (one-sided near the "
-              f"lower bound), at the samples with normalized soilWHC < {FD_CHECK_Z:g}; SIPNET v2.2.0-11, "
+              f"lower bound), at the samples with normalized soilWHC < {FD_CHECK_Z:g}; {SUBSTITUTE}; SIPNET v2.2.0-11, "
               f"Latin hypercube seed {SEED}. Compare with gradients.csv (step {H:g})", cols)
     if check:
         ref = read_csv(os.path.join(HERE, "fd_check_soilWHC.csv"))
         err = np.abs(A - ref).max() / np.abs(ref).max()
         print(f"fd_check_soilWHC.csv: max abs difference / max abs value = {err:.2e}")
+
+
+SUBSTITUTE = "substitute set-up, not the paper's runs (see DATA.md)"
+BUILD_HINT = ("git clone https://github.com/PecanProject/sipnet && cd sipnet && "
+              "git checkout c3479bd681ad092e6be33fcf14272e23e0b3fcbf && make sipnet")
+
+
+def find_sipnet(path=None):
+    """The SIPNET binary: path, else $SIPNET, else `sipnet` on PATH; exits with a message if absent."""
+    cand = path or os.environ.get("SIPNET") or shutil.which("sipnet")
+    if cand and os.path.isfile(cand) and os.access(cand, os.X_OK):
+        return os.path.abspath(cand)
+    sys.exit(f"SIPNET binary not found{' at ' + cand if cand else ''}. Build SIPNET v2.2.0-11 "
+             f"({BUILD_HINT}) and rerun with --sipnet /path/to/sipnet/sipnet.")
 
 
 def sample_inputs(m=M, seed=SEED):
@@ -224,7 +242,8 @@ def read_csv(path):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("--sipnet", required=True, help="path to the compiled SIPNET binary")
+    ap.add_argument("--sipnet", default=None,
+                    help="path to the compiled SIPNET binary (default: $SIPNET, else sipnet on PATH)")
     ap.add_argument("--rows", default=None, help="subset a:b of the M samples")
     ap.add_argument("--out", default=HERE, help="output directory")
     ap.add_argument("--workers", type=int, default=os.cpu_count())
@@ -235,7 +254,7 @@ def main():
     a = ap.parse_args()
     if (a.check or a.rows) and os.path.abspath(a.out) == os.path.abspath(HERE):
         sys.exit('--check and --rows need --out DIR outside this directory, so that the shipped files are not overwritten')
-    binary = os.path.abspath(a.sipnet)
+    binary = find_sipnet(a.sipnet)
     X = sample_inputs()
     if a.fd_check:
         os.makedirs(a.out, exist_ok=True)
@@ -250,7 +269,7 @@ def main():
     dt = time.perf_counter() - t0
     print(f"{len(Xs)} samples, {a.workers} workers: {dt:.1f} s")
     os.makedirs(a.out, exist_ok=True)
-    tag = (f"SIPNET v2.2.0-11 on niwot_2004_2005.clim, Latin hypercube seed {SEED}, "
+    tag = (f"{SUBSTITUTE}; SIPNET v2.2.0-11 on niwot_2004_2005.clim, Latin hypercube seed {SEED}, "
            f"rows {a.rows or '0:' + str(M)}")
     write_csv(os.path.join(a.out, "inputs.csv"), Xs,
               f"SIPNET parameters (physical units), uniform priors of Fer et al. 2018 Table A2; {tag}",

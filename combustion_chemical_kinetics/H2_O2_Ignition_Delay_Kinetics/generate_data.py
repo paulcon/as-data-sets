@@ -1,4 +1,4 @@
-"""Regenerate the data files of H2_O2_Ignition_Delay_Kinetics (needs Cantera; tested 3.2.0).
+"""Regenerate the data files of H2_O2_Ignition_Delay_Kinetics (needs Cantera 3.2.0).
 
     python generate_data.py                          # all files, 2 processes (about 15 min)
     python generate_data.py --case 19 --rows 0:10 --out /tmp/h2 --check   # subset vs shipped files
@@ -14,6 +14,10 @@ Cases
 Gradients: central differences in the physical inputs with step 1e-3 of each input's
 half-range. Inputs are rounded to the digits written before the model is run, so the files
 are consistent with each other.
+
+Needs Cantera (the shipped files were written with Cantera 3.2.0: pip install cantera==3.2.0)
+through h2o2_ignition_driver.py; without it the script stops with an error. --check and --rows
+write only to --out DIR outside this directory, so the shipped files are never overwritten.
 """
 import argparse
 import os
@@ -25,7 +29,7 @@ import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-import h2o2_ignition_model as M  # noqa: E402
+import h2o2_ignition_driver as M  # noqa: E402
 
 SEEDS = {"19": 2019019, "36": 2019036, "mc36": 2019100}
 SIZES = {"19": 1000, "36": 1000, "mc36": 10000}
@@ -119,6 +123,9 @@ def main():
     a = p.parse_args()
     if (a.check or a.rows) and os.path.abspath(a.out) == os.path.abspath(HERE):
         sys.exit('--check and --rows need --out DIR outside this directory, so that the shipped files are not overwritten')
+    if M.ct is None:
+        sys.exit('Cantera is not installed. Install it (pip install cantera==3.2.0, the version that wrote '
+                 'the shipped files) and rerun generate_data.py.')
     os.makedirs(a.out, exist_ok=True)
     cases = ["19", "36", "mc36"] if a.case == "all" else [a.case]
     total = 0.0

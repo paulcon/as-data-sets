@@ -1,16 +1,18 @@
 # Arctic_Snow_Depth_SMRT: data
 
 Kind: **stored data, generated with SMRT 1.5.1; regeneration script included**. The data come from an outside code,
-SMRT (Snow Microwave Radiative Transfer, LGPL-3.0), which is not a numpy/scipy model, so this data set
-follows the outside-tool path of the build rules: the tool was installed in a separate environment, the
-data were generated and shipped, and the provenance is recorded below. Unlike most stored data sets, the
-files can be regenerated: `snow_smrt_model.py` sets up the SMRT model and `generate_data.py` draws the
-inputs with a saved seed and writes all four data files. The notebook reads the files and needs only
-numpy, matplotlib and active_subspaces. No SMRT code is in this directory.
+SMRT (Snow Microwave Radiative Transfer, LGPL-3.0), which is not a numpy/scipy model: SMRT was installed in a
+separate environment, the data were generated and shipped, and the provenance is recorded below. Unlike most
+stored data sets, the files can be regenerated: `snow_smrt_driver.py` sets up the SMRT model and
+`generate_data.py` draws the inputs with a saved seed and writes all four data files. **Regenerating the data,
+or rerunning the accuracy checks (`check_accuracy.py`), needs SMRT 1.5.1** (`pip install smrt==1.5.1`); both
+scripts stop with an error that says what to install when SMRT is missing. The repo's `.venv` has no SMRT. The
+notebook reads the files and needs only numpy, matplotlib and active_subspaces. No SMRT code is in this
+directory.
 
 **Source version.** The published paper, The Cryosphere 20(11):6157–6180, 30 October 2026
 (doi:10.5194/tc-20-6157-2026, CC BY 4.0), and its Supplement (doi:10.5194/tc-20-6157-2026-supplement).
-Page, table and figure numbers below are those of the published paper. An earlier build used the
+Page, table and figure numbers below are those of the published paper. An earlier version of these data used the
 EGUsphere preprint (doi:10.5194/egusphere-2026-1680); Tables 1 and 4 and the numbers printed in Fig. 3a
 are the same in both versions.
 
@@ -19,8 +21,9 @@ are the same in both versions.
 | file | contents | role |
 |---|---|---|
 | `Arctic_Snow_Depth_SMRT.ipynb` | the case study (Python 3, active_subspaces v1) | executed top to bottom with seed 424; outputs committed |
-| `snow_smrt_model.py` | `SnowOnFYI` (SMRT model: X (N, 5) → TB (N, 12)), `gr`, `fd_stencil`, `fd_gradient`; `NAMES`, `UNITS`, `LOWER`, `UPPER`, `CHANNELS`, `DENSE_THRESHOLD`, `CONFIG` | the model set-up; imports SMRT only when `SnowOnFYI` is built |
+| `snow_smrt_driver.py` | `SnowOnFYI` (SMRT driver: X (N, 5) → TB (N, 12)), `gr`, `fd_stencil`, `fd_gradient`; `NAMES`, `UNITS`, `LOWER`, `UPPER`, `CHANNELS`, `DENSE_THRESHOLD`, `CONFIG` | the model set-up; imports SMRT only when `SnowOnFYI` is built |
 | `generate_data.py` | draws the inputs and writes the four CSVs | regenerates the data (needs SMRT 1.5.1) |
+| `check_accuracy.py` | recomputes the numbers of "Accuracy" below (`--skip-streams` leaves out the 64-stream comparison) | accuracy check (needs SMRT 1.5.1) |
 | `inputs.csv` | 400 × 5 physical inputs: depth (m), density (kg m⁻³), temperature (K), radius (mm), stickiness (–) | model input |
 | `outputs.csv` | 400 × 12: TB (K) at 6V, 6H, 10V, 10H, 18V, 18H, 23V, 23H, 36V, 36H, 89V, 89H | model output |
 | `gradients.csv` | 400 × 60: column 5 i + j is ∂TB_i/∂x_j in physical units (K per unit of input j) | model output (finite differences) |
@@ -44,7 +47,7 @@ and wet snow on Arctic sea ice, ranked by EFAST (Saltelli et al. 1999, via SALib
 **single-layer dry snow** case (m = 5), the spreadsheet's target; the paper's multi-layer cases (m = 14 dry,
 m = 8 wet) and the wet single-layer case are not generated.
 
-**Configuration from the paper and its Supplement.** Sticky hard sphere (SHS) microstructure with the
+**Configuration from the paper and its Supplement** (Table S1 checked against the Supplement PDF, p. 2). Sticky hard sphere (SHS) microstructure with the
 improved Born approximation (IBA), Sect. 2.1 (p. 6159); upwelling TB at the snow–air interface for the 12
 AMSR2 channels at 55° (Sect. 2.1, p. 6159; Sect. 3.1, p. 6161); dry snow on first-year ice (FYI) of two
 layers, Table 4 (p. 6166): 0.5 m and 1.0 m thick, density 910 kg m⁻³, 265 K, scatterer radius 0.1 mm,
@@ -58,7 +61,7 @@ docstrings, so SMRT's default permittivity models are used here (for dry snow SM
 `ice_permittivity_maetzler06`, although the docstring names matzler87). Table S1 does not say whether it applies to every sensitivity run; its caption
 is generic and Sect. S4 keeps "the same SMRT configurations", so it is taken as the baseline set-up here.
 
-**Configuration chosen here** (still not stated; `snow_smrt_model.CONFIG`, all listed in `unknowns`):
+**Configuration chosen here** (not stated in the paper or its Supplement; `snow_smrt_driver.CONFIG`):
 
 | setting | value used | why |
 |---|---|---|
@@ -93,8 +96,8 @@ second is GR(36/18) = (TB36V − TB18V)/(TB36V + TB18V) (paper Eq. 12, p. 6160),
 the stored TBs, with its gradient by the chain rule from the stored TB gradients.
 
 **Sampling design.** Plain Monte Carlo: N = 400 points from `numpy.random.default_rng(424).random((400, 5))`
-mapped to the box. N meets the brief's minimum for gradients (≥ 10 m = 50 and ≥ 300). The paper used EFAST
-(interference factor M = 4, Eq. 2, p. 6159) with an unreported sample size and no seed.
+mapped to the box. The paper used EFAST (interference factor M, "usually set to 4", Eq. 2, p. 6159; the value
+it used and its sample size are not reported) with no seed.
 
 **Gradients.** Finite differences of SMRT, which is not differentiable here: step h = 1e-4 of each input's
 half-range (δ = 3e-5 m, 0.0175 kg m⁻³, 1.5e-3 K, 1.5e-5 mm, 1e-5), central where x ± δ is in the box and
@@ -115,9 +118,9 @@ pathwise derivative: the derivative of the smooth branch on the sample's own sid
 notebook's matrix C is built from these gradients on each side, so it does not capture the jump itself (whose
 derivative is a delta function on the plane ρ = 458.35 kg m⁻³; smoothed over any width it would dominate C
 along density); the notebook prints how C would change for ramp widths from 87.5 down to 0.0175 kg m⁻³. If a
-future design put a stencil across the threshold, the jump detector would flag it (the re-review checked this
-at a synthetic point 0.005 kg m⁻³ above the threshold: flagged in all 12 channels, and the kept slope matched
-sample 321's stored gradient).
+future design put a stencil across the threshold, the jump detector would flag it (`check_accuracy.py`
+check 5, at a synthetic point 0.005 kg m⁻³ above the threshold with the other inputs of sample 321: flagged in all
+12 channels, and the kept slope agrees with sample 321's stored gradient to 5.2e-3).
 
 **Samples outside physical meaning.** None in the inputs (all ranges are physical). 41 of the 400 samples
 have density above 458.35 kg m⁻³ (ice fraction above 0.5); there the dense-snow correction treats the snow
@@ -142,6 +145,7 @@ the 24 printed indices agree to within 0.1.
 python3 -m venv svenv && svenv/bin/pip install smrt==1.5.1
 svenv/bin/python generate_data.py                                         # 400 samples, 2 processes
 svenv/bin/python generate_data.py --rows 173:178 --out /tmp/snow --check  # a subset, compared with the files here
+svenv/bin/python check_accuracy.py                                        # the Accuracy numbers
 ```
 
 `generate_data.py` stops if the installed SMRT is not 1.5.1 (override with `--any-smrt`).
@@ -156,7 +160,8 @@ recorded), numpy 2.5.4, scipy 1.18.1, xarray 2026.9.0, pandas 3.1.0, numba 0.68.
 the differences are deterministic). `--rows 173:178 --check` after the run (it covers sample 175, the only
 one with jump flags) reproduced all four files bit for bit (max relative difference 0).
 
-**Effect of the switch from the earlier build** (SMRT 1.7.3, plain IBA; same inputs): below the dense-snow
+**Effect of the switch from an earlier version of these data** (SMRT 1.7.3, plain IBA; same inputs; external run,
+not reproducible from the repository): below the dense-snow
 threshold TB changed by at most 0.3 K up to 36 GHz and 1.3 K at 89 GHz (SMRT version), and the normalized
 gradients by a median 0.2 % (at most 8 %); above it TB changed by up to 31 K at 36 GHz and 70 K at 89 GHz
 (dense-snow correction). Another SMRT version, or other numerical libraries, may change TB in the last digits,
@@ -165,58 +170,73 @@ a jump.
 
 ## Accuracy
 
-- **Step study** (scratch `step_study.py`, rerun on the shipped data: 8 samples, 4 drawn with seed 2026 plus
-  samples 10, 71 and 339, two dense samples and the smallest depth; normalized gradients for all 12 channels
-  compared with the stored h = 1e-4 values). With h = 3e-5 the per-channel relative difference is at most
-  1.3e-4 (sample 71, 36H; 8.4e-5 at 36V), median over the samples 8.2e-7; at 18V at most 1.4e-8. With
-  h = 3e-4 it is at most 1.2e-3 (again sample 71), median 1.1e-5. At sample 71 the density derivative has
-  strong, smooth curvature at 36 GHz (the difference grows linearly with h), below the jump detector's
-  threshold; it is immaterial for the subspace. At the smallest-depth sample (d = 6.8e-5 m) h = 3e-5 agrees
-  to 6.4e-7. The stored gradients are therefore accurate to about 1e-4 relative or better per channel (often
-  1e-6), and the TBs reproduce to 5e-10 K.
-- **Dense-snow step.** With the correction, SMRT models the snow as ice spheres in air below 458.35 kg m⁻³
-  and as air spheres in ice above it, and TB jumps at the switch. Scratch `refvals.py` and (re-review fix
-  round) `smrt_jump.py`, TB(458.36) − TB(458.34 kg m⁻³): at the midpoint of the other inputs −0.46 K (18V),
-  **−6.83 K (36V)**, −41.7 K (89V); at (d, T, r, τ) = (0.6 m, 240 K, 0.4 mm, 0.1) −7.80 K (18V), −54.03 K
-  (36V), −56.34 K (89V). Over 40 random points of the threshold face (`default_rng(7)`): 36V mean −8.56 K,
-  rms 12.85 K, range −46.23 to −0.17 K; 18V mean −0.67 K, rms 1.13 K; 89V mean −36.94 K, rms 40.72 K.
-  Below 18 GHz the step is under 1 K. The step is part of the paper's configuration and lies inside the
-  paper's range, so it is kept. It contributes to the variance (and the paper's EFAST indices) but not to the
-  gradients (see "The dense-snow step and the gradients" above). The notebook estimates the 36V jump from the
-  stored data alone, by the step term of its Sobol' surrogate: −7.50 K at the midpoint, −59.55 K at the
-  corner, face mean −10.06 K and rms 14.20 K; at the 40 face points above the estimate correlates 0.990 with
-  the SMRT jumps (rms difference 1.7 K; scratch `pce_jump.py`).
+`check_accuracy.py` recomputes every number in this section except the notebook's and those marked as an
+external run. It needs SMRT 1.5.1. With SMRT 1.5.1 from PyPI (Python 3.11, numpy 2.3.5, macOS x86-64,
+2026-11-02) it ran in 1027 s on one core while another job shared the machine (`--skip-streams`, which leaves
+out the 64-stream comparison, the slowest part, takes a few minutes), and it printed the values below; where
+the same quantity was computed when the data were made, it agreed to the digits quoted.
+
+- **Step study** (`check_accuracy.py` check 1: 8 shipped samples, 340, 71, 10 and 255 drawn with
+  `default_rng(2026).choice(400, 4)`, 339, the first two dense samples, 25 and 34, and the smallest depth, 88;
+  normalized gradients for all 12 channels compared with the stored h = 1e-4 values, as the relative 2-norm
+  difference of each channel's 5-vector). With h = 3e-5 the difference is at most 1.3e-4 (sample 71, 36H;
+  8.4e-5 at 36V; 1.4e-8 at 18V), and its median over the 96 sample–channel pairs is of order 1e-9. With
+  h = 3e-4 it is at most 1.2e-3 (again sample 71, 36H), median of order 1e-8. At sample 71 the density
+  derivative has strong, smooth curvature at 36 GHz (the difference grows linearly with h), below the jump
+  detector's threshold; it is immaterial for the subspace. At the smallest-depth sample (d = 6.8e-5 m)
+  h = 3e-5 agrees to 6.4e-7. The stored gradients are therefore accurate to about 1e-4 relative or better per
+  channel (usually far better), and the TBs reproduce to 5e-10 K (the 12 digits written).
+- **Dense-snow step** (`check_accuracy.py` check 2). With the correction, SMRT models the snow as ice spheres
+  in air below 458.35 kg m⁻³ and as air spheres in ice above it, and TB jumps at the switch,
+  TB(458.36) − TB(458.34 kg m⁻³): at the midpoint of the other inputs −0.46 K (18V), **−6.83 K (36V)**,
+  −41.7 K (89V); at (d, T, r, τ) = (0.6 m, 240 K, 0.4 mm, 0.1) −7.80 K (18V), −54.03 K (36V), −56.34 K (89V).
+  Over 40 points of the threshold face (other inputs uniform, `default_rng(7)`): 36V mean −8.56 K, rms 12.85 K,
+  range −46.23 to −0.17 K; 18V mean −0.67 K, rms 1.13 K; 89V mean −36.94 K, rms 40.72 K. Below 18 GHz the step
+  is under 0.5 K. The step is part of the paper's configuration and lies inside the paper's range, so it is
+  kept. It contributes to the variance (and the paper's EFAST indices) but not to the gradients (see "The
+  dense-snow step and the gradients" above). The notebook estimates the 36V jump from the stored data alone,
+  by the step term of its Sobol' surrogate: −7.50 K at the midpoint, −59.55 K at the corner, face mean
+  −10.06 K and rms 14.20 K; at the 40 face points above the estimate correlates 0.990 with the SMRT jumps
+  (rms difference 1.7 K; `check_accuracy.py` refits the surrogate to compute this).
 - **Effect of the samples above the step on the subspace** (notebook). TB36V, all 400 samples: λ1/λ2 = 7.54,
   λ2/λ3 = 1.41, w1 = (−0.339, +0.379, +0.066, −0.533, +0.673). The 359 samples below the step: λ1/λ2 = 7.53,
   λ2/λ3 = 2.14, |w1·w1(all)| = 0.9995. So the 41 samples above the step change λ2/λ3 (1.41 → 2.14) but not
   w1; the bootstrap intervals of λ2/λ3 overlap ([1.08, 2.18] and [1.19, 3.48]). Above the step the medium is
   inverted and the mean normalized density derivative of TB36V changes sign (+9.1 K below, −6.1 K above), so
-  averaging the two branches fills in λ2 and λ3. The first build (plain IBA, no step) had λ2/λ3 = 2.15.
+  averaging the two branches fills in λ2 and λ3. An earlier version of these data (SMRT 1.7.3, plain IBA, no step) had λ2/λ3 = 2.15.
 - **Stream-count jumps.** DORT takes 32 Gauss–Legendre streams in the most refringent layer (the ice) and
   carries them into the snow by Snell's law; the number of streams that are not totally reflected changes
   in steps with the snow's refractive index, so TB is piecewise smooth with small jumps across surfaces in
-  (density, temperature). Example from the earlier build (SMRT 1.7.3): at depth 0.558 m, density
-  236.06 kg m⁻³, 249.3 K, r 0.217 mm, τ 0.154, TB18V drops by 0.114 K between densities 236.06 and
-  236.11 kg m⁻³ with 32 streams; with 64 streams there is no jump in that interval. The detector handles the
-  gradients; the jumps remain in the TB values (about 0.1 K, against channel standard deviations of
-  0.57 K at 6V to 41.1 K at 89V in the shipped data).
-- **Stream count (discretization)**, from the earlier build (SMRT 1.7.3, plain IBA, samples 0–39 with 64
-  streams against 32): TB differs by a median of 0.27–0.41 K per channel, at most 0.36–0.61 K below 36 GHz
-  and 3.2–4.6 K at 36 and 89 GHz; gradients differ by a median of 0.6–6.5 %. The active subspace did not
-  move (TB36V λ1/λ2 = 14.15 with either stream count on those 40 samples, |w1(32)·w1(64)| = 1.0000). This
-  was not repeated with SMRT 1.5.1; the DORT defaults are the same in both versions, its code is not.
-- **Zero depth.** SMRT drops a zero-thickness layer (bare ice), and TB is discontinuous at d = 0: at the
-  midpoint of the other inputs (scratch `refvals.py`), 6H is 197.58 K for d = 0 and 228.47 K for
+  (density, temperature). Example from an earlier version of these data (SMRT 1.7.3; external run, not
+  reproducible from the repository): at depth 0.558 m, density 236.06 kg m⁻³, 249.3 K, r 0.217 mm, τ 0.154,
+  TB18V drops by 0.114 K between densities 236.06 and 236.11 kg m⁻³ with 32 streams; with 64 streams there is
+  no jump in that interval. The detector handles the gradients; the jumps remain in the TB values (about 0.1 K,
+  against channel standard deviations of 0.57 K at 6V to 41.1 K at 89V in the shipped data).
+- **Jump detector** (`check_accuracy.py` check 5). At a synthetic point 0.005 kg m⁻³ above the dense-snow
+  threshold (other inputs of sample 321) the density stencil is flagged in all 12 channels, and the kept
+  one-sided density slope agrees with sample 321's stored gradient to 5.2e-3 relative.
+- **Stream count (discretization)** (`check_accuracy.py` check 6: samples 0–39 with 64 streams against 32,
+  SMRT 1.5.1). TB differs by a median of 0.27–0.50 K per channel, at most 0.36–0.61 K below 36 GHz and
+  3.25–4.62 K at 36 and 89 GHz; the normalized gradients differ by a median of 1.8–8.0 % per channel. The
+  active subspace does not move: on those 40 samples TB36V has λ1/λ2 = 9.28 with 32 streams and 9.85 with 64,
+  and |w1(32)·w1(64)| = 1.0000. (An earlier version of these data, with SMRT 1.7.3 and plain IBA, gave TB
+  differences of 0.27–0.41 K median, gradient differences of 0.6–6.5 %, and λ1/λ2 = 14.15 with either stream
+  count.)
+- **Zero depth** (`check_accuracy.py` check 3). SMRT drops a zero-thickness layer (bare ice), and TB is
+  discontinuous at d = 0: at the midpoint of the other inputs, 6H is 197.58 K for d = 0 and 228.47 K for
   d = 1e-7 m; 18H 198.34 and 228.95 K; 36V 262.42 and 260.92 K. A snow layer of any thickness adds two flat
   interfaces (air–snow, snow–ice) combined incoherently. The shipped samples and stencils have d > 0, so they
   describe d → 0⁺; the paper does not say how its EFAST samples near d = 0 were treated.
-- **Thin layers.** Because the layers are combined incoherently, TB for d from 1e-7 to 1e-3 m is the same as
-  for d = 1e-7 m within 0.02 K in every channel below 89 GHz (0.46 K at 89V), so the +30 K H-pol offset
-  over bare ice persists for any thin layer. This is unphysical for layers thinner than about a wavelength
-  (centimetres), but it is what SMRT computes in the paper's configuration, so the data are consistent with
-  the paper's set-up. 9 of the 400 samples have d < 1 cm and 19 have d < 3 cm.
+- **Thin layers** (`check_accuracy.py` check 4). Because the layers are combined incoherently, TB for d from
+  1e-7 to 1e-3 m is the same as for d = 1e-7 m within 0.02 K in every channel below 89 GHz (0.46 K at 89V,
+  0.25 K at 89H), so the +30 K H-pol offset over bare ice persists for any thin layer. This is unphysical for
+  layers thinner than about a wavelength (centimetres), but it is what SMRT computes in the paper's
+  configuration, so the data are consistent with the paper's set-up. 9 of the 400 samples have d < 1 cm and 19
+  have d < 3 cm.
 
-The notebook does not rerun SMRT; `generate_data.py --check` is the reproduction test.
+The notebook does not rerun SMRT; `generate_data.py --check` is the reproduction test. On the platform above,
+`generate_data.py --rows 175:176 --out DIR --check` (the sample with jump flags) reproduces `outputs.csv` and
+`fd_jumps.csv` exactly and `gradients.csv` to 4e-11 of the largest value.
 
 ## How these files relate to the paper
 
@@ -234,7 +254,7 @@ The notebook does not rerun SMRT; `generate_data.py --check` is the reproduction
 
 ## License and credit
 
-Code (`snow_smrt_model.py`, `generate_data.py`, the notebook): MIT (`LICENSE`). Data (the CSVs): CC BY 4.0
+Code (`snow_smrt_driver.py`, `generate_data.py`, `check_accuracy.py`, the notebook): MIT (`LICENSE`). Data (the CSVs): CC BY 4.0
 (`LICENSE-DATA`). The data were generated with SMRT (G. Picard, M. Sandells, H. Löwe and contributors),
 which is licensed under the GNU LGPL v3; SMRT is used as an installed library and no SMRT code is included
 here. The model configuration and parameter ranges are from Yan et al. (2026, CC BY 4.0). Cite Z. Yan et al.,

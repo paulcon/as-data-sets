@@ -1,4 +1,4 @@
-# Two-year totals 2004-2005 (cum_nee positive = carbon source); SIPNET v2.2.0-11 on niwot_2004_2005.clim, Latin hypercube seed 514, rows 0:1000
+# Two-year totals 2004-2005 (cum_nee positive = carbon source); substitute set-up, not the paper's runs (see DATA.md); SIPNET v2.2.0-11 on niwot_2004_2005.clim, Latin hypercube seed 514, rows 0:1000
 # cum_nee [g C m-2],total_et [mm],total_gpp [g C m-2]
 557.530365,1302.573044,453.702834
 1226.681655,1424.2949,315.21388

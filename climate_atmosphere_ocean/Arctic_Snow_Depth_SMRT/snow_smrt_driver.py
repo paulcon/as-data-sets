@@ -8,9 +8,10 @@ upwelling brightness temperature at the snow-air interface (no atmosphere) for t
 channels at 55 deg.
 
 Settings the paper does not state are chosen here and marked "assumed" in CONFIG; DATA.md lists
-them. This module needs SMRT (https://github.com/smrt-model/smrt, LGPL-3.0; the shipped data were
-made with smrt 1.5.1 from PyPI, the paper's version) and numpy. It contains no SMRT code. The
-notebook does not import SMRT.
+them. This module is a driver for SMRT, an outside code, not a numpy/scipy model: SnowOnFYI needs
+SMRT (https://github.com/smrt-model/smrt, LGPL-3.0; the shipped data were made with smrt 1.5.1 from
+PyPI, the paper's version: pip install smrt==1.5.1) and numpy. It contains no SMRT code. The
+constants load without SMRT; the notebook imports them and does not import SMRT.
 
 Inputs (physical units, Table 1 of the paper):
     depth [m], density [kg m^-3], temperature [K], radius [mm], stickiness [-]
@@ -61,8 +62,17 @@ CONFIG = {
 }
 
 
+def have_smrt():
+    """True if SMRT can be imported."""
+    import importlib.util
+    return importlib.util.find_spec('smrt') is not None
+
+
 def _smrt():
-    import smrt  # noqa: F401  (imported lazily so that the constants above load without SMRT)
+    try:
+        import smrt  # noqa: F401  (imported lazily so that the constants above load without SMRT)
+    except ImportError as e:
+        raise ImportError(f"SnowOnFYI needs SMRT: pip install smrt=={CONFIG['smrt_version']}, then rerun") from e
     from smrt import make_ice_column, make_model, make_snowpack, sensor_list
     return make_ice_column, make_model, make_snowpack, sensor_list
 

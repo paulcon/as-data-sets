@@ -1,4 +1,4 @@
-# SIPNET parameters (physical units), uniform priors of Fer et al. 2018 Table A2; SIPNET v2.2.0-11 on niwot_2004_2005.clim, Latin hypercube seed 514, rows 0:1000
+# SIPNET parameters (physical units), uniform priors of Fer et al. 2018 Table A2; substitute set-up, not the paper's runs (see DATA.md); SIPNET v2.2.0-11 on niwot_2004_2005.clim, Latin hypercube seed 514, rows 0:1000
 # baseSoilResp [1/yr],soilRespQ10 [1],soilWHC [cm],halfSatPar [Einsteins m-2 day-1],dVpdSlope [1/kPa],leafGrowth [g C m-2],psnTOpt [degC],leafTurnoverRate [1/yr]
 0.1042515819,2.507512094,11.72577083,15.46768,0.09693226188,52.70441935,38.29358259,1.396180527
 0.2857806709,1.78777059,30.22898909,20.24342044,0.2322246611,36.91413128,24.57889212,0.9063563321

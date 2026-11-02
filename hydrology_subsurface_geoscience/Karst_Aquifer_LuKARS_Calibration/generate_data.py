@@ -1,6 +1,6 @@
 """Write the data files of Karst_Aquifer_LuKARS_Calibration from lukars_model.py.
 
-    python generate_data.py                 # all data files (about 3 min)
+    python generate_data.py                 # all data files (about 5 min)
     python generate_data.py --check         # recompute and compare with the files here
     python generate_data.py --forcing DIR   # (once) convert the authors' forcing files
 

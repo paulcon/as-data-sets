@@ -25,10 +25,11 @@ Inputs (physical units):
   P0     initial pressure, atm;  T0 initial temperature, K;  phi equivalence ratio
          (mixture H2 : O2 = 2 phi : 1 by moles, no diluent).
 
-The constants (names, nominal values, bounds) need only numpy; IgnitionModel needs cantera
-(tested with Cantera 3.2.0) and scipy. Because the solver is Cantera, an outside code, the
-data set is "stored data" in as-data-sets' sense (generated with this module and
-generate_data.py; provenance in DATA.md), not a numpy/scipy "Python model".
+The constants (names, nominal values, bounds) need only numpy; IgnitionModel needs Cantera
+(the shipped data were written with Cantera 3.2.0: pip install cantera==3.2.0) and scipy.
+Because the solver is Cantera, an outside code, this module is a driver, not a numpy/scipy
+model, and the data set is "stored data with a regeneration script" in as-data-sets' sense
+(generated with this module and generate_data.py; provenance in DATA.md).
 """
 import os
 import numpy as np
@@ -51,8 +52,9 @@ REACTIONS = [
 # Cantera reaction indices in h2o2_li2004.yaml for paper reactions R1..R19.
 CANTERA_INDEX = [[0], [1], [2], [3], [4, 5], [6, 7], [8], [9], [10], [11], [12], [13],
                  [14], [15, 16], [17], [18], [19], [20], [21, 22]]
-# Reference A (first expression listed in Li et al. 2004 Table I; cm-mol-s units) and
-# reference Ea (kcal/mol) of R1..R19, as printed there.
+# Reference A (first expression listed in Li et al. 2004 Table I, p. 568; cm-mol-s units) and
+# reference Ea (kcal/mol) of R1..R19, as printed there (mostly 3 significant figures; every
+# value in this file and in h2o2_li2004.yaml was checked against the printed table).
 A_REF = np.array([3.55e15, 5.08e4, 2.16e8, 2.97e6, 4.58e19, 6.16e15, 4.71e18, 3.8e22,
                   6.37e20, 1.66e13, 7.08e13, 3.25e13, 2.89e13, 4.20e14, 1.20e17, 2.41e13,
                   4.82e13, 9.55e6, 1.00e12])
@@ -92,7 +94,8 @@ class IgnitionModel:
 
     def __init__(self, rtol=1e-9, atol=1e-18, mech=MECH):
         if ct is None:
-            raise ImportError("IgnitionModel needs Cantera (pip install cantera)")
+            raise ImportError("IgnitionModel needs Cantera: pip install cantera==3.2.0 (the version that "
+                              "wrote the shipped data), then rerun")
         self.gas = ct.Solution(mech)
         self.rtol, self.atol = rtol, atol
         self._orig = [self.gas.reaction(j).rate for j in range(self.gas.n_reactions)]

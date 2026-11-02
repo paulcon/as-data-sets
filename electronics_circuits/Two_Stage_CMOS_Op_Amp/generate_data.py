@@ -14,10 +14,13 @@ around each design, with steps x_j * exp(+-H) (H in ln x_j).
     python generate_data.py --set box --rows 0:10 --out /tmp/oa --check   # a subset, compared
     python generate_data.py --fd-check 0:5        # gradient step study (H vs 10H and H/10)
 
-Needs numpy, scipy and the ngspice program on PATH (or NGSPICE=/path/to/ngspice).
+Needs numpy, scipy and the ngspice program on PATH (or NGSPICE=/path/to/ngspice); the shipped
+files were written with ngspice-42. Without ngspice the script stops with an error that says what
+to install. --check and --rows write only to --out DIR outside this directory.
 """
 import argparse
 import os
+import shutil
 import sys
 import time
 from multiprocessing import Pool
@@ -112,6 +115,14 @@ GRAD_COLS = [f'd{q}/d{n} [{qu}/{u}]' for q, qu in zip(op.QOI_NAMES, op.QOI_UNITS
              for n, u in zip(op.NAMES, op.UNITS)]
 
 
+def require_ngspice():
+    """Stop with a message if the ngspice program is not found."""
+    if shutil.which(op.NGSPICE) is None:
+        sys.exit(f'ngspice not found ({op.NGSPICE!r}). Install ngspice (the shipped files used ngspice-42, '
+                 f'e.g. apt-get install ngspice or brew install ngspice), or set NGSPICE=/path/to/ngspice, '
+                 f'and rerun this script.')
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--set', choices=('box', 'gain200', 'all'), default='all')
@@ -123,6 +134,7 @@ def main():
     a = ap.parse_args()
     if (a.check or a.rows) and os.path.abspath(a.out) == HERE:
         ap.error('--check and --rows need --out elsewhere, so that the shipped files are not overwritten')
+    require_ngspice()
     if a.fd_check:   # on the box draws, or with --set gain200 on the shipped gain200 inputs
         X = read_csv(os.path.join(HERE, 'gain200_inputs.csv')) if a.set == 'gain200' else draw_inputs()
         r0, r1 = (int(s) for s in a.fd_check.split(':'))

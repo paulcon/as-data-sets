@@ -1,11 +1,11 @@
-"""Generate the data of Arctic_Snow_Depth_SMRT with SMRT (needs SMRT; the notebook does not).
+"""Generate the data of Arctic_Snow_Depth_SMRT with SMRT (needs SMRT 1.5.1; the notebook does not).
 
     python generate_data.py                       # 400 samples, 2 processes, writes here
     python generate_data.py --rows 0:5 --out /tmp/snow --check   # a subset, compared with the files here
 
 Draws N = 400 Monte Carlo samples (numpy default_rng(424), independent uniform on the ranges of
 Yan et al. 2026, Table 1, single-layer dry snow) of (depth, density, temperature, radius,
-stickiness), runs `snow_smrt_model.SnowOnFYI` (SMRT 1.5.1, IBA with the dense-snow correction +
+stickiness), runs `snow_smrt_driver.SnowOnFYI` (SMRT 1.5.1, IBA with the dense-snow correction +
 DORT, 12 AMSR2 channels at 55 deg; Supplement Table S1 of the paper),
 and computes the gradient of every TB with respect to the physical inputs by finite differences
 with step h = 1e-4 of each input's half-range: central where the stencil fits in the box,
@@ -21,8 +21,9 @@ the entry is flagged in fd_jumps.csv (bit j of column i: input j, channel i).
 
 Files written: inputs.csv, outputs.csv, gradients.csv, fd_jumps.csv. There is no other
 randomness, so a run reproduces the files (to the digits written, on the same SMRT version; the
-script stops if the installed SMRT is not CONFIG['smrt_version'] unless --any-smrt is given).
-Run with one BLAS thread per worker (set below).
+script stops if the installed SMRT is not CONFIG['smrt_version'] unless --any-smrt is given, and
+stops with an error that says what to install if SMRT is missing). --check and --rows write only to
+--out DIR outside this directory. Run with one BLAS thread per worker (set below).
 """
 import argparse
 import multiprocessing as mp
@@ -38,7 +39,7 @@ import numpy as np  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-import snow_smrt_model as sm  # noqa: E402
+import snow_smrt_driver as sm  # noqa: E402
 
 SEED = 424
 N = 400
@@ -120,8 +121,14 @@ def main():
     a = ap.parse_args()
     if (a.check or a.rows) and os.path.abspath(a.out) == os.path.abspath(HERE):
         sys.exit('--check and --rows need --out DIR outside this directory, so that the shipped files are not overwritten')
-    from importlib.metadata import version
-    have = version('smrt')
+    from importlib.metadata import version, PackageNotFoundError
+    try:
+        have = version('smrt')
+    except PackageNotFoundError:
+        have = None
+    if have is None or not sm.have_smrt():
+        sys.exit(f"SMRT is not installed. Install it (pip install smrt=={sm.CONFIG['smrt_version']}, the version "
+                 f"that wrote the shipped files; a separate venv is fine) and rerun generate_data.py.")
     if have != sm.CONFIG['smrt_version'] and not a.any_smrt:
         sys.exit(f"smrt {have} installed; the shipped data use smrt {sm.CONFIG['smrt_version']} "
                  f"(pip install smrt=={sm.CONFIG['smrt_version']}) or pass --any-smrt")

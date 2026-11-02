@@ -39,11 +39,16 @@ Every data set is one of two kinds, and the kind decides what the port must deli
 - DATA.md records the generating code and version, who ran it, the input ranges and distributions, units, the gradient coordinates (physical or normalized), license and credit, and every unknown (see [UNKNOWNS.md](port-2026/UNKNOWNS.md)).
 - Acceptance: the notebook's numbers reproduce from the shipped files.
 - A Python re-implementation may be added to *check* stored data (SingleDiodePV's `single_diode.py`), but the shipped files stay the record, and any disagreement is reported, not fixed.
-- Data generated for this repository with an outside code that is not a numpy/scipy model (SMRT, Cantera, ngspice, SIPNET; decision 1 of 2026-10-30) are stored data too. Their `generate_data.py` records how the files were made and can regenerate them where that code is installed, but the shipped files stay the record, and DATA.md names the tool, its version, and where the files were written.
+- Data generated for this repository with an outside code that is not a numpy/scipy model (SMRT, Cantera, ngspice, SIPNET; decision 1 of 2026-10-30, confirmed 2026-11-02) are stored data too. Their `generate_data.py` records how the files were made and can regenerate them where that code is installed, but the shipped files stay the record, and DATA.md names the tool, its version, and where the files were written.
+  - When the outside code is not installed, `generate_data.py` exits with an error that names what to install and says to rerun it. The checks of a data set do not need the outside code: a data set passes them without it.
+  - The outside code is rerun only when a problem is found in the shipped data (author, 2026-11-02).
+  - A Python module that drives the outside code is named `*_driver.py` (e.g. `snow_smrt_driver.py`, `h2o2_ignition_driver.py`); `*_model.py` is reserved for numpy/scipy models.
+- Numbers in a DATA.md Accuracy section that the notebook and the generating or converting script do not print come from `check_accuracy.py` in the data set directory. Like `generate_data.py`, it runs where the outside code it needs is installed and otherwise exits with an error naming what to install. A number that no script here can produce (a commercial code, an unrecoverable run) is labelled "external run, not reproducible from the repository".
+- Data with no stated licence are hosted with the source credited (decision of 2026-10-30) and are listed, with their source, in the exceptions list of `LICENSE-DATA`.
 
 **Python model.** The data-generating model is Python code in the data set's directory, so its outputs can be regenerated and the notebook can call the model as needed.
 - The model lives in a module named `*_model.py` (e.g. `HIV_model.py`, `pde_model.py`). It imports only numpy and scipy and loads its own files relative to `__file__`, so it works from any working directory. A closed-form model may stay in the notebook if it is a few lines, but a module is preferred so it can be called outside the notebook.
-- Each shipped output file (samples, gradients, chains) is written by `generate_data.py` in the directory, with fixed seeds and all settings saved, alongside the data or in the script. The script must reproduce the shipped files to a stated tolerance. Its runtime is stated in DATA.md and the notebook.
+- Each shipped output file (samples, gradients, chains) is written by `generate_data.py` in the directory, with fixed seeds and all settings saved, alongside the data or in the script. The script must reproduce the shipped files to a stated tolerance. Its runtime is stated in DATA.md (author, 2026-11-02).
 - Inputs the model needs but that cannot be regenerated (Elliptic_PDE's KL bases, whose generating script is lost) are treated as stored data.
 - The notebook calls the model directly when that is cheap, and loads the shipped files when regeneration is expensive.
 - DATA.md records how to regenerate, the runtime, the tolerance, and how the shipped files relate to the paper's original runs (e.g. HIV's CSVs are a Python regeneration, not the paper's MATLAB runs).
@@ -74,12 +79,12 @@ The 28 data sets added in October 2026 (14 in [#56](https://github.com/paulcon/a
 | Data set (directory) | Kind | Model in the repo | Outside generating code (stored data) |
 |---|---|---|---|
 | Annular_Combustor_Thermoacoustics | Python model | `annular_combustor_model.py` (a new implementation of the ATACAMAC dispersion relation); `generate_data.py` writes the CSVs | — |
-| Arctic_Snow_Depth_SMRT | stored data | `snow_smrt_model.py` (sets up SMRT; not a numpy/scipy model); `generate_data.py` regenerates the CSVs when SMRT is installed | SMRT 1.5.1 (LGPL-3.0, not shipped), run for this repository |
+| Arctic_Snow_Depth_SMRT | stored data | `snow_smrt_driver.py` (sets up SMRT; not a numpy/scipy model); `generate_data.py` regenerates the CSVs when SMRT is installed | SMRT 1.5.1 (LGPL-3.0, not shipped), run for this repository |
 | Atrial_Cell_Models_Courtemanche_Maleckar | stored data | — | MATLAB Courtemanche and Maleckar runs by Coveney and Clayton (figshare 11309756); `convert_data.py` converts them losslessly |
 | Fire_Satellite_Coupled_System | Python model | `fire_satellite_model.py`; `generate_data.py` writes the CSVs | — |
 | Geological_CO2_Storage_Leakage | Python model | `co2_leakage_model.py` (closed form); `generate_data.py` writes the CSVs | — |
 | Golinski_Speed_Reducer | Python model | `golinski_model.py` (closed form); `generate_data.py` writes the CSVs | — |
-| H2_O2_Ignition_Delay_Kinetics | stored data | `h2o2_ignition_model.py` (a Cantera driver, not a numpy/scipy model); `generate_data.py` regenerates the CSVs when Cantera is installed | Cantera 3.2.0 with the Li et al. (2004) mechanism, run for this repository |
+| H2_O2_Ignition_Delay_Kinetics | stored data | `h2o2_ignition_driver.py` (a Cantera driver, not a numpy/scipy model); `generate_data.py` regenerates the CSVs when Cantera is installed | Cantera 3.2.0 with the Li et al. (2004) mechanism, run for this repository |
 | Hat_Stiffened_Panel_Shear_Buckling | Python model | `panel_model.py` (closed form); `generate_data.py` writes the CSVs | — |
 | Hodgkin_Huxley_Action_Potential | Python model | `HH_model.py`; `generate_data.py` writes the CSVs | — |
 | HTGR_Microreactor_Control_Drums | stored data | — | Serpent runs by Price, Radaideh and Kochunas (deanrp2/MicroControl); `convert_data.py` converts them losslessly |
