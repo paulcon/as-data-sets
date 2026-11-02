@@ -8,3 +8,54 @@ the Creative Commons Attribution 4.0 International License (CC BY 4.0):
 When you use a data set, credit its source as given in that directory's
 notebook (and DATA.md, where present), and cite the associated publication
 listed in README.md.
+
+Exceptions. The files below are not under CC BY 4.0: their sources state no
+licence, or a different one. They are hosted here, unchanged in value, with
+the source credited (decision of 2026-10-30); each data set's DATA.md gives
+the source, version or commit, checksum and credit. If an owner attaches a
+licence or objects, that takes precedence.
+
+  aerospace_cfd/LS89_Turbine_Blade_Envelopes/
+    inputs.csv, outputs.csv, blade_x.csv, blade_y.csv
+    Source: equadratures/data-sets, blade_envelopes/blade_envelopes.npz
+    (C. Y. Wong, P. Seshadri, A. Scillitoe, A. B. Duncan, G. Parks). No licence stated.
+
+  aerospace_cfd/Transonic_Fan_Blade_Performance_Maps/
+    blade_A.csv, blade_B.csv, blade_C.csv
+    Source: equadratures/data-sets, 3Dfan_blades/3Dfan_blades.npz, "shared
+    with permission from Rolls-Royce plc" (P. Seshadri, S. Shahpar,
+    P. Constantine, G. Parks, M. Adams). No licence stated.
+
+  aerospace_cfd/Transonic_Airfoil_Shape_Parameterizations/
+    cst_outputs.csv, parsec_outputs.csv (the CL and CD values)
+    Source: zgrey/ASAP (Z. J. Grey, P. G. Constantine). No licence stated.
+    The regenerated design inputs (cst_inputs.csv, parsec_inputs.csv) are CC BY 4.0.
+
+  structural_materials_manufacturing/Powder_Bed_Fusion_Residual_Stress/
+    pbf_training_*.csv, pbf_validation_*.csv (six files)
+    Source: yulin-g/BPOF-optimization-AM, Supplementary_material_data.zip
+    (Y. Guo, B. Kramer). No licence stated.
+
+  energy/HTGR_Microreactor_Control_Drums/
+    microreactor_runs.csv
+    Source: deanrp2/MicroControl, pmdata/qpower_full.csv (D. Price,
+    M. I. Radaideh, B. Kochunas). The repository's MIT licence
+    (MicroControl_LICENSE.txt, kept beside the file) does not say whether it
+    covers data.
+
+  electronics_circuits/Two_Stage_CMOS_Op_Amp/
+    45nm_bulk.txt; the circuit lines of two_stage_opamp.cir.template
+    Source: ksettaluri6/AutoCkt (K. Settaluri et al.); the model card is the
+    Berkeley Predictive Technology Model "BPTM 45nm". No licence stated.
+    The six CSVs are CC BY 4.0.
+
+  ecology_agriculture/SIPNET_Ecosystem_Carbon_Flux/
+    niwot_2004_2005.clim, sipnet_template.param
+    Source: SIPNET and PEcAn. BSD 3-clause (LICENSE-SIPNET-PEcAn.txt, kept
+    beside the files). The CSVs are CC BY 4.0.
+
+  combustion_chemical_kinetics/H2_O2_Ignition_Delay_Kinetics/
+    h2o2_li2004.yaml
+    Rate parameters from J. Li, Z. Zhao, A. Kazakov, F. L. Dryer (2004), no
+    licence stated; thermodynamic data from Cantera's h2o2.yaml, BSD 3-clause
+    (LICENSE-cantera.txt, kept beside the file). The CSVs are CC BY 4.0.

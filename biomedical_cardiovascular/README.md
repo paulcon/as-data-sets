@@ -4,5 +4,6 @@ Biomedical, physiological and cardiovascular models.
 
 Data sets (descriptions and papers are in the [top-level README](../README.md#data-sets)):
 
+- [Atrial_Cell_Models_Courtemanche_Maleckar](Atrial_Cell_Models_Courtemanche_Maleckar/)
 - [Hodgkin_Huxley_Action_Potential](Hodgkin_Huxley_Action_Potential/)
 - [Luo_Rudy_Cardiac_Action_Potential](Luo_Rudy_Cardiac_Action_Potential/)

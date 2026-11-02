@@ -38,7 +38,7 @@ The default branch is `main` (renamed from `master` 2026-10-30). It is protected
 
 Every data set is **stored data** or a **Python model**; MHD_Generator has one part of each. The README tags each entry, and `docs/README.md` ("Two kinds of data sets") has the full rules and the per-data-set table.
 
-- **Stored data**: an outside code (SU2, ParFlow-CLM, Drekar, FAST, MATLAB, …) produced the files, and they are the only record. Never regenerate or "correct" their values. Format conversions must be lossless and scripted. Rows are dropped in the notebook by a stated rule or a flag, never deleted from the file.
+- **Stored data**: an outside code (SU2, ParFlow-CLM, Drekar, FAST, MATLAB, …) produced the files, and they are the only record. Never regenerate or "correct" their values. Format conversions must be lossless and scripted. Rows are dropped in the notebook by a stated rule or a flag, never deleted from the file. Data made for this repository with an outside code (SMRT, Cantera, ngspice, SIPNET, …) are stored data with a `generate_data.py` that exits with an install message when the code is missing; the code is rerun only if a problem is found in the shipped data. Modules that drive an outside code are `*_driver.py`. Accuracy numbers that no notebook or generating script prints come from `check_accuracy.py` (same rule for missing outside codes).
 - **Python model**: the model is a numpy/scipy `*_model.py` module in the directory that loads its files relative to `__file__` (e.g. `HIV_model.py`, `pde_model.py`); a closed-form model may stay in a notebook cell. Shipped outputs are written by `generate_data.py` with saved seeds, and that script must reproduce them.
 
 ## Conventions in the notebooks

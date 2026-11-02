@@ -9,4 +9,5 @@ Data sets (descriptions and papers are in the [top-level README](../README.md#da
 - [N2_Supersonic_Jet](N2_Supersonic_Jet/)
 - [NACA0012_Airfoil](NACA0012_Airfoil/)
 - [ONERA_M6_Wing](ONERA_M6_Wing/)
+- [Transonic_Airfoil_Shape_Parameterizations](Transonic_Airfoil_Shape_Parameterizations/)
 - [Transonic_Fan_Blade_Performance_Maps](Transonic_Fan_Blade_Performance_Maps/)
