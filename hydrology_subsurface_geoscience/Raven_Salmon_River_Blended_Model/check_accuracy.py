@@ -10,8 +10,8 @@ into <cache>/templates on first use and checked against their SHA-256. Run it fr
 
 Checks:
  1. The scrambled Sobol' design of generate_data.py reproduces inputs.csv, and the Eq. (A1) transform
-    of raven_salmon.weights reproduces weights.csv (largest absolute difference; 0 expected).
- 2. Rerun Raven at the given rows (default 0:32) with raven_salmon.run: largest relative difference of
+    of raven_salmon_driver.weights reproduces weights.csv (largest absolute difference; 0 expected).
+ 2. Rerun Raven at the given rows (default 0:32) with raven_salmon_driver.run: largest relative difference of
     mean_Q, NSE and KGE from outputs.csv, and the largest differences between our NSE and KGE (computed
     from Hydrographs.csv) and Raven's own DIAG_NASH_SUTCLIFFE and DIAG_KLING_GUPTA (6 significant digits).
  3. Central-difference gradients of mean_Q and NSE at design rows 0, 1, 2 in normalized coordinates with
@@ -29,7 +29,7 @@ import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-import raven_salmon as rs  # noqa: E402
+import raven_salmon_driver as rs  # noqa: E402
 import generate_data as gd  # noqa: E402
 
 INSTALL = ("Raven is not available. Build commit cb745e1 of github.com/CSHS-CWRA/RavenHydroFramework as "

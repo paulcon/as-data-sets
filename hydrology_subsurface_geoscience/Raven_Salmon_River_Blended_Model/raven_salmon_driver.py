@@ -146,7 +146,7 @@ def fetch_templates(folder, download=True):
     if not os.path.exists(path):
         if not download:
             raise RuntimeError(f"xSSA template file not found at {path}; fetch it with "
-                               f"raven_salmon.fetch_templates({folder!r}) (needs network)")
+                               f"raven_salmon_driver.fetch_templates({folder!r}) (needs network)")
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with urllib.request.urlopen(XSSA_TEMPLATE_URL, timeout=60) as resp:
             data = resp.read()

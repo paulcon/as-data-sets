@@ -12,7 +12,7 @@ Without Raven (--raven / RAVEN_EXE) and the xSSA streamflow folder (--obs / XSSA
 every mode except --assemble exits with an install message.
 
 The Raven input deck is filled from the xSSA template file (LGPL-3.0), which
-raven_salmon.fetch_templates downloads once from GitHub at a pinned commit into
+raven_salmon_driver.fetch_templates downloads once from GitHub at a pinned commit into
 --templates (default: <cache>/templates) and checks against its SHA-256. It is
 not part of this repository.
 
@@ -33,7 +33,7 @@ from scipy.stats import qmc
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-import raven_salmon as rs  # noqa: E402
+import raven_salmon_driver as rs  # noqa: E402
 
 SEED = 20201202          # scrambled Sobol' seed
 N_SAMPLES = 4096         # 2^12

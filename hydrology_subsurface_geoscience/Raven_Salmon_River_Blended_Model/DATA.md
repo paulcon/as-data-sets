@@ -1,6 +1,6 @@
 # Raven_Salmon_River_Blended_Model: data
 
-Kind: **stored data**. The outputs come from an outside code, the Raven hydrological modelling framework (C++), version string "3.0" (commit `cb745e1`), built from source here. The files are the only record of the runs; `generate_data.py` and `raven_salmon.py` document how they were made and can rerun them with a Raven executable (without one they exit with an install message), the xSSA forcing and streamflow files and the xSSA deck templates, none of which is in this repository (the templates are downloaded at run time from a pinned commit; see "Provenance of the input deck").
+Kind: **stored data**. The outputs come from an outside code, the Raven hydrological modelling framework (C++), version string "3.0" (commit `cb745e1`), built from source here. The files are the only record of the runs; `generate_data.py` and `raven_salmon_driver.py` document how they were made and can rerun them with a Raven executable (without one they exit with an install message), the xSSA forcing and streamflow files and the xSSA deck templates, none of which is in this repository (the templates are downloaded at run time from a pinned commit; see "Provenance of the input deck").
 
 ## Files
 
@@ -11,7 +11,7 @@ Kind: **stored data**. The outputs come from an outside code, the Raven hydrolog
 | `weights.csv` | 4096 × 13: the process-option weights computed from r1 … r8 by the paper's Eq. (A1) (infiltration HMETS, VIC_ARNO, HBV; quickflow LINEAR_ANALYTIC, VIC, TOPMODEL; soil evaporation ALL, TOPMODEL; baseflow LINEAR_ANALYTIC, POWER_LAW; snow balance HMETS, SIMPLE_MELT, HBV) | derived from `inputs.csv`, for reference; not independent inputs |
 | `outputs.csv` | 4096 × 15: mean_Q (m³/s), NSE (–), KGE (–), Q_Jan … Q_Dec (m³/s) | Raven output, reduced to scalars |
 | `fd_gradients_meanQ.csv` | 3 × 44: design row (0, 1, 2), then the finite-difference gradient of mean_Q with respect to the 43 normalized inputs (m³/s per normalized unit; step 1e-3 of each half-range) | check of the QPHD estimate (notebook) |
-| `raven_salmon.py` | `fetch_templates(folder)`, `load_templates(folder)`, `placeholder_values(x)`, `write_deck(x, folder, templates)`, `run(x, raven_exe, obs_dir, templates)`, `weights(x)`, `stick_breaking_weights(r)`; `NAMES`, `UNITS`, `LOWER`, `UPPER`, `DESCRIPTIONS`, `PROCESS_GROUPS`, `WEIGHT_NAMES`, `BASIN`, `XSSA_COMMIT`, `XSSA_TEMPLATE_URL`, `XSSA_TEMPLATE_SHA256` | downloads and verifies the xSSA deck templates, fills their placeholders, runs Raven and reads its output (numpy and the standard library; contains no template text) |
+| `raven_salmon_driver.py` | `fetch_templates(folder)`, `load_templates(folder)`, `placeholder_values(x)`, `write_deck(x, folder, templates)`, `run(x, raven_exe, obs_dir, templates)`, `weights(x)`, `stick_breaking_weights(r)`; `NAMES`, `UNITS`, `LOWER`, `UPPER`, `DESCRIPTIONS`, `PROCESS_GROUPS`, `WEIGHT_NAMES`, `BASIN`, `XSSA_COMMIT`, `XSSA_TEMPLATE_URL`, `XSSA_TEMPLATE_SHA256` | downloads and verifies the xSSA deck templates, fills their placeholders, runs Raven and reads its output (numpy and the standard library; contains no template text) |
 | `generate_data.py` | draws the design, runs Raven block by block (resumable cache), `--assemble` writes the CSVs, `--check` reruns a subset, `--fd` writes `fd_gradients_meanQ.csv` | provenance of the files |
 | `check_accuracy.py` | check 1: design and weights vs the CSVs (numpy/scipy only, `--skip-raven`); checks 2–3 rerun Raven: our NSE and KGE vs Raven's diagnostics, reruns vs `outputs.csv`, finite-difference steps 1e-2 vs 1e-3 | the Accuracy numbers; exits with an install message without Raven |
 
@@ -104,7 +104,7 @@ python check_accuracy.py --cache $C                          # the Accuracy numb
 
 **Raven build** (2026-11-01, Ubuntu 24.04 container, g++ 13.3.0): `git clone https://github.com/CSHS-CWRA/RavenHydroFramework`, `git checkout cb745e1`, then in `src/`: `touch .depend && make CXXFLAGS="-Wno-deprecated -O2"` (no NetCDF). Commit `cb745e1` (2020-06-17) is the first in which `RavenMain.cpp` sets `Options.version="3.0"`; the string becomes "3.0.1" at `133625e` (2020-10-19). The paper says only "released version 3.0" (pp. 5840, 5853), so the exact revision the authors ran is not known (the xSSA repository holds a 68-byte placeholder in place of `Raven.exe`). Evidence that it may have been a 2.9.x build: the paper was received on 8 May 2020 (p. 5835), before `cb745e1`; on GitHub the version string is "2.9.2" up to `4e1216d` (2020-04-25), "2.9.9" at `ae46a89` (2020-05-05) and first "3.0" at `cb745e1` (2020-06-17); and every xSSA template is headed `:FileType … Raven rev252 (v2.9)`, created June 2019. The authors may have rerun the results during revision (revised 15 October 2020), and "released version 3.0" may refer to the raven.uwaterloo.ca release. We diffed the process sources (infiltration, baseflow, soil evaporation, snow balance, potential melt, percolation, convolution, precipitation partitioning, process groups, solvers, common functions, model, forcing update and others) from `4e1216d` to `cb745e1` to `133625e` (3.0.1): the changes touch only options this deck does not use (BASE_THRESH_STOR, the SOILEVAP_HBV/HYPR snow correction, INF_XINANXIANG, routing diversions and irrigation, gridded forcing, POTMELT_NONE, PRECIP_ICEPT_NONE, freeze/thaw enthalpy helpers). The results are therefore probably the same for this deck, but this has not been verified by running a 2.9.x build.
 
-**The runs.** The shipped files were written on 2026-11-01 in a Linux container (Python 3.13, one process, about 24 min for the 4096 rows). On 2026-11-02 they were regenerated with the committed `generate_data.py` and `raven_salmon.py` on an AWS c7a.4xlarge (16 vCPUs; Ubuntu 24.04, g++ 13.3.0, Raven built from `cb745e1` as above; Python 3.12.3, numpy 2.4.6, scipy 1.17.1; forcing and streamflow from xSSA commit `034e718`): 16 processes ran the 4096 rows in 84 s (1317 s of Raven time in all, 0.32 s per run), `--fd` (258 runs) took 66 s, and `inputs.csv`, `weights.csv`, `outputs.csv` and `fd_gradients_meanQ.csv` came out **byte for byte identical** to the shipped files. The design has no randomness beyond its fixed seed, and Raven is deterministic.
+**The runs.** The shipped files were written on 2026-11-01 in a Linux container (Python 3.13, one process, about 24 min for the 4096 rows). On 2026-11-02 they were regenerated with the committed `generate_data.py` and `raven_salmon_driver.py` on an AWS c7a.4xlarge (16 vCPUs; Ubuntu 24.04, g++ 13.3.0, Raven built from `cb745e1` as above; Python 3.12.3, numpy 2.4.6, scipy 1.17.1; forcing and streamflow from xSSA commit `034e718`): 16 processes ran the 4096 rows in 84 s (1317 s of Raven time in all, 0.32 s per run), `--fd` (258 runs) took 66 s, and `inputs.csv`, `weights.csv`, `outputs.csv` and `fd_gradients_meanQ.csv` came out **byte for byte identical** to the shipped files. The design has no randomness beyond its fixed seed, and Raven is deterministic.
 
 ## Accuracy
 
@@ -129,25 +129,25 @@ python check_accuracy.py --cache $C                          # the Accuracy numb
   change 2021-07-27), SHA-256 `8109faaeb01ed6ad7e3d835e6a08a1e3a328d8911199f2e0c0bfca500aa060d0`, URL
   `https://raw.githubusercontent.com/julemai/xSSA/034e7189618b377a8b25ac95fde0ea11656cfa8c/examples/scripts/raven_templates.py`.
   The file is Copyright 2019–2020 Juliane Mai and licensed under the GNU LGPL, version 3 or later (its header; the
-  repository's `LICENSE` is LGPL-3.0). `raven_salmon.fetch_templates` downloads it once into a local cache, refuses it
+  repository's `LICENSE` is LGPL-3.0). `raven_salmon_driver.fetch_templates` downloads it once into a local cache, refuses it
   if the SHA-256 differs, and `load_templates` reads the five strings with Python's `ast` parser without importing or
   executing the file. No template text is in this repository.
-- **Our code.** `raven_salmon.py` (MIT) supplies only the values for the templates' placeholders (`par`: x01 … x35;
+- **Our code.** `raven_salmon_driver.py` (MIT) supplies only the values for the templates' placeholders (`par`: x01 … x35;
   `dpar`: the sums x09 + x10, x13 + x14, x24 + x25, the powers 10^x04 and 10^x11 and the half-full initial stores
   x29 · 500 mm and x30 · 500 mm; `weights`: the Eq. (A1) weights of each process at full precision; `props`: the
   basin constants), runs Raven and reads its output. It was written for this repository and contains no xSSA code.
-- **How the shipped files were made.** They were first written by an earlier version of `raven_salmon.py` that wrote
+- **How the shipped files were made.** They were first written by an earlier version of `raven_salmon_driver.py` that wrote
   the same Raven commands from a transcription of these templates; the transcription has been removed (copyleft text
   is not kept in this MIT repository). The committed code, which fetches the templates, regenerates all four files
   byte for byte (see "The runs" above).
 
 ## License and credit
 
-Code (`raven_salmon.py`, `generate_data.py`, the notebook): MIT (`LICENSE`). Data (the CSVs): CC BY 4.0
+Code (`raven_salmon_driver.py`, `generate_data.py`, the notebook): MIT (`LICENSE`). Data (the CSVs): CC BY 4.0
 (`LICENSE-DATA`). Model and study: J. Mai, J. R. Craig and B. A. Tolson (2020), CC BY 4.0 article.
 
 - **xSSA** (github.com/julemai/xSSA, LGPL-3.0): the Raven deck templates are fetched at run time, not
-  redistributed (see above). The basin constants in `raven_salmon.BASIN` are numbers from
+  redistributed (see above). The basin constants in `raven_salmon_driver.BASIN` are numbers from
   `examples/data_in/basin_metadata/basin_physical_characteristics.txt`. The forcing and observed-streamflow files
   (`examples/data_in/data_obs/08KC001/`) state no licence of their own and are not redistributed here; the streamflow
   is Water Survey of Canada gauge 08KC001 data (HYDAT), which Environment and Climate Change Canada publishes,
