@@ -1,0 +1,42 @@
+{
+ "res": {
+  "ifail": 1.0,
+  "rmajor": 8.356952988650034,
+  "sqsumsq": 2.120303266386476e-09,
+  "n_solver_iterations": 18.0,
+  "convergence_parameter": 1.071140712832115e-08,
+  "norm_objf": 1.671390597730007,
+  "p_plant_electric_net_mw": 400.0000043781079,
+  "t_plant_pulse_burn": 7200.000002414353,
+  "p_fusion_total_mw": 1627.7627451106287,
+  "b_plasma_toroidal_on_axis": 4.857326293660224,
+  "q95": 3.000000000725587,
+  "p_div_bt_q_aspect_rmajor_mw": 9.199999824957546,
+  "f_nd_impurity_electrons(13)": 0.00045818305075462265,
+  "capcost": 10608.809793967539,
+  "kappa": 1.85,
+  "hfact": 1.1,
+  "cpu_s": 53.676006894,
+  "wall_s": 54.151195764541626,
+  "error": ""
+ },
+ "itv": {
+  "b_plasma_toroidal_on_axis": 4.857326293660224,
+  "temp_plasma_electron_vol_avg_kev": 13.25450677386302,
+  "beta_total_vol_avg": 0.03788984163171374,
+  "nd_plasma_electrons_vol_avg": 7.387883501692897e+19,
+  "dr_cs": 0.5101276616589487,
+  "q95": 3.000000000725587,
+  "dr_bore": 2.4436136342360264,
+  "f_c_plasma_non_inductive": 0.3153290548316982,
+  "t_tf_superconductor_quench": 15.382928460132982,
+  "dr_tf_nose_case": 0.20587143226743443,
+  "dx_tf_turn_steel": 0.008000000047358118,
+  "f_a_tf_turn_cable_copper": 0.8940045075732572,
+  "c_tf_turn": 89999.99978343773,
+  "f_a_cs_turn_steel": 0.7691203934113189,
+  "f_nd_impurity_electrons(13)": 0.00045818305075462265,
+  "dr_tf_wp_with_insulation": 0.4889170695515001,
+  "rmajor": 8.356952988650034
+ }
+}

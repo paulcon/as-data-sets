@@ -1,0 +1,808 @@
+
+[[model]]
+author: Myokit CellML 1 API
+documentation: """
+    A mathematical treatment of integrated Ca dynamics within the ventricular
+    myocyte
+    
+    Martin
+    Fink
+    
+    Oxford University
+    
+    Model Status
+    
+    This model runs in PCEnv, OpenCell and COR to recreate the published
+    results. The units are consistent throughout. The model equations and
+    output were checked using the original matlab code, and it currently
+    recreates the Pace1 Stimulus protocol described.
+    
+    Model Structure
+    
+    ABSTRACT: We have developed a detailed mathematical model for Ca2+ handling
+    and ionic currents in the rabbit ventricular myocyte. The objective was to
+    develop a model that: 1), accurately reflects Ca-dependent Ca release; 2),
+    uses realistic parameters, particularly those that concern Ca transport
+    from the cytosol; 3), comes to steady state; 4), simulates basic
+    excitation-contraction coupling phenomena; and 5), runs on a normal desktop
+    computer. The model includes the following novel features: 1), the addition
+    of a subsarcolemmal compartment to the other two commonly formulated
+    cytosolic compartments (junctional and bulk) because ion channels in the
+    membrane sense ion concentrations that differ from bulk; 2), the use of
+    realistic cytosolic Ca buffering parameters; 3), a reversible sarcoplasmic
+    reticulum (SR) Ca pump; 4), a scheme for Na-Ca exchange transport that is
+    [Na]i dependent and allosterically regulated by [Ca]i; and 5), a practical
+    model of SR Ca release including both inactivation/adaptation and SR Ca
+    load dependence. The data describe normal electrical activity and Ca
+    handling characteristics of the cardiac myocyte and the SR Ca load
+    dependence of these processes. The model includes a realistic balance of Ca
+    removal mechanisms (e.g., SR Ca pump versus Na-Ca exchange), and the
+    phenomena of rest decay and frequency-dependent inotropy. A particular
+    emphasis is placed upon reproducing the nonlinear dependence of gain and
+    fractional SR Ca release upon SR Ca load. We conclude that this model is
+    more robust than many previously existing models and reproduces many
+    experimental results using parameters based largely on experimental
+    measurements in myocytes.
+    
+    The complete original paper reference is cited below:
+    
+    A mathematical treatment of integrated Ca dynamics within the ventricular
+    myocyte, Thomas R. Shannon, Fei Wang, Jose Puglisi, Christopher Weber and
+    Donald M. Bers, 2004, Biophysical Journal , 87, 3351-3371. PubMed ID:
+    15347581
+    
+    cell diagram
+    
+    A schematic diagram of the cell model which highlights the calcium- and
+    sodium-dependent components of the model in particular.
+    """
+name: shannon_2004
+# Initial values
+cell.V                                 = -85.56885
+INa_h_gate.h                           = 0.9867005
+INa_j_gate.j                           = 0.991562
+INa_m_gate.m                           =  1.40562700000000000e-3
+IKr_Xr_gate.Xr                         =  8.64138599999999917e-3
+IKs_Xs_gate.Xs                         =  5.41203399999999960e-3
+Itos_X_gate.X_tos                      =  4.05157399999999963e-3
+Itos_Y_gate.Y_tos                      = 0.9945511
+Itos_R_gate.R_tos                      = 0.9946
+Itof_X_gate.X_tof                      =  4.05157399999999963e-3
+Itof_Y_gate.Y_tof                      = 0.9945511
+ICaL_d_gate.d                          =  7.17566199999999998e-6
+ICaL_f_gate.f                          = 1.000681
+ICaL_fCa_gate.fCaB_SL                  =  1.45260500000000004e-2
+ICaL_fCa_gate.fCaB_jct                 =  2.42199100000000007e-2
+Jrel_SR.R                              = 0.8884332
+Jrel_SR.I                              =  1.02427400000000003e-7
+Jrel_SR.O                              =  8.15662800000000032e-7
+Na_buffer.Na_SL                        = 8.80733
+Na_buffer.Na_jct                       = 8.80329
+Na_buffer.Na_SL_buf                    = 0.7720854
+Na_buffer.Na_jct_buf                   = 3.539892
+Na_buffer.Nai                          = 8.80853
+Ca_buffer.Ca_SR                        = 0.5545201
+Ca_buffer.Ca_SL                        =  1.03181200000000001e-4
+Ca_buffer.Ca_jct                       =  1.73747500000000010e-4
+Ca_buffer.Cai                          =  8.59740100000000012e-5
+Ca_buffer.Ca_SLB_SL                    = 0.1110363
+Ca_buffer.Ca_SLB_jct                   =  9.56635500000000034e-3
+Ca_buffer.Ca_SLHigh_SL                 =  7.29737800000000020e-2
+Ca_buffer.Ca_SLHigh_jct                =  7.34788800000000034e-3
+Ca_buffer.Ca_Calsequestrin             = 1.242988
+cytosolic_Ca_buffer.Ca_TroponinC       =  8.77319099999999963e-3
+cytosolic_Ca_buffer.Ca_TroponinC_Ca_Mg = 0.1078283
+cytosolic_Ca_buffer.Mg_TroponinC_Ca_Mg =  1.52400200000000000e-2
+cytosolic_Ca_buffer.Ca_Calmodulin      =  2.91191599999999985e-4
+cytosolic_Ca_buffer.Ca_Myosin          =  1.29875400000000005e-3
+cytosolic_Ca_buffer.Mg_Myosin          = 0.1381982
+cytosolic_Ca_buffer.Ca_SRB             =  2.14316499999999983e-3
+
+[Ca_buffer]
+Bmax_Calsequestrin = 0.14 [mM]
+    in [mM]
+Bmax_SLB_SL = 0.0374 [mM]
+    in [mM]
+Bmax_SLB_jct = 0.0046 [mM]
+    in [mM]
+Bmax_SLHigh_SL = 0.0134 [mM]
+    in [mM]
+Bmax_SLHigh_jct = 0.00165 [mM]
+    in [mM]
+dot(Ca_Calsequestrin) = dCalsequestrin
+    in [mM]
+dot(Ca_SL) = -i_Ca_SL_tot * model_parameters.Cm / (model_parameters.Vol_SL * 2 * model_parameters.F) + (ion_diffusion.J_Ca_jct_SL - ion_diffusion.J_Ca_SL_myo) / model_parameters.Vol_SL - 1 * dCa_SL_tot_bound
+    in [mM]
+dot(Ca_SLB_SL) = dCa_SLB_SL
+    in [mM]
+dot(Ca_SLB_jct) = dCa_SLB_jct
+    in [mM]
+dot(Ca_SLHigh_SL) = dCa_SLHigh_SL
+    in [mM]
+dot(Ca_SLHigh_jct) = dCa_SLHigh_jct
+    in [mM]
+dot(Ca_SR) = Jpump_SR.j_pump_SR - (Jleak_SR.j_leak_SR * model_parameters.Vol_myo / model_parameters.Vol_SR + Jrel_SR.j_rel_SR) - dCalsequestrin
+    in [mM]
+dot(Ca_jct) = -i_Ca_jct_tot * model_parameters.Cm / (model_parameters.Vol_jct * 2 * model_parameters.F) - ion_diffusion.J_Ca_jct_SL / model_parameters.Vol_jct + Jrel_SR.j_rel_SR * model_parameters.Vol_SR / model_parameters.Vol_jct + Jleak_SR.j_leak_SR * model_parameters.Vol_myo / model_parameters.Vol_jct - 1 * dCa_jct_tot_bound
+    in [mM]
+dot(Cai) = -Jpump_SR.j_pump_SR * model_parameters.Vol_SR / model_parameters.Vol_myo + ion_diffusion.J_Ca_SL_myo / model_parameters.Vol_myo - 1 * cytosolic_Ca_buffer.dCa_cytosol_tot_bound
+    in [mM]
+dCa_SLB_SL = kon_SL * Ca_SL * (Bmax_SLB_SL * model_parameters.Vol_myo / model_parameters.Vol_SL - Ca_SLB_SL) - koff_SLB * Ca_SLB_SL
+    in [mM/ms]
+dCa_SLB_jct = kon_SL * Ca_jct * (Bmax_SLB_jct * 0.1 * model_parameters.Vol_myo / model_parameters.Vol_jct - Ca_SLB_jct) - koff_SLB * Ca_SLB_jct
+    in [mM/ms]
+dCa_SLHigh_SL = kon_SL * Ca_SL * (Bmax_SLHigh_SL * model_parameters.Vol_myo / model_parameters.Vol_SL - Ca_SLHigh_SL) - koff_SLHigh * Ca_SLHigh_SL
+    in [mM/ms]
+dCa_SLHigh_jct = kon_SL * Ca_jct * (Bmax_SLHigh_jct * 0.1 * model_parameters.Vol_myo / model_parameters.Vol_jct - Ca_SLHigh_jct) - koff_SLHigh * Ca_SLHigh_jct
+    in [mM/ms]
+dCa_SL_tot_bound = dCa_SLB_SL + dCa_SLHigh_SL
+    in [mM/ms]
+dCa_jct_tot_bound = dCa_SLB_jct + dCa_SLHigh_jct
+    in [mM/ms]
+dCalsequestrin = kon_Calsequestrin * Ca_SR * (Bmax_Calsequestrin * model_parameters.Vol_myo / model_parameters.Vol_SR - Ca_Calsequestrin) - koff_Calsequestrin * Ca_Calsequestrin
+    in [mM/ms]
+i_Ca_SL_tot = ICaL.i_CaL_Ca_SL - 2 * INaCa.i_NaCa_SL + ICab.i_Cab_SL + ICap.i_Cap_SL
+    in [A/F]
+i_Ca_jct_tot = ICaL.i_CaL_Ca_jct - 2 * INaCa.i_NaCa_jct + ICab.i_Cab_jct + ICap.i_Cap_jct
+    in [A/F]
+koff_Calsequestrin = 65 [mS/uF]
+    in [mS/uF]
+koff_SLB = 1.3 [mS/uF]
+    in [mS/uF]
+koff_SLHigh = 0.03 [mS/uF]
+    in [mS/uF]
+kon_Calsequestrin = 100 [1/mM/ms]
+    in [1/mM/ms]
+kon_SL = 100 [1/mM/ms]
+    in [1/mM/ms]
+
+[ICaL]
+p = 1
+Fx_ICaL_SL = 0.1
+    in [1]
+Fx_ICaL_jct = 0.9
+    in [1]
+PCa = 0.00054 [L/F/ms]
+    in [L/F/ms]
+PK = 2.7e-7 [L/F/ms]
+    in [L/F/ms]
+PNa = 1.5e-8 [L/F/ms]
+    in [L/F/ms]
+Q10_CaL = 1.8
+    in [1]
+Q_CaL = Q10_CaL^((model_parameters.T - 310 [K]) / 10 [K])
+    in [1]
+gamma_Cai = 0.341
+    in [1]
+gamma_Cao = 0.341
+    in [1]
+gamma_Ki = 0.75
+    in [1]
+gamma_Ko = 0.75
+    in [1]
+gamma_Nai = 0.75
+    in [1]
+gamma_Nao = 0.75
+    in [1]
+i_CaL = (i_CaL_Ca_SL + i_CaL_Ca_jct + i_CaL_Na_SL + i_CaL_Na_jct + i_CaL_K)
+    in [A/F]
+i_CaL_Ca_SL =  p * (temp * ICaL_fCa_gate.fCa_SL * Fx_ICaL_SL * PCa * 4 * (gamma_Cai * Ca_buffer.Ca_SL * exp(2 * cell.V * model_parameters.F / (model_parameters.R * model_parameters.T)) - gamma_Cao * model_parameters.Cao) / (exp(2 * cell.V * model_parameters.F / (model_parameters.R * model_parameters.T)) - 1))
+    in [A/F]
+i_CaL_Ca_jct =  p * (temp * ICaL_fCa_gate.fCa_jct * Fx_ICaL_jct * PCa * 4 * (gamma_Cai * Ca_buffer.Ca_jct * exp(2 * cell.V * model_parameters.F / (model_parameters.R * model_parameters.T)) - gamma_Cao * model_parameters.Cao) / (exp(2 * cell.V * model_parameters.F / (model_parameters.R * model_parameters.T)) - 1))
+    in [A/F]
+i_CaL_K =  p * (temp * (ICaL_fCa_gate.fCa_SL * Fx_ICaL_SL + ICaL_fCa_gate.fCa_jct * Fx_ICaL_jct) * PK * (gamma_Ki * model_parameters.Ki * exp(cell.V * model_parameters.F / (model_parameters.R * model_parameters.T)) - gamma_Ko * model_parameters.Ko) / (exp(cell.V * model_parameters.F / (model_parameters.R * model_parameters.T)) - 1))
+    in [A/F]
+i_CaL_Na_SL =  p * (temp * ICaL_fCa_gate.fCa_SL * Fx_ICaL_SL * PNa * (gamma_Nai * Na_buffer.Na_SL * exp(cell.V * model_parameters.F / (model_parameters.R * model_parameters.T)) - gamma_Nao * model_parameters.Nao) / (exp(cell.V * model_parameters.F / (model_parameters.R * model_parameters.T)) - 1))
+    in [A/F]
+i_CaL_Na_jct =  p * (temp * ICaL_fCa_gate.fCa_jct * Fx_ICaL_jct * PNa * (gamma_Nai * Na_buffer.Na_jct * exp(cell.V * model_parameters.F / (model_parameters.R * model_parameters.T)) - gamma_Nao * model_parameters.Nao) / (exp(cell.V * model_parameters.F / (model_parameters.R * model_parameters.T)) - 1))
+    in [A/F]
+temp = 0.45 * ICaL_d_gate.d * ICaL_f_gate.f * Q_CaL * cell.V * model_parameters.F^2 / (model_parameters.R * model_parameters.T)
+    in [C/mol]
+
+[ICaL_d_gate]
+dot(d) = (d_infinity - d) / tau_d
+    in [1]
+d_infinity = 1 / (1 + exp(-(cell.V + 14.5 [mV]) / 6 [mV]))
+    in [1]
+tau_d = 1 [ms] * d_infinity * (1 - exp(-(cell.V + 14.5 [mV]) / 6 [mV])) / (0.035 [1/mV] * (cell.V + 14.5 [mV]))
+    in [ms]
+
+[ICaL_fCa_gate]
+dot(fCaB_SL) = 1.7 [1/mM/ms] * Ca_buffer.Ca_SL * (1 - fCaB_SL) - 0.0119 [mS/uF] * fCaB_SL
+    in [1]
+dot(fCaB_jct) = 1.7 [1/mM/ms] * Ca_buffer.Ca_jct * (1 - fCaB_jct) - 0.0119 [mS/uF] * fCaB_jct
+    in [1]
+fCa_SL = 1 - fCaB_SL
+    in [1]
+fCa_jct = 1 - fCaB_jct
+    in [1]
+
+[ICaL_f_gate]
+dot(f) = (f_infinity - f) / tau_f
+    in [1]
+f_infinity = 1 / (1 + exp((cell.V + 35.06 [mV]) / 3.6 [mV])) + 0.6 / (1 + exp((50 [mV] - cell.V) / 20 [mV]))
+    in [1]
+tau_f = 1 [ms] / (0.0197 * exp(-(0.0337 [1/mV] * (cell.V + 14.5 [mV]))^2) + 0.02)
+    in [ms]
+
+[ICab]
+p = 1
+Fx_CaBk_SL = 0.89
+    in [1]
+Fx_CaBk_jct = 0.11
+    in [1]
+G_CaBk = 0.0002513 [mS/uF]
+    in [mS/uF]
+i_Cab =  (i_Cab_SL + i_Cab_jct)
+    in [A/F]
+i_Cab_SL = p * (G_CaBk * Fx_CaBk_SL * (cell.V - reversal_potentials.E_Ca_SL))
+    in [A/F]
+i_Cab_jct = p * (G_CaBk * Fx_CaBk_jct * (cell.V - reversal_potentials.E_Ca_jct))
+    in [A/F]
+
+[ICap]
+p = 1
+Fx_SLCaP_SL = 0.89
+    in [1]
+Fx_SLCaP_jct = 0.11
+    in [1]
+H = 1.6
+    in [1]
+Km = 0.0005 [mM]
+    in [mM]
+Q10_SLCaP = 2.35
+    in [1]
+Q_SLCaP = Q10_SLCaP^((model_parameters.T - 310 [K]) / 10 [K])
+    in [1]
+V_maxAF = 0.0673 [A/F]
+    in [A/F]
+i_Cap =  (i_Cap_jct + i_Cap_SL)
+    in [A/F]
+i_Cap_SL = p * (Q_SLCaP * V_maxAF * Fx_SLCaP_SL / (1 + (Km / Ca_buffer.Ca_SL)^H))
+    in [A/F]
+i_Cap_jct = p * (Q_SLCaP * V_maxAF * Fx_SLCaP_jct / (1 + (Km / Ca_buffer.Ca_jct)^H))
+    in [A/F]
+
+[ICl_Ca]
+p = 1
+Fx_Cl_SL = 0.89
+    in [1]
+Fx_Cl_jct = 0.11
+    in [1]
+G_Cl = 0.109625 [mS/uF]
+    in [mS/uF]
+Kd_ClCa = 0.1 [mM]
+    in [mM]
+i_Cl_Ca = p * (G_Cl * (cell.V - reversal_potentials.E_Cl) * (Fx_Cl_jct / (1 + Kd_ClCa / Ca_buffer.Ca_jct) + Fx_Cl_SL / (1 + Kd_ClCa / Ca_buffer.Ca_SL)))
+    in [A/F]
+
+[IClb]
+p = 1
+G_ClBk = 0.009 [mS/uF]
+    in [mS/uF]
+i_Clb = p * (G_ClBk * (cell.V - reversal_potentials.E_Cl))
+    in [A/F]
+
+[IK1]
+p = 1
+G_K1 = 0.9 [mS/uF] * sqrt(model_parameters.Ko / 5.4 [mM])
+    in [mS/uF]
+i_K1 = p *(G_K1 * IK1_K1_gate.K1_infinity * (cell.V - reversal_potentials.E_K))
+    in [A/F]
+
+[IK1_K1_gate]
+K1_infinity = alpha_K1 / (alpha_K1 + beta_K1)
+    in [1]
+alpha_K1 = 1.02 [mS/uF] / (1 + exp(0.2385 [1/mV] * (cell.V - (reversal_potentials.E_K + 59.215 [mV]))))
+    in [mS/uF]
+beta_K1 = (0.49124 [mS/uF] * exp(0.08032 [1/mV] * (cell.V - reversal_potentials.E_K + 5.476 [mV])) + 1 [mS/uF] * exp(0.06175 [1/mV] * (cell.V - (reversal_potentials.E_K + 594.31 [mV])))) / (1 + exp(-0.5143 [1/mV] * (cell.V - reversal_potentials.E_K + 4.753 [mV])))
+    in [mS/uF]
+
+[IKp]
+p = 1
+g_Kp = 0.001 [mS/uF]
+    in [mS/uF]
+i_Kp = p * (g_Kp * (cell.V - reversal_potentials.E_K) / (1 + exp(7.488 - cell.V / 5.98 [mV])))
+    in [A/F]
+
+[IKr]
+p = 1
+G_IKr = 0.03 [mS/uF] * sqrt(model_parameters.Ko / 5.4 [mM])
+    in [mS/uF]
+i_Kr = p * (G_IKr * IKr_Xr_gate.Xr * IKr_Rr_gate.Rr * (cell.V - reversal_potentials.E_K))
+    in [A/F]
+
+[IKr_Rr_gate]
+Rr = 1 / (1 + exp((33 [mV] + cell.V) / 22.4 [mV]))
+    in [1]
+
+[IKr_Xr_gate]
+dot(Xr) = (Xr_infinity - Xr) / tau_Xr
+    in [1]
+Xr_infinity = 1 / (1 + exp(-(50 [mV] + cell.V) / 7.5 [mV]))
+    in [1]
+tau_Xr = 1 [ms] / (0.00138 [1/mV] * (cell.V + 7 [mV]) / (1 - exp(-0.123 [1/mV] * (cell.V + 7 [mV]))) + 0.00061 [1/mV] * (cell.V + 10 [mV]) / (exp(0.145 [1/mV] * (cell.V + 10 [mV])) - 1))
+    in [ms]
+
+[IKs]
+p = 1
+E_Ks = model_parameters.R * model_parameters.T / model_parameters.F * log((model_parameters.Ko + pKNa * model_parameters.Nao) / (model_parameters.Ki + pKNa * Na_buffer.Nai))
+    in [mV]
+Fx_Ks_SL = 0.89
+    in [1]
+Fx_Ks_jct = 0.11
+    in [1]
+G_Ks_SL = 0.07 [mS/uF] * (0.057 + 0.19 / (1 + exp((-7.2 + pCa_SL) / 0.6)))
+    in [mS/uF]
+G_Ks_jct = 0.07 [mS/uF] * (0.057 + 0.19 / (1 + exp((-7.2 + pCa_jct) / 0.6)))
+    in [mS/uF]
+i_Ks =  (i_Ks_jct + i_Ks_SL)
+    in [A/F]
+i_Ks_SL = p * (Fx_Ks_SL * G_Ks_SL * IKs_Xs_gate.Xs^2 * (cell.V - E_Ks))
+    in [A/F]
+i_Ks_jct = p * (Fx_Ks_jct * G_Ks_jct * IKs_Xs_gate.Xs^2 * (cell.V - E_Ks))
+    in [A/F]
+pCa_SL = -log10(Ca_buffer.Ca_SL / 1 [mM]) + 3
+    in [1]
+pCa_jct = -log10(Ca_buffer.Ca_jct / 1 [mM]) + 3
+    in [1]
+pKNa = 0.01833
+    in [1]
+
+[IKs_Xs_gate]
+dot(Xs) = (Xs_infinity - Xs) / tau_Xs
+    in [1]
+Xs_infinity = 1 / (1 + exp(-(cell.V - 1.5 [mV]) / 16.7 [mV]))
+    in [1]
+tau_Xs = 1 [ms] / (7.19e-5 [1/mV] * (cell.V + 30 [mV]) / (1 - exp(-0.148 [1/mV] * (cell.V + 30 [mV]))) + 0.000131 [1/mV] * (cell.V + 30 [mV]) / (-1 + exp(0.0687 [1/mV] * (cell.V + 30 [mV]))))
+    in [ms]
+
+[INa]
+p = 1
+Fx_Na_SL = 0.89
+    in [1]
+Fx_Na_jct = 0.11
+    in [1]
+G_INa = 16 [mS/uF]
+    in [mS/uF]
+i_Na =  (i_Na_jct + i_Na_SL)
+    in [A/F]
+i_Na_SL = p * (Fx_Na_SL * G_INa * openProb * (cell.V - reversal_potentials.E_Na_SL))
+    in [A/F]
+i_Na_jct = p * (Fx_Na_jct * G_INa * openProb * (cell.V - reversal_potentials.E_Na_jct))
+    in [A/F]
+openProb = INa_m_gate.m^3 * INa_h_gate.h * INa_j_gate.j
+    in [1]
+
+[INaCa]
+p = 1
+Fx_NCX_SL = 0.89
+    in [1]
+Fx_NCX_jct = 0.11
+    in [1]
+HNa = 3
+    in [1]
+K_mCai = 0.00359 [mM]
+    in [mM]
+K_mCao = 1.3 [mM]
+    in [mM]
+K_mNai = 12.29 [mM]
+    in [mM]
+K_mNao = 87.5 [mM]
+    in [mM]
+Ka_SL = 1 / (1 + (Kd_act / Ca_buffer.Ca_SL)^3)
+    in [1]
+Ka_jct = 1 / (1 + (Kd_act / Ca_buffer.Ca_jct)^3)
+    in [1]
+Kd_act = 0.000256 [mM]
+    in [mM]
+Q10_NCX = 1.57
+    in [1]
+Q_NCX = Q10_NCX^((model_parameters.T - 310 [K]) / 10 [K])
+    in [1]
+V_max = 9 [A/F]
+    in [A/F]
+eta = 0.35
+    in [1]
+i_NaCa =  (i_NaCa_jct + i_NaCa_SL)
+    in [A/F]
+i_NaCa_SL = p * (Fx_NCX_SL * V_max * Ka_SL * Q_NCX * temp_SL / (K_mCai * model_parameters.Nao^HNa * (1 + (Na_buffer.Na_SL / K_mNai)^HNa) + K_mNao^HNa * Ca_buffer.Ca_SL * (1 + Ca_buffer.Ca_SL / K_mCai) + K_mCao * Na_buffer.Na_SL^HNa + Na_buffer.Na_SL^HNa * model_parameters.Cao + model_parameters.Nao^HNa * Ca_buffer.Ca_SL))
+    in [A/F]
+i_NaCa_jct = p * (Fx_NCX_jct * V_max * Ka_jct * Q_NCX * temp_jct / (K_mCai * model_parameters.Nao^HNa * (1 + (Na_buffer.Na_jct / K_mNai)^HNa) + K_mNao^HNa * Ca_buffer.Ca_jct * (1 + Ca_buffer.Ca_jct / K_mCai) + K_mCao * Na_buffer.Na_jct^HNa + Na_buffer.Na_jct^HNa * model_parameters.Cao + model_parameters.Nao^HNa * Ca_buffer.Ca_jct))
+    in [A/F]
+ksat = 0.27
+    in [1]
+temp_SL = (exp(eta * cell.V * model_parameters.F / (model_parameters.R * model_parameters.T)) * Na_buffer.Na_SL^HNa * model_parameters.Cao - exp((eta - 1) * cell.V * model_parameters.F / (model_parameters.R * model_parameters.T)) * model_parameters.Nao^HNa * Ca_buffer.Ca_SL) / (1 + ksat * exp((eta - 1) * cell.V * model_parameters.F / (model_parameters.R * model_parameters.T)))
+    in [mol^4/m^12]
+temp_jct = (exp(eta * cell.V * model_parameters.F / (model_parameters.R * model_parameters.T)) * Na_buffer.Na_jct^HNa * model_parameters.Cao - exp((eta - 1) * cell.V * model_parameters.F / (model_parameters.R * model_parameters.T)) * model_parameters.Nao^HNa * Ca_buffer.Ca_jct) / (1 + ksat * exp((eta - 1) * cell.V * model_parameters.F / (model_parameters.R * model_parameters.T)))
+    in [mol^4/m^12]
+
+[INaK]
+p = 1
+Fx_NaK_SL = 0.89
+    in [1]
+Fx_NaK_jct = 0.11
+    in [1]
+H_NaK = 4
+    in [1]
+I_NaK_max = 1.90719 [A/F]
+    in [A/F]
+Km_Ko = 1.5 [mM]
+    in [mM]
+Km_Nai = 11 [mM]
+    in [mM]
+f_NaK = 1 / (1 + 0.1245 * exp(-0.1 * cell.V * model_parameters.F / (model_parameters.R * model_parameters.T)) + 0.0365 * sigma * exp(-cell.V * model_parameters.F / (model_parameters.R * model_parameters.T)))
+    in [1]
+i_NaK =  (i_NaK_jct + i_NaK_SL)
+    in [A/F]
+i_NaK_SL = p * (Fx_NaK_SL * I_NaK_max * f_NaK / (1 + (Km_Nai / Na_buffer.Na_SL)^H_NaK) * model_parameters.Ko / (model_parameters.Ko + Km_Ko))
+    in [A/F]
+i_NaK_jct = p * (Fx_NaK_jct * I_NaK_max * f_NaK / (1 + (Km_Nai / Na_buffer.Na_jct)^H_NaK) * model_parameters.Ko / (model_parameters.Ko + Km_Ko))
+    in [A/F]
+sigma = (exp(model_parameters.Nao / 67.3 [mM]) - 1) / 7
+    in [1]
+
+[INa_h_gate]
+alpha_h = piecewise(cell.V < -40 [mV], 0.135 [mS/uF] * exp((80 [mV] + cell.V) / -6.8 [mV]), 0 [mS/uF])
+    in [mS/uF]
+beta_h = piecewise(cell.V < -40 [mV], 3.56 [mS/uF] * exp(0.079 [1/mV] * cell.V) + 310000 [mS/uF] * exp(0.35 [1/mV] * cell.V), 1 / (0.13 [ms] * (1 + exp((cell.V + 10.66 [mV]) / -11.1 [mV]))))
+    in [mS/uF]
+dot(h) = alpha_h * (1 - h) - beta_h * h
+    in [1]
+
+[INa_j_gate]
+alpha_j = piecewise(cell.V < -40 [mV], (-127140 [mS/uF] * exp(0.2444 [1/mV] * cell.V) - 3.474e-5 [mS/uF] * exp(-0.04391 [1/mV] * cell.V)) * (cell.V + 37.78 [mV]) / 1 [mV] / (1 + exp(0.311 [1/mV] * (cell.V + 79.23 [mV]))), 0 [mS/uF])
+    in [mS/uF]
+beta_j = piecewise(cell.V < -40 [mV], 0.1212 [mS/uF] * exp(-0.01052 [1/mV] * cell.V) / (1 + exp(-0.1378 [1/mV] * (cell.V + 40.14 [mV]))), 0.3 [mS/uF] * exp(-2.535e-7 [1/mV] * cell.V) / (1 + exp(-0.1 [1/mV] * (cell.V + 32 [mV]))))
+    in [mS/uF]
+dot(j) = alpha_j * (1 - j) - beta_j * j
+    in [1]
+
+[INa_m_gate]
+alpha_m = 0.32 [mS/uF] * (cell.V + 47.13 [mV]) / 1 [mV] / (1 - exp(-0.1 [1/mV] * (cell.V + 47.13 [mV])))
+    in [mS/uF]
+beta_m = 0.08 [mS/uF] * exp(-cell.V / 11 [mV])
+    in [mS/uF]
+dot(m) = alpha_m * (1 - m) - beta_m * m
+    in [1]
+
+[INab]
+p = 1
+Fx_NaBk_SL = 0.89
+    in [1]
+Fx_NaBk_jct = 0.11
+    in [1]
+G_NaBk = 0.000297 [mS/uF]
+    in [mS/uF]
+i_Nab =  (i_Nab_jct + i_Nab_SL)
+    in [A/F]
+i_Nab_SL = p * (Fx_NaBk_SL * G_NaBk * (cell.V - reversal_potentials.E_Na_SL))
+    in [A/F]
+i_Nab_jct = p * (Fx_NaBk_jct * G_NaBk * (cell.V - reversal_potentials.E_Na_jct))
+    in [A/F]
+
+[Ions_n_reversal_potentials]
+
+[Itof]
+p = 1
+G_tof = 0.02 [mS/uF]
+    in [mS/uF]
+i_tof = p * (G_tof * Itof_X_gate.X_tof * Itof_Y_gate.Y_tof * (cell.V - reversal_potentials.E_K))
+    in [A/F]
+
+[Itof_X_gate]
+dot(X_tof) = (X_tof_infinity - X_tof) / tau_X_tof
+    in [1]
+X_tof_infinity = 1 / (1 + exp(-(cell.V + 3 [mV]) / 15 [mV]))
+    in [1]
+tau_X_tof = 3.5 [ms] * exp(-(cell.V / 30 [mV])^2) + 1.5 [ms]    
+    in [ms]
+
+[Itof_Y_gate]
+dot(Y_tof) = (Y_tof_infinity - Y_tof) / tau_Y_tof
+    in [1]
+Y_tof_infinity = 1 / (1 + exp((cell.V + 33.5 [mV]) / 10 [mV]))
+    in [1]
+tau_Y_tof = 20 [ms] / (1 + exp((cell.V + 33.5 [mV]) / 10 [mV])) + 20 [ms]
+    in [ms]
+
+[Itos]
+p = 1
+G_tos = 0.06 [mS/uF]
+    in [mS/uF]
+i_tos = p * (G_tos * Itos_X_gate.X_tos * (Itos_Y_gate.Y_tos + 0.5 * Itos_R_gate.R_tos) * (cell.V - reversal_potentials.E_K))
+    in [A/F]
+
+[Itos_R_gate]
+dot(R_tos) = (R_tos_infinity - R_tos) / tau_R_tos
+    in [1]
+R_tos_infinity = 1 / (1 + exp((cell.V + 33.5 [mV]) / 10 [mV]))
+    in [1]
+tau_R_tos = 2800 [ms] / (1 + exp((cell.V + 60 [mV]) / 10 [mV])) + 220 [ms]
+    in [ms]
+
+[Itos_X_gate]
+dot(X_tos) = (X_tos_infinity - X_tos) / tau_X_tos
+    in [1]
+X_tos_infinity = 1 / (1 + exp(-(cell.V + 3 [mV]) / 15 [mV]))
+    in [1]
+tau_X_tos = 9 [ms] / (1 + exp((cell.V + 3 [mV]) / 15 [mV])) + 0.5 [ms]
+    in [ms]
+
+[Itos_Y_gate]
+dot(Y_tos) = (Y_tos_infinity - Y_tos) / tau_Y_tos
+    in [1]
+Y_tos_infinity = 1 / (1 + exp((cell.V + 33.5 [mV]) / 10 [mV]))
+    in [1]
+tau_Y_tos = 3000 [ms] / (1 + exp((cell.V + 60 [mV]) / 10 [mV])) + 30 [ms]
+    in [ms]
+
+[Jleak_SR]
+KSRleak = 5.348e-6 [mS/uF]
+    in [mS/uF]
+j_leak_SR = KSRleak * (Ca_buffer.Ca_SR - Ca_buffer.Ca_jct)
+    in [mM/ms]
+
+[Jpump_SR]
+H = 1.787
+    in [1]
+Kmf = 0.000246 [mM]
+    in [mM]
+Kmr = 1.7 [mM]
+    in [mM]
+Q10_SRCaP = 2.6
+    in [1]
+Q_SRCaP = Q10_SRCaP^((model_parameters.T - 310 [K]) / 10 [K])
+    in [1]
+V_max = 0.0053114 [mM/ms]
+    in [mM/ms]
+j_pump_SR = Q_SRCaP * V_max * ((Ca_buffer.Cai / Kmf)^H - (Ca_buffer.Ca_SR / Kmr)^H) / (1 + (Ca_buffer.Cai / Kmf)^H + (Ca_buffer.Ca_SR / Kmr)^H)
+    in [mM/ms]
+
+[Jrel_SR]
+EC50_SR = 0.45 [mM]
+    in [mM]
+HSR = 2.5
+    in [1]
+dot(I) = kiSRCa * Ca_buffer.Ca_jct * O - kim * I - (kom * I - koSRCa * Ca_buffer.Ca_jct^2 * RI)
+    in [1]
+Max_SR = 15
+    in [1]
+Min_SR = 1
+    in [1]
+dot(O) = koSRCa * Ca_buffer.Ca_jct^2 * R - kom * O - (kiSRCa * Ca_buffer.Ca_jct * O - kim * I)
+    in [1]
+dot(R) = kim * RI - kiSRCa * Ca_buffer.Ca_jct * R - (koSRCa * Ca_buffer.Ca_jct^2 * R - kom * O)
+    in [1]
+RI = 1 - R - O - I
+    in [1]
+j_rel_SR = ks * O * (Ca_buffer.Ca_SR - Ca_buffer.Ca_jct)
+    in [mM/ms]
+kCaSR = Max_SR - (Max_SR - Min_SR) / (1 + (EC50_SR / Ca_buffer.Ca_SR)^HSR)
+    in [1]
+kiCa = 0.5 [1/mM/ms]
+    in [1/mM/ms]
+kiSRCa = kiCa * kCaSR
+    in [1/mM/ms]
+kim = 0.005 [mS/uF]
+    in [mS/uF]
+koCa = 10 [1/mM^2/ms]
+    in [1/mM^2/ms]
+koSRCa = koCa / kCaSR
+    in [1/mM^2/ms]
+kom = 0.06 [mS/uF]
+    in [mS/uF]
+ks = 25 [mS/uF]
+    in [mS/uF]
+
+[Na_buffer]
+Bmax_SL = 1.65 [mM]
+    in [mM]
+Bmax_jct = 7.561 [mM]
+    in [mM]
+dot(Na_SL) = -model_parameters.Cm * (INa.i_Na_SL + 3 * INaCa.i_NaCa_SL + INab.i_Nab_SL + 3 * INaK.i_NaK_SL + ICaL.i_CaL_Na_SL) / (model_parameters.Vol_SL * model_parameters.F) + (ion_diffusion.J_Na_jct_SL - ion_diffusion.J_Na_SL_myo) / model_parameters.Vol_SL - dNa_SL_buf
+    in [mM]
+dot(Na_SL_buf) = dNa_SL_buf
+    in [mM]
+dot(Na_jct) = -model_parameters.Cm * (INa.i_Na_jct + 3 * INaCa.i_NaCa_jct + INab.i_Nab_jct + 3 * INaK.i_NaK_jct + ICaL.i_CaL_Na_jct) / (model_parameters.Vol_jct * model_parameters.F) - ion_diffusion.J_Na_jct_SL / model_parameters.Vol_jct - dNa_jct_buf
+    in [mM]
+dot(Na_jct_buf) = dNa_jct_buf
+    in [mM]
+dot(Nai) = ion_diffusion.J_Na_SL_myo / model_parameters.Vol_myo
+    in [mM]
+dNa_SL_buf = kon * Na_SL * (Bmax_SL - Na_SL_buf) - koff * Na_SL_buf
+    in [mM/ms]
+dNa_jct_buf = kon * Na_jct * (Bmax_jct - Na_jct_buf) - koff * Na_jct_buf
+    in [mM/ms]
+koff = 0.001 [mS/uF]
+    in [mS/uF]
+kon = 0.0001 [1/mM/ms]
+    in [1/mM/ms]
+
+[cell]
+dot(V) = -(INa.i_Na + INab.i_Nab + INaK.i_NaK + IKr.i_Kr + IKs.i_Ks + Itos.i_tos + Itof.i_tof + IK1.i_K1 + INaCa.i_NaCa + ICl_Ca.i_Cl_Ca + IClb.i_Clb + ICaL.i_CaL + ICab.i_Cab + ICap.i_Cap + IKp.i_Kp + i_Stim)
+    in [mV]
+i_Stim = pace * stim_amplitude
+    in [A/F]
+pace = 0 bind pace
+    in [1]
+stim_amplitude = 9.5 [A/F]
+    in [A/F]
+
+[cytosolic_Ca_buffer]
+Bmax_Calmodulin = 0.024 [mM]
+    in [mM]
+Bmax_Myosin_Ca = 0.14 [mM]
+    in [mM]
+Bmax_Myosin_Mg = 0.14 [mM]
+    in [mM]
+Bmax_SRB = 0.0171 [mM]
+    in [mM]
+Bmax_TroponinC = 0.07 [mM]
+    in [mM]
+Bmax_TroponinC_Ca_Mg_Ca = 0.14 [mM]
+    in [mM]
+Bmax_TroponinC_Ca_Mg_Mg = 0.14 [mM]
+    in [mM]
+dot(Ca_Calmodulin) = dCa_Calmodulin
+    in [mM]
+dot(Ca_Myosin) = dCa_Myosin
+    in [mM]
+dot(Ca_SRB) = dCa_SRB
+    in [mM]
+dot(Ca_TroponinC) = dCa_TroponinC
+    in [mM]
+dot(Ca_TroponinC_Ca_Mg) = dCa_TroponinC_Ca_Mg
+    in [mM]
+dot(Mg_Myosin) = dMg_Myosin
+    in [mM]
+dot(Mg_TroponinC_Ca_Mg) = dMg_TroponinC_Ca_Mg
+    in [mM]
+dCa_Calmodulin = kon_Calmodulin * Ca_buffer.Cai * (Bmax_Calmodulin - Ca_Calmodulin) - koff_Calmodulin * Ca_Calmodulin
+    in [mM/ms]
+dCa_Myosin = kon_Myosin_Ca * Ca_buffer.Cai * (Bmax_Myosin_Ca - (Ca_Myosin + Mg_Myosin)) - koff_Myosin_Ca * Ca_Myosin
+    in [mM/ms]
+dCa_SRB = kon_SRB * Ca_buffer.Cai * (Bmax_SRB - Ca_SRB) - koff_SRB * Ca_SRB
+    in [mM/ms]
+dCa_TroponinC = kon_TroponinC * Ca_buffer.Cai * (Bmax_TroponinC - Ca_TroponinC) - koff_TroponinC * Ca_TroponinC
+    in [mM/ms]
+dCa_TroponinC_Ca_Mg = kon_TroponinC_Ca_Mg_Ca * Ca_buffer.Cai * (Bmax_TroponinC_Ca_Mg_Ca - (Ca_TroponinC_Ca_Mg + Mg_TroponinC_Ca_Mg)) - koff_TroponinC_Ca_Mg_Ca * Ca_TroponinC_Ca_Mg
+    in [mM/ms]
+dCa_cytosol_tot_bound = dCa_TroponinC + dCa_TroponinC_Ca_Mg + dMg_TroponinC_Ca_Mg + dCa_Calmodulin + dCa_Myosin + dMg_Myosin + dCa_SRB
+    in [mM/ms]
+dMg_Myosin = kon_Myosin_Mg * model_parameters.Mgi * (Bmax_Myosin_Mg - (Ca_Myosin + Mg_Myosin)) - koff_Myosin_Mg * Mg_Myosin
+    in [mM/ms]
+dMg_TroponinC_Ca_Mg = kon_TroponinC_Ca_Mg_Mg * model_parameters.Mgi * (Bmax_TroponinC_Ca_Mg_Mg - (Ca_TroponinC_Ca_Mg + Mg_TroponinC_Ca_Mg)) - koff_TroponinC_Ca_Mg_Mg * Mg_TroponinC_Ca_Mg
+    in [mM/ms]
+koff_Calmodulin = 0.238 [mS/uF]
+    in [mS/uF]
+koff_Myosin_Ca = 0.00046 [mS/uF]
+    in [mS/uF]
+koff_Myosin_Mg = 5.7e-5 [mS/uF]
+    in [mS/uF]
+koff_SRB = 0.06 [mS/uF]
+    in [mS/uF]
+koff_TroponinC = 0.0196 [mS/uF]
+    in [mS/uF]
+koff_TroponinC_Ca_Mg_Ca = 3.2e-5 [mS/uF]
+    in [mS/uF]
+koff_TroponinC_Ca_Mg_Mg = 0.00333 [mS/uF]
+    in [mS/uF]
+kon_Calmodulin = 34 [1/mM/ms]
+    in [1/mM/ms]
+kon_Myosin_Ca = 13.8 [1/mM/ms]
+    in [1/mM/ms]
+kon_Myosin_Mg = 0.0157 [1/mM/ms]
+    in [1/mM/ms]
+kon_SRB = 100 [1/mM/ms]
+    in [1/mM/ms]
+kon_TroponinC = 32.7 [1/mM/ms]
+    in [1/mM/ms]
+kon_TroponinC_Ca_Mg_Ca = 2.37 [1/mM/ms]
+    in [1/mM/ms]
+kon_TroponinC_Ca_Mg_Mg = 0.003 [1/mM/ms]
+    in [1/mM/ms]
+
+[environment]
+time = 0 [ms] bind time
+    in [ms]
+
+[intracellular_currents]
+
+[ion_diffusion]
+J_Ca_SL_myo = (Ca_buffer.Ca_SL - Ca_buffer.Cai) *  3.72430000000000020e-12 [m^3/s]
+    in [kat]
+J_Ca_jct_SL = (Ca_buffer.Ca_jct - Ca_buffer.Ca_SL) *  8.24130000000000044e-13 [m^3/s]
+    in [kat]
+J_Na_SL_myo = (Na_buffer.Na_SL - Na_buffer.Nai) *  1.63859999999999990e-12 [m^3/s]
+    in [kat]
+J_Na_jct_SL = (Na_buffer.Na_jct - Na_buffer.Na_SL) *  1.83129999999999992e-14 [m^3/s]
+    in [kat]
+
+[model_parameters]
+p1 = 1
+p2 = 1
+p3 = 1
+p4 = 1
+p5 = 1
+
+Cao = 1.8 [mM]
+    in [mM]
+Cli =  p4 * 15 [mM]
+    in [mM]
+Clo =  p5 * 150 [mM]
+    in [mM]
+Cm = 1.381e-10 [F]
+    in [F]
+F =  p3 * 96485 [C/mol]
+    in [C/mol]
+Ki = 135 [mM]
+    in [mM]
+Ko = 5.4 [mM]
+    in [mM]
+Mgi = 1 [mM]
+    in [mM]
+Nao = 140 [mM]
+    in [mM]
+R =  p1 * 8314.3 [mJ/mol/K]
+    in [mJ/mol/K]
+T =  p2 * 310 [K]
+    in [K]
+Vol_Cell =  3.14159265400000010 * (cell_radius / 1000 [1 (0.001)])^2 * cell_length / 1000 [1 (0.001)]^3
+    in [L]
+Vol_SL = 0.02 * Vol_Cell
+    in [L]
+Vol_SR = 0.035 * Vol_Cell
+    in [L]
+Vol_jct = 0.0539 * 0.01 * Vol_Cell
+    in [L]
+Vol_myo = 0.65 * Vol_Cell
+    in [L]
+cell_length = 100 [um]
+    in [um]
+cell_radius = 10.25 [um]
+    in [um]
+
+[reversal_potentials]
+E_Ca_SL = model_parameters.R * model_parameters.T / (2 * model_parameters.F) * log(model_parameters.Cao / Ca_buffer.Ca_SL)
+    in [mV]
+E_Ca_jct = model_parameters.R * model_parameters.T / (2 * model_parameters.F) * log(model_parameters.Cao / Ca_buffer.Ca_jct)
+    in [mV]
+E_Cl = model_parameters.R * model_parameters.T / model_parameters.F * log(model_parameters.Cli / model_parameters.Clo)
+    in [mV]
+E_K = model_parameters.R * model_parameters.T / model_parameters.F * log(model_parameters.Ko / model_parameters.Ki)
+    in [mV]
+E_Na_SL = -15.0
+    in [mV]
+#E_Na_SL = model_parameters.R * model_parameters.T / model_parameters.F * log(model_parameters.Nao / Na_buffer.Na_SL)
+#    in [mV]
+E_Na_jct = model_parameters.R * model_parameters.T / model_parameters.F * log(model_parameters.Nao / Na_buffer.Na_jct)
+    in [mV]
+
+[transmembrane_currents]
+
+[[protocol]]
+# Level  Start    Length   Period   Multiplier
+#-1.0      20.0    5.0      500.0   0
+-1.0       76.0    5.0      500.0   0
+
+
+[[script]]
+import matplotlib.pyplot as plt
+import myokit
+
+# Get model and protocol, create simulation
+m = get_model()
+p = get_protocol()
+s = myokit.Simulation(m, p)
+
+# Run simulation
+d = s.run(1000)
+
+# Display the results
+var = 'cell.V'
+plt.figure()
+plt.plot(d.time(), d[var])
+plt.title(var)
+plt.show()
+
