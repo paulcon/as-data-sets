@@ -124,6 +124,8 @@ def main():
     ap.add_argument('--workers', type=int, default=2)
     ap.add_argument('--check', action='store_true', help='compare with the files next to this script')
     a = ap.parse_args()
+    if os.path.abspath(a.out) == HERE and (a.check or a.rows is not None):
+        ap.error('--check and --rows need --out DIR outside this directory, so that the shipped files are not overwritten')
     os.makedirs(a.out, exist_ok=True)
     t0 = time.perf_counter()
     with mp.Pool(a.workers) as pool:

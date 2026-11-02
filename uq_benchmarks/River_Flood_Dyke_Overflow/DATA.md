@@ -74,7 +74,7 @@ python generate_data.py                           # writes the three CSVs here
 python generate_data.py --out /tmp/flood --check  # writes elsewhere and compares
 ```
 
-The shipped files were written on 2026-10-30 in a Linux container (numpy 2.5.4, scipy 1.18.1, Python 3.13.18). In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31) the run takes 0.2 s (1.0 s with Python start-up) and also prints the gradient check; `--check` finds the files differ from the shipped ones by rounding error: at most a relative 9.2e-16 (inputs) and 1.7e-15 (outputs), and 5.8e-16 absolute (gradients). The notebook runs in about 12 s under nbconvert.
+The shipped files were written on 2026-10-30 in a Linux container (numpy 2.5.4, scipy 1.18.1, Python 3.13.18). In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31) the run takes 0.2 s (1.0 s with Python start-up) and also prints the gradient check; `--check` finds the files differ from the shipped ones by rounding error: at most a relative 9.2e-16 (inputs), 1.7e-15 (outputs) and 4.2e-13 (gradients, largest per-element relative difference; rechecked 2026-11-01). The notebook runs in about 12 s under nbconvert.
 
 ## Accuracy
 

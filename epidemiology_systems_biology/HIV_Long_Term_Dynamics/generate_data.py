@@ -16,7 +16,9 @@ time, never the numbers. The 2026 run took 33 min on three processes (about
 4 s of CPU per sample).
 
 `--check` compares the new files with the ones next to this script and prints
-the largest relative differences.
+the largest relative differences. `--check` and `--rows` need `--out` outside this
+directory, so that the shipped files are not overwritten. inputs.csv is never
+rewritten here (it cannot be redrawn); with `--out` elsewhere a copy is written there.
 
 Only numpy, scipy and the standard library are imported.
 """
@@ -70,14 +72,24 @@ def sample(p):
     return T, G
 
 
-def write(out, X, f, G):
+def write_inputs(out, X):
     names = list(hm.NAMES)
-    t = [str(v) for v in TIMES]
     np.savetxt(os.path.join(out, 'inputs.csv'), X, fmt='%.12g', delimiter=',',
                header='1000 samples of the 27 physical parameters, uniform on nominal +- 2.5 % '
                       '(drawn without a seed in 2016; stored data)\n' + ','.join(names))
     if not np.array_equal(read_csv(os.path.join(out, 'inputs.csv')), X):
         raise RuntimeError('inputs.csv did not round-trip exactly')
+
+
+def write(out, X, f, G):
+    names = list(hm.NAMES)
+    t = [str(v) for v in TIMES]
+    if os.path.abspath(out) == HERE:       # never rewrite the 2016 inputs: no seed, cannot be redrawn
+        X0 = read_csv(os.path.join(out, 'inputs.csv'))
+        if not np.array_equal(X0[:len(X)], X):
+            raise RuntimeError('inputs differ from inputs.csv')
+    else:
+        write_inputs(out, X)
     np.savetxt(os.path.join(out, 'outputs.csv'), f, fmt='%.12e', delimiter=',',
                header=f'T(t) in cells/mm^3 at t = {", ".join(t)} days. {PROVENANCE}\n'
                       + ','.join(f'T({s})' for s in t))
@@ -95,6 +107,8 @@ def main():
     ap.add_argument('--check', action='store_true',
                     help='compare with the CSVs in this directory')
     args = ap.parse_args()
+    if os.path.abspath(args.out) == HERE and (args.check or args.rows != ':'):
+        ap.error('--check and --rows need --out DIR outside this directory, so that the shipped files are not overwritten')
 
     X = read_csv(os.path.join(HERE, 'inputs.csv'))
     a, b = (int(s) if s else None for s in args.rows.split(':'))

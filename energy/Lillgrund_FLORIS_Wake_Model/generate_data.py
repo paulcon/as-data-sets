@@ -81,6 +81,8 @@ def main():
     ap.add_argument('--out', default=HERE, help='output directory (default: this directory)')
     ap.add_argument('--check', action='store_true', help='compare with the CSVs in this directory')
     args = ap.parse_args()
+    if os.path.abspath(args.out) == HERE and (args.check or args.rows != ':'):
+        ap.error('--check and --rows need --out DIR outside this directory, so that the shipped files are not overwritten')
 
     a, b = (int(s) if s else None for s in args.rows.split(':'))
     X = draw()[a:b]

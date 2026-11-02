@@ -106,6 +106,8 @@ def main():
     ap.add_argument('--mc', type=int, default=M_MC, help='Monte Carlo sample size (default 10000)')
     ap.add_argument('--nfd', type=int, default=10, help='samples per case in the finite-difference check')
     args = ap.parse_args()
+    if os.path.abspath(args.out) == HERE and args.mc != M_MC:
+        ap.error('--mc needs --out DIR outside this directory, so that the shipped files are not overwritten')
     os.makedirs(args.out, exist_ok=True)
     t_all = time.perf_counter()
     checks()

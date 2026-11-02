@@ -101,6 +101,8 @@ def main():
     ap.add_argument('--fd-check', type=int, default=0, metavar='K',
                     help='check gradients at the first K stored rows against central differences')
     args = ap.parse_args()
+    if os.path.abspath(args.out) == HERE and (args.check or args.n != M):
+        ap.error('--check and --n need --out DIR outside this directory, so that the shipped files are not overwritten')
 
     if args.fd_check:
         X = read_csv(os.path.join(HERE, 'inputs.csv'))[:args.fd_check]

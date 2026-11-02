@@ -70,6 +70,8 @@ def main():
     ap.add_argument('--out', default=HERE, help='output directory (default: this directory)')
     ap.add_argument('--check', action='store_true', help='compare with the CSVs in this directory')
     args = ap.parse_args()
+    if os.path.abspath(args.out) == HERE and (args.check or args.n != N):
+        ap.error('--check and --n need --out DIR outside this directory, so that the shipped files are not overwritten')
 
     X = draw(args.n)
     os.makedirs(args.out, exist_ok=True)
