@@ -1,7 +1,7 @@
 """Write thermal_compliance.npz: M = 1500 random material distributions, the thermal
 energy E and its exact gradient dE/dtheta, from thermal_model.py.
 
-    python generate_data.py                         # all 1500 samples, writes here (about 25 s)
+    python generate_data.py                         # all 1500 samples, writes here (10-20 s)
     python generate_data.py --rows 0:50 --check     # recompute 50 rows, compare with the file here
     python generate_data.py --fd-check              # exact gradients vs central differences
     python generate_data.py --casm /path/to/CASM    # reproduce the author's stored files
@@ -95,14 +95,21 @@ def casm_check(casm_dir):
           f'smallest eigenvalue {ld[-1]:.2e} (eps*lambda_1 = {np.finfo(float).eps*ld[0]:.1e})')
     np.random.seed(42)  # the CASM notebook's legacy global seed and draw order
     X = np.vstack(np.array([np.random.uniform(-1, 1, 512) for _ in range(512)]).T)
+    E50 = {}
     for bnd in ('casm', 'paper'):
         model = tm.ThermalCompliance(boundary=bnd)
         G = np.array([0.5*model.grad((x + 1)/2) for x in X])     # dE/dx = dE/dtheta / 2
-        Et = np.array([model.energy((x + 1)/2) for x in Xt]) - tm.E_MAX
+        E50[bnd] = np.array([model.energy((x + 1)/2) for x in Xt])
+        Et = E50[bnd] - tm.E_MAX
         lam = np.linalg.eigvalsh(G.T @ G/len(G))[::-1]
-        print(f'boundary={bnd!r}: dfData rel. diff {np.linalg.norm(G - df)/np.linalg.norm(df):.1e}, '
+        row = np.linalg.norm(G - df, axis=1)/np.linalg.norm(df, axis=1)
+        print(f'boundary={bnd!r}: dfData rel. diff {np.linalg.norm(G - df)/np.linalg.norm(df):.1e} '
+              f'(worst row {row.max():.1e}), '
               f'fData max rel. diff {np.max(np.abs(Et - fdata)/np.abs(fdata)):.1e}, '
               f'lambda_1, lambda_2 = {lam[0]:.6e}, {lam[1]:.6e}')
+    dE = np.abs(E50['paper'] - E50['casm'])/E50['casm']
+    print(f'at the {len(Xt)} designs of Xtest.npy the full boundary changes E by {100*dE.min():.2f} to '
+          f'{100*dE.max():.2f} % from the CASM list')
 
 
 def main():

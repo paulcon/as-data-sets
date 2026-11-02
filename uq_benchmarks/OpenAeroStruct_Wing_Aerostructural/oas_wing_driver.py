@@ -207,8 +207,8 @@ class OASWing:
 
         OAS 2.x reads E, G and mrho from the surface dictionaries at compute time, except
         the von Mises component, which caches E and G at setup; both are updated here.
-        Checked during the build: in-place updates and a fresh build agree to rounding
-        in all outputs and gradients (DATA.md, Accuracy)."""
+        In-place updates and a fresh build agree to rounding in all outputs and gradients
+        (check_accuracy.py, check 5)."""
         mat = (float(E), float(G), float(mrho))
         if self._prob is None:
             self._build(*mat)
