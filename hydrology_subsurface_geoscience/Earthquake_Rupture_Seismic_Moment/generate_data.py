@@ -1,9 +1,14 @@
 """Write design_inputs.csv (numpy, scipy) and, with --rerun, fdfault_reruns.csv (needs fdfault).
 
+design_inputs.csv needs only numpy and scipy. fdfault_reruns.csv needs the outside code fdfault
+v1.0.1 (its Python package and compiled binary, run through mpiexec); without it --rerun exits
+with status 1 and says what to install. The shipped reruns stay the record: fdfault is rerun only
+if a problem is found in them.
+
 design_inputs.csv: the paper's two Latin hypercube designs at full precision. fabmogp draws
 them with mogp_emulator 0.4.0 after np.random.seed(seed), seed 4742322 for the 20 training
 runs and 63684 for the 10 validation runs (fabmogp_paper/manuscript/Makefile). They are
-redrawn here (fdfault_problem.lhs_mogp) and matched, row by row, to paper_tables.csv: every
+redrawn here (fdfault_driver.lhs_mogp) and matched, row by row, to paper_tables.csv: every
 input must round to the printed value, or the script stops.
 
 fdfault_reruns.csv: selected rows of paper_tables.csv rerun with the compiled fdfault
@@ -23,7 +28,13 @@ import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-import fdfault_problem as fp  # noqa: E402
+import fdfault_driver as fp  # noqa: E402
+
+INSTALL = ('fdfault v1.0.1 is needed for --rerun and was not found ({}). Install it as DATA.md '
+           '("Regenerating") describes: Open MPI, then git clone https://github.com/edaub/fdfault, '
+           'git checkout v1.0.1, make in fdfault/src, pip install ./fdfault/python; then rerun this '
+           'script with --fdfault-dir (or FDFAULT_DIR) set to the fdfault directory that holds the '
+           'compiled fdfault binary.')
 
 SEEDS = {2: (4742322, 20), 3: (63684, 10)}     # table -> (seed, size)
 COLS = 'normal stress sigma_yy (MPa), shear/normal stress ratio (-), normal stress ratio sigma_xx/sigma_yy (-)'
@@ -64,7 +75,22 @@ def write_design(path):
     return X
 
 
+def require_fdfault(fdfault_dir):
+    """Exit with status 1 and an install message if fdfault cannot be run."""
+    import shutil
+    try:
+        import fdfault  # noqa: F401
+        import fdfault.analysis  # noqa: F401
+    except ImportError:
+        sys.exit(INSTALL.format('no Python package fdfault'))
+    if not fdfault_dir or not os.path.isfile(os.path.join(fdfault_dir, 'fdfault')):
+        sys.exit(INSTALL.format(f'no fdfault binary in --fdfault-dir {fdfault_dir!r}'))
+    if shutil.which('mpiexec') is None:
+        sys.exit(INSTALL.format('no mpiexec on the PATH'))
+
+
 def rerun(rows, fdfault_dir, out):
+    require_fdfault(fdfault_dir)
     tab, X, _ = design_inputs()
     work = tempfile.mkdtemp(prefix='fdfault_')
     lines = []

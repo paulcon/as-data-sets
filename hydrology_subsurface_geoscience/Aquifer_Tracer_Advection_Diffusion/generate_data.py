@@ -1,7 +1,11 @@
 """Regenerate the inputs, outputs and gradients of Aquifer_Tracer_Advection_Diffusion.
 
-    python generate_data.py --fd            # writes all files here (about 10-15 min, one process)
-    python generate_data.py --out /tmp/t --nmain 20 --nconv 5 --check
+    python generate_data.py --fd                                 # writes all files here
+    python generate_data.py --out DIR --check --fd               # writes to DIR, compares with the files here
+    python generate_data.py --out DIR --nmain 20 --nconv 5 --check   # a subset
+
+--check, --nmain and --nconv need --out DIR outside this directory, so that the shipped files are
+never overwritten. Run times are in DATA.md.
 
 Inputs: M = 500 Monte Carlo draws of the 10 KLE coefficients z ~ N(0, I),
 numpy default_rng(SEED).standard_normal((500, 10)).
@@ -18,7 +22,7 @@ Crank-Nicolson steps:
 
 Gradients are exact derivatives of the discrete model (tangent-linear mode in
 tracer_model.py). --check compares the new values with the files next to this
-script (row for row, on the rows computed); --fd also prints a central-difference
+script (row for row, on the rows computed; relative differences); --fd also prints a central-difference
 check of the gradients at five rows on orders 21 and 11. Only numpy, scipy and
 the standard library are imported.
 """
@@ -103,6 +107,10 @@ def main():
     ap.add_argument("--check", action="store_true")
     ap.add_argument("--fd", action="store_true")
     args = ap.parse_args()
+    here = os.path.abspath(args.out) == HERE
+    if here and (args.check or args.nmain < M or args.nconv < NCONV):
+        ap.error("--check, --nmain and --nconv need --out DIR outside this directory, "
+                 "so that the shipped files are not overwritten")
     os.makedirs(args.out, exist_ok=True)
 
     X = np.random.default_rng(SEED).standard_normal((M, tm.M_KLE))
@@ -112,9 +120,7 @@ def main():
     models = {s: tm.TracerModel(order=SETS[s][0], nsteps=64) for s in SETS}
     t0 = time.perf_counter()
     results = {s: run(models[s], X[:nrows[s]], f"order {SETS[s][0]}") for s in SETS}
-    full = nmain == M and nconv == NCONV
-    if full or os.path.abspath(args.out) != HERE:
-        write(args.out, X[:nmain], results)
+    write(args.out, X[:nmain], results)
     print(f"total {time.perf_counter() - t0:.0f} s", flush=True)
 
     if args.fd:

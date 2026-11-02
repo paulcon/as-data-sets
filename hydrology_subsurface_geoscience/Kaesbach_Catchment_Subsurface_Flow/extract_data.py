@@ -14,10 +14,13 @@ Usage
     python extract_data.py /path/to/activeSubSpPilotData.mat          # write the CSVs
     python extract_data.py /path/to/activeSubSpPilotData.mat --check  # compare only
 
-The conversion is lossless: values are written with 17 significant digits and
-``--check`` confirms that the files read back bit for bit (inputs_unit.csv,
-outputs.csv) and that inputs.csv maps back to u within 1e-12. Nothing in the
-.mat file is executed; scipy.io.loadmat only reads arrays.
+It writes inputs_unit.csv (Rorg) and outputs.csv (obsMTRX). The conversion is
+lossless: values are written with 17 significant digits and ``--check``
+confirms that both files read back bit for bit (the signs of zeros included).
+Physical inputs are not stored: the notebook computes them from inputs_unit.csv
+with kaesbach_inputs.to_physical (a map that is partly assumed, see DATA.md);
+``--check`` also prints the round-trip error of that map on Rorg. Nothing in
+the .mat file is executed; scipy.io.loadmat only reads arrays.
 """
 
 import argparse
@@ -33,7 +36,6 @@ import kaesbach_inputs as ki  # noqa: E402
 
 FILES = {
     "unit": os.path.join(HERE, "inputs_unit.csv"),
-    "phys": os.path.join(HERE, "inputs.csv"),
     "out": os.path.join(HERE, "outputs.csv"),
 }
 
@@ -52,35 +54,28 @@ def headers():
             "stored in the supplement (coordinate u in [0,1]; see kaesbach_inputs.py for the map "
             "to physical units)",
             ",".join(n + " [u]" for n in ki.NAMES))
-    phys = ("Erdal & Cirpka (2019) HydroGeoSphere ensemble, 10050 runs: the 32 inputs in physical "
-            "units, computed from inputs_unit.csv by kaesbach_inputs.to_physical (map status per "
-            "column in DATA.md)",
-            ",".join("%s [%s]" % (n, u) for n, u in zip(ki.NAMES, ki.UNITS)))
     out = ("Erdal & Cirpka (2019) HydroGeoSphere ensemble, 10050 runs: the 9 outputs exactly as "
            "stored in the supplement (row i matches row i of inputs_unit.csv); residence-time unit "
            "not stated by the authors: Fig. 8 years = stored value / 17520 (see DATA.md)",
            ",".join("%s [%s]" % (n, u) for n, u in zip(ki.OUTPUT_NAMES, ki.OUTPUT_UNITS)))
-    return unit, phys, out
+    return unit, out
 
 
 def write(U, Y):
-    hu, hp, ho = headers()
+    hu, ho = headers()
     np.savetxt(FILES["unit"], U, fmt="%.17g", delimiter=",", header="\n".join(hu))
-    np.savetxt(FILES["phys"], ki.to_physical(U), fmt="%.17g", delimiter=",",
-               header="\n".join(hp))
     np.savetxt(FILES["out"], Y, fmt="%.17g", delimiter=",", header="\n".join(ho))
 
 
 def check(U, Y):
     Uf = np.loadtxt(FILES["unit"], delimiter=",")
     Yf = np.loadtxt(FILES["out"], delimiter=",")
-    Xf = np.loadtxt(FILES["phys"], delimiter=",")
     ok_u = np.array_equal(Uf, U)
     ok_y = np.array_equal(Yf, Y) and np.array_equal(np.signbit(Yf), np.signbit(Y))
-    err = np.max(np.abs(ki.to_unit(Xf) - U))
+    err = np.max(np.abs(ki.to_unit(ki.to_physical(U)) - U))
     print("inputs_unit.csv identical to Rorg: %s" % ok_u)
     print("outputs.csv identical to obsMTRX (signs of zeros included): %s" % ok_y)
-    print("inputs.csv -> u, max |difference|: %.1e" % err)
+    print("u -> physical -> u (kaesbach_inputs), max |difference|: %.1e" % err)
     return ok_u and ok_y and err < 1e-12
 
 

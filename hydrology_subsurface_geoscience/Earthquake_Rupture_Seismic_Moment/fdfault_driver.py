@@ -8,10 +8,12 @@ fault profile seed 18749) is theirs, unchanged at the default keywords. Changes:
 -> complex (numpy 2); scipy.integrate.simps -> simpson (identical for 401 points); absolute
 paths; the friction constants, profile seed and grid refinement as keywords; the moment
 returned with the final-slip profile; and the Latin hypercube of mogp_emulator 0.4.0
-(LatinHypercubeDesign._draw_samples, MIT) written out with numpy.
+(LatinHypercubeDesign._draw_samples; MIT licence, Copyright (c) 2019 The Alan Turing
+Institute) written out with numpy.
 
-Needs the fdfault Python package and the compiled fdfault binary (see DATA.md); lhs_mogp
-needs numpy only.
+A driver of the outside code fdfault, not a numpy/scipy model: create_problem and run need
+the fdfault Python package and the compiled fdfault binary (see DATA.md); lhs_mogp needs
+numpy only.
 """
 import os
 import subprocess

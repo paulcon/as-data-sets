@@ -16,6 +16,7 @@ scripted conversion of it. No value has been changed, and no row has been droppe
 | `inputs.csv` | 300 × 20: per1, per2, per3, perz1–perz4, d1–d3, dt1–dt3, kd1–kd3, poros, i1, i2, i3, physical units, the number strings of `marthedata.txt` unchanged | stored data (converted) |
 | `outputs.csv` | 300 × 10: Sr-90 concentration (Bq/l) at the end of 2010 at wells p102K, p104, p106, p2.76, p29K, p31K, p35K, p37K, p38, p4b, same rows | stored data (converted) |
 | `convert_data.py` | writes the two CSVs from `marthedata.txt` (checks its SHA-256 first); `--check` verifies that the shipped CSVs are byte-identical to a fresh conversion and that every value and number string equals the source | conversion and check |
+| `check_accuracy.py` | recomputes the numbers of this file that the notebook and `convert_data.py` do not print (numpy, scipy) | check |
 
 The CSVs are plain comma-separated numbers after two `#` lines (a description, and the column
 names with units), so `np.loadtxt(path, delimiter=',')` reads them. `[n.r.]` marks a unit the paper
@@ -64,12 +65,14 @@ The paper does not label the two Weibull parameters. The VLSE page lists them as
 "where α is the shape parameter, and β is the scale parameter" (page fetched 2026-11-01), so the first
 number is the shape and the second the scale. The data agree: Kolmogorov–Smirnov p-values are 0.32,
 1.00 and 0.71, and both Latin-hypercube blocks (below) are stratified in those CDFs; the reverse
-reading (shape ≈ 20, scale ≈ 1) is incompatible with values up to 148. The kd distributions were fitted to measured histograms (Fig. 5); the other
+reading (shape ≈ 20, scale ≈ 1) is incompatible with the data: the largest values are 95.1, 148.0 and
+89.8, and its Kolmogorov–Smirnov p-values are 0 to printed precision (`check_accuracy.py`, check 2). The kd distributions were fitted to measured histograms (Fig. 5); the other
 inputs are uniform for lack of data (Sec. 4.1).
 
 **Quantity of interest**: the Sr-90 concentration (Bq/l, Fig. 6 caption, p. 27) predicted by the
 model at an observation well at the end of 2010 (Sec. 4.1). The paper used 20 wells, dropped two with
-negligible concentrations in all runs, and analysed 18 (Sec. 4.2). The VLSE file has 10:
+negligible concentrations in all runs, and analysed 18 (Sec. 4.2, p. 26; Table 3 has 18 rows, but
+Table 2 lists all 20, see "Inconsistencies in the paper" below). The VLSE file has 10:
 p102K, p104, p106, p2.76 (the paper's "p2–76"), p29K, p31K, p35K, p37K, p38, p4b. The VLSE page
 gives no unit or year for them; the year and unit above come from the paper, and the file's
 outputs reproduce the paper's Table 2 (below), so they are the paper's 2010 concentrations.
@@ -98,7 +101,9 @@ and whether the paper's analysis used the same 300 rows in this order, is not st
 
 **Data source**: https://www.sfu.ca/~ssurjano/marthe.html (S. Surjanovic and D. Bingham, Simon
 Fraser University), data file https://www.sfu.ca/~ssurjano/Code/marthedata.txt, downloaded
-2026-11-01 by P. Constantine's browser (the container cannot reach sfu.ca). The page says the data
+2026-11-01 by P. Constantine's browser. Both were fetched again on 2026-11-02: the file has the same
+SHA-256, and the page still says "The computer code is no longer accessible" and "where α is the shape
+parameter, and β is the scale parameter", and states no licence or copyright for the data. The page says the data
 were obtained from the "Benchmark Proposals of GdR MASCOT-NUM" page
 (http://www.gdr-mascotnum.fr/benchmarks.html), retrieved April 2014, and cites the paper above and
 A. Marrel, B. Iooss, F. Van Dorpe, E. Volkova, "An efficient methodology for modeling complex
@@ -113,19 +118,21 @@ is no longer accessible. The CSVs are regenerated from the shipped source file w
 ```bash
 python convert_data.py           # writes inputs.csv and outputs.csv (< 1 s)
 python convert_data.py --check   # verifies them; prints OK
+python check_accuracy.py         # the precision and Weibull numbers of this file (< 1 s)
 ```
 
-`--check` on the shipped files: both CSVs byte-identical to a fresh conversion, parsed values
+`--check` on the shipped files (`.venv`, 2026-11-02): both CSVs byte-identical to a fresh conversion, parsed values
 identical to `np.loadtxt('marthedata.txt', skiprows=1)` (`np.array_equal`), every number string
 identical, SHA-256 of `marthedata.txt` as above.
 
 ## Accuracy
 
-- **Conversion**: exact (above). The file's own precision is as written by the source: median
-  5 significant digits for most inputs in rows 1–200 and 7–10 in rows 201–300 (trailing zeros
-  dropped, so some values show fewer), 7–8 for the conditional inputs dt1–dt3, i2 and i3 in all
-  rows, 3 for every i1 (267 distinct values in 300 rows), and
-  7 for most concentrations (very small values with fewer).
+- **Conversion**: exact (above). The file's own precision is as written by the source
+  (`check_accuracy.py`, check 1; trailing zeros are not written, so some values show fewer digits):
+  a median of 5 significant digits for each of the 14 unconditional inputs in rows 1–200 and 7–10 in
+  rows 201–300, 7–8 for the conditional inputs dt1–dt3, i2 and i3 in all rows, at most 3 for i1
+  (267 distinct values in 300 rows), and a median of 7 for each concentration column (433 of the
+  3,000 entries have fewer).
 - **Identity with the paper**: the notebook repeats the paper's rank regression. R²* equals Table 2
   to the printed two decimals at all 10 wells (max difference 0.00), and all 54 SRRC entries of
   Table 2 for these wells equal the notebook's to the integer (checked in the notebook). So the file's
@@ -154,14 +161,24 @@ output scale; p2.76 and p38 are poor on both scales. The paper's boosting-tree s
 indices are not recomputed. The paper's description of the design (one Latin hypercube of 300) does
 not match the file (above).
 
+## Inconsistencies in the paper
+
+Recorded here; none affects the data or the notebook.
+- Sec. 4.2 (p. 26) says two of the 20 outputs were removed and "Eighteen output variables are now to be
+  considered". Table 3 (p. 28) has 18 rows (no p107, p110), but Table 2 (p. 28) has all 20, including
+  p107 (R²* 0.92) and p110 (0.63).
+- P. 27 says R²* "has a value greater than 70% for 12 out of 18 output variables (see Table 2)" and
+  lists p107, which is not in Table 3, and p109, whose R²* in Table 2 is 0.70, not above it.
+
 ## License and credit
 
-The VLSE page and the GdR MASCOT-NUM source state no licence for the data. Per the repository
-author's decision of 2026-10-30, data with no stated licence are hosted with credit: please cite
-Volkova, Iooss and Van Dorpe (2008), doi:10.1007/s00477-006-0093-y, for the model and runs, and the
-Virtual Library of Simulation Experiments (S. Surjanovic and D. Bingham,
-https://www.sfu.ca/~ssurjano/marthe.html) for the hosted file. `convert_data.py` and the notebook
-are MIT; the notebook's text and figures are CC BY 4.0 with the repository.
+The VLSE page and the GdR MASCOT-NUM source state no licence for the data. `marthedata.txt` is
+therefore hosted with the source credited (the repository author's decision of 2026-10-30 on data with
+no stated licence) and is listed in the exceptions list of `LICENSE-DATA`; `inputs.csv` and
+`outputs.csv` are a lossless conversion of it and carry the same credit. Please cite Volkova, Iooss and
+Van Dorpe (2008), doi:10.1007/s00477-006-0093-y, for the model and runs, and the Virtual Library of
+Simulation Experiments (S. Surjanovic and D. Bingham, https://www.sfu.ca/~ssurjano/marthe.html) for the
+hosted file. `convert_data.py`, `check_accuracy.py` and the notebook are MIT (`LICENSE`).
 
 ## Unknowns (questions for the authors)
 
