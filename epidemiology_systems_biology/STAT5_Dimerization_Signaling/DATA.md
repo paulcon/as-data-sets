@@ -49,14 +49,14 @@ with w_AA = k_phos Epo(t) A², w_AB = k_phos Epo(t) A B, w_BB = k_phos Epo(t) B�
 
 Held at their benchmark values (fixed, not estimated, in `parameters.tsv`): ratio = 0.693, specC17 = 0.107. Fixed in the SBML: total STAT5 207.6, Epo(0) = 1.25e-7, V_c = 1.4, V_n = 0.45.
 
-**The study box: our choice, and why.** The paper gives no input distribution: it says only that "upper- and lower bounds are defined for all parameters. In most cases, these bounds cover eight orders of magnitude or even more" (Sec. 2.3, p. 5), and recommends a log10 scale for estimation (Sec. 4.2, p. 6). The PEtab bounds are [1e-5, 1e5] for all six rates, ten decades. The paper card flagged that such bounds might give stiff or failed solves. We checked this with scratch scripts:
+**The study box: our choice, and why.** The paper gives no input distribution: it says only that "upper- and lower bounds are defined for all parameters. In most cases, these bounds cover eight orders of magnitude or even more" (Sec. 2.3, p. 5), and recommends a log10 scale for estimation (Sec. 4.2, p. 6). The PEtab bounds are [1e-5, 1e5] for all six rates, ten decades. Bounds that wide might give stiff or failed solves. We checked this in external runs, not reproducible from the repository:
 
 - **Full PEtab box.** All 64 corners and 200 random points solved with Radau at rtol = atol = 1e-10, at a median 0.06 s. In a further 300 random points, all solved, but 79.7 % have a time-averaged pSTAT5A_rel below 1 %, only 15 % lie between 5 and 95 %, and 54 % of all observable values at the 15 times are below 1 % or above 99 %. Over most of that box the model barely responds to Epo, so an active subspace there would describe the on/off switch, not the measured dynamics.
 - **Our box.** We take the best fit ± 1 decade in each rate, clipped to the PEtab bounds. Three rates are clipped (k_exp_hetero at the lower bound; k_imp_homo and k_phos at the upper), so their intervals are 1.0, 1.01 and 1.80 decades wide instead of 2. All 64 corners and 200 random points solved (median 1.8 s per plain solve with four processes sharing two cores), and the time-averaged pSTAT5A_rel spans 0.93–99.06 % there.
 
 The box is defensible as "the neighborhood of the fit to the data", but it is not from the paper, and the results depend on it. The authors could replace it with a profile-likelihood or posterior range.
 
-**Quantities of interest.** The benchmark's objective is the likelihood. Following the brief, we use smooth physical outputs instead:
+**Quantities of interest.** The benchmark's objective is the likelihood. We use smooth physical outputs instead: they describe the model's response to Epo directly, and they need no measurements, while a likelihood needs the 48 measurements and the 3 noise parameters, and we do not ship the measurements (see "Measurements not shipped" below). The outputs are:
 
 - main QoI `pSTAT5A_rel_mean`: (1/240) ∫₀²⁴⁰ pSTAT5A_rel(t) dt, the time-averaged relative phosphorylation of STAT5A (%);
 - the same time averages for pSTAT5B_rel and rSTAT5A_rel;
@@ -66,7 +66,7 @@ The time averages are quadrature states integrated with the ODE. Every output is
 
 **Gradients.** From the forward sensitivity equations with respect to ξ, dS/dt = J S + (∂f/∂θ) diag(θ ln 10), S(0) = 0, solved together with the model and the quadratures in one 77-state Radau solve (rtol = atol = 1e-10) with an analytic Jacobian of the model (the Newton matrix omits the second-derivative coupling of S to y, which affects only convergence). Gradients of the observables are ∇_y h · S at the output times; gradients of the time averages are quadrature states.
 
-**Sampling design.** N = 1000 independent uniform samples of ξ, `numpy.random.default_rng(2019).random((1000, 6))` mapped to the box. The brief's minimum for the gradient estimator is max(10 m, 300) = 300. The paper has no forward sampling study; it uses multistart optimization.
+**Sampling design.** N = 1000 independent uniform samples of ξ, `numpy.random.default_rng(2019).random((1000, 6))` mapped to the box, about 170 per input. The paper has no forward sampling study; it uses multistart optimization.
 
 **Published results.** The paper reports no sensitivity or active-subspace result for this model. For the Boehm problem it gives the model size (Table 1) and uses it, with the other 19 models, in its studies of log-transformation and optimizer performance, with no number specific to this model that we can reproduce. The collection provides the best-fit parameters (PEtab `nominalValue`), not printed in the paper.
 
@@ -86,7 +86,7 @@ The seed is fixed and the samples are the first N rows of one stream, so a run r
 
 ## Accuracy
 
-These checks were made with scratch scripts, not committed:
+The first four checks are external runs, not reproducible from the repository; the last is in the notebook:
 
 - **Against the benchmark repository.** At the PEtab best fit, the observables at the 16 measurement times agree with the repository's `simulations.tsv` to 2.0e-6 (absolute, per cent), and the Gaussian negative log-likelihood of the 48 measurements with the best-fit noise parameters is 138.222.
 - **Outputs.** At 5 samples (rows 0, 200, 400, 600, 800), the shipped outputs agree with the same solve at rtol = atol = 1e-12 to a relative 4.6e-9 at worst.
