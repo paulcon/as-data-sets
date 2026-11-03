@@ -24,7 +24,7 @@ Checks (DATA.md, "Accuracy"):
 
 The notebook prints the other numbers of the section: the contraction factor, the outputs at the
 OpenTURNS tolerance 1e-3, the 20-sample check at step 1e-4 sd, and the outputs of this model with
-the OpenTURNS conventions (omega_max = 6000 rad/s, mu = 3.986004418e14).
+OpenTURNS's omega_max = 6000 rad/s (its mu, 3.986e14, is Table 1's).
 
 Deterministic (fixed rows and seed). Imports numpy, scipy (through fire_satellite_model) and the
 standard library, and openturns for check 2. Writes nothing.
