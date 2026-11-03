@@ -2,6 +2,8 @@
 
 Instructions for a later PR (author, 2026-11-03), written so that Claude, or anyone else, can do it without the history of this repository. Until that PR, the numbers listed below are labelled "external run, not reproducible from the repository" in their DATA.md.
 
+**Done in [#71](https://github.com/paulcon/as-data-sets/pull/71) (2026-11-03)** for all twelve data sets below; what changed is in `docs/TODO.md` ("Done in #71"). The instructions are kept for data sets added later.
+
 ## The rule
 
 `docs/README.md` ("Two kinds of data sets", decision A8 of 2026-11-02, revised): every number in a DATA.md Accuracy section that neither the notebook nor the generating or converting script prints comes from a `check_accuracy.py` in the data-set directory. If the check needs an outside code, the script runs where that code is installed and otherwise exits with status 1 and a message naming what to install and saying to rerun it. A number that no script here can produce (a commercial code, a lost run) keeps the label "external run, not reproducible from the repository".

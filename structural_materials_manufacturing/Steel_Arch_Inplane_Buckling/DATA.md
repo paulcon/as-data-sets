@@ -9,6 +9,7 @@ Kind: **Python model**. The model is `arch_buckling_model.py`, a closed-form for
 | `Steel_Arch_Inplane_Buckling.ipynb` | the case study (Python 3, active_subspaces v1) | executed top to bottom with seed 2020; outputs committed |
 | `arch_buckling_model.py` | `buckling_load(X, case, grad)`, `slenderness`, `branch`, `coefficient`, `section`, `implied_span`, `sample`; `NAMES`, `UNITS`, `LOWER`, `UPPER`, `CASES` | the model |
 | `generate_data.py` | writes the four CSVs (`--check` compares a rerun with them) | regenerates the data |
+| `check_accuracy.py` | the complex-step check of the gradients (Accuracy), which the notebook and `generate_data.py` do not print; 0.01 s in `.venv` (0.15 s with start-up; 2026-11-03) | check |
 | `inputs.csv` | 1000 × 7 physical inputs S (m), Φ (rad), E (MPa), D, B, t_w, t_f (m), columns in the order of `NAMES` | model input |
 | `outputs.csv` | 1000 × 3: N_acr of the fixed arch (kN), N_acr of the pin-ended arch (kN), slenderness λ | model output |
 | `gradients_fixed.csv` | 1000 × 7: ∂N_acr/∂x_j for the fixed arch, kN per unit of input j (**physical** inputs) | model output |
@@ -92,7 +93,7 @@ The shipped files were written on 2026-10-30 in a Linux container (Python 3, num
 
 ## Accuracy
 
-- **Gradients vs. complex step** (external run, not reproducible from the repository: an independent re-implementation of the formulas in complex arithmetic, step 10⁻²⁰ of each input's range): maximum relative error of the gradient vector over the 1000 samples 7.4e-16 (fixed) and 1.2e-15 (pin-ended).
+- **Gradients vs. complex step** (`check_accuracy.py`, check 1: an independent re-implementation of the formulas in complex arithmetic, step 10⁻²⁰ of each input's range): maximum relative error of the gradient vector over the 1000 samples of order 10⁻¹⁵ for both cases (7.0e-16 fixed, 1.1e-15 pin-ended in `.venv`), rounding error.
 - **Gradients vs. central differences** (notebook check cell; step 10⁻⁶ of each input's range; samples within 10⁻⁴ of the pin-ended switch would be left out, none are): maximum relative error 6.3e-9 (fixed) and 6.0e-9 (pin-ended), median 1.5e-9 for both, the truncation and rounding error of the difference.
 - **Outputs**: the notebook re-evaluates the model at the 1000 inputs and finds a relative difference from `outputs.csv` of 9.1e-16 (fixed) and 7.6e-16 (pin-ended), rounding error.
 - **Formula reading**: continuity of the fixed-arch branches at λ = 18.6 (to 0.0006 in c) checks the square-root reading of Eq. (3). Eq. (2) has the 1.6 % jump noted above, which is in Pi et al. (2002) as well (see "Against Pi, Bradford and Uy").
