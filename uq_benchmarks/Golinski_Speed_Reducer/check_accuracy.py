@@ -25,6 +25,12 @@
    DATA.md: 2974.8 and 3029.8; 2800.8 and 2863.0; 2044.8 and 2303.8; 2471.5 and 2893.4 cm^3.
    The script first checks that the same sum with the reading used here, hub (pi/4)(d_p^2 - d_k^2)
    2 d_k, equals golinski_model.volume.
+3. Free hub and shaft coefficients. With the rim and web terms as above, the hub term and the shaft
+   term are each multiplied by an unknown coefficient (1 is the reading itself), and the two
+   coefficients are solved for from the two Table 1 volumes (2236.35 and 2247.79 cm^3), for the hub
+   used here (length 2 d_k) and the hub as printed (2b), each with d_k^2 l_k and d_k l_k shafts.
+   DATA.md: hub 2 d_k gives hub coefficients -7.7 and -4.9; hub 2b gives shaft coefficients -4.3
+   and -20.9 (hub coefficients +1.3 and +1.4).
 
 The other numbers of the Accuracy section are printed by the notebook (gradients against
 central differences; expanded against geometric volume), and so is the volume of the reading
@@ -44,7 +50,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import golinski_model as gm  # noqa: E402
 
-# Golinski (1970), Table 1, p. 300: inputs (b, m_t, l1, l2, d1, d2), z
+# Golinski (1970), Table 1, p. 300: inputs (b, m_t, l1, l2, d1, d2), z, and the volumes (cm^3)
+TABLE1_VOLUMES = (2236.35, 2247.79)
 DESIGNS = {'crude Monte Carlo': (np.array([4.4, 0.6, 7.3, 8.1, 3.4, 5.0]), 17),
            'stray process': (np.array([3.6, 0.7, 6.6, 8.2, 2.8, 5.2]), 18)}
 
@@ -104,6 +111,20 @@ def main():
     for label, text, hub, shaft, quoted in READINGS:
         v = [volume_reading(x, z, HUBS[hub], SHAFTS[shaft]) for x, z in DESIGNS.values()]
         print(f'   ({label}) {text:42s} {v[0]:7.1f} {v[1]:7.1f}   (DATA.md: {quoted[0]:.1f} and {quoted[1]:.1f})')
+
+    def zero(*args):
+        return 0.0
+    print('3. hub and shaft coefficients solved from the two Table 1 volumes:')
+    for hub, hub_text in (('used', 'hub 2 d_k (used)'), ('as printed', 'hub 2b (printed)')):
+        for shaft, quoted in zip(('d^2 l', 'd l'), {'used': ('-7.7, shaft +46.6', '-4.9, shaft +137.7'),
+                                                    'as printed': ('+1.3, shaft -4.3', '+1.4, shaft -20.9')}[hub]):
+            A, r = [], []
+            for x, z in DESIGNS.values():
+                rest = volume_reading(x, z, zero, zero)
+                A.append([volume_reading(x, z, HUBS[hub], zero) - rest, volume_reading(x, z, zero, SHAFTS[shaft]) - rest])
+                r.append(rest)
+            a, c = np.linalg.solve(np.array(A), np.array(TABLE1_VOLUMES) - np.array(r))
+            print(f'   {hub_text:17s} {shaft:5s} shafts: hub {a:+.1f}, shaft {c:+.1f}   (DATA.md: hub {quoted})')
     print(f'run time {time.perf_counter() - t0:.2f} s')
 
 
