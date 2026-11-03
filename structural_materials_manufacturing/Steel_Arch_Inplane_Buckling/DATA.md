@@ -18,7 +18,7 @@ The CSVs are plain comma-separated numbers after two `#` lines (a description an
 
 ## Model
 
-**Citation.** T.-H. Nguyen, "Global sensitivity analysis of in-plane elastic buckling of steel arches", *Engineering, Technology & Applied Science Research* 10(5):6476–6480, 2020, doi:[10.48084/etasr.3833](https://doi.org/10.48084/etasr.3833). Read from the journal's open-access PDF (journal header and page numbers; the file is named `_oa`, but it is the published version). The formulas are those of Y.-L. Pi, M. A. Bradford and B. Uy, "In-plane stability of arches", *Int. J. Solids Struct.* 39(1):105–125, 2002, doi:[10.1016/S0020-7683(01)00209-8](https://doi.org/10.1016/S0020-7683(01)00209-8) (the paper's ref. [14]); Pi et al. was not read, so the formulas are as the 2020 paper states them.
+**Citation.** T.-H. Nguyen, "Global sensitivity analysis of in-plane elastic buckling of steel arches", *Engineering, Technology & Applied Science Research* 10(5):6476–6480, 2020, doi:[10.48084/etasr.3833](https://doi.org/10.48084/etasr.3833). Read from the journal's open-access PDF (journal header and page numbers; the file is named `_oa`, but it is the published version). The formulas are those of Y.-L. Pi, M. A. Bradford and B. Uy, "In-plane stability of arches", *Int. J. Solids Struct.* 39(1):105–125, 2002, doi:[10.1016/S0020-7683(01)00209-8](https://doi.org/10.1016/S0020-7683(01)00209-8) (the paper's ref. [14]). We read Pi et al. (2002) and checked the 2020 paper's formulas against it (below).
 
 **Equations** (paper pp. 6476–6477). In-plane elastic buckling load of a shallow (Φ < 90°) circular steel I-section arch under uniform compression:
 
@@ -28,14 +28,22 @@ The CSVs are plain comma-separated numbers after two `#` lines (a description an
 - Eq. (3), fixed: N_acr = (0.36 + 0.0011 λ²) N_cr for 9.87 < λ < 18.6; (0.6 + 0.4 √(1 − 3.109 π⁴/λ²)) N_cr for λ > 18.6.
 - Eqs. (4)–(5), deep arches (Φ > 90°), are not needed: Φ ≤ 44° here.
 
-The square roots in the second branches are visible in the typeset equations (page image) but missing from the PDF's text layer; the paper card had flagged these terms as garbled. With the square roots, the fixed-arch branches meet at λ = 18.6 (c = 0.7406 and 0.7412), which supports the reading. The pin-ended branches do not meet: at λ = 9.38, c = 0.6779 on the first branch and 0.6670 on the second, a drop of 1.6 %, presumably from rounded constants. The model reproduces the jump.
+The square roots in the second branches are visible in the typeset equations (page image) but missing from the PDF's text layer. With the square roots, the fixed-arch branches meet at λ = 18.6 (c = 0.7406 and 0.7412), which supports the reading. The pin-ended branches do not meet: at λ = 9.38, c = 0.6779 on the first branch and 0.6670 on the second, a drop of 1.6 %. The model reproduces the jump.
+
+**Against Pi, Bradford and Uy (2002)** (pages of Int. J. Solids Struct. 39). The four branch formulas are their Eqs. (59) and (51) (pin-ended, pp. 114–115) and (78) and (69) (fixed, pp. 117–118), with the same constants (their 30.686π² in Eq. 69 is 3.109π⁴) and the same branch limits: 3.88 = π³/8 (p. 115), 9.38 (p. 114), 9.87 = π² (p. 118) and 18.60 (p. 118).
+
+- *Slenderness.* Pi et al. define λ_s = RΘ²/r_x = S²/(4 r_x R) (Eq. 33, p. 112), with R the radius, S the developed length of the arch and Θ **half** the included angle (nomenclature, p. 107). With Φ = 2Θ the full included angle and S = RΦ this is SΦ/(4 r_x), the 2020 paper's Eq. (1). The definitions agree, and the model's Φ is the full included angle (Table II: 36°–44°, shallow by Pi et al.'s criterion 2Θ < 90°, p. 116).
+- *Column loads.* N_cr with k = 0.5 is their N_P = π²EI/(S/2)² (Eq. 10, p. 109), the load used in Eqs. (51) and (59). N_cr with k = 0.35 is their N_FB = (1.4303π)²EI/(S/2)² (Eq. 12), the second-mode load of a fixed column, used in Eq. (69): 0.5/1.4303 = 0.3496.
+- *Eq. (78).* Pi et al. print the first fixed branch with N_P, not N_FB. With N_P it would neither meet Eq. (69) at λ_s = 18.60 nor approach their exact limit N_ss = π²EI/(S/2)² (Eq. 80) at λ_s = π² (it gives 0.467 N_P there; with N_FB, 0.467 × 1.4303² = 0.956 N_P). So we read N_P in Eq. (78) as a misprint for N_FB, as the 2020 paper does (k = 0.35 for both fixed branches). This is inferred from the equations, not stated by the authors.
+- *The pin-ended jump* is in the source. Pi et al. find that the exact symmetric and anti-symmetric loads are equal at λ_s = 9.38 (p. 114); their approximation (59) is 1.6 % above their Eq. (51) there.
+- *Below λ_s = 9.87* a fixed shallow arch does not buckle (p. 118). See choice 4.
 
 **Choices made here** (the paper does not settle them; each is also in the notebook):
 
 1. **Independent parameterization.** The paper samples S, L and Φ independently (Table II). But L does not enter Eqs. (1)–(6), and for a circular arch of radius R = S/Φ the span is L = 2R sin(Φ/2), fixed by S and Φ. The Table II range of L (9–10 m) is also impossible with those of S and Φ: the chord of an arc is shorter than the arc, and S ≤ 7.679 m; S and Φ imply L ∈ [6.13, 7.55] m. (Table II's S range equals 10 Φ, i.e. R = 10 m at the end points, which suggests a common radius was intended, but S and Φ are sampled independently.) We take the inputs as the seven quantities in the formulas, (S, Φ, E, D, B, t_w, t_f), independent and uniform on the Table II ranges; L is left out. Its Sobol' indices are then 0 by construction, as they would be for the paper's model too.
 2. **Young's modulus.** Table II prints 18E5–22E5 MPa (1800–2200 GPa), ten times the modulus of steel. We use 1.8e5–2.2e5 MPa. The active subspace and Sobol' indices do not depend on this choice (the relative range is the same, and N_acr is proportional to E); the loads in kN do.
 3. **Section properties.** The paper does not give A and I. We use a doubly symmetric welded I-section without root fillets: A = 2Bt_f + (D − 2t_f)t_w, I = [BD³ − (B − t_w)(D − 2t_f)³]/12.
-4. **Validity range of Eq. (3).** Over the input box λ ∈ [8.06, 15.23] (corners). For the fixed arch the first branch is stated for λ > 9.87 only; we apply the same polynomial below 9.87. The paper does not say what it did there. The fixed arch never reaches its second branch (λ < 18.6).
+4. **Validity range of Eq. (3).** Over the input box λ ∈ [8.06, 15.23] (corners). For the fixed arch the first branch is stated for λ > 9.87 only; we apply the same polynomial below 9.87. The paper does not say what it did there. Pi et al. (p. 118) state that a fixed shallow arch with λ_s ≤ 9.87 does not buckle, so for these samples N_acr is an extrapolation of the formula, not a buckling load. The fixed arch never reaches its second branch (λ < 18.6).
 
 **Kink and branch fractions** (notebook, check cell):
 
@@ -65,7 +73,7 @@ So the fixed-arch QoI is a single smooth formula over the whole box (one polynom
 
 **Gradients.** Exact, by the chain rule through λ, A, I and N_cr (`buckling_load(..., grad=True)`), with respect to the physical inputs. The model is smooth on each branch; at the pin-ended switch λ = 9.38 the gradient is that of the branch the point is on.
 
-**Sampling design.** Here: M = 1000 independent uniform samples, `numpy.random.default_rng(2020)`; the gradient estimator needs ≥ 10m = 70 and ≥ 300. In the paper: Monte Carlo estimation of Sobol' indices with 100,000 simulations per case in MATLAB (67.0 min fixed, 69.0 min pin-ended, pp. 6478–6479); no seed, no data or code published.
+**Sampling design.** Here: M = 1000 independent uniform samples, `numpy.random.default_rng(2020)` (about 140 per input). In the paper: Monte Carlo estimation of Sobol' indices with 100,000 simulations per case in MATLAB (67.0 min fixed, 69.0 min pin-ended, pp. 6478–6479); no seed, no data or code published.
 
 **Published results** (no active subspace; Sobol' indices only):
 
@@ -84,10 +92,10 @@ The shipped files were written on 2026-10-30 in a Linux container (Python 3, num
 
 ## Accuracy
 
-- **Gradients vs. complex step** (scratch script, not committed; an independent re-implementation of the formulas in complex arithmetic, step 10⁻²⁰ of each input's range): maximum relative error of the gradient vector over the 1000 samples 7.4e-16 (fixed) and 1.2e-15 (pin-ended).
+- **Gradients vs. complex step** (external run, not reproducible from the repository: an independent re-implementation of the formulas in complex arithmetic, step 10⁻²⁰ of each input's range): maximum relative error of the gradient vector over the 1000 samples 7.4e-16 (fixed) and 1.2e-15 (pin-ended).
 - **Gradients vs. central differences** (notebook check cell; step 10⁻⁶ of each input's range; samples within 10⁻⁴ of the pin-ended switch would be left out, none are): maximum relative error 6.3e-9 (fixed) and 6.0e-9 (pin-ended), median 1.5e-9 for both, the truncation and rounding error of the difference.
 - **Outputs**: the notebook re-evaluates the model at the 1000 inputs and finds a relative difference from `outputs.csv` of 9.1e-16 (fixed) and 7.6e-16 (pin-ended), rounding error.
-- **Formula reading**: continuity of the fixed-arch branches at λ = 18.6 (to 0.0006 in c) checks the square-root reading of Eq. (3); Eq. (2) has the 1.6 % jump noted above, which Pi et al. (2002) could settle.
+- **Formula reading**: continuity of the fixed-arch branches at λ = 18.6 (to 0.0006 in c) checks the square-root reading of Eq. (3). Eq. (2) has the 1.6 % jump noted above, which is in Pi et al. (2002) as well (see "Against Pi, Bradford and Uy").
 
 ## How these files relate to the paper
 
