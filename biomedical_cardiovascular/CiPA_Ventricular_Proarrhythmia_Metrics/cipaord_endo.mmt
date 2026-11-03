@@ -1,0 +1,659 @@
+# cipaord_endo.mmt: CiPAORdv1.0 endocardial myocyte (Myokit format) for the as-data-sets
+# repository (github.com/paulcon/as-data-sets), data set CiPA_Ventricular_Proarrhythmia_Metrics.
+#
+# Licence: MIT for the new parts; the O'Hara-Rudy (ORd) parts are BSD 3-clause,
+# copyright T. O'Hara and Y. Rudy (notice below; see also LICENSE-ORd beside this file).
+# The ORd core of this file (camk, rev, ina, inal, ito, ical, iks, ik1, inaca, inak,
+# background, ryr, fluxes, conc, cell, phys) follows the O'Hara-Rudy reference
+# implementation as distributed in github.com/FDA/CiPA,
+# AP_simulation/models/newordherg_qNet.c (commit 539ff80), whose header carries the
+# notice reproduced here. The hERG/drug-binding section (ikr), the virtual-drug scaling
+# (drug), the qNet integral (qnet) and the stimulus are new (MIT): the hERG Markov model is
+# written in flux form from Li et al. (2017), with parameter values from the FDA files.
+# No code of the FDA's own (GPL-3.0) contributions to that C file is included.
+#
+# Notice and disclaimer of the O'Hara-Rudy code, reproduced exactly as in the header of
+# newordherg_qNet.c:
+#
+# Copyright (c) 2011-2015 by Thomas O'Hara, Yoram Rudy, 
+#                            Washington University in St. Louis.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+#
+# 1. Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright 
+# notice, this list of conditions and the following disclaimer in the 
+# documentation and/or other materials provided with the distribution.
+#
+# 3. Neither the names of the copyright holders nor the names of its
+# contributors may be used to endorse or promote products derived from 
+# this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS 
+# IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED 
+# TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A 
+# PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT 
+# HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF 
+# USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND 
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, 
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF 
+# THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+# DAMAGE.
+#
+[[model]]
+name: cipaordv1_endo
+desc: """
+CiPAORdv1.0 human ventricular myocyte model, endocardial cell: a Myokit
+re-expression for the as-data-sets repository.
+  ORd core: follows the O'Hara-Rudy reference implementation (BSD-3, notice
+    in the header comment of this file), as distributed in the FDA CiPA
+    repository (github.com/FDA/CiPA, AP_simulation/models/newordherg_qNet.c);
+    model: O'Hara, Virag, Varro, Rudy (2011) PLoS Comput Biol 7:e1002061.
+  hERG Markov model with dynamic drug binding and trapping (replacing the
+    Hodgkin-Huxley IKr): written in flux form from Li et al. (2017) Circ
+    Arrhythm Electrophysiol 10:e004628, with parameter values from the FDA files.
+  Conductance scalings: Dutta et al. (2017) Front Physiol 8:616.
+The right-hand sides were checked against the FDA C code (to 1.5e-12).
+Drug effects follow Parikh et al. (2019) Front Pharmacol 10:1054, Eqs 1-3:
+percent blocks scale the maximal conductances by (100 - b)/100, and the static
+hERG block sbIKr sets the drug binding rate Ku*sbIKr of the Li et al. model.
+Units: mV, ms, uA/uF, mM; the qNet state is in nC/uF.
+"""
+# Initial values: control (no drug) steady state at 2000 ms cycle length,
+# as distributed with CiPAORdv1.0 (file newordherg_states_CL2000.txt).
+membrane.V     = -88.0145
+conc.nai       = 6.46961
+conc.nass      = 6.46967
+conc.ki        = 145.501
+conc.kss       = 145.501
+conc.cai       = 7.45321e-05
+conc.cass      = 7.30454e-05
+conc.cansr     = 1.37897
+conc.cajsr     = 1.37944
+ina.m          = 0.00733485
+ina.hf         = 0.698542
+ina.hs         = 0.698542
+ina.j          = 0.698542
+ina.hsp        = 0.455526
+ina.jp         = 0.698541
+inal.mL        = 0.000187813
+inal.hL        = 0.513396
+inal.hLp       = 0.307923
+ito.a          = 0.00100025
+ito.iF         = 0.999555
+ito.iS         = 0.871715
+ito.ap         = 0.000509652
+ito.iFp        = 0.999555
+ito.iSp        = 0.905466
+ical.d         = 2.33382e-09
+ical.ff        = 1
+ical.fs        = 0.971897
+ical.fcaf      = 1
+ical.fcas      = 1
+ical.jca       = 1
+ical.nca       = 0.0015391
+ical.ffp       = 1
+ical.fcafp     = 1
+iks.xs1        = 0.130941
+iks.xs2        = 0.000192517
+ik1.xk1        = 0.996756
+ryr.Jrelnp     = 1.46507e-07
+ryr.Jrelp      = 1.83132e-07
+camk.CaMKt     = 0.00325232
+ikr.IC1        = 0.999637
+ikr.IC2        = 6.83208e-05
+ikr.C1         = 1.80145e-08
+ikr.C2         = 8.26619e-05
+ikr.O          = 0.00015551
+ikr.IO         = 5.67623e-05
+ikr.IObound    = 0
+ikr.Obound     = 0
+ikr.Cbound     = 0
+qnet.q         = 0
+
+#
+# Simulation engine
+#
+[engine]
+time = 0 bind time
+pace = 0 bind pace
+
+#
+# Stimulus: -80 uA/uF for 0.5 ms at the start of every beat (protocol level 1)
+#
+[stimulus]
+amplitude = -80
+i_stim = engine.pace * amplitude
+
+#
+# Virtual drug (Parikh et al. 2019, Table 2). Blocks in percent.
+#
+[drug]
+bINa  = 0
+bINaL = 0
+bIto  = 0
+bIKs  = 0
+bICaL = 0
+bIK1  = 0
+sbIKr = 0
+Vhalf = -100
+Ku    = 0.1
+Kt    = 3.5e-5
+f_INa  = (100 - bINa) / 100
+f_INaL = (100 - bINaL) / 100
+f_Ito  = (100 - bIto) / 100
+f_IKs  = (100 - bIKs) / 100
+f_ICaL = (100 - bICaL) / 100
+f_IK1  = (100 - bIK1) / 100
+
+#
+# Physical constants, extracellular concentrations and cell geometry
+#
+[phys]
+R = 8314
+T = 310
+F = 96485
+FoRT = F / (R * T)
+nao = 140
+cao = 1.8
+ko = 5.4
+
+[cell]
+L = 0.01
+rad = 0.0011
+vcell = 1000 * 3.14 * rad * rad * L
+Ageo = 2 * 3.14 * rad * rad + 2 * 3.14 * rad * L
+Acap = 2 * Ageo
+vmyo = 0.68 * vcell
+vnsr = 0.0552 * vcell
+vjsr = 0.0048 * vcell
+vss  = 0.02 * vcell
+
+#
+# Membrane potential
+#
+[membrane]
+dot(V) = -(i_ion + stimulus.i_stim)
+i_ion = (ina.INa + inal.INaL + ito.Ito + ical.ICaL + ical.ICaNa + ical.ICaK
+         + ikr.IKr + iks.IKs + ik1.IK1 + inaca.INaCa_i + inaca.INaCa_ss
+         + inak.INaK + background.INab + background.IKb + background.IpCa
+         + background.ICab)
+
+#
+# Net charge carried by INaL, ICaL, Ito, IKr, IKs and IK1 (Dutta et al. 2017);
+# the driver resets q to 0 at the start of each analysed beat.
+#
+[qnet]
+dot(q) = inal.INaL + ical.ICaL + ito.Ito + ikr.IKr + iks.IKs + ik1.IK1
+
+#
+# CaMKII
+#
+[camk]
+KmCaMK = 0.15
+aCaMK = 0.05
+bCaMK = 0.00068
+CaMKo = 0.05
+KmCaM = 0.0015
+CaMKb = CaMKo * (1 - CaMKt) / (1 + KmCaM / conc.cass)
+CaMKa = CaMKb + CaMKt
+dot(CaMKt) = aCaMK * CaMKb * (CaMKb + CaMKt) - bCaMK * CaMKt
+fphos = 1 / (1 + KmCaMK / CaMKa)
+
+#
+# Reversal potentials
+#
+[rev]
+PKNa = 0.01833
+ENa = log(phys.nao / conc.nai) / phys.FoRT
+EK = log(phys.ko / conc.ki) / phys.FoRT
+EKs = log((phys.ko + PKNa * phys.nao) / (conc.ki + PKNa * conc.nai)) / phys.FoRT
+
+#
+# Fast sodium current
+#
+[ina]
+use membrane.V as V
+mss = 1 / (1 + exp(-(V + 39.57) / 9.871))
+tm = 1 / (6.765 * exp((V + 11.64) / 34.77) + 8.552 * exp(-(V + 77.42) / 5.955))
+dot(m) = (mss - m) / tm
+hss = 1 / (1 + exp((V + 82.90) / 6.086))
+thf = 1 / (1.432e-5 * exp(-(V + 1.196) / 6.285) + 6.149 * exp((V + 0.5096) / 20.27))
+ths = 1 / (0.009794 * exp(-(V + 17.95) / 28.05) + 0.3343 * exp((V + 5.730) / 56.66))
+Ahf = 0.99
+Ahs = 1 - Ahf
+dot(hf) = (hss - hf) / thf
+dot(hs) = (hss - hs) / ths
+h = Ahf * hf + Ahs * hs
+tj = 2.038 + 1 / (0.02136 * exp(-(V + 100.6) / 8.281) + 0.3052 * exp((V + 0.9941) / 38.45))
+dot(j) = (hss - j) / tj
+hssp = 1 / (1 + exp((V + 89.1) / 6.086))
+dot(hsp) = (hssp - hsp) / (3 * ths)
+hp = Ahf * hf + Ahs * hsp
+dot(jp) = (hss - jp) / (1.46 * tj)
+GNa = 75 * drug.f_INa
+INa = GNa * (V - rev.ENa) * m^3 * ((1 - camk.fphos) * h * j + camk.fphos * hp * jp)
+
+#
+# Late sodium current (Dutta et al. 2017 scaling 2.661)
+#
+[inal]
+use membrane.V as V
+mLss = 1 / (1 + exp(-(V + 42.85) / 5.264))
+dot(mL) = (mLss - mL) / ina.tm
+hLss = 1 / (1 + exp((V + 87.61) / 7.488))
+thL = 200
+dot(hL) = (hLss - hL) / thL
+hLssp = 1 / (1 + exp((V + 93.81) / 7.488))
+dot(hLp) = (hLssp - hLp) / (3 * thL)
+GNaL = 0.0075 * 2.661 * drug.f_INaL
+INaL = GNaL * (V - rev.ENa) * mL * ((1 - camk.fphos) * hL + camk.fphos * hLp)
+
+#
+# Transient outward potassium current (endocardial cell)
+#
+[ito]
+use membrane.V as V
+ass = 1 / (1 + exp(-(V - 14.34) / 14.82))
+ta = 1.0515 / (1 / (1.2089 * (1 + exp(-(V - 18.4099) / 29.3814))) + 3.5 / (1 + exp((V + 100) / 29.3814)))
+dot(a) = (ass - a) / ta
+iss = 1 / (1 + exp((V + 43.94) / 5.711))
+tiF = 4.562 + 1 / (0.3933 * exp(-(V + 100) / 100) + 0.08004 * exp((V + 50) / 16.59))
+tiS = 23.62 + 1 / (0.001416 * exp(-(V + 96.52) / 59.05) + 1.780e-8 * exp((V + 114.1) / 8.079))
+AiF = 1 / (1 + exp((V - 213.6) / 151.2))
+AiS = 1 - AiF
+dot(iF) = (iss - iF) / tiF
+dot(iS) = (iss - iS) / tiS
+i = AiF * iF + AiS * iS
+assp = 1 / (1 + exp(-(V - 24.34) / 14.82))
+dot(ap) = (assp - ap) / ta
+dti_develop = 1.354 + 1e-4 / (exp((V - 167.4) / 15.89) + exp(-(V - 12.23) / 0.2154))
+dti_recover = 1 - 0.5 / (1 + exp((V + 70) / 20))
+dot(iFp) = (iss - iFp) / (dti_develop * dti_recover * tiF)
+dot(iSp) = (iss - iSp) / (dti_develop * dti_recover * tiS)
+ip = AiF * iFp + AiS * iSp
+Gto = 0.02 * drug.f_Ito
+Ito = Gto * (V - rev.EK) * ((1 - camk.fphos) * a * i + camk.fphos * ap * ip)
+
+#
+# L-type calcium current and its Na and K components (Dutta et al. 2017 scaling 1.007)
+#
+[ical]
+use membrane.V as V
+dss = 1 / (1 + exp(-(V + 3.940) / 4.230))
+td = 0.6 + 1 / (exp(-0.05 * (V + 6)) + exp(0.09 * (V + 14)))
+dot(d) = (dss - d) / td
+fss = 1 / (1 + exp((V + 19.58) / 3.696))
+tff = 7 + 1 / (0.0045 * exp(-(V + 20) / 10) + 0.0045 * exp((V + 20) / 10))
+tfs = 1000 + 1 / (0.000035 * exp(-(V + 5) / 4) + 0.000035 * exp((V + 5) / 6))
+Aff = 0.6
+Afs = 1 - Aff
+dot(ff) = (fss - ff) / tff
+dot(fs) = (fss - fs) / tfs
+f = Aff * ff + Afs * fs
+tfcaf = 7 + 1 / (0.04 * exp(-(V - 4) / 7) + 0.04 * exp((V - 4) / 7))
+tfcas = 100 + 1 / (0.00012 * exp(-V / 3) + 0.00012 * exp(V / 7))
+Afcaf = 0.3 + 0.6 / (1 + exp((V - 10) / 10))
+Afcas = 1 - Afcaf
+dot(fcaf) = (fss - fcaf) / tfcaf
+dot(fcas) = (fss - fcas) / tfcas
+fca = Afcaf * fcaf + Afcas * fcas
+dot(jca) = (fss - jca) / 75
+dot(ffp) = (fss - ffp) / (2.5 * tff)
+fp = Aff * ffp + Afs * fs
+dot(fcafp) = (fss - fcafp) / (2.5 * tfcaf)
+fcap = Afcaf * fcafp + Afcas * fcas
+Kmn = 0.002
+k2n = 1000
+km2n = jca
+anca = 1 / (k2n / km2n + (1 + Kmn / conc.cass)^4)
+dot(nca) = anca * k2n - nca * km2n
+vffrt = V * phys.F * phys.FoRT
+vfrt = V * phys.FoRT
+PhiCaL  = 4 * vffrt * (conc.cass * exp(2 * vfrt) - 0.341 * phys.cao) / (exp(2 * vfrt) - 1)
+PhiCaNa = vffrt * (0.75 * conc.nass * exp(vfrt) - 0.75 * phys.nao) / (exp(vfrt) - 1)
+PhiCaK  = vffrt * (0.75 * conc.kss * exp(vfrt) - 0.75 * phys.ko) / (exp(vfrt) - 1)
+PCa = 0.0001 * 1.007 * drug.f_ICaL
+PCap = 1.1 * PCa
+gate_np = d * (f * (1 - nca) + jca * fca * nca)
+gate_p  = d * (fp * (1 - nca) + jca * fcap * nca)
+ICaL  = (1 - camk.fphos) * PCa * PhiCaL * gate_np + camk.fphos * PCap * PhiCaL * gate_p
+ICaNa = 0.00125 * ((1 - camk.fphos) * PCa * PhiCaNa * gate_np + camk.fphos * PCap * PhiCaNa * gate_p)
+ICaK  = 3.574e-4 * ((1 - camk.fphos) * PCa * PhiCaK * gate_np + camk.fphos * PCap * PhiCaK * gate_p)
+
+#
+# Rapid delayed rectifier: hERG Markov model with dynamic drug binding
+# (Li et al. 2017). Rate k = A exp(B V) q^((Temp - 20)/10).
+#
+[ikr]
+use membrane.V as V
+Temp = 37
+A1 = 0.0264
+B1 = 4.631e-05
+q1 = 4.843
+A2 = 4.986e-06
+B2 = -0.004226
+q2 = 4.23
+A3 = 0.001214
+B3 = 0.008516
+q3 = 4.962
+A4 = 1.854e-05
+B4 = -0.04641
+q4 = 3.769
+A11 = 0.0007868
+B11 = 1.535e-08
+q11 = 4.942
+A21 = 5.455e-06
+B21 = -0.1688
+q21 = 4.156
+A31 = 0.005509
+B31 = 7.771e-09
+q31 = 4.22
+A41 = 0.001416
+B41 = -0.02877
+q41 = 1.459
+A51 = 0.4492
+B51 = 0.008595
+q51 = 5
+A52 = 0.3181
+B52 = 3.613e-08
+q52 = 4.663
+A53 = 0.149
+B53 = 0.004668
+q53 = 2.412
+A61 = 0.01241
+B61 = 0.1725
+q61 = 5.568
+A62 = 0.3226
+B62 = -0.0006575
+q62 = 5
+A63 = 0.008978
+B63 = -0.02215
+q63 = 5.682
+tf = (Temp - 20) / 10
+k1  = A1  * exp(B1  * V) * q1^tf
+k2  = A2  * exp(B2  * V) * q2^tf
+k3  = A3  * exp(B3  * V) * q3^tf
+k4  = A4  * exp(B4  * V) * q4^tf
+k11 = A11 * exp(B11 * V) * q11^tf
+k21 = A21 * exp(B21 * V) * q21^tf
+k31 = A31 * exp(B31 * V) * q31^tf
+k41 = A41 * exp(B41 * V) * q41^tf
+k51 = A51 * exp(B51 * V) * q51^tf
+k52 = A52 * exp(B52 * V) * q52^tf
+k53 = A53 * exp(B53 * V) * q53^tf
+k61 = A61 * exp(B61 * V) * q61^tf
+k62 = A62 * exp(B62 * V) * q62^tf
+k63 = A63 * exp(B63 * V) * q63^tf
+kon = drug.Ku * drug.sbIKr
+koff_IO = drug.Ku * k53 / k63
+ftrap = 1 / (1 + exp(-(V - drug.Vhalf) / 6.789))
+J_IC1_IC2 = k11 * IC1 - k21 * IC2
+J_C1_C2   = k1 * C1 - k2 * C2
+J_C2_O    = k31 * C2 - k41 * O
+J_IC2_IO  = k3 * IC2 - k4 * IO
+J_C1_IC1  = k51 * C1 - k61 * IC1
+J_C2_IC2  = k52 * C2 - k62 * IC2
+J_O_IO    = k53 * O - k63 * IO
+J_O_Ob    = kon * O - drug.Ku * Obound
+J_IO_IOb  = kon * IO - koff_IO * IObound
+J_Cb_Ob   = drug.Kt * ftrap * Cbound - drug.Kt * Obound
+J_Cb_IOb  = drug.Kt * ftrap * Cbound - drug.Kt * IObound
+dot(IC1) = -J_IC1_IC2 + J_C1_IC1
+dot(IC2) = J_IC1_IC2 - J_IC2_IO + J_C2_IC2
+dot(C1)  = -J_C1_C2 - J_C1_IC1
+dot(C2)  = J_C1_C2 - J_C2_O - J_C2_IC2
+dot(O)   = J_C2_O - J_O_IO - J_O_Ob
+dot(IO)  = J_IC2_IO + J_O_IO - J_IO_IOb
+dot(IObound) = J_IO_IOb + J_Cb_IOb
+dot(Obound)  = J_O_Ob + J_Cb_Ob
+dot(Cbound)  = -J_Cb_Ob - J_Cb_IOb
+GKr = 0.046 * 1.114 / 1.1
+IKr = GKr * sqrt(phys.ko / 5.4) * O * (V - rev.EK)
+
+#
+# Slow delayed rectifier (Dutta et al. 2017 scaling 1.870)
+#
+[iks]
+use membrane.V as V
+xs1ss = 1 / (1 + exp(-(V + 11.60) / 8.932))
+txs1 = 817.3 + 1 / (2.326e-4 * exp((V + 48.28) / 17.80) + 0.001292 * exp(-(V + 210) / 230))
+dot(xs1) = (xs1ss - xs1) / txs1
+txs2 = 1 / (0.01 * exp((V - 50) / 20) + 0.0193 * exp(-(V + 66.54) / 31))
+dot(xs2) = (xs1ss - xs2) / txs2
+KsCa = 1 + 0.6 / (1 + (3.8e-5 / conc.cai)^1.4)
+GKs = 0.0034 * 1.870 * drug.f_IKs
+IKs = GKs * KsCa * xs1 * xs2 * (V - rev.EKs)
+
+#
+# Inward rectifier (Dutta et al. 2017 scaling 1.698)
+#
+[ik1]
+use membrane.V as V
+xk1ss = 1 / (1 + exp(-(V + 2.5538 * phys.ko + 144.59) / (1.5692 * phys.ko + 3.8115)))
+txk1 = 122.2 / (exp(-(V + 127.2) / 20.36) + exp((V + 236.8) / 69.33))
+dot(xk1) = (xk1ss - xk1) / txk1
+rk1 = 1 / (1 + exp((V + 105.8 - 2.6 * phys.ko) / 9.493))
+GK1 = 0.1908 * 1.698 * drug.f_IK1
+IK1 = GK1 * sqrt(phys.ko) * rk1 * xk1 * (V - rev.EK)
+
+#
+# Sodium-calcium exchanger (80% myoplasm, 20% subspace)
+#
+[inaca]
+use membrane.V as V
+kna1 = 15
+kna2 = 5
+kna3 = 88.12
+kasymm = 12.5
+wna = 6e4
+wca = 6e4
+wnaca = 5e3
+kcaon = 1.5e6
+kcaoff = 5e3
+qna = 0.5224
+qca = 0.1670
+KmCaAct = 150e-6
+Gncx = 0.0008
+hca = exp(qca * V * phys.FoRT)
+hna = exp(qna * V * phys.FoRT)
+# outside-facing terms (same for both compartments)
+h7 = 1 + phys.nao / kna3 * (1 + 1 / hna)
+h8 = phys.nao / (kna3 * hna * h7)
+h9 = 1 / h7
+h10 = kasymm + 1 + phys.nao / kna1 * (1 + phys.nao / kna2)
+h11 = phys.nao * phys.nao / (h10 * kna1 * kna2)
+h12 = 1 / h10
+k1 = h12 * phys.cao * kcaon
+k2 = kcaoff
+k3p = h9 * wca
+k3pp = h8 * wnaca
+k3 = k3p + k3pp
+k5 = kcaoff
+k8 = h8 * h11 * wna
+# myoplasm
+h1_i = 1 + conc.nai / kna3 * (1 + hna)
+h2_i = conc.nai * hna / (kna3 * h1_i)
+h3_i = 1 / h1_i
+h4_i = 1 + conc.nai / kna1 * (1 + conc.nai / kna2)
+h5_i = conc.nai * conc.nai / (h4_i * kna1 * kna2)
+h6_i = 1 / h4_i
+k4pp_i = h2_i * wnaca
+k4_i = h3_i * wca / hca + k4pp_i
+k6_i = h6_i * conc.cai * kcaon
+k7_i = h5_i * h2_i * wna
+x1_i = k2 * k4_i * (k7_i + k6_i) + k5 * k7_i * (k2 + k3)
+x2_i = k1 * k7_i * (k4_i + k5) + k4_i * k6_i * (k1 + k8)
+x3_i = k1 * k3 * (k7_i + k6_i) + k8 * k6_i * (k2 + k3)
+x4_i = k2 * k8 * (k4_i + k5) + k3 * k5 * (k1 + k8)
+xs_i = x1_i + x2_i + x3_i + x4_i
+E1_i = x1_i / xs_i
+E2_i = x2_i / xs_i
+E3_i = x3_i / xs_i
+E4_i = x4_i / xs_i
+allo_i = 1 / (1 + (KmCaAct / conc.cai)^2)
+JncxNa_i = 3 * (E4_i * k7_i - E1_i * k8) + E3_i * k4pp_i - E2_i * k3pp
+JncxCa_i = E2_i * k2 - E1_i * k1
+INaCa_i = 0.8 * Gncx * allo_i * (JncxNa_i + 2 * JncxCa_i)
+# subspace
+h1_ss = 1 + conc.nass / kna3 * (1 + hna)
+h2_ss = conc.nass * hna / (kna3 * h1_ss)
+h3_ss = 1 / h1_ss
+h4_ss = 1 + conc.nass / kna1 * (1 + conc.nass / kna2)
+h5_ss = conc.nass * conc.nass / (h4_ss * kna1 * kna2)
+h6_ss = 1 / h4_ss
+k4pp_ss = h2_ss * wnaca
+k4_ss = h3_ss * wca / hca + k4pp_ss
+k6_ss = h6_ss * conc.cass * kcaon
+k7_ss = h5_ss * h2_ss * wna
+x1_ss = k2 * k4_ss * (k7_ss + k6_ss) + k5 * k7_ss * (k2 + k3)
+x2_ss = k1 * k7_ss * (k4_ss + k5) + k4_ss * k6_ss * (k1 + k8)
+x3_ss = k1 * k3 * (k7_ss + k6_ss) + k8 * k6_ss * (k2 + k3)
+x4_ss = k2 * k8 * (k4_ss + k5) + k3 * k5 * (k1 + k8)
+xs_ss = x1_ss + x2_ss + x3_ss + x4_ss
+E1_ss = x1_ss / xs_ss
+E2_ss = x2_ss / xs_ss
+E3_ss = x3_ss / xs_ss
+E4_ss = x4_ss / xs_ss
+allo_ss = 1 / (1 + (KmCaAct / conc.cass)^2)
+JncxNa_ss = 3 * (E4_ss * k7_ss - E1_ss * k8) + E3_ss * k4pp_ss - E2_ss * k3pp
+JncxCa_ss = E2_ss * k2 - E1_ss * k1
+INaCa_ss = 0.2 * Gncx * allo_ss * (JncxNa_ss + 2 * JncxCa_ss)
+
+#
+# Sodium-potassium pump
+#
+[inak]
+use membrane.V as V
+k1p = 949.5
+k1m = 182.4
+k2p = 687.2
+k2m = 39.4
+k3p = 1899
+k3m = 79300
+k4p = 639
+k4m = 40
+Knai0 = 9.073
+Knao0 = 27.78
+delta = -0.1550
+Kki = 0.5
+Kko = 0.3582
+MgADP = 0.05
+MgATP = 9.8
+Kmgatp = 1.698e-7
+H = 1e-7
+eP = 4.2
+Khp = 1.698e-7
+Knap = 224
+Kxkur = 292
+Pnak = 30
+Knai = Knai0 * exp(delta * V * phys.FoRT / 3)
+Knao = Knao0 * exp((1 - delta) * V * phys.FoRT / 3)
+P = eP / (1 + H / Khp + conc.nai / Knap + conc.ki / Kxkur)
+den_i = (1 + conc.nai / Knai)^3 + (1 + conc.ki / Kki)^2 - 1
+den_o = (1 + phys.nao / Knao)^3 + (1 + phys.ko / Kko)^2 - 1
+a1 = k1p * (conc.nai / Knai)^3 / den_i
+b1 = k1m * MgADP
+a2 = k2p
+b2 = k2m * (phys.nao / Knao)^3 / den_o
+a3 = k3p * (phys.ko / Kko)^2 / den_o
+b3 = k3m * P * H / (1 + MgATP / Kmgatp)
+a4 = k4p * MgATP / Kmgatp / (1 + MgATP / Kmgatp)
+b4 = k4m * (conc.ki / Kki)^2 / den_i
+x1 = a4 * a1 * a2 + b2 * b4 * b3 + a2 * b4 * b3 + b3 * a1 * a2
+x2 = b2 * b1 * b4 + a1 * a2 * a3 + a3 * b1 * b4 + a2 * a3 * b4
+x3 = a2 * a3 * a4 + b3 * b2 * b1 + b2 * b1 * a4 + a3 * a4 * b1
+x4 = b4 * b3 * b2 + a3 * a4 * a1 + b2 * a4 * a1 + b3 * b2 * a1
+xs = x1 + x2 + x3 + x4
+E1 = x1 / xs
+E2 = x2 / xs
+E3 = x3 / xs
+E4 = x4 / xs
+JnakNa = 3 * (E1 * a3 - E2 * b3)
+JnakK = 2 * (E4 * b1 - E3 * a1)
+INaK = Pnak * (JnakNa + JnakK)
+
+#
+# Background currents and sarcolemmal Ca pump
+#
+[background]
+use membrane.V as V
+xkb = 1 / (1 + exp(-(V - 14.48) / 18.34))
+GKb = 0.003
+IKb = GKb * xkb * (V - rev.EK)
+PNab = 3.75e-10
+INab = PNab * ical.vffrt * (conc.nai * exp(ical.vfrt) - phys.nao) / (exp(ical.vfrt) - 1)
+PCab = 2.5e-8
+ICab = PCab * 4 * ical.vffrt * (conc.cai * exp(2 * ical.vfrt) - 0.341 * phys.cao) / (exp(2 * ical.vfrt) - 1)
+GpCa = 0.0005
+IpCa = GpCa * conc.cai / (0.0005 + conc.cai)
+
+#
+# SR calcium release (ryanodine receptor)
+#
+[ryr]
+bt = 4.75
+a_rel = 0.5 * bt
+Jrel_inf = a_rel * (-ical.ICaL) / (1 + (1.5 / conc.cajsr)^8)
+tau_rel_raw = bt / (1 + 0.0123 / conc.cajsr)
+tau_rel = if(tau_rel_raw < 0.001, 0.001, tau_rel_raw)
+dot(Jrelnp) = (Jrel_inf - Jrelnp) / tau_rel
+btp = 1.25 * bt
+a_relp = 0.5 * btp
+Jrel_infp = a_relp * (-ical.ICaL) / (1 + (1.5 / conc.cajsr)^8)
+tau_relp_raw = btp / (1 + 0.0123 / conc.cajsr)
+tau_relp = if(tau_relp_raw < 0.001, 0.001, tau_relp_raw)
+dot(Jrelp) = (Jrel_infp - Jrelp) / tau_relp
+Jrel = (1 - camk.fphos) * Jrelnp + camk.fphos * Jrelp
+
+#
+# SERCA uptake, leak, translocation and diffusion fluxes
+#
+[fluxes]
+Jupnp = 0.004375 * conc.cai / (conc.cai + 0.00092)
+Jupp = 2.75 * 0.004375 * conc.cai / (conc.cai + 0.00092 - 0.00017)
+Jleak = 0.0039375 * conc.cansr / 15
+Jup = (1 - camk.fphos) * Jupnp + camk.fphos * Jupp - Jleak
+Jtr = (conc.cansr - conc.cajsr) / 100
+JdiffNa = (conc.nass - conc.nai) / 2
+JdiffK = (conc.kss - conc.ki) / 2
+Jdiff = (conc.cass - conc.cai) / 0.2
+
+#
+# Concentrations, with rapid buffering of cai, cass and cajsr
+#
+[conc]
+use cell.Acap as Acap, cell.vmyo as vmyo, cell.vss as vss, cell.vnsr as vnsr, cell.vjsr as vjsr
+use phys.F as F
+cmdnmax = 0.05
+kmcmdn = 0.00238
+trpnmax = 0.07
+kmtrpn = 0.0005
+BSRmax = 0.047
+KmBSR = 0.00087
+BSLmax = 1.124
+KmBSL = 0.0087
+csqnmax = 10
+kmcsqn = 0.8
+dot(nai) = -(ina.INa + inal.INaL + 3 * inaca.INaCa_i + 3 * inak.INaK + background.INab) * Acap / (F * vmyo) + fluxes.JdiffNa * vss / vmyo
+dot(nass) = -(ical.ICaNa + 3 * inaca.INaCa_ss) * Acap / (F * vss) - fluxes.JdiffNa
+dot(ki) = -(ito.Ito + ikr.IKr + iks.IKs + ik1.IK1 + background.IKb + stimulus.i_stim - 2 * inak.INaK) * Acap / (F * vmyo) + fluxes.JdiffK * vss / vmyo
+dot(kss) = -ical.ICaK * Acap / (F * vss) - fluxes.JdiffK
+Bcai = 1 / (1 + cmdnmax * kmcmdn / (kmcmdn + cai)^2 + trpnmax * kmtrpn / (kmtrpn + cai)^2)
+dot(cai) = Bcai * (-(background.IpCa + background.ICab - 2 * inaca.INaCa_i) * Acap / (2 * F * vmyo) - fluxes.Jup * vnsr / vmyo + fluxes.Jdiff * vss / vmyo)
+Bcass = 1 / (1 + BSRmax * KmBSR / (KmBSR + cass)^2 + BSLmax * KmBSL / (KmBSL + cass)^2)
+dot(cass) = Bcass * (-(ical.ICaL - 2 * inaca.INaCa_ss) * Acap / (2 * F * vss) + ryr.Jrel * vjsr / vss - fluxes.Jdiff)
+dot(cansr) = fluxes.Jup - fluxes.Jtr * vjsr / vnsr
+Bcajsr = 1 / (1 + csqnmax * kmcsqn / (kmcsqn + cajsr)^2)
+dot(cajsr) = Bcajsr * (fluxes.Jtr - ryr.Jrel)
+
+[[protocol]]
+# Level  Start    Length   Period   Multiplier
+1.0      0.0      0.5      2000.0   0

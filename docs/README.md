@@ -74,35 +74,60 @@ Every data set is one of two kinds, and the kind decides what the port must deli
 | Atacamac (excluded from main; Annular_Combustor_Thermoacoustics replaces it) | stored data | — | ATACAMAC annular-combustor model runs (Bauerheim et al., JFM 2016) |
 | Reentry_freestream_conditions (excluded from main) | stored data | — | EXPERT reentry simulations |
 
-The 28 data sets added in October 2026 (14 in [#56](https://github.com/paulcon/as-data-sets/pull/56), Transonic_Fan_Blade_Performance_Maps in [#60](https://github.com/paulcon/as-data-sets/pull/60), 13 in [#64](https://github.com/paulcon/as-data-sets/pull/64)) have no spec in this directory; their DATA.md files record the kind. They are listed by directory name.
+The 28 data sets added in October 2026 (14 in [#56](https://github.com/paulcon/as-data-sets/pull/56), Transonic_Fan_Blade_Performance_Maps in [#60](https://github.com/paulcon/as-data-sets/pull/60), 13 in [#64](https://github.com/paulcon/as-data-sets/pull/64)) and the 25 added in November 2026 have no spec in this directory; their DATA.md files record the kind. They are listed by directory name.
 
 | Data set (directory) | Kind | Model in the repo | Outside generating code (stored data) |
 |---|---|---|---|
 | Annular_Combustor_Thermoacoustics | Python model | `annular_combustor_model.py` (a new implementation of the ATACAMAC dispersion relation); `generate_data.py` writes the CSVs | — |
+| Aquifer_Tracer_Advection_Diffusion | Python model | `tracer_model.py` (numpy/scipy re-implementation of the PyApprox 1.0.3 advection-diffusion benchmark); `generate_data.py` writes the CSVs | the KLE basis `kle_basis.csv` (computed by PyApprox 1.0.3) is stored data |
 | Arctic_Snow_Depth_SMRT | stored data | `snow_smrt_driver.py` (sets up SMRT; not a numpy/scipy model); `generate_data.py` regenerates the CSVs when SMRT is installed | SMRT 1.5.1 (LGPL-3.0, not shipped), run for this repository |
 | Atrial_Cell_Models_Courtemanche_Maleckar | stored data | — | MATLAB Courtemanche and Maleckar runs by Coveney and Clayton (figshare 11309756); `convert_data.py` converts them losslessly |
+| CiPA_Ventricular_Proarrhythmia_Metrics | stored data | `cipaord_driver.py` (drives Myokit; not a numpy/scipy model); `generate_data.py` regenerates the CSV when Myokit is installed | Myokit 1.39.2 with `cipaord_endo.mmt` (a Myokit re-expression of CiPAORdv1.0), run for this repository |
+| CO2_Injection_Benchmark_Saturation | stored data | — (`generate_data.py` runs the benchmark's executable and converts its output losslessly) | the benchmark's finite-volume executable `prog` (Linux x86-64, no source; Zenodo 10.5281/zenodo.933827), run for this repository on the benchmark's 10,000 input samples |
+| Cole_Cole_Cell_Monolayer_Impedance | Python model | `cole_model.py` (closed form, exact gradients); `generate_data.py` writes the CSVs | — |
+| COVID19_SEIR_Epidemic_Peak | Python model | `seir_model.py` (SEIR ODE with forward sensitivities); `generate_data.py` writes the CSVs | — |
+| DTMB_5415_Hull_Resistance | stored data | `l2sea_driver.py` (drives L2-Sea; not a numpy/scipy model); `generate_data.py` regenerates the CSVs when L2-Sea is built | L2-Sea (Fortran, GPL-3.0; A. Serani and M. Diez, CNR-INM) at commit 100da62, run for this repository |
+| Earthquake_Rupture_Seismic_Moment | stored data (hybrid: outputs as printed, inputs regenerated) | `fdfault_driver.py` (drives fdfault; not a numpy/scipy model); `generate_data.py` regenerates the design inputs and, where fdfault is installed, the five reruns | fdfault runs by Daub et al. (Tables 2–3); five reruns with fdfault v1.0.1 for this repository |
+| EU_DEMO_PROCESS_Major_Radius | stored data | `process_driver.py` and the deck `demo_template_IN.DAT` (run PROCESS; not a numpy/scipy model); `generate_data.py` regenerates the CSV when PROCESS is installed | PROCESS v3.4.2 (UKAEA, MIT), run for this repository on a public deck at the paper's input ranges, not the paper's runs |
 | Fire_Satellite_Coupled_System | Python model | `fire_satellite_model.py`; `generate_data.py` writes the CSVs | — |
+| Four_Chamber_Heart_Electromechanics | stored data | — | CARP + CircAdapt four-chamber runs and ToR-ORd runs by Strocchi et al. (Zenodo 10.5281/zenodo.7405335); `convert_data.py` converts them losslessly |
 | Geological_CO2_Storage_Leakage | Python model | `co2_leakage_model.py` (closed form); `generate_data.py` writes the CSVs | — |
 | Golinski_Speed_Reducer | Python model | `golinski_model.py` (closed form); `generate_data.py` writes the CSVs | — |
 | H2_O2_Ignition_Delay_Kinetics | stored data | `h2o2_ignition_driver.py` (a Cantera driver, not a numpy/scipy model); `generate_data.py` regenerates the CSVs when Cantera is installed | Cantera 3.2.0 with the Li et al. (2004) mechanism, run for this repository |
+| Hall_Thruster_Multi_Component | stored data | `spt100_components.py` (numpy cathode and plume components); `run_hallthruster.jl` drives HallThruster.jl; `generate_data.py` regenerates the CSV when Julia and HallThruster.jl are installed | HallThruster.jl v0.18.7 (MIT, Julia 1.13.3), run for this repository |
 | Hat_Stiffened_Panel_Shear_Buckling | Python model | `panel_model.py` (closed form); `generate_data.py` writes the CSVs | — |
 | Hodgkin_Huxley_Action_Potential | Python model | `HH_model.py`; `generate_data.py` writes the CSVs | — |
 | HTGR_Microreactor_Control_Drums | stored data | — | Serpent runs by Price, Radaideh and Kochunas (deanrp2/MicroControl); `convert_data.py` converts them losslessly |
+| HyMod_Leaf_River_Rainfall_Runoff | Python model | `hymod_model.py` (clean-room numpy re-implementation of SAFE's `hymod_sim`); `generate_data.py` writes the CSVs | the Leaf River forcing (`forcing.csv`, `forcing_other_years.csv`, from SAFE's `LeafCatch.txt`) is stored data |
+| Kaesbach_Catchment_Subsurface_Flow | stored data | — | HydroGeoSphere runs by Erdal and Cirpka (residence times by Tecplot 360 particle tracking), from the HESS supplement; `extract_data.py` converts them losslessly |
 | Karst_Aquifer_LuKARS_Calibration | Python model | `lukars_model.py` (numpy port of the authors' LuKARS R script); `generate_data.py` writes the data files | the measured forcing and discharge (`forcing.csv`, `monthly_mean_temp.csv`, from HydroShare) are stored data |
+| Kurchatov_Sr90_Groundwater_Migration | stored data | — | MARTHE (BRGM) runs by Volkova, Iooss and Van Dorpe, as hosted by the VLSE (`marthedata.txt`); `convert_data.py` converts them losslessly |
 | Lillgrund_FLORIS_Wake_Model | Python model | `lillgrund_model.py` (numpy port of FLORIS 2.0.1); `generate_data.py` writes the CSVs | — |
+| Lithium_Ion_DFN_Drive_Cycle | stored data | `dfn_us06_driver.py` (sets up PyBaMM; not a numpy/scipy model); `generate_data.py` regenerates the CSVs when PyBaMM is installed | PyBaMM 24.9.0 (BSD-3-Clause, not shipped), run for this repository |
+| Lithium_Ion_Impedance_Calibration | stored data | `spme_eis_driver.py` (sets up PyBaMM/PyBOP and the adjoint gradient; not a numpy/scipy model); `generate_data.py` regenerates the CSVs when they are installed | PyBaMM 26.10.1.1 and PyBOP 26.3 (BSD-3-Clause, not shipped), run for this repository |
+| Lorenz96_Initial_State_Inference | Python model | `lorenz96_model.py` (RK4 with exact tangent-linear gradients); `generate_data.py` writes the CSVs | — |
 | LS89_Turbine_Blade_Envelopes | stored data | — | SU2 runs by Wong, Seshadri, Scillitoe, Duncan and Parks (equadratures/data-sets); `convert_data.py` converts them losslessly |
 | Luo_Rudy_Cardiac_Action_Potential | stored data | — | MATLAB LR1991 runs by Chang, Strong and Clayton (PLOS ONE 2015, S1 and S2 Data); `convert_data.py` converts them losslessly |
+| MAPK_Cascade_Bistable_Oscillatory | Python model | `MAPK_model.py` (ODE with forward sensitivities); `generate_data.py` writes the CSVs | — |
+| Marine_Carbonate_System_PyCO2SYS | stored data | `carbonate_driver.py` (drives PyCO2SYS; not a numpy/scipy model); `generate_data.py` regenerates the CSVs when PyCO2SYS is installed | PyCO2SYS 1.8.3 (GPLv3, not shipped), run for this repository |
+| NACA2412_Flapped_Airfoil | stored data | `xfoil_driver.py` (drives XFOIL; not a numpy/scipy model); `generate_data.py` regenerates the CSVs when XFOIL is built | XFOIL 6.99 (GPL; M. Drela, H. Youngren), built from Ubuntu's source package, run for this repository; `davis_training_98.csv` holds the authors' own XFOIL runs (csdlpsu/uqchallenge2) |
+| OpenAeroStruct_Wing_Aerostructural | stored data | `oas_wing_driver.py` (sets up OpenAeroStruct; not a numpy/scipy model); `generate_data.py` regenerates the CSVs when OpenAeroStruct is installed | OpenAeroStruct 2.12.0 on OpenMDAO 3.45.2 (Apache-2.0, not shipped), run for this repository |
 | Point_Heat_Source_Consolidation | Python model | `heat_source_model.py` (closed form); `generate_data.py` writes the CSVs | — |
 | Powder_Bed_Fusion_Residual_Stress | stored data | — | Abaqus runs by Guo and Kramer (yulin-g/BPOF-optimization-AM); `convert_data.py` converts them losslessly |
+| Pyloric_Circuit_Energy_Consumption | stored data | — (`generate_data.py` drives pyloric; no `*_driver.py`) | pyloric (mackelab, commit 89dd27d, MIT), run for this repository |
+| Rabbit_Ventricular_Action_Potential | stored data | `shannon_driver.py` (drives Myokit; not a numpy/scipy model); `generate_data.py` regenerates the CSV when Myokit is installed | Myokit 1.39.2 with Yang et al.'s Shannon 2004 model file, run for this repository |
+| Raven_Salmon_River_Blended_Model | stored data | `raven_salmon_driver.py` (fills the authors' xSSA deck templates, fetched at run time, runs Raven and reads its output; not a numpy/scipy model); `generate_data.py` regenerates the CSVs when Raven is built | Raven (C++, commit cb745e1), run for this repository on the authors' xSSA deck and forcing; regenerated byte for byte on 2026-11-02 |
 | River_Flood_Dyke_Overflow | Python model | `flood_model.py` (closed form); `generate_data.py` writes the CSVs | — |
 | Simply_Supported_Tube_Deflection | Python model | `tube_model.py` (closed form); `generate_data.py` writes the CSVs | — |
 | SIPNET_Ecosystem_Carbon_Flux | stored data | — (`generate_data.py` regenerates the CSVs with a compiled SIPNET binary) | SIPNET v2.2.0 (C), run for this repository in a substitute set-up, not the paper's runs |
+| Stagnation_Temperature_Probe_Design | stored data | — | ANSYS Fluent RANS runs by Scillitoe, Ubald, Seshadri and Shahpar (equadratures/data-sets `probes/probes.npz`); `convert_data.py` converts them losslessly |
 | STAT5_Dimerization_Signaling | Python model | `STAT5_model.py`; `generate_data.py` writes the CSVs | — |
 | Steel_Arch_Inplane_Buckling | Python model | `arch_buckling_model.py` (closed form); `generate_data.py` writes the CSVs | — |
 | Sulfur_Aerosol_Radiative_Forcing | Python model | `sulfur_model.py` (closed form); `generate_data.py` writes the CSVs | — |
 | Transonic_Airfoil_Shape_Parameterizations | stored data | — | SU2 runs by Grey and Constantine (zgrey/ASAP); `convert_data.py` converts the outputs losslessly and regenerates the design inputs |
 | Transonic_Fan_Blade_Performance_Maps | stored data | — | Rolls-Royce Hydra RANS runs by Seshadri, Shahpar, Constantine, Parks and Adams (equadratures/data-sets); `convert_data.py` converts them losslessly |
 | Two_DOF_Equipment_Structure_Oscillator | Python model | `oscillator_model.py` (closed form); `generate_data.py` writes the CSVs | — |
+| Two_Material_Thermal_Compliance | Python model | `thermal_model.py` (P2 finite elements, exact adjoint gradient); `generate_data.py` writes `thermal_compliance.npz` | — |
 | Two_Stage_CMOS_Op_Amp | stored data | `opamp_spice.py` and the circuit deck (run ngspice; not a numpy/scipy model); `generate_data.py` regenerates the CSVs when ngspice is installed | ngspice 42 with a BSIM4 45 nm model card, run for this repository |
 | Vlasov_Poisson_Instability_Growth_Rate | Python model | `plasma_dispersion_model.py`; `generate_data.py` writes the CSVs | — |
 | Zika_SEIR_SEI_Brazil | Python model | `zika_model.py`; `generate_data.py` writes the CSVs | the weekly case counts the model is fitted to (`data_cases.csv`, Brazilian Ministry of Health) are stored data |

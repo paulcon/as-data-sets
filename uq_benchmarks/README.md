@@ -8,6 +8,7 @@ Data sets (descriptions and papers are in the [top-level README](../README.md#da
 - [Fire_Satellite_Coupled_System](Fire_Satellite_Coupled_System/)
 - [Golinski_Speed_Reducer](Golinski_Speed_Reducer/)
 - [Hat_Stiffened_Panel_Shear_Buckling](Hat_Stiffened_Panel_Shear_Buckling/)
+- [OpenAeroStruct_Wing_Aerostructural](OpenAeroStruct_Wing_Aerostructural/)
 - [PDE_Inverse_Problem_MCMC](PDE_Inverse_Problem_MCMC/)
 - [Point_Heat_Source_Consolidation](Point_Heat_Source_Consolidation/)
 - [River_Flood_Dyke_Overflow](River_Flood_Dyke_Overflow/)

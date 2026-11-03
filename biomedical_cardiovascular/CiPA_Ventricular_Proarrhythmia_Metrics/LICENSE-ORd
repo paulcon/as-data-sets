@@ -1,0 +1,51 @@
+Licence of the O'Hara-Rudy (ORd) parts of cipaord_endo.mmt
+==========================================================
+
+cipaord_endo.mmt is a Myokit re-expression of the CiPAORdv1.0 model. Its ORd core
+(CaMKII, reversal potentials, INa, INaL, Ito, ICaL/ICaNa/ICaK, IKs, IK1, INaCa, INaK,
+background currents and IpCa, SR release and uptake, diffusion/translocation fluxes,
+buffering and concentrations, and cell geometry) follows the O'Hara-Rudy reference
+implementation as distributed in the FDA CiPA repository
+(https://github.com/FDA/CiPA, AP_simulation/models/newordherg_qNet.c, commit 539ff80,
+cloned 2026-11-01). Those parts are derived from code under the BSD 3-clause licence
+below; its copyright notice, conditions and disclaimer are reproduced exactly as they
+appear in the header of that C file (with the C comment markers "// " removed).
+
+The rest of cipaord_endo.mmt (the hERG Markov model with drug binding and trapping,
+written in flux form from Li et al. 2017; the virtual-drug scaling of Parikh et al.
+2019; the qNet integral; the stimulus and protocol) and the other code of this data set
+are new and licensed MIT, as is the repository. No code of the FDA's own (GPL-3.0)
+contributions to that C file is included.
+
+---------------------------------------------------------------------------------------
+Copyright (c) 2011-2015 by Thomas O'Hara, Yoram Rudy, 
+                           Washington University in St. Louis.
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+1. Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright 
+notice, this list of conditions and the following disclaimer in the 
+documentation and/or other materials provided with the distribution.
+
+3. Neither the names of the copyright holders nor the names of its
+contributors may be used to endorse or promote products derived from 
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS 
+IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED 
+TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A 
+PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT 
+HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF 
+USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND 
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, 
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF 
+THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
