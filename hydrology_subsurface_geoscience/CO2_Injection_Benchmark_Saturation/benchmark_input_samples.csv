@@ -1,5 +1,5 @@
 # Koeppel et al. (2019) benchmark: 10,000 coded input samples, InputParameters.csv of Zenodo 10.5281/zenodo.933827 (BSD 3-clause), values unchanged
-# ir (injection-rate perturbation theta1; Q = Cp qCO2 (1 + ir)),kd (relative permeability degree n = 2 + 2 kd),po (coded porosity; phi = A_PHI + B_PHI po with A_PHI and B_PHI fitted in DATA.md)
+# ir (injection rate, coded),kd (relative permeability degree, coded),po (porosity, coded)
 0.51652973000000002,0.0194369915,1.08017608
 0.87690210999999996,0.41391147499999997,0.038824672800000001
 0.50435341600000005,0.56965641899999997,0.92109174699999996

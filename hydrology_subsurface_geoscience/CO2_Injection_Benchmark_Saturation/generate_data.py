@@ -1,36 +1,55 @@
-"""Write the data files of CO2_Injection_Benchmark_Saturation.
+"""Write the data files of CO2_Injection_Benchmark_Saturation from the benchmark's own executable.
 
-    python generate_data.py                         # inputs.csv, outputs.csv, gradients.csv
-    python generate_data.py --out /tmp/co2 --check  # write elsewhere and compare with the files here
-    python generate_data.py --from-archive DIR      # also rewrite the two stored CSVs from the
-                                                    # unzipped Zenodo archive DIR/uqBenchmarkData
+The saturations are outputs of the authors' finite-volume code, the Linux executable `prog` of the
+benchmark's Zenodo archive (doi:10.5281/zenodo.933827, uqBenchmarkData.zip; no source), run on the
+archive's 10,000 input samples. They are stored data: this script records how they were made and can
+remake them on Linux x86-64; the shipped files stay the record.
 
-Stored data (from Zenodo 10.5281/zenodo.933827, uqBenchmarkData.zip, BSD 3-clause):
-  benchmark_input_samples.csv  the 10,000 coded samples (ir, kd, po) of InputParameters.csv
-  mc_reference_mean_std.csv    the Monte Carlo reference curves of MCrefs_MeanStd.csv
-Both are converted losslessly (float values identical; checked on writing).
+    # 1. run prog on the 10,000 samples in parallel chunks (Linux x86-64; about 8 h on 16 cores)
+    python generate_data.py run --archive DIR --work WORK [--jobs 16]
+    # 2. assemble the chunks into the shipped files (writes here unless --out is given)
+    python generate_data.py assemble --work WORK [--out DIR]
+    # compare a finished WORK with the shipped files (writes nothing)
+    python generate_data.py assemble --work WORK --check
+    # rewrite the two stored CSVs from the unzipped archive (lossless; header and values checked)
+    python generate_data.py archive --archive DIR [--out DIR]
 
-Model data (written from co2_benchmark_model.py, no randomness):
-  inputs.csv     10,000 x 3 physical inputs (Q in m^2/s, n, phi)
-  outputs.csv    10,000 x 6: S at r = 50, 75, 100, 125, 150 m and front radius r_f in m, t = 100 d
-  gradients.csv  10,000 x 3: d r_f / d(Q, n, phi), physical units
+DIR is the unzipped archive folder `uqBenchmarkData` (it holds `prog`, `InputParameters.txt`,
+`InputParameters.csv` and `MCrefs_MeanStd.csv`). WORK is a scratch folder outside this directory.
+`run` splits `InputParameters.txt` into chunks `WORK/chunks/in_00`, `in_01`, ... and runs
+`prog -pfile WORK/chunks/in_kk -path WORK/out_kk/ -allS -MC<rows>` for each, with the program's
+defaults otherwise (250 cells on [0, 250] m, t = 100 days, test case 5023: uncertain injection rate,
+relative permeability degree and porosity). `assemble` reads the per-sample saturation files
+(`*__S_0000.dat`, one line of 250 values per sample) in chunk order.
 
-Only numpy, scipy and the standard library are imported.
+Files written by `assemble`:
+  saturation_field.npz  S (10000 x 250, float64, as printed by prog with 17 significant digits)
+                        and r (250 cell positions in m, from prog's mean-value file)
+  outputs.csv           10000 x 5: S at the cells r = 50.2, 75.3, 100.4, 125.5, 150.6 m (cells 50,
+                        75, 100, 125, 150), copied from the field
+
+Only numpy and the standard library are imported; `run` needs the executable.
 """
 import argparse
+import glob
+import math
 import os
+import platform
+import shutil
+import subprocess
 import sys
+import tempfile
 import time
 
 import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, HERE)
-import co2_benchmark_model as cm  # noqa: E402
-
-PROVENANCE = ('co2_benchmark_model.py: exact entropy (Buckley-Leverett) solution of Eq. (11) of '
-              'Koeppel et al. 2019, t = 100 d, C_Q = %g, phi = %g + %g po; written by generate_data.py'
-              % (cm.C_Q, cm.A_PHI, cm.B_PHI))
+CELLS = (50, 75, 100, 125, 150)
+PROG_SHA256 = 'ca3773a458c753e408cb765beaebd369546e1551182cbad9c13eb564334c51b9'
+INPUT_SHA256 = 'c5b9e358ff7f54eca20b183110183ef534aac37135f2a4c1fed1a061fbf0707e'
+INSTALL = ("The benchmark executable is not available here. `prog` is a statically linked Linux x86-64 "
+           "binary from the Zenodo archive doi:10.5281/zenodo.933827 (uqBenchmarkData.zip); unzip it and "
+           "rerun this script on a Linux x86-64 machine with --archive pointing to the uqBenchmarkData folder.")
 
 
 def read_csv(path):
@@ -44,15 +63,22 @@ def _save(path, A, header):
         raise RuntimeError(f'{path} did not round-trip exactly')
 
 
-def convert_archive(src, out):
+def _sha256(path):
+    import hashlib
+    h = hashlib.sha256()
+    with open(path, 'rb') as fh:
+        for block in iter(lambda: fh.read(1 << 20), b''):
+            h.update(block)
+    return h.hexdigest()
+
+
+def archive(src, out):
     """Lossless conversion of the two stored files of the Zenodo archive."""
     C = np.loadtxt(os.path.join(src, 'InputParameters.csv'), delimiter=',', skiprows=1)
     _save(os.path.join(out, 'benchmark_input_samples.csv'), C,
           'Koeppel et al. (2019) benchmark: 10,000 coded input samples, InputParameters.csv of '
           'Zenodo 10.5281/zenodo.933827 (BSD 3-clause), values unchanged\n'
-          'ir (injection-rate perturbation theta1; Q = Cp qCO2 (1 + ir)),'
-          'kd (relative permeability degree n = 2 + 2 kd),'
-          'po (coded porosity; phi = A_PHI + B_PHI po with A_PHI and B_PHI fitted in DATA.md)')
+          'ir (injection rate, coded),kd (relative permeability degree, coded),po (porosity, coded)')
     with open(os.path.join(src, 'MCrefs_MeanStd.csv')) as fh:
         cols = fh.readline().strip()
     D = np.loadtxt(os.path.join(src, 'MCrefs_MeanStd.csv'), delimiter=',', skiprows=1)
@@ -61,58 +87,104 @@ def convert_archive(src, out):
           'code), CO2 saturation mean (e..) and std (s..) at t = 100 d, MCrefs_MeanStd.csv of '
           'Zenodo 10.5281/zenodo.933827 (BSD 3-clause), values unchanged; x in m; al = joint, '
           'ir/kd/po = only that input uncertain\n' + cols)
-    return C
+    print(f'wrote benchmark_input_samples.csv ({C.shape[0]} rows) and mc_reference_mean_std.csv to {out}')
 
 
-def compute(C):
-    Q, n, phi = cm.coded_to_physical(*C.T)
-    X = np.column_stack([Q, n, phi])
-    S = cm.saturation_field(cm.RADII, Q, n, phi)
-    rf = np.array([cm.front_radius(*x) for x in X])
-    G = np.array([cm.grad_front_radius(*x) for x in X])
-    return X, np.column_stack([S, rf]), G
+def run(src, work, jobs):
+    prog = os.path.join(src, 'prog')
+    if platform.system() != 'Linux' or platform.machine() not in ('x86_64', 'AMD64') or not os.path.exists(prog):
+        sys.exit(INSTALL)
+    for path, sha in ((prog, PROG_SHA256), (os.path.join(src, 'InputParameters.txt'), INPUT_SHA256)):
+        if _sha256(path) != sha:
+            sys.exit(f'{path} does not match the SHA-256 recorded in DATA.md; refusing to run')
+    os.chmod(prog, 0o755)
+    lines = open(os.path.join(src, 'InputParameters.txt')).read().splitlines()
+    size = math.ceil(len(lines) / jobs)
+    os.makedirs(os.path.join(work, 'chunks'), exist_ok=True)
+    procs = []
+    t0 = time.perf_counter()
+    for k in range(math.ceil(len(lines) / size)):
+        part = lines[k * size:(k + 1) * size]
+        fin = os.path.join(work, 'chunks', f'in_{k:02d}')
+        with open(fin, 'w') as fh:
+            fh.write('\n'.join(part) + '\n')
+        dout = os.path.join(work, f'out_{k:02d}')
+        os.makedirs(dout, exist_ok=True)
+        log = open(os.path.join(work, f'prog_{k:02d}.log'), 'w')
+        procs.append(subprocess.Popen([prog, '-pfile', fin, '-path', dout + '/', '-allS', f'-MC{len(part)}'],
+                                      stdout=log, stderr=subprocess.STDOUT))
+    codes = [p.wait() for p in procs]
+    print(f'{len(procs)} chunks, exit codes {sorted(set(codes))}, {time.perf_counter() - t0:.0f} s')
 
 
-def write(out, X, F, G):
-    _save(os.path.join(out, 'inputs.csv'), X,
-          '10,000 physical inputs from benchmark_input_samples.csv via co2_benchmark_model.'
-          'coded_to_physical\nQ (m^2/s),n (1),phi (1)')
-    rad = ','.join(f'S_r{int(r)} (1)' for r in cm.RADII)
-    _save(os.path.join(out, 'outputs.csv'), F,
-          'CO2 saturation at radii r (m) and front radius at t = 100 d; ' + PROVENANCE +
-          '\n' + rad + ',r_front (m)')
-    _save(os.path.join(out, 'gradients.csv'), G,
-          'gradient of r_front with respect to the physical inputs (Q, phi exact; n by central '
-          'difference of the shock speed, h = 1e-4); ' + PROVENANCE +
-          '\ndrf_dQ (m per m^2/s),drf_dn (m),drf_dphi (m)')
+def assemble_arrays(work):
+    """S (10000 x 250) and r (250) from the chunk folders, in chunk order."""
+    outs = sorted(glob.glob(os.path.join(work, 'out_[0-9][0-9]')))
+    if not outs:
+        sys.exit(f'no out_kk folders in {work}')
+    S, r = [], None
+    for d in outs:
+        fs = glob.glob(os.path.join(d, '*__S_0000.dat'))
+        fm = [f for f in glob.glob(os.path.join(d, '*_0000.dat')) if '__S_' not in f and '__v_' not in f]
+        if len(fs) != 1 or len(fm) != 1:
+            sys.exit(f'{d}: expected one per-sample file and one mean file')
+        S.append(np.loadtxt(fs[0], ndmin=2))
+        rk = np.loadtxt(fm[0])[:, 0]
+        if r is None:
+            r = rk
+        elif not np.array_equal(r, rk):
+            sys.exit(f'{d}: grid differs from the first chunk')
+    return np.vstack(S), r
+
+
+def write(out, S, r):
+    np.savez_compressed(os.path.join(out, 'saturation_field.npz'), S=S, r=r)
+    cols = ','.join(f'S_r{r[c]:.1f} (1)' for c in CELLS)
+    _save(os.path.join(out, 'outputs.csv'), S[:, list(CELLS)],
+          'CO2 saturation at t = 100 d at cells ' + ', '.join(str(c) for c in CELLS) + ' (r in m in the column '
+          'names), copied from saturation_field.npz; outputs of the benchmark executable prog '
+          '(Zenodo 10.5281/zenodo.933827) on the 10,000 rows of benchmark_input_samples.csv\n' + cols)
 
 
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument('mode', choices=('run', 'assemble', 'archive'))
+    ap.add_argument('--archive', help='the unzipped uqBenchmarkData folder')
+    ap.add_argument('--work', help='scratch folder of the prog runs (outside this directory)')
     ap.add_argument('--out', default=HERE)
-    ap.add_argument('--from-archive', default=None)
-    ap.add_argument('--check', action='store_true')
+    ap.add_argument('--jobs', type=int, default=16)
+    ap.add_argument('--check', action='store_true', help='with assemble: compare with the shipped files')
     a = ap.parse_args()
-    if os.path.abspath(a.out) == HERE and a.check:
-        ap.error('--check needs --out DIR outside this directory, so that the shipped files are not overwritten')
-    os.makedirs(a.out, exist_ok=True)
-    t0 = time.perf_counter()
-    if a.from_archive:
-        C = convert_archive(a.from_archive, a.out)
+    if a.work and os.path.abspath(a.work).startswith(HERE):
+        ap.error('--work must be outside this directory')
+    if a.mode == 'archive':
+        if not a.archive:
+            ap.error('archive needs --archive DIR')
+        archive(a.archive, a.out)
+    elif a.mode == 'run':
+        if not (a.archive and a.work):
+            ap.error('run needs --archive DIR and --work WORK')
+        run(a.archive, a.work, a.jobs)
     else:
-        C = read_csv(os.path.join(HERE, 'benchmark_input_samples.csv'))
-    X, F, G = compute(C)
-    write(a.out, X, F, G)
-    print(f'wrote {len(X)} samples to {a.out} in {time.perf_counter() - t0:.1f} s')
-    if a.check:
-        for name in ('inputs.csv', 'outputs.csv', 'gradients.csv', 'benchmark_input_samples.csv',
-                     'mc_reference_mean_std.csv'):
-            p_new, p_old = os.path.join(a.out, name), os.path.join(HERE, name)
-            if not os.path.exists(p_new) or os.path.samefile(p_new, p_old):
-                continue
-            A, B = read_csv(p_new), read_csv(p_old)
-            rel = np.max(np.abs(A - B)) / max(np.max(np.abs(B)), 1e-300)
-            print(f'{name}: max |new - shipped| / max |shipped| = {rel:.1e}')
+        if not a.work:
+            ap.error('assemble needs --work WORK')
+        S, r = assemble_arrays(a.work)
+        if S.shape != (10000, 250):
+            sys.exit(f'assembled {S.shape}, expected (10000, 250)')
+        if a.check:
+            tmp = tempfile.mkdtemp()
+            try:
+                write(tmp, S, r)
+                old = np.load(os.path.join(HERE, 'saturation_field.npz'))
+                print('saturation_field.npz: S identical:', np.array_equal(old['S'], S),
+                      '; r identical:', np.array_equal(old['r'], r))
+                print('outputs.csv identical:', np.array_equal(read_csv(os.path.join(tmp, 'outputs.csv')),
+                                                               read_csv(os.path.join(HERE, 'outputs.csv'))))
+            finally:
+                shutil.rmtree(tmp)
+        else:
+            write(a.out, S, r)
+            print(f'wrote saturation_field.npz and outputs.csv ({S.shape[0]} samples) to {a.out}')
 
 
 if __name__ == '__main__':
