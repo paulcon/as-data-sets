@@ -9,7 +9,7 @@ Kind: **Python model**. The model is `HH_model.py`, and `generate_data.py` draws
 | `Hodgkin_Huxley_Action_Potential.ipynb` | the case study (Python 3, active_subspaces v1) | executed top to bottom with `SEED = 2015`; outputs committed |
 | `HH_model.py` | `qoi(p)`, `qoi_and_grad(p)`, `trajectory(p, times)`; `NAMES`, `UNITS`, `NOMINAL`, `LOWER`, `UPPER`, `I_INJ`, `FORM`, `TIMES`, `QOI_NAMES` | the model |
 | `generate_data.py` | draws the inputs (`numpy.random.default_rng(2015)`) and writes the three CSVs | regenerates the data |
-| `check_accuracy.py` | the numbers below that the notebook and `generate_data.py` do not print (checks 1–6) | checks; in `.venv` 10–12 min with 4 worker processes, depending on the machine's load; `--skip-slow` (checks 1 and 4–6) 46 s |
+| `check_accuracy.py` | the numbers below that the notebook and `generate_data.py` do not print (checks 1–6) | checks; in `.venv` 10–12 min with 4 worker processes, depending on the machine's load; `--skip-slow` (checks 1 and 4–6) about 50 s |
 | `inputs.csv` | 1000 × 11 physical inputs, columns in the order of `NAMES` | model input |
 | `outputs.csv` | 1000 × 21: `vpeak` (mV), `tpeak` (ms), v (mV) at t = 5, 5.5, …, 14 ms | model output |
 | `gradients.csv` | 1000 × 231: column 11 i + j is ∂(output i)/∂(input j), with respect to the **physical** inputs | model output |
@@ -61,7 +61,7 @@ Ranges: p. 3 of the paper. Table 2 prints the conductances in µS/cm²; with C i
    | 160 | 7.4 | 44.0 at 8.40 | 10.8 at 10.58 | 31.4 |
    | 170 | 8.3 | 42.3 at 8.29 | 12.3 at 10.50 | 31.3 |
 
-   At I = 50 the nominal v(5 ms) is about −5 mV and the second maximum is a full spike of about 78 mV near 11 ms; at I ≤ 20 the second spike comes at or after 14 ms. Neither looks like Fig. 1(a). So Fig. 1(a) fixes I to roughly 140–160, and 150 is a round value in that range.
+   At I = 50 the nominal v(5 ms) is −4.8 mV and the second maximum is a full spike of 77.7 mV at 11.02 ms. At I ≤ 20 the second maximum comes after the 14 ms window (at 14.16 ms for I = 20, later for smaller I): a spike of 92–96 mV for I = 10–20, and an oscillation of a few mV for I ≤ 5 (`check_accuracy.py`, check 1, at I = 0, 5, …, 20, solved to 60 ms). Neither looks like Fig. 1(a). So Fig. 1(a) fixes I to roughly 140–160, and 150 is a round value in that range.
 4. **Time window.** Solve on [0, 14] ms; Fig. 1(a) shows 5–14 ms. Outputs at t = 5, 5.5, …, 14 ms (19 times). The markers of the Sobol curves in Fig. 1(a) appear at about this spacing.
 5. **The current term.** Eq. (1) as printed is dv/dt = −(gNa/C) m³h(v − ENa) − (gK/C) n⁴(v − EK) − (gL/C)(v − EL) + I, with I not divided by C. We use the H-H form C dv/dt = … + I (`FORM = 'standard'`). At the nominal C = 1 the two are identical, so the I fit above holds for both. They differ in how C matters. We computed both on the first 300 samples (`check_accuracy.py`, check 2; printed form by central differences with h = 1e-3 in normalized inputs):
    - **H-H form** (shipped): time-averaged normalized activity scores of v(t), scaled to max 1, are gK 1.000, ENa 0.971, gNa 0.315, h0 0.292, C 0.216, EK 0.200.

@@ -8,7 +8,9 @@ Prints, beside the values DATA.md quotes:
 
 1. Choice 3, the injected current: the nominal trajectory at I = 130, 140, ..., 170 uA/cm^2
    (DOP853, rtol 1e-10): v(5), the second maximum of v and its time, the trough after 9 ms and
-   its time, and v(14).
+   its time, and v(14). Then the lower currents of the sentence after the table: at I = 50, v(5)
+   and the second maximum; at I = 0, 5, 10, 15, 20, the second maximum of v and its time, from a
+   solve to 60 ms (the model's window ends at 14 ms).
 2. Choice 5, the current term: on the first 300 shipped samples, the time-averaged normalized
    activity scores of v(t) (scaled to max 1), lambda1/lambda2 of vpeak, and the weight of C in
    w1 of vpeak (w1 signed so that vpeak increases along it), for the H-H form (the shipped
@@ -141,6 +143,16 @@ def check1():
     print('   (DATA.md: 130: 4.6, 50.5 at 8.79, 6.4 at 10.90, 24.0; 140: 5.6, 48.1 at 8.65, 7.9 at 10.78, 27.5;\n'
           '    150: 6.5, 46.0 at 8.52, 9.3 at 10.67, 30.2; 160: 7.4, 44.0 at 8.40, 10.8 at 10.58, 31.4;\n'
           '    170: 8.3, 42.3 at 8.29, 12.3 at 10.50, 31.3)')
+    s = solve_ivp(hm._rhs, (0., hm.T_END), hm._y0(p), method='DOP853', t_eval=[5.], args=(p, 50., hm.FORM),
+                  events=hm._vmax, rtol=hm.RTOL, atol=hm.ATOL)
+    print(f'   I = 50: v(5) {s.y[0][0]:.1f}, second maximum {s.y_events[0][1, 0]:.1f} at {s.t_events[0][1]:.2f} '
+          f'(DATA.md: -4.8; 77.7 at 11.02)')
+    for I in [0., 5., 10., 15., 20.]:
+        s = solve_ivp(hm._rhs, (0., 60.), hm._y0(p), method='DOP853', args=(p, I, hm.FORM),
+                      events=hm._vmax, rtol=hm.RTOL, atol=hm.ATOL)
+        print(f'   I = {I:2.0f}: second maximum {s.y_events[0][1, 0]:5.1f} at {s.t_events[0][1]:.2f}')
+    print('   (DATA.md: after 14 ms for I <= 20, at 14.16 for I = 20; a spike of 92-96 mV for I = 10-20,\n'
+          '    a few mV for I <= 5)')
 
 
 def check2(pool, X, F, G):
