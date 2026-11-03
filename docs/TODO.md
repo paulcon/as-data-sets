@@ -159,11 +159,12 @@ One PR from `main` ships the 25 data sets built on 2026-10-31/11-01 (A1, A14). T
 - A12: the errata confirmed on the page are in §6; unconfirmed ones stay as DATA.md notes.
 
 Left open from PR 2:
-- [ ] B10 OpenAeroStruct: accept the failure ≤ 0 rule (805 of 2000 wings), or name another (author)
-- [ ] MAPK Study 2 keeps the authors' 20 s output grid: on a 1 s grid 215 samples oscillate instead of 171, and cycles shorter than 2 min have 5–35 % larger amplitude (documented in DATA.md and cell 35). Keep, or regenerate Study 2 on a finer grid? (author)
+- [x] B10 OpenAeroStruct: the failure ≤ 0 rule (805 of 2000 wings) is **accepted** (author, 2026-11-03)
+- [x] MAPK Study 2 keeps the authors' 20 s output grid: on a 1 s grid 215 samples oscillate instead of 171, and cycles shorter than 2 min have 5–35 % larger amplitude. **Keep the grid, with a note on the differences** (author, 2026-11-03): the note, already in DATA.md and cell 35, is now also in the summary and the comparison table ([#69](https://github.com/paulcon/as-data-sets/pull/69))
+- [x] The eight extra `*_driver.py` renames beyond A4's list: **fine** (author, 2026-11-03)
 - [ ] Untested here (no outside code): the optional `ion_wall_losses` column of Hall's `run_hallthruster.jl` (default unchanged) and Pyloric's new `dt`/`noise_std`/`seed` arguments (defaults unchanged); the check_accuracy.py parts that need L2-Sea, XFOIL, PROCESS, pyloric, HallThruster.jl or fdfault
 - [ ] For the existing-notebook PR (A7, A9 apply to the whole project): data sets on `main` still carry `.ema`/EMA references, rule citations ("M ≥ 10m") or build-process wording ("paper card", "the brief's"): Hodgkin_Huxley, Lillgrund, STAT5, Zika, Geological_CO2, Vlasov, Steel_Arch, River_Flood (DATA.md and `flood_model.py`), Sulfur
-- [ ] Letter D03 (Yang et al.), outside the repository: its pNaK 0.5 "no AP at beat 1000" came from an LSODA run and is wrong. With CVODES, the solver of the data (`check_accuracy.py` on the AWS host, 2026-11-02), beat 1000 is normal at pNaK 0.1, 0.5 and 1.0 (A90 86.6, 152.1, 199.3 ms). Correct the letter before sending; the rest of its numbers stand (Rabbit DATA.md)
+- [x] Letter D03 (Yang et al.), outside the repository: **fixed** (author, 2026-11-03). The draft did not contain the pNaK 0.5 "no AP" claim (its notes had left it out), but its beat-by-beat A90 values and the Nernst peak came from an LSODA integration ("not yet repeated in Myokit"). They are now the CVODES values of `check_accuracy.py` (AWS run, 2026-11-02): A90 at beats 5, 20, 100, 1000 is 308, 292, 208, 87 ms at pNaK 0.1, 265, 255, 205, 152 ms at 0.5 (new in the letter), and 231, 229, 208, 199 ms at 1; the notes say why LSODA is not quoted
 
 ### Author interview, 2026-10-30
 
