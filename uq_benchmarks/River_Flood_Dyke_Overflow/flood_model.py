@@ -66,7 +66,7 @@ LOWER = np.array([Q_LO, KS_LO, 49.0, 54.0, HD_LO, 55.0, 4990.0, 295.0])
 UPPER = np.array([Q_HI, np.inf, 51.0, 56.0, HD_HI, 56.0, 5010.0, 305.0])
 
 #: A reference point: the Gumbel location, the normal mean, the modes and the
-#: centre of the uniform. Used as the EMA nominal point; it is not a quantity of the paper.
+#: centre of the uniform. A reference point only; it is not a quantity of the paper.
 NOMINAL = np.array([1013.0, 30.0, 50.0, 55.0, 8.0, 55.5, 5000.0, 300.0])
 
 #: Exponents of H = Q^0.6 Ks^-0.6 B^-0.6 L^0.3 (Zm - Zv)^-0.3 in Q, Ks, B and L.

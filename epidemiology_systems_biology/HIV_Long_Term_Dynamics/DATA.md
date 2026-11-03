@@ -36,7 +36,7 @@ There is no randomness, so a run reproduces the files. Samples are independent; 
 
 ## Accuracy
 
-Checked against tighter solves (scratch scripts, not committed):
+Checked against tighter solves (external runs, not reproducible from the repository):
 
 - **Outputs**: LSODA at 1e-10 agrees with Radau at rtol = atol = 1e-13 to a relative 4e-9 for typical samples and 1.5e-6 for one with T(3400) ≈ 0.6.
 - **Gradients**: central differences with h = 3e-4 at 1e-10 agree with the same differences at rtol = atol = 1e-12 to a relative 1e-5 (row norm, worst time, three samples) and to ≤ 6e-6 at the three rows checked below. h = 1e-4 gives 3–5e-5 (solver noise), and h = 1e-3 gives up to 4e-4 at late times (truncation), so 3e-4 is the step used.

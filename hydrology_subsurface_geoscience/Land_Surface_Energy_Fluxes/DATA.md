@@ -35,6 +35,7 @@ Distributions and units are those of Table 2 of the paper. The notebook's table 
 - soilcol is an integer class, 1 to 8, normalized like a uniform input on [1, 8].
 - The values are rounded to one or two significant figures, so each column has few distinct values: 8 to 89 for grass (z0m has 21), and 8, 219 and 87 for bare soil (soilcol, z0m, watertable).
 - Every uniform input lies inside its range.
+- lai (maximum leaf area index) and lai0 (minimum) are drawn independently, U(1, 4) and U(0.05, 3), as in Table 2 of the paper. In 70 of the 300 grass runs lai0 is larger than lai (row 1: lai = 2.5, lai0 = 2.8), and in 10 they are equal. That is physically inconsistent; the runs are used as they are (the notebook prints the count).
 - The grass default point of the paper's Table 2 lies outside the sampled ranges. Its rhol_nir = 0.58 is above U(0.35, 0.55), and Table 2 gives both values; which one is in error is unknown. Its z0m = 0.03 m is above every sampled grass value (largest 0.029).
 
 ## Outputs (`ScatterSummary_*.txt`)
@@ -49,13 +50,13 @@ Space-separated text, no header, 300 rows × 5 columns. Columns are numbered fro
 | 3 | unknown | 16.6 – 25.0 | 7.4 – 22.1 | no |
 | 4 | unknown (values 301.6 – 309.2 suggest a temperature in K; not confirmed) | 302.6 – 309.2 | 301.6 – 308.3 | no |
 
-- The quantities in columns 0–2 are the total latent, sensible and ground heat over the 144-hour forcing period (paper §4.3). Their units and normalization are **unknown** (author, 2026-10-30). The paper labels its outputs W m⁻² (p. 17). The constant terms of the quadratic fits to these files are 103 to 617 times those of the paper's Table 4, with a different factor for each flux (printed by the notebook). So these files are not the paper's outputs in other units.
+- The quantities in columns 0–2 are the total latent, sensible and ground heat over the 144-hour forcing period (paper §4.3). Their units and normalization are **unknown** (author, 2026-10-30). The paper labels its outputs W m⁻² (p. 17; page numbers here refer to the paper's accepted manuscript). The constant terms of the quadratic fits to these files are 103 to 617 times those of the paper's Table 4, with a different factor for each flux (printed by the notebook). So these files are not the paper's outputs in other units.
 - The meaning of columns 3 and 4 is **unknown** (author, 2026-10-30).
 
 ## Provenance
 
 - Generating code: ParFlow coupled to the Common Land Model (ParFlow-CLM). The PF-CLM version, the run date and who ran the simulations are **not recorded**.
-- The 2016 notebook calls these "updated model evaluations" compared with the paper. They are later runs than those behind the paper's figures and tables, and they do not reproduce them: R², fitted coefficients, the ranking of the grass latent heat parameters and the default-point example all differ (the notebook prints each difference). The paper's tilted-v runs are not in the repo.
+- The 2016 notebook calls these "updated model evaluations" compared with the paper. They are later runs than those behind the paper's figures and tables, and they do not reproduce them: R², fitted coefficients, the ranking of the grass latent heat parameters and the default-point example all differ (the notebook prints each difference). One difference is in the sign of a physical effect: for bare-soil sensible heat the log z0m weight is +0.35 in these data and about −0.57 in the paper's Fig. 5 (p. 40), whose C₁ > 0 (Table 4) shows the same sign convention. Which is right is not known. The paper's tilted-v runs are not in the repo.
 - The simulation setup (domain, subsurface parameters, the 144-hour forcing from the Little Washita watershed, Oklahoma) is in Tables 2–3 and §2 of the paper.
 
 ## Regenerating

@@ -2,6 +2,7 @@
 
     python generate_data.py              # both cases, writes the CSVs next to this script
     python generate_data.py --out /tmp/acx --mc 2000    # smaller Monte Carlo, elsewhere
+    python generate_data.py --out /tmp/acx --check      # full rerun elsewhere, compared with the files here
 
 For each case (weak, strong coupling; Bauerheim et al. 2016, Table 2) this writes
 
@@ -100,12 +101,28 @@ def write(path, A, fmt, header):
     np.savetxt(path, A, fmt=fmt, delimiter=',', header=header)
 
 
+def compare(out, names):
+    """Largest difference of each rerun file from the shipped one, relative to the largest
+    absolute value in each column (so that values near zero do not dominate)."""
+    for name in names:
+        new = np.loadtxt(os.path.join(out, name), delimiter=',', ndmin=2)
+        old = np.loadtxt(os.path.join(HERE, name), delimiter=',', ndmin=2)
+        if new.shape != old.shape:
+            print(f'{name}: shape {new.shape} differs from the shipped {old.shape}')
+            continue
+        scale = np.maximum(np.abs(old).max(axis=0), np.finfo(float).tiny)
+        print(f'{name}: max difference / column max {(np.abs(new - old) / scale).max():.1e}')
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     ap.add_argument('--out', default=HERE)
     ap.add_argument('--mc', type=int, default=M_MC, help='Monte Carlo sample size (default 10000)')
     ap.add_argument('--nfd', type=int, default=10, help='samples per case in the finite-difference check')
+    ap.add_argument('--check', action='store_true', help='compare the rerun files with the shipped ones')
     args = ap.parse_args()
+    if args.check and os.path.abspath(args.out) == HERE:
+        ap.error('--check needs --out DIR outside this directory, so that the shipped files are not overwritten')
     if os.path.abspath(args.out) == HERE and args.mc != M_MC:
         ap.error('--mc needs --out DIR outside this directory, so that the shipped files are not overwritten')
     os.makedirs(args.out, exist_ok=True)
@@ -154,6 +171,11 @@ def main():
               header=f'{args.mc} Monte Carlo samples, seed {SEEDS[case][1]} (inputs: generate_data.mc_inputs); '
                      f'{dist}. {prov}\n' + OUT_COLS)
     print(f'total {time.perf_counter() - t_all:.0f} s')
+    if args.check:
+        names = [f'{kind}_{case}.csv' for case in acm.CASES for kind in ('inputs', 'outputs', 'gradients')]
+        if args.mc == M_MC:
+            names += [f'montecarlo_{case}.csv' for case in acm.CASES]
+        compare(args.out, names)
 
 
 if __name__ == '__main__':

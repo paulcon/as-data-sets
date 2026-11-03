@@ -31,7 +31,7 @@ SHA-256 of the originals: s002 `af735fd071cf5b1ca5c40ce5feeabe02909870e2da565977
 
 ## Model
 
-From the paper card. All page and table references are to Chang, Strong and Clayton, PLoS ONE 10(6):e0130252 (2015).
+All page and table references are to Chang, Strong and Clayton, PLoS ONE 10(6):e0130252 (2015).
 
 - **Simulator**: LR1991 (Luo and Rudy, Circ. Res. 68:1501–1526, 1991): eight ODEs, for V_m, six gating variables and the intracellular calcium concentration. The paper ran MATLAB code generated automatically from the CellML repository (www.cellml.org) and solved it with `ode15s` (p. 4). It does not state solver tolerances, the MATLAB version or the CellML model revision.
 - **Pacing protocol** (p. 5): nine S1 stimuli of −25.5 µA/cm² for 2 ms at a cycle length of 1000 ms. The six action-potential outputs come from the final (ninth) beat.
@@ -49,7 +49,7 @@ From the paper card. All page and table references are to Chang, Strong and Clay
 
   Table 1 rounds the range ends to four decimals. The text (p. 4: "Gx ± Gx/4", "0.0 corresponding to 17.25 … 1.0 corresponding to 28.75") fixes the exact ends used here. The normal distributions, N(0.5, variance 0.04) in u, are the paper's sensitivity-analysis distribution. The notebook uses them only to compare with the paper's indices; the active subspace is computed on the uniform design distribution.
 - **Quantities of interest**: the eight outputs above (p. 4, Table 2). APD90 is the paper's worked example.
-- **Gradients**: none. Only values are published, so the notebook uses the global quadratic (QPHD) estimator, with M = 200 ≥ 2 × 28, and OLS as a cross-check.
+- **Gradients**: none. Only values are published, so the notebook uses the global quadratic (QPHD) estimator, with M = 200 points for the 28 coefficients of a quadratic in six inputs, and OLS as a cross-check.
 - **Sampling design** (p. 4): 200 design points by Latin hypercube sampling of the uniform ranges, and 20 separate test runs. No seed is given. Both files are valid Latin hypercubes in u: with the values sorted, the i-th value of every column lies in [i/M, (i+1)/M] (checked for M = 200 and M = 20). There are no duplicate rows, and no test point is a design point.
 - **Cost** (p. 10): 2000 simulator runs (one Monte Carlo set for Fig. 4(b)) took 9 h 13 min to 9 h 34 min, about 17 s per run.
 - **Published results**: GP emulator summaries (Table 2: design mean, emulator mean and CoV under the normal inputs, Mahalanobis distance on the test runs); mean effects (Figs. 5, 7); main-effect indices (Fig. 6 for APD90, Fig. 8 for all outputs, with the values printed in the cells); PLS regression coefficients (Fig. 9). The APD90 main effects sum to 98.4 % (p. 10). The sums are over 98 % for all outputs except the APDr slope (85 %) and the minimum DI (26 %, 0.256; pp. 13, 15, 17). There is no active subspace in the paper.

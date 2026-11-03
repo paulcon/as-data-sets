@@ -47,7 +47,7 @@ Charlson gives nominal values and relative uncertainties, not distributions. The
 
 **Gradients.** Exact: ∂ΔF_R/∂z_i = x_i ∂ΔF_R/∂x_i = ΔF_R for every i, because every input enters with power 1. So the active subspace in log coordinates is exactly one-dimensional, w₁ = σ/‖σ‖, λ₁ = E[ΔF_R²] ‖σ‖², λ₂ = … = λ₉ = 0. Gradients with respect to the physical inputs are ΔF_R/x_i (`grad_physical`); the notebook uses them for a comparison in physical coordinates.
 
-**Sampling design.** M = 1000 independent draws, x = exp(μ + σ ⊙ ξ), ξ ~ N(0, I₉), `numpy.random.default_rng(1992).standard_normal((1000, 9))`. M ≥ 10 m and ≥ 300.
+**Sampling design.** M = 1000 independent draws, x = exp(μ + σ ⊙ ξ), ξ ~ N(0, I₉), `numpy.random.default_rng(1992).standard_normal((1000, 9))`, about 111 samples per input.
 
 **Published results.** Charlson et al. report a point estimate: Table 1 gives B = 4.6 × 10⁻³ g SO₄²⁻ m⁻² (4.8 × 10⁻⁵ mol m⁻²), δ = 0.04 and ΔF_R = −1.3 W m⁻²; the text (p. 426) gives −1 W m⁻² "uncertain to a factor of 2". No sampling study and no active subspace. UQTestFuns gives the analytic mean −1.2741 and variance 1.7089 of the benchmark (Monte Carlo with 10⁶ samples: −1.2741 and 1.7007).
 

@@ -18,7 +18,8 @@ digits, which float64 round-trips exactly). Nothing is rescaled or dropped:
 - dropped_runs_<rate>: Run numbers whose final voltage (Vol50) is more than
   1 mV below the 2.8 V cutoff. This is a flag; the rows stay in the arrays and the
   notebook applies the same rule;
-- source_md5 (3, 2): md5 of each source file, to check against the archived originals.
+- source_md5 (6, 2): file name and md5 of each of the six source files, to check
+  against the archived originals.
 
 Not converted: the 150 concentration columns per file (ConA, ConS, ConC). They
 are unused and go to the archival deposit of the original files only.

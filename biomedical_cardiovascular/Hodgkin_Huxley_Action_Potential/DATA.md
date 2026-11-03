@@ -26,7 +26,7 @@ The CSVs are plain comma-separated numbers after two `#` lines (a description an
 - dm/dt = 0.1(25 − v)/(exp((25 − v)/10) − 1) (1 − m) − 4 exp(−v/18) m
 - dh/dt = 0.07 exp(−v/20) (1 − h) − h/(exp((30 − v)/10) + 1)
 
-with (v, m, n, h)(0) = (v0, m0, n0, h0) and t in ms. The rate functions are as printed; their removable singularities at v = 10 and v = 25 are evaluated with `expm1` and a series.
+with (v, m, n, h)(0) = (v0, m0, n0, h0) and t in ms. Eq. (1) (p. 2) defines the state as x = [v, m, n, h], but its second row is the n equation and its third the m equation; we use each equation for the variable it describes. The rate functions are as printed; their removable singularities at v = 10 and v = 25 are evaluated with `expm1` and a series.
 
 **Inputs (m = 11)**, the vector ξ of Eq. (2), nominal values from Table 2 (p. 6), independent uniform on nominal ± 20 % (p. 3: "assuming 20 % of variability in the nominal values"):
 
@@ -50,7 +50,7 @@ Ranges: p. 3 of the paper. Table 2 prints the conductances in µS/cm²; with C i
 
 1. **"20 % of variability"** is read as nominal ± 20 % (a 40 %-wide interval). For the negative nominals (v0, EK) the bounds are 1.2 and 0.8 times nominal.
 2. **h0 > 1.** Under ± 20 %, h0 reaches 1.19976, outside the physical range [0, 1], in about half the samples. We keep the paper's stated ranges. The equations stay well defined (h relaxes toward h∞(v) < 1), and h0 has a small effect on the outputs.
-3. **Injected current I = 150 µA/cm²**, constant from t = 0, for Fig. 1. The paper does not give it. We chose it by matching the nominal trajectory to the deterministic curve of Fig. 1(a), read from the figure: v ≈ 5 mV at 5 ms, peak ≈ 45 mV at ≈ 8.7 ms, trough ≈ 10 mV at ≈ 10.8 ms, v ≈ 30 mV at 14 ms. Nominal trajectories (scratch scan, DOP853 at rtol 1e-10):
+3. **Injected current I = 150 µA/cm²**, constant from t = 0, for Fig. 1. The paper does not give it. We chose it by matching the nominal trajectory to the deterministic curve of Fig. 1(a), read from the figure: v ≈ 5 mV at 5 ms, peak ≈ 45 mV at ≈ 8.7 ms, trough ≈ 10 mV at ≈ 10.8 ms, v ≈ 30 mV at 14 ms. Nominal trajectories (external run, not reproducible from the repository; DOP853 at rtol 1e-10):
 
    | I (µA/cm²) | v(5) (mV) | second peak (mV at ms) | trough (mV at ms) | v(14) (mV) |
    |---|---|---|---|---|
@@ -62,7 +62,7 @@ Ranges: p. 3 of the paper. Table 2 prints the conductances in µS/cm²; with C i
 
    At I = 50 the nominal v(5 ms) is about −5 mV and the second maximum is a full spike of about 78 mV near 11 ms; at I ≤ 20 the second spike comes at or after 14 ms. Neither looks like Fig. 1(a). So Fig. 1(a) fixes I to roughly 140–160, and 150 is a round value in that range.
 4. **Time window.** Solve on [0, 14] ms; Fig. 1(a) shows 5–14 ms. Outputs at t = 5, 5.5, …, 14 ms (19 times). The markers of the Sobol curves in Fig. 1(a) appear at about this spacing.
-5. **The current term.** Eq. (1) as printed is dv/dt = −(gNa/C) m³h(v − ENa) − (gK/C) n⁴(v − EK) − (gL/C)(v − EL) + I, with I not divided by C. We use the H-H form C dv/dt = … + I (`FORM = 'standard'`). At the nominal C = 1 the two are identical, so the I fit above holds for both. They differ in how C matters. We computed both on the first 300 samples (scratch script; printed form by central differences with h = 1e-3 in normalized inputs):
+5. **The current term.** Eq. (1) as printed is dv/dt = −(gNa/C) m³h(v − ENa) − (gK/C) n⁴(v − EK) − (gL/C)(v − EL) + I, with I not divided by C. We use the H-H form C dv/dt = … + I (`FORM = 'standard'`). At the nominal C = 1 the two are identical, so the I fit above holds for both. They differ in how C matters. We computed both on the first 300 samples (external run, not reproducible from the repository; printed form by central differences with h = 1e-3 in normalized inputs):
    - **H-H form** (shipped): time-averaged normalized activity scores of v(t), scaled to max 1, are gK 1.000, ENa 0.993, gNa 0.322, h0 0.292, C 0.216, EK 0.199.
    - **Printed form**: the same scores are C 1.000, ENa 0.691, gK 0.643, gNa 0.216, h0 0.185, EK 0.126. vpeak has λ1/λ2 = 64 (121 for the H-H form on the same 300 samples), and C has weight −0.31 in w1 (−0.01 for the H-H form).
 
@@ -76,7 +76,7 @@ Ranges: p. 3 of the paper. Table 2 prints the conductances in µS/cm²; with C i
 
 Maxima are found by a `solve_ivp` event on dv/dt = 0 (decreasing). `HH_model.qoi` raises an error unless the first maximum is before 2 ms and the second lies in (5, 12) ms. Some samples have a third maximum after 13.2 ms, which is not used.
 
-**Smoothness and regime check: no threshold crossing.** These were scratch checks with the shipped model:
+**Smoothness and regime check: no threshold crossing.** The first two checks are external runs with the shipped model, not reproducible from the repository; the third is in the notebook:
 - 2000 uniform random points and all 2048 corners of the box: every point has its first maximum at 0.46–0.77 ms (94–141 mV) and its second at 7.76–9.32 ms (20.7–77.2 mV). Each has 2 or 3 maxima (624 corners and 181 random points have a third, at ≥ 13.29 ms), and `qoi` succeeds at every point.
 - The 1000 shipped samples: vpeak 21.7–73.6 mV, tpeak 7.89–9.16 ms.
 - In the notebook, a line through the center of the box along w1 at 81 points: vpeak varies smoothly (largest second difference 0.014 mV).
@@ -90,11 +90,11 @@ The second peak is a graded, damped oscillation, not an all-or-none spike, so vp
 
 They are with respect to the physical inputs. Multiply column j by (upper_j − lower_j)/2 for normalized inputs.
 
-**Sampling design.** N = 1000 independent uniform samples, `numpy.random.default_rng(2015).random((1000, 11))` mapped to the box. That is about 90 per input; the brief's minimum for the gradient estimator is max(10 m, 300) = 300. The paper used level-3/4 Gauss–Patterson sparse grids (17249 and 18591 runs) and 1000 Monte Carlo samples per time point from a piecewise-linear sparse-grid interpolant, with no seed reported.
+**Sampling design.** N = 1000 independent uniform samples, `numpy.random.default_rng(2015).random((1000, 11))` mapped to the box. That is about 90 per input. The paper used level-3/4 Gauss–Patterson sparse grids (17249 and 18591 runs) and 1000 Monte Carlo samples per time point from a piecewise-linear sparse-grid interpolant, with no seed reported.
 
 **Published results.** The paper has no active subspace. It reports:
 - time-resolved first-order Sobol indices of v (Fig. 1(a), middle);
-- time-averaged Sobol indices for v, n, m, h (Fig. 1(b));
+- time-averaged Sobol indices for v, n, m, h (Fig. 1(b), a colour map). Read from it (pixel colours against the colour bar, 0 to 0.5), the v(t) column has gK and ENa at about 0.31 each, gNa 0.10, h0 0.08, C and EK about 0.06, and the other five about 0;
 - the SVD of that 11 × 4 matrix (Table 2): mode-1 energy 0.944690, with normalized mode 1 gK 1.000000, ENa 0.532895, EK 0.232445, gNa 0.172271, h0 0.140569, C 0.099635, and n0, m0, v0, gL, EL ≤ 0.0018;
 - a two-parameter model (gK, ENa) that reproduces the standard deviation of v to within 10 % at all times (Fig. 1(a), bottom).
 
@@ -115,7 +115,7 @@ The seed is fixed and the samples are the first N rows of one stream, so a run r
 
 ## Accuracy
 
-These checks were made with scratch scripts, not committed:
+The first three checks are external runs, not reproducible from the repository; the last is in the notebook:
 
 - **Outputs.** At 5 samples, the shipped values (DOP853, rtol 1e-10, atol 1e-12) agree with Radau at rtol = 1e-13, atol = 1e-14 to 2.8e-10 mV (vpeak), 2.7e-11 ms (tpeak) and 5.2e-10 mV (v(t)).
 - **Gradients against tighter sensitivities.** At 4 samples, the shipped gradients agree with the same sensitivity solve at rtol = 1e-13 to a relative 5.2e-10 (row norm, worst output).
@@ -129,7 +129,7 @@ These checks were made with scratch scripts, not committed:
 ## How these files relate to the paper
 
 - **Not the paper's computation.** The paper's results come from stochastic collocation on Gauss–Patterson sparse grids, with Sobol indices from sparse-grid quadrature. Its code and samples are not available, and it reports no scalar output or gradient. The data here are an independent Python computation of the same model and input ranges. They use three settings the paper does not state: I = 150 µA/cm², the window [0, 14] ms, and the H-H form of the current term. Changing I changes the outputs and, to a smaller degree, the ranking.
-- **What is compared.** Two things are compared: the nominal trajectory, against Fig. 1(a) read by eye, and the ranking of the inputs, against Fig. 1(b) and Table 2. Our scores are derivative-based activity scores of v only; the paper's are first-order Sobol indices of v, n, m, h. They agree on the two dominant inputs (gK, ENa) and the five negligible ones. ENa's relative weight is larger here (0.993 against 0.533).
+- **What is compared.** Two things are compared: the nominal trajectory, against Fig. 1(a) read by eye, and the ranking of the inputs, against Fig. 1(b) and Table 2. Our scores are derivative-based activity scores of v only; the paper's are first-order Sobol indices of v, n, m, h. They agree on the two dominant inputs (gK, ENa) and the five negligible ones. Against Table 2 mode 1, ENa's relative weight is larger here (0.993 against 0.533), but mode 1 mixes v, n, m and h. The v(t) column of Fig. 1(b), read from the colour map, is the like-for-like comparison: it gives gK and ENa the same average Sobol index (about 0.31), and scaled to max 1 gNa 0.33, h0 0.26, C 0.21 and EK 0.18, close to the scores here (0.322, 0.292, 0.216, 0.199).
 - No data were copied from the paper or from any outside source.
 
 ## Open questions (for the authors)
