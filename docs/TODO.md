@@ -122,7 +122,7 @@ Part D, letters to authors:
 - [ ] D1–D15 (author, 2026-11-02): **draft all fifteen letters** (D1 Seshadri, D2 Bauerheim, D3 Yang et al., D4 Grey, D5 Erdal and Cirpka, D6 Iooss, D7 Köppel and Rohde, D8 Morris, D9 Schuster and Sullivan, D10 Wong et al., D11 Zonta et al., D12 Marks et al., D13 Davis et al., D14 Linden et al., D15 Equadratures and Rolls-Royce). The drafts are kept outside the repository, in `~/Documents/Claude/ActiveSubspacesDiscovered/letters/` (one file per letter); the author sends them. D13 (Davis et al.) and D15 (Equadratures and Rolls-Royce) ask for a licence or CC BY grant, which the author chose here in addition to A5's exceptions list. Until replies arrive, each question stays stated as open in its DATA.md. Drafted 2026-11-02; each file ends with "Notes for Paul" (evidence per question, unverified points, contacts to check). Before sending:
   - D1 and D2 describe Transonic_Fan and Annular as B4 and B23 will leave them; send them after those fixes merge (main still quotes Eq. 11 as ⅓A² and says "weak case reproduced")
   - addresses missing or possibly out of date: Iooss (2006 CEA address), Grey and Davis (no e-mail in the paper), D15 recipients (2018/2021 papers)
-- [x] Repository fixes found while drafting the letters (2026-11-02; MAPK and Lorenz96 done in PR 2, below):
+- [x] Repository fixes found while drafting the letters (2026-11-02; MAPK and Lorenz96 done in [#68](https://github.com/paulcon/as-data-sets/pull/68)):
   - MAPK: the S2 Table (now in `papers/`) gives k1 in [0, 0.05], the code's `paramBounds` [0, 0.1] (Study 1 uses 0.1, and the limit-cycle nominal k1 = 0.1 lies outside S2's range); S2 lists every rate constant in nM·s⁻¹, which does not fit the equations. DATA.md still says the S2 Table "was not opened". The peak threshold is confirmed: `limitCycleFeatures.m` lines 22–23 test `range(lMax) < 17` (full spread), p. 23 says half. Asked in D14
   - Lorenz96 DATA.md: Fig. 5.6's F marginal is described as "about −5 to 5"; the page shows mode near 1, about −6 to 8
   - [x] Transonic_Airfoil DATA.md: Grey's CST "index 1 upper" statement is on p. 2010, not p. 2011 (fixed in the #64 follow-up, 2026-11-02)
@@ -143,7 +143,7 @@ Left open from this step:
 - [x] CMOS review E3 C5: cell 20 now says the second-stage mirror term m_n5/m_n4 carries little weight (the full formula's direction has |cos| 0.899 with w₁ on the box, against 0.959 for the tail ratio m_n3/m_n4 alone; m_n5 +0.122 in w₁), verified in `.venv` (2026-11-02)
 - [x] Annular_Combustor and Fire_Satellite (on main) printed warnings with the kernel's temporary path (`/var/folders/...`): fixed in [#66](https://github.com/paulcon/as-data-sets/pull/66) (2026-11-02; re-executed twice, text outputs unchanged)
 
-#### Done in PR 2: the 25 new data sets (2026-11-02)
+#### Done in [#68](https://github.com/paulcon/as-data-sets/pull/68) (PR 2): the 25 new data sets (2026-11-02)
 
 One PR from `main` ships the 25 data sets built on 2026-10-31/11-01 (A1, A14). The first commit adds them as built, without Kaesbach's derived `inputs.csv` (B12); the later commits are the fixes, one per group of data sets.
 - A13: listed in `README.md`, the category READMEs and the `docs/README.md` table; Pyloric moved to `biomedical_cardiovascular/`.
