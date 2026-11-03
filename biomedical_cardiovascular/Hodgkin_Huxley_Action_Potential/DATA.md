@@ -9,6 +9,7 @@ Kind: **Python model**. The model is `HH_model.py`, and `generate_data.py` draws
 | `Hodgkin_Huxley_Action_Potential.ipynb` | the case study (Python 3, active_subspaces v1) | executed top to bottom with `SEED = 2015`; outputs committed |
 | `HH_model.py` | `qoi(p)`, `qoi_and_grad(p)`, `trajectory(p, times)`; `NAMES`, `UNITS`, `NOMINAL`, `LOWER`, `UPPER`, `I_INJ`, `FORM`, `TIMES`, `QOI_NAMES` | the model |
 | `generate_data.py` | draws the inputs (`numpy.random.default_rng(2015)`) and writes the three CSVs | regenerates the data |
+| `check_accuracy.py` | the numbers below that the notebook and `generate_data.py` do not print (checks 1–6) | checks; in `.venv` 10–12 min with 4 worker processes, depending on the machine's load; `--skip-slow` (checks 1 and 4–6) 46 s |
 | `inputs.csv` | 1000 × 11 physical inputs, columns in the order of `NAMES` | model input |
 | `outputs.csv` | 1000 × 21: `vpeak` (mV), `tpeak` (ms), v (mV) at t = 5, 5.5, …, 14 ms | model output |
 | `gradients.csv` | 1000 × 231: column 11 i + j is ∂(output i)/∂(input j), with respect to the **physical** inputs | model output |
@@ -50,7 +51,7 @@ Ranges: p. 3 of the paper. Table 2 prints the conductances in µS/cm²; with C i
 
 1. **"20 % of variability"** is read as nominal ± 20 % (a 40 %-wide interval). For the negative nominals (v0, EK) the bounds are 1.2 and 0.8 times nominal.
 2. **h0 > 1.** Under ± 20 %, h0 reaches 1.19976, outside the physical range [0, 1], in about half the samples. We keep the paper's stated ranges. The equations stay well defined (h relaxes toward h∞(v) < 1), and h0 has a small effect on the outputs.
-3. **Injected current I = 150 µA/cm²**, constant from t = 0, for Fig. 1. The paper does not give it. We chose it by matching the nominal trajectory to the deterministic curve of Fig. 1(a), read from the figure: v ≈ 5 mV at 5 ms, peak ≈ 45 mV at ≈ 8.7 ms, trough ≈ 10 mV at ≈ 10.8 ms, v ≈ 30 mV at 14 ms. Nominal trajectories (external run, not reproducible from the repository; DOP853 at rtol 1e-10):
+3. **Injected current I = 150 µA/cm²**, constant from t = 0, for Fig. 1. The paper does not give it. We chose it by matching the nominal trajectory to the deterministic curve of Fig. 1(a), read from the figure: v ≈ 5 mV at 5 ms, peak ≈ 45 mV at ≈ 8.7 ms, trough ≈ 10 mV at ≈ 10.8 ms, v ≈ 30 mV at 14 ms. Nominal trajectories (`check_accuracy.py`, check 1; DOP853 at rtol 1e-10):
 
    | I (µA/cm²) | v(5) (mV) | second peak (mV at ms) | trough (mV at ms) | v(14) (mV) |
    |---|---|---|---|---|
@@ -62,9 +63,9 @@ Ranges: p. 3 of the paper. Table 2 prints the conductances in µS/cm²; with C i
 
    At I = 50 the nominal v(5 ms) is about −5 mV and the second maximum is a full spike of about 78 mV near 11 ms; at I ≤ 20 the second spike comes at or after 14 ms. Neither looks like Fig. 1(a). So Fig. 1(a) fixes I to roughly 140–160, and 150 is a round value in that range.
 4. **Time window.** Solve on [0, 14] ms; Fig. 1(a) shows 5–14 ms. Outputs at t = 5, 5.5, …, 14 ms (19 times). The markers of the Sobol curves in Fig. 1(a) appear at about this spacing.
-5. **The current term.** Eq. (1) as printed is dv/dt = −(gNa/C) m³h(v − ENa) − (gK/C) n⁴(v − EK) − (gL/C)(v − EL) + I, with I not divided by C. We use the H-H form C dv/dt = … + I (`FORM = 'standard'`). At the nominal C = 1 the two are identical, so the I fit above holds for both. They differ in how C matters. We computed both on the first 300 samples (external run, not reproducible from the repository; printed form by central differences with h = 1e-3 in normalized inputs):
-   - **H-H form** (shipped): time-averaged normalized activity scores of v(t), scaled to max 1, are gK 1.000, ENa 0.993, gNa 0.322, h0 0.292, C 0.216, EK 0.199.
-   - **Printed form**: the same scores are C 1.000, ENa 0.691, gK 0.643, gNa 0.216, h0 0.185, EK 0.126. vpeak has λ1/λ2 = 64 (121 for the H-H form on the same 300 samples), and C has weight −0.31 in w1 (−0.01 for the H-H form).
+5. **The current term.** Eq. (1) as printed is dv/dt = −(gNa/C) m³h(v − ENa) − (gK/C) n⁴(v − EK) − (gL/C)(v − EL) + I, with I not divided by C. We use the H-H form C dv/dt = … + I (`FORM = 'standard'`). At the nominal C = 1 the two are identical, so the I fit above holds for both. They differ in how C matters. We computed both on the first 300 samples (`check_accuracy.py`, check 2; printed form by central differences with h = 1e-3 in normalized inputs):
+   - **H-H form** (shipped): time-averaged normalized activity scores of v(t), scaled to max 1, are gK 1.000, ENa 0.971, gNa 0.315, h0 0.292, C 0.216, EK 0.200.
+   - **Printed form**: the same scores are C 1.000, ENa 0.704, gK 0.648, gNa 0.220, h0 0.187, EK 0.128. vpeak has λ1/λ2 = 64 (121 for the H-H form on the same 300 samples), and C has weight −0.31 in w1 (−0.01 for the H-H form).
 
    The paper's Table 2 mode 1 is gK 1.000, ENa 0.533, EK 0.232, gNa 0.172, h0 0.141, C 0.100 (Fig. 1(b): gK and ENa dominate, C minor). Only the H-H form reproduces that ranking, so we take the missing division as a typesetting slip. `HH_model.py` keeps the printed form available as `form='printed'`.
 
@@ -76,8 +77,8 @@ Ranges: p. 3 of the paper. Table 2 prints the conductances in µS/cm²; with C i
 
 Maxima are found by a `solve_ivp` event on dv/dt = 0 (decreasing). `HH_model.qoi` raises an error unless the first maximum is before 2 ms and the second lies in (5, 12) ms. Some samples have a third maximum after 13.2 ms, which is not used.
 
-**Smoothness and regime check: no threshold crossing.** The first two checks are external runs with the shipped model, not reproducible from the repository; the third is in the notebook:
-- 2000 uniform random points and all 2048 corners of the box: every point has its first maximum at 0.46–0.77 ms (94–141 mV) and its second at 7.76–9.32 ms (20.7–77.2 mV). Each has 2 or 3 maxima (624 corners and 181 random points have a third, at ≥ 13.29 ms), and `qoi` succeeds at every point.
+**Smoothness and regime check: no threshold crossing.** The first check is `check_accuracy.py`, check 3; the notebook prints the other two:
+- 2000 uniform random points (`numpy.random.default_rng(1)`) and all 2048 corners of the box: every point has its first maximum at 0.46–0.77 ms (94–141 mV) and its second at 7.76–9.32 ms (20.7–77.2 mV). Each has 2 or 3 maxima (624 corners and 181 random points have a third, at ≥ 13.29 ms), and `qoi` succeeds at every point.
 - The 1000 shipped samples: vpeak 21.7–73.6 mV, tpeak 7.89–9.16 ms.
 - In the notebook, a line through the center of the box along w1 at 81 points: vpeak varies smoothly (largest second difference 0.014 mV).
 
@@ -115,15 +116,15 @@ The seed is fixed and the samples are the first N rows of one stream, so a run r
 
 ## Accuracy
 
-The first three checks are external runs, not reproducible from the repository; the last is in the notebook:
+The first three checks are in `check_accuracy.py`; the last is in the notebook:
 
-- **Outputs.** At 5 samples, the shipped values (DOP853, rtol 1e-10, atol 1e-12) agree with Radau at rtol = 1e-13, atol = 1e-14 to 2.8e-10 mV (vpeak), 2.7e-11 ms (tpeak) and 5.2e-10 mV (v(t)).
-- **Gradients against tighter sensitivities.** At 4 samples, the shipped gradients agree with the same sensitivity solve at rtol = 1e-13 to a relative 5.2e-10 (row norm, worst output).
-- **Gradients against independent central differences.** Central differences of `qoi` with step h in normalized inputs (22 extra plain solves per sample):
-  - at rtol = 1e-13, h = 1e-3, 4 samples: worst relative error 1.3e-6 over all 21 outputs;
+- **Outputs** (check 4). At 5 samples (rows 0, 100, …, 400), the shipped values (DOP853, rtol 1e-10, atol 1e-12) agree with Radau at rtol = 1e-13, atol = 1e-14 to 2.7e-10 mV (vpeak), 2.7e-11 ms (tpeak) and 5.2e-10 mV (v(t)).
+- **Gradients against tighter sensitivities** (check 5). At 4 samples (rows 0, 100, 200, 300), the shipped gradients agree with the same sensitivity solve at rtol = 1e-13, atol = 1e-14, to a relative 5e-10 (row norm, worst output; 5.2e-10 or 5.3e-10 from run to run).
+- **Gradients against independent central differences** (check 6). Central differences of `qoi` with step h in normalized inputs (22 extra plain solves per sample), errors in the 2-norm of each output's row of physical derivatives:
+  - at rtol = 1e-13, h = 1e-3, 4 samples (rows 0, 100, 200, 300): worst relative error 2.4e-7 over all 21 outputs;
   - at the shipped rtol = 1e-10, h = 1e-3, 10 samples (rows 0, 100, …, 900): vpeak 9.7e-7, tpeak 3.0e-6, v(t) 8.4e-5. The larger v(t) values are solver noise in the differences near the trough (they change irregularly with h and disappear at rtol = 1e-13), not errors in the sensitivities.
 
-  At the nominal point (rtol 1e-10), the worst error of central differences against the sensitivities falls from 2.9e-6 at h = 3e-3 to 5.5e-7 at h = 1e-3, about as O(h²), and then levels off at solver noise (4.0e-7 at h = 3e-4).
+  At the nominal point (rtol 1e-10; row 2-norm of the derivatives in normalized inputs), the worst error of central differences against the sensitivities falls from 2.9e-6 at h = 3e-3 to 5.5e-7 at h = 1e-3, about as O(h²), and then stops falling at solver noise (8.0e-7 at h = 3e-4).
 - The notebook re-solves 3 samples with sensitivities and prints the largest relative differences from the files: 3.2e-13 (outputs) and 2.7e-11 (gradients).
 
 ## How these files relate to the paper
