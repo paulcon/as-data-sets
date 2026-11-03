@@ -76,7 +76,7 @@ Readings of the paper that it leaves implicit (our choices):
 
 - "Triangular distribution with a median value of 12.5 MPa and a scatter of ± 4.5 MPa" is read as the symmetric triangular law on [8, 17] MPa (Quest: [3.84, 12.84] MPa), and "symmetric triangular distribution with the lower and upper bounds according to Table 3" as the symmetric triangular law on those bounds in log₁₀ K.
 - "Uniform distribution with mean values according to Table 3 and a scatter range of ± 5.0 m" is read as uniform on [h_i − 5, h_i + 5].
-- The "nominal" values (medians) are those of Table A1; they are a reference point for EMA, not a result of the paper. At the median Ketzin point layers 1 and 3 tie (same K, same η), so it lies on the kink of V̇_min.
+- The "nominal" values (medians) are those of Table A1; they are a reference point, not a result of the paper. At the median Ketzin point layers 1 and 3 tie (same K, same η), so it lies on the kink of V̇_min.
 
 **Quantities of interest.** Both paper outputs are heavy-tailed (Table 5; Fig. 7 fits log-normal laws), so the notebook uses base-10 logarithms.
 
@@ -85,7 +85,7 @@ Readings of the paper that it leaves implicit (our choices):
 
 **Gradients.** Exact, with respect to the physical inputs. With t_i the layer times and T their sum: ∂T/∂log K_i = −ln 10 · t_i; ∂T/∂h_j = t_j/L_j − t_{j−1}/L_{j−1} (plus T · 10⁶ p_pump/(c h_1²) for j = 1, through c); ∂T/∂p_pump = −T (10⁶/h_1)/c; ∂T/∂u_η = Σ_i t_i (η_U,i − η_L,i)/η_i; then ∂log₁₀T = ∂T/(T ln 10). For log₁₀ V̇_soft, with softmax weights w_i = V̇_i^(−q)/Σ_j V̇_j^(−q): ∂/∂log K_i = w_i; ∂/∂p_pump = (10⁶/h_1)/(c ln 10); ∂/∂h_1 = −(10⁶ p_pump/h_1²)/(c ln 10); ∂/∂u_η = −Σ_i w_i (η_U,i − η_L,i)/(η_i ln 10); other depths 0.
 
-**Sampling design.** Per site, M = 2000 independent draws by the inverse CDF of `numpy.random.default_rng(seed).random((2000, m))`, seed 2139 (Ketzin) and 2140 (Quest) (`co2_leakage_model.sample`). M ≥ 10 m and ≥ 300. The paper used 500 improved Latin hypercube samples per site with maximum input-correlation error about 0.02 (Sec. 3.1, Fig. 6), seed not given.
+**Sampling design.** Per site, M = 2000 independent draws by the inverse CDF of `numpy.random.default_rng(seed).random((2000, m))`, seed 2139 (Ketzin) and 2140 (Quest) (`co2_leakage_model.sample`), about 91 samples per input for Ketzin (m = 22) and 67 for Quest (m = 30). The paper used 500 improved Latin hypercube samples per site with maximum input-correlation error about 0.02 (Sec. 3.1, Fig. 6), seed not given.
 
 **Published results.** No active subspace. Table 5 (p. 14, Ketzin) and Table 6 (p. 16, Quest): minimum, maximum, mean, standard deviation, 5 % and 95 % quantiles of V̇_min, t_leak,total and selected layer outputs (e.g. Ketzin t_leak,total mean 1063.0 years, sd 962.0, 5 % 209.3, 95 % 2248.8; V̇_min mean 0.214 m³/year, 95 % 0.681). MOP "Coefficients of Prognosis" for the raw outputs (Fig. 7g–h, Ketzin: V̇_min log K₁ 53 %, log K₃ 52 %, u_η 30 %, p_pump 3 %; t_leak log K₃ 59 %, u_η 33 %, log K₁ 19 %, p_pump 3 %, log K₈ 1 %, h₃ 0 %. Fig. 9g–h, Quest: V̇_min log K₅ 60 %, log K₃ 57 %, u_η 3 %, p_pump 1 %; t_leak log K₅ 79 %, log K₃ 15 %, u_η 6 %, log K₇ 1 %, p_pump 1 %, h₄ 1 %), read from the bar labels; layer-wise MOP matrices (Figs. 8, 10).
 

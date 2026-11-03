@@ -48,7 +48,7 @@ Readings of Table 4 that the paper leaves implicit (our choices):
 - K_s has no unit in Table 4; in the Strickler law it is m^(1/3)/s.
 - The exact means and standard deviations in the table are computed by quadrature (`flood_model.mean_and_sd`); the paper does not give them.
 
-`NOMINAL` in `flood_model.py` (Q = 1013, K_s = 30, the modes, H_d = 8) is a reference point for EMA, not a quantity of the paper.
+`NOMINAL` in `flood_model.py` (Q = 1013, K_s = 30, the modes, H_d = 8) is a reference point, not a quantity of the paper.
 
 **Quantity of interest.** S in m, smooth everywhere on the support (Z_m > Z_v always). On the support, S ≤ −3.663 m (at Q = 3000, K_s = 15, Z_v = 51, Z_m = 54, H_d = 7, C_b = 55, L = 5010, B = 295), so flooding (S > 0) never occurs under Table 4.
 
@@ -56,16 +56,16 @@ Readings of Table 4 that the paper leaves implicit (our choices):
 
 **Gradients.** Exact, with respect to the physical inputs: ∂S/∂Q = 0.6H/Q, ∂S/∂K_s = −0.6H/K_s, ∂S/∂Z_v = 1 + 0.3H/(Z_m − Z_v), ∂S/∂Z_m = −0.3H/(Z_m − Z_v), ∂S/∂H_d = ∂S/∂C_b = −1, ∂S/∂L = 0.3H/L, ∂S/∂B = −0.6H/B. For Cp, ∂Cp/∂S = −3200 S⁻⁵ exp(−1000/S⁴) for S < 0, times ∇S, plus 1/20 in the H_d component for H_d > 8. S depends on Z_v, H_d, C_b only through Z_v − H_d − C_b and Z_m − Z_v, so two directions are exactly null for every gradient.
 
-**Sampling design.** M = 10 000 independent draws by the inverse CDF of `numpy.random.default_rng(2013).random((10000, 8))` (`flood_model.sample`); the truncated laws are sampled exactly (inverse CDF restricted to the truncation interval). M ≥ 10 m and ≥ 300; the paper's DGSM also used 10⁴ points (a Sobol' sequence, p. 15).
+**Sampling design.** M = 10 000 independent draws by the inverse CDF of `numpy.random.default_rng(2013).random((10000, 8))` (`flood_model.sample`); the truncated laws are sampled exactly (inverse CDF restricted to the truncation interval), 1250 per input. The paper's DGSM also used 10⁴ points (a Sobol' sequence, p. 15).
 
 **Input spaces in the notebook** (active_subspaces v1 has uniform and Gaussian spaces only):
 
-1. Main analysis, physical inputs: `ac.Product([ac.Gaussian(mean, var) for Q, K_s, Z_v, Z_m; ac.Uniform(7, 9) for H_d; ac.Gaussian(mean, var) for C_b, L, B])`, with the exact marginal means and variances. The Gaussian blocks are used only for their affine map (x − μ)/σ; the samples keep their true distributions. H_d is mapped from [7, 9] to [−1, 1], a scale of 1 m (√3 standard deviations).
-2. Second analysis, transformed inputs: z_j = Φ⁻¹(F_j(x_j)) (`flood_model.to_gaussian`), exactly standard normal, in `ac.Gaussian.reference` blocks, with H_d kept in `ac.Uniform(7, 9)`; gradients ∂S/∂z_j = ∂S/∂x_j · φ(z_j)/ρ_j(x_j) (`flood_model.dx_dz`).
+1. Main analysis, physical inputs: `ac.Gaussian(mean, var)` for all eight inputs, with the exact marginal means and variances. It is used only for its affine map (x − μ)/σ; the samples keep their true distributions. H_d too is scaled by its standard deviation (1/√3 m), not by its half-range (1 m), which would multiply its DGSM by 3.
+2. Second analysis, transformed inputs: z_j = Φ⁻¹(F_j(x_j)) (`flood_model.to_gaussian`), exactly standard normal, in `ac.Gaussian.reference` blocks, with H_d scaled by its standard deviation as in the main analysis; gradients ∂S/∂z_j = ∂S/∂x_j · φ(z_j)/ρ_j(x_j) (`flood_model.dx_dz`).
 
 **Published results** (Table 5, p. 15, for S; Table 6, p. 16, for Cp): first-order and total Sobol' indices S_j, ST_j (two Monte Carlo samples of 10⁵, 20 replicates, 2 × 10⁷ runs), DGSM ν_j = E[(∂f/∂x_j)²] and weighted τ_j from 10⁴ Sobol'-sequence points with finite differences, and the bound Υ_j = C_j ν_j / D (Eq. (4.18)). For S: S_j / ST_j = 0.343/0.353 (Q), 0.130/0.139 (K_s), 0.185/0.186 (Z_v), 0.003/0.003 (Z_m), 0.276/0.276 (H_d), 0.036/0.036 (C_b), 0/0 (L, B); ν_j = 1.296e-06, 3.286e-03, 1.123, 2.279e-02, 0.8389, 0.8389, 2.147e-08, 2.386e-05; Υ_j = 2.807, 0.198, 0.561, 0.011, 0.340, 0.105, 0.000, 0.000. No active subspace.
 
-**What the notebook finds** (seed 2013): a one-dimensional active subspace of S, λ₁/λ₂ = 47.0 (λ₁ = 1.915, 97.0 % of the trace), w₁ ≈ (Q +0.496, K_s −0.309, Z_v +0.341, Z_m −0.047, H_d −0.720, C_b −0.147, L 0.000, B −0.008); a line in y₁ has leave-one-out R² = 0.9783. In the transformed inputs, λ₁/λ₂ = 55.7 and |w₁ᵀw₁| = 0.9996. For Cp, λ₁/λ₂ = 2.05 and λ₂/λ₃ = 15.38 (two-dimensional).
+**What the notebook finds** (seed 2013): a one-dimensional active subspace of S, λ₁/λ₂ = 33.2 (λ₁ = 1.2555, 96.0 % of the trace), w₁ ≈ (Q +0.615, K_s −0.387, Z_v +0.419, Z_m −0.058, H_d −0.511, C_b −0.181, L 0.001, B −0.009), whose four largest weights (Q, H_d, Z_v, K_s) are in the order of the total Sobol' indices; a line in y₁ has leave-one-out R² = 0.9777. In the transformed inputs, λ₁/λ₂ = 49.2 and |w₁ᵀw₁| = 0.9996. For Cp, λ₁/λ₂ = 2.80 and λ₂/λ₃ = 7.63 (two-dimensional).
 
 ## Regenerating
 
@@ -80,7 +80,7 @@ The shipped files were written on 2026-10-30 in a Linux container (numpy 2.5.4, 
 
 - **Values.** Closed form in double precision; `flood_model.overflow` reproduces `outputs.csv` to rounding error (1.4e-14 m, printed in the notebook).
 - **Gradients.** Exact. Checked against central finite differences with step 10⁻⁶ standard deviations of each input, at all 10 000 samples: largest relative error (row 2-norm) 1.4 × 10⁻⁸ for S and 3.0 × 10⁻⁸ for Cp (no sample within 10⁻⁵ m of the kink), the size expected from rounding in the differences.
-- **Quadrature.** `exact_moments` uses adaptive quadrature (relative tolerance 10⁻¹³) for the moments of Q and K_s, and 40-point Gauss–Legendre rules on each side of the mode for the triangular inputs (exact for the polynomial densities times the smooth integrands to machine precision). Against 400 000 Monte Carlo samples (seed 0, scratch check): Var(S) 1.1745 vs 1.1704, ν_j within 0.2 % for every input. On the shipped 10 000 samples: mean of S −10.9342 (exact −10.9445), variance 1.2087 (exact 1.1745).
+- **Quadrature.** `exact_moments` uses adaptive quadrature (relative tolerance 10⁻¹³) for the moments of Q and K_s, and 40-point Gauss–Legendre rules on each side of the mode for the triangular inputs (exact for the polynomial densities times the smooth integrands to machine precision). Against 400 000 Monte Carlo samples (seed 0; external run, not reproducible from the repository): Var(S) 1.1745 vs 1.1704, ν_j within 0.2 % for every input. On the shipped 10 000 samples: mean of S −10.9342 (exact −10.9445), variance 1.2087 (exact 1.1745).
 
 ## How these files relate to the paper
 
@@ -90,7 +90,7 @@ The shipped files were written on 2026-10-30 in a Linux container (numpy 2.5.4, 
 - **τ_j.** Table 5's τ_j are reproduced, up to the same factor (ratio 0.829–0.840), by E[(∂S/∂x_j)² w(x_j)] with the Sobol'–Kucherenko weight w(x) = (1 − 3x + 3x²)/6, which is defined for U[0, 1], applied to the unnormalized inputs.
 - **Υ_j.** For Q and H_d, whose constants are unambiguous, Table 5's Υ_j equal C_j ν_j with its ν_j and no division by D (or D = 1; the exact D is 1.1745). Read this way, the implied constants are C_Q = 2.1659 × 10⁶ (the Cheeger constant 1/ρ(m)² of the truncated Gumbel at its median is 2.1656 × 10⁶) and C_Hd = 0.40529 = 4/π²; for the triangular inputs about half of 1/ρ(m)² (0.4996, 0.4827, 0.1252 against 1, 1, 0.25); for K_s 60.3, neither σ² = 64 nor 1/ρ(m)² = 378.6. `flood_model.poincare_constants` returns 1/ρ(m)² for the log-concave inputs and (b − a)²/π² for H_d; with them and exact ν_j and D, Υ = 2.848, 1.264, 1.140, 0.0231, 0.345, 0.213, 2.2e-06, 6.1e-04, which bound ST_j for every input.
 - **Table 6 (cost).** The ν_j of Table 6 are 1391–1475 times the sample values from Eq. (4.21) as printed (for every input, including H_d). We could not reconcile this; the formula may differ from the one used in the computations. The Sobol' indices of Cp were not recomputed.
-- **The OpenTURNS flood use case differs** (per the paper card, not checked here): K_s N(30, 7.5) truncated at 0, Z_v U(49, 51), Z_m U(54, 56), Q truncated at 0. These files use Table 4 of the paper.
+- **The OpenTURNS flood use case differs** (not checked here against OpenTURNS): K_s N(30, 7.5) truncated at 0, Z_v U(49, 51), Z_m U(54, 56), Q truncated at 0. These files use Table 4 of the paper.
 
 ## License and credit
 
