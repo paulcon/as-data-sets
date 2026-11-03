@@ -185,11 +185,25 @@ The interview decisions for data sets already on `main` (B4, B23, B24, B26–B31
 - A12: §6 rows added for Seshadri et al. 2018 and Torres Valderrama et al. 2015 (confirmed on the page).
 
 Left open from this step:
-- [ ] A8 for the data sets above: port `check_accuracy.py` from the build folders, as described in [check_accuracy_port.md](check_accuracy_port.md) (author, 2026-11-03: relabel now, port later)
+- [x] A8 for the data sets above: port `check_accuracy.py` from the build folders, as described in [check_accuracy_port.md](check_accuracy_port.md) (author, 2026-11-03: relabel now, port later). Done in [#71](https://github.com/paulcon/as-data-sets/pull/71)
 - [ ] A10 for the notebooks that were on `main` before #64: each justifies its subspace dimension in its text (author, 2026-11-03: not in #70)
 - [ ] Luo_Rudy review findings L1–L3 (Table 1 variances against sd 0.2 in u; min DI as a probable single misprinted Table 2 cell; "n = 1 for every output" from the linear gap rule) are still open in its DATA.md; L3 waits on the author
-- [ ] HIV DATA.md compares the shipped data with the 2016 files (at `legacy-master`) without saying how; label it or add the comparison to a check script
+- [x] HIV DATA.md compares the shipped data with the 2016 files (at `legacy-master`) without saying how; label it or add the comparison to a check script. Added as `check_accuracy.py` checks 3–6 in [#71](https://github.com/paulcon/as-data-sets/pull/71)
 - [ ] Ask Wong et al. which 1000 of the 2000 Latin-hypercube points LS89 holds (a letter, or a line in D15)
+
+#### Done in [#71](https://github.com/paulcon/as-data-sets/pull/71): `check_accuracy.py` for the older data sets (2026-11-03)
+
+A8 for the twelve data sets of [check_accuracy_port.md](check_accuracy_port.md): each has a `check_accuracy.py` (numpy, scipy and its own modules), and no "external run" label is left in their DATA.md files or notebooks. Each script was written fresh against the repository and run twice (numbers identical; a third, full run for review). Where a number changed beyond rounding, DATA.md takes the new value; the original rows, seeds and error measures were not recorded, so the scripts' choices are named in DATA.md. Notebooks: only the old label was replaced, in markdown (Vlasov cell 32, Lillgrund cells 2 and 4, STAT5 cell 27); no output changed.
+- Unchanged (to the quoted digits or as orders of magnitude): Steel_Arch (complex step, of order 1e-15), MHD (2016 `gradients.py` transcribed; about 1e-14, was 1e-13), Annular checks 1, 3–5, STAT5 checks 2–6 (PEtab tables read with the standard library; benchmark commit c44d5ede9bf9 passed by `--petab`), Vlasov check 3, Golinski check 1 (psdr expressions transcribed from c61374b).
+- Changed: Hodgkin_Huxley (300-sample activity scores; the old list was the notebook's 1000-sample one; central differences at rtol 1e-13 2.4e-7, was 1.3e-6; h = 3e-4 8.0e-7, was 4.0e-7); Zika (wide-range median C₅₂ 2.2e6, eight times the data, was 2.3e6, nine); Annular (weak-case risk factor under the 2016 Gaussian design 10.1 %, was 9.3 %, 1500 samples); Lillgrund (frozen differences at 10⁻³ up to 4e-4, was 8e-6 "falling as h²"; TI against FLORIS to order 1e-17, was "exactly"); Golinski (2303.8, was 2303.9); River_Flood (ν_j within 0.07 %, was 0.2 %); STAT5 wide-box fractions 79.0 % and 16 % (seed unknown); Vlasov stress-test γ range −3.21 to 0.34 (own seeds); HIV (below).
+- HIV: checks 3–6 read the 2016 files and `HIV_model.py` at `legacy-master` with `git show`; check 5 runs that 2016 module (`exec` of the tag's source). Over all 1000 samples the 2016 code under scipy 1.17.1 differs from its own files by up to 0.45 (20 samples cross the floor at a different time; 0.10 where both are above it), not the 1.6e-2 at one sample of #51. No shipped sample has T(3400) ≈ 0.6, so the outputs bullet now gives rows 0–4 and three near-floor rows; the h = 3e-4 step choice is shown at row 714 (at rows 0–2, h = 1e-3 is more accurate, 3e-6).
+- Outside codes, in throwaway venvs in the scratchpad (never `.venv`): FLORIS 2.0.1 (numpy 1.26.4, scipy 1.11.4; installed `--no-deps`, because 2.0.1 declares the withdrawn `sklearn` package; steps in the script), OpenTURNS **1.25** for Fire_Satellite (no macOS x86-64 wheel for 1.26 or later; its use-case code differs from 1.27 only by one renamed argument). DATA.md names the platform. Run times with other jobs on the machine are given as ranges.
+
+Left open from this step:
+- [ ] Fire_Satellite check 2 ran with OpenTURNS 1.25, not the 1.27 of the original run (conda-forge would be needed on this Mac); the 1.27 values are quoted from the original run. Also: OpenTURNS's code has μ = 3.98600e14, not the 3.986004418e14 DATA.md (choice 5) and the notebook attribute to it (outputs agree to the printed digits); and "τ_g is 0.26 % of τ_dist (at most 2 %)" is printed by no script
+- [ ] Golinski: psdr is AGPL-3.0 (DATA.md says its licence "was not checked"; the script transcribes two one-line expressions). "Solving for free hub and shaft coefficients … gives a negative hub coefficient" holds for the hub reading used, not for the printed (d_p² − d_k²)·2b reading (positive hub, negative shaft coefficient); say which is meant
+- [ ] Vlasov "Stable samples": the paper's stable-region values are called "another damped root"; the build-time review had dropped that conjecture (unverified here)
+- [ ] Hodgkin_Huxley: the sentence after the choice-3 table (I = 50 and I ≤ 20 trajectories) is not printed by any script (it was not labelled)
 
 ### Author interview, 2026-10-30
 
