@@ -123,18 +123,31 @@ def compare(out, n, with_ref):
 
     p0, t0, s0 = wm.read_mesh(HERE)
     p1, t1, s1 = wm.read_mesh(out)
-    same_topology = t0.shape == t1.shape and np.array_equal(t0, t1) and np.array_equal(s0, s1)
-    print(f'  mesh connectivity identical: {same_topology}')
-    ok &= same_topology
+    # The triangles are compared as a set: the order in which scipy's Delaunay (Qhull) returns them can
+    # differ between platforms (on macOS with scipy 1.17.1, 768 of the 2197 keep their index). The rows of
+    # Phi follow the element order, so they are compared after mapping the new order onto the shipped one.
+    key = lambda a: [tuple(sorted(r)) for r in a.tolist()]
+    k0, k1 = key(t0), key(t1)
+    same_set = t0.shape == t1.shape and set(k0) == set(k1) and set(key(s0)) == set(key(s1))
+    perm = np.array([dict(zip(k1, range(len(k1))))[k] for k in k0]) if same_set else None
+    if same_set:
+        print(f'  mesh: same {len(t0)} triangles and boundary segments as the shipped mesh '
+              f'({int(np.sum(perm == np.arange(len(perm))))} at the same index)')
+    else:
+        print('  mesh: the triangles or boundary segments differ from the shipped mesh')
+    ok &= same_set
     if p0.shape == p1.shape:
         rep('mesh nodes, max abs difference', np.abs(p0 - p1).max(), TOL_NODES)
     z0, z1 = np.load(os.path.join(HERE, wm.KL_FILE)), np.load(os.path.join(out, wm.KL_FILE))
     lam0 = z0['eigenvalues']
     rep('eigenvalues of Sigma, max abs difference / lambda_1', np.abs(lam0 - z1['eigenvalues']).max() / lam0[0], TOL_EIG_SIGMA)
+    if not same_set:
+        return False
+    Phi0, Phi1 = z0['Phi'], z1['Phi'][perm]
     lead = lam0 >= 1e-8 * lam0[0]
-    dphi = np.linalg.norm(z0['Phi'][:, lead] - z1['Phi'][:, lead], axis=0) / np.linalg.norm(z0['Phi'][:, lead], axis=0)
-    rep(f'Phi columns 1-{lead.sum()} (eigenvalue >= 1e-8 lambda_1), max relative difference', dphi.max(), TOL_PHI)
-    dtrail = np.linalg.norm(z0['Phi'][:, ~lead] - z1['Phi'][:, ~lead]) / np.linalg.norm(z0['Phi'])
+    dphi = np.linalg.norm(Phi0[:, lead] - Phi1[:, lead], axis=0) / np.linalg.norm(Phi0[:, lead], axis=0)
+    rep(f'Phi columns 1-{lead.sum()} (eigenvalue >= 1e-8 lambda_1, rows in the shipped element order), max relative difference', dphi.max(), TOL_PHI)
+    dtrail = np.linalg.norm(Phi0[:, ~lead] - Phi1[:, ~lead]) / np.linalg.norm(Phi0)
     print(f'  Phi columns {lead.sum() + 1}-{R_KL} (eigenvalues below 1e-8 lambda_1): difference / ||Phi||_F = {dtrail:.1e} (not checked)')
     xi0, xi1 = read_csv(os.path.join(HERE, 'inputs.csv'))[:n], read_csv(os.path.join(out, 'inputs.csv'))
     rep('inputs, max abs difference', np.abs(xi0 - xi1).max(), TOL_XI)
