@@ -145,7 +145,9 @@ The record's README lists two more files, `Parameter_values_validation_runs_orig
 `..._transform_units.csv`, which the record page did not offer for download.
 
 **External run** (not reproducible from the repository). To rerun the model: obtain SOCOL-AER with the Se scheme
-from the authors (ECHAM5 licence agreement, http://www.mpimet.mpg.de/en/science/models/license/), build it for a
+from the authors (ECHAM5 licence agreement with MPI-M; the address http://www.mpimet.mpg.de/en/science/models/license/
+returned 404 on 2026-11-09, and MPI-M's current licence page is the MPI-ESM licence project,
+https://code.mpimet.mpg.de/projects/mpi-esm-license), build it for a
 cluster, use the authors' 10-year spin-up initial file and year-2000 boundary conditions, set the 34 inputs of
 one row of `se_training_inputs.csv` (emiss_vol in the column's units, emiss_aer in kg/yr, lat_aer as the band),
 run 18 months at T42L39 with chemistry-radiation decoupling, average months 7–18 of the 17 Se fields, and
