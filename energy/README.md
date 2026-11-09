@@ -1,6 +1,6 @@
 # Energy
 
-Batteries, photovoltaics, wind, nuclear, power generation and power grids.
+Batteries, photovoltaics, wind, nuclear, power generation, power grids and building energy use.
 
 Data sets (descriptions and papers are in the [top-level README](../README.md#data-sets)):
 

@@ -1,6 +1,6 @@
 # Hydrology, subsurface and geoscience
 
-Surface and subsurface hydrology, land-surface models, porous media and geophysics.
+Surface and subsurface hydrology, land-surface models, porous media, glaciers and geophysics.
 
 Data sets (descriptions and papers are in the [top-level README](../README.md#data-sets)):
 
