@@ -219,9 +219,9 @@ scratch (33 s wall) and reproduced all six run files within tolerance (largest d
 0.0e+00); `--stage emissions --check` reproduced the emission file within tolerance (10 s), and
 `convert_data.py --check` the three converted files (0.0e+00). A later
 `--rows 0:3 --check` run (24 s wall) gave largest differences 1.5e-18 (`qoi.csv`), 1.9e-17
-(`qoi_internal_variability.csv`) and 1.9e-9 (gradients). The committed notebook run took 34.3 s
-(analysis environment: Python 3.13.18, numpy 2.5.4, scipy 1.18.1, matplotlib 3.11.2,
-active_subspaces 1.0.0.dev0).
+(`qoi_internal_variability.csv`) and 1.9e-9 (gradients). The committed notebook run took 11.4 s
+(the repository's `.venv`: Python 3.11.16, numpy 2.4.6, scipy 1.17.1, matplotlib 3.11.2,
+active_subspaces 1.0.0.dev0; 2026-11-09).
 
 ## Accuracy
 
@@ -241,7 +241,7 @@ SSP2-4.5 warming: rows 733 (0.705 K), 541 (1.711 K) and 509 (3.493 K).
 - **Gradients in v** (chain rule from the shipped files, as in the notebook, against central differences
   taken directly in v, whitened, step 1e-3 sd of v_j): warming 3.5e-5, 6.4e-6, 1.3e-6; GMST 8.4e-5, 1.4e-4,
   1.2e-6; ECS and TCR at rounding level (order 1e-14 to 1e-12, depending on the run).
-- **ECS closed form** (notebook): FaIR's ECS equals F4xCO2/(2 κ1) to 4.0e-15, and the finite-difference ECS
+- **ECS closed form** (notebook): FaIR's ECS equals F4xCO2/(2 κ1) to rounding (order 1e-15), and the finite-difference ECS
   gradient matches the closed-form gradient with a median relative error of 7.9e-08 (maximum 5.2e-07).
 - **Regeneration** (`generate_data.py --check`, above): rerunning the first 20 members reproduces the
   shipped files.

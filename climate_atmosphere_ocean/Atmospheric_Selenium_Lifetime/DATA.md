@@ -66,7 +66,7 @@ u = Φ((ln e − 19.0 − 2.54 r)/2.88) with e in kg/yr and r in µm (to 1.1e-03
 gives 18.9923 + 2.5446 r + 2.8816 z, so the printed constants are rounded). This u is the authors' independent
 coordinate (a Rosenblatt transform).
 
-**emiss_vol.** The deposited column spans 0.0606–38.5. The log-uniform ranges on which it is a Latin hypercube
+**emiss_vol.** The deposited column spans 0.06055–38.55. The log-uniform ranges on which it is a Latin hypercube
 (one run in each of 400 strata) have lower ends 0.059997–0.060011 and upper ends 38.9990–39.0052, so the design
 range is [0.06, 39] in the column's units (notebook, four linear programs over the strata constraints); on Table
 3's [0.076, 49.1] the column occupies only 293 strata and 15 runs are below 0.076. Table 3's bounds exceed the
@@ -127,7 +127,7 @@ python convert_data.py <folder with the deposited files> --check --out <dir>    
 relative difference of 0.0e+00 for all four files and identical text for the two input files, in about 4 s
 (again on 2026-11-08, after the emiss_vol header was changed).
 It also prints the largest difference between the file's latitudes and the Gauss–Legendre latitudes
-(7.1e-15 degrees). The notebook takes about 2.5 min (140 s printed on a shared machine), most of it the 400
+(7.1e-15 degrees). The notebook takes about 1 min (46 s printed in the committed `.venv` run), most of it the 400
 leave-one-out refits (of tau, 1/tau and log tau) and 300 bootstrap refits of the penalized quadratic.
 
 **Source.** ETH Research Collection, "Simulation data used for sensitivity analysis of atmospheric selenium in

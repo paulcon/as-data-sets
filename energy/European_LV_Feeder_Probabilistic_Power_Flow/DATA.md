@@ -65,7 +65,7 @@ Power Flow", *IEEE Transactions on Power Systems* 32(1) (2017) 694–704, doi:10
   solve (`check_accuracy.py`, check 6).
 - Solver: OpenDSSDirect.py 0.9.4 (DSS-Python 0.15.7, DSS C-API 0.14.5, based on OpenDSS SVN 3723), snapshot
   power flow, tolerance tightened from the default 1e-4 to 1e-12, at most 100 iterations (8–10 are used). Each
-  solve starts from the previous solution. One solve takes about 1.5 ms.
+  solve starts from the previous solution. One solve takes about 1.5 ms (`generate_data.py`: 160.0 s for the 1000 × 111 solves of the 55-input case, below).
 - **Load model above 1.05 p.u.** OpenDSS's constant-P load becomes a constant impedance (sized to draw the
   specified power at 1.05 p.u. of 230 V) when its voltage exceeds 1.05 p.u. With the 1.05 p.u. source, 43 of the
   55 loads are above 1.05 p.u. at the nominal point (`check_accuracy.py`). The paper says the loads are "modelled as

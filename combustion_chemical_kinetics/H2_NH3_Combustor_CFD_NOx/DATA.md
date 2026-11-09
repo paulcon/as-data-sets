@@ -139,8 +139,7 @@ record's description names the files `P_175.npy` and `X_175.npy`; the files are 
 `X.npy` is float64, shape (903465, 175) = (60231 cells × 15 fields, 175 cases), C order; `xy.npy` (60231, 2)
 holds axial $z$ and radius $r$ in m; `P.npy` (175, 3) holds $\phi_1$, $x_{H_2}$, $p_o$ [Pa].
 
-The notebook printed a kernel run time of 7 s (20 s for `jupyter nbconvert --execute` including start-up,
-2026-11-08, two shared CPUs).
+The committed notebook run in the repository's `.venv` printed a kernel run time of 3 s (2026-11-09).
 
 ## Accuracy
 

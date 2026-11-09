@@ -83,7 +83,7 @@ semi-detached, location Dublin, weather historical, renewables no (Table 4).
 **Quantity of interest.** Energy use intensity, "annual primary energy usage per square meter of total floor
 space" in kWh/(m² yr) (p. 8). Secondary: annual space heating energy (`space_heating_energy`, kWh/yr), the
 EnergyPlus output through which the building inputs act. In every row the stored EUI satisfies (notebook for
-the subset; `check_accuracy.py` item 7 for all rows, max deviation 2.3e-13 kWh/(m² yr))
+the subset; `check_accuracy.py` item 7 for all rows, max deviation of order 1e-13 kWh/(m² yr), rounding)
 
 EUI = (p_H · c_H · Q_heat + p_E · E_el) / A,
 
@@ -186,9 +186,9 @@ Specifications Table). Archive `Urban Building Energy Stock Datasets.zip`, 52,85
 in the archive). Versions 2–5 of the record exist (the latest, version 5, dated 16 April 2024); they were not
 downloaded or compared. The paper's Fig. 1 and Tables 2–3 match version 1 (above).
 
-The notebook takes about 7 minutes in the analysis venv (394 s in the committed run, of which 181 s for the
-local linear gradients at all 49,298 rows and 60 s for the neighbourhood diagnostics, on a shared two-core
-machine); on a busy machine it takes considerably longer.
+The notebook takes about 5 to 6 minutes in the repository's `.venv` (319 s in the committed run, of which 121 s for the
+local linear gradients at all 49,298 rows and 76 s for the neighbourhood diagnostics); on a busy machine it
+takes considerably longer.
 
 ## Accuracy
 

@@ -126,7 +126,7 @@ coefficients with the tolerance |a − b| ≤ 1e-9 + 1e-6 |b|; the tolerance all
 versions and platforms. Run time of the shipped run: about 0.8 s per case (its log records 212 cases in
 166 s), so about 13 min for the 1000 cases. Without `airfrans` the script exits with the install command
 above. `--check` compares with the `airfrans_forces.csv` in this folder and stops with a message if that file
-is not there. The notebook needs numpy, scipy, matplotlib and active_subspaces and runs in about 15 s.
+is not there. The notebook needs numpy, scipy, matplotlib and active_subspaces and runs in about 5 s (4 s printed in the committed `.venv` run).
 
 ### Running the notebook from the archive
 
@@ -163,7 +163,7 @@ its summary prints; the scale numbers are printed by the notebook.
   The totals of the two methods agree to better than 0.8 % ($C_D$) and 0.09 % ($C_L$). For scale, in the
   cambered subset the standard deviation of $C_D$ is 5.39e-03 and the leave-one-out RMS error of the cubic in
   all five inputs is 6.75e-04 for $C_D$ and 7.74e-03 for $C_L$ (notebook): the largest $C_D$ difference is
-  1.8 % of that spread and 14 % of that error, and the largest $C_L$ difference 0.7 % of its error. The
+  1.8 % of that spread and 14 % of that error, and the largest $C_L$ difference 0.7 % of its error (ratios of the numbers above). The
   analysis uses only $C_D$ and $C_L$, so its conclusions do not depend on the integration method.
 - **Pressure and viscous parts: the split depends on the method.** Same run:
   - $C_{D,p}$: median relative difference 4.11e-2, 95th percentile 1.07e-1, largest 1.33e-1; median difference

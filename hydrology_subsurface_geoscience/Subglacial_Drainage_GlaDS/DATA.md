@@ -83,7 +83,7 @@ input over the Table 2 box. The paper does not state the generator; the deposit'
 `experiments/synthetic/train_config.py` does: the first 512 points of a scrambled Sobol' sequence,
 `scipy.stats.qmc.Sobol(8, seed=20240318, optimization=None)` (scrambled by scipy's default), mapped affinely
 onto the $\log_{10}$ bounds of Table 2 ($\omega$'s bounds are listed high to low, which reverses that coordinate
-but not its range). With scipy 1.18.1 this reproduces the $\log_{10}$ training design to 2.1e-07, the 7-digit
+but not its range). With scipy 1.17.1 (the repository's `.venv`) this reproduces the $\log_{10}$ training design to 2.1e-07, the 7-digit
 print of the design files (notebook); each log10 input of the first 256 and of all 512 points fills all 256 and
 512 equal strata. The paper's scalar emulators use $m$ = 256 training simulations (p. 4058); that they are the
 first 256 rows, and that the Fig. 12 Sobol' indices come from these emulators, is from the authors' code
@@ -136,7 +136,7 @@ are regenerated from the deposit with `convert_data.py`. Because the archive is 
   0.0e+00, tolerance 1e-12) in under 1 s. The design CSVs of the deposit are byte-identical to those at
   github.com/timghill/GladsGP commit e7f143a.
 
-The notebook runs in 20–40 s (22 s in two runs on 2026-11-08, up to 41 s with other jobs sharing two CPUs), most of it the 500
+The notebook runs in about 20 s (18 s printed in the committed `.venv` run), most of it the 500
 bootstrap replicates and the radial-basis surrogate fits.
 
 ## Accuracy

@@ -288,7 +288,7 @@ run of rows 20:30, and a slow flame) and row 192 (a slow flame).
   26 % more than 3 % and 14 % more than 5 %. **The subspace is unaffected:** dividing every stored gradient by the
   fitted ratio changes λ1/λ2 from 10.218 to 10.223 and λ2/λ3 from 4.209 to 4.216, raises λ1 by 2.6 %, and leaves
   |w1·w1′| and |w2·w2′| at 1.00000 (distance of the two-dimensional subspaces 0.0021). The notebook repeats this
-  rescaling. So the flame gradients are accurate in direction everywhere; their magnitudes are biased low by
+  rescaling from the ratios as printed to four digits, so its fit reads 1.390 S_u^−1.283 (20.7 % at the slowest flame). So the flame gradients are accurate in direction everywhere; their magnitudes are biased low by
   0.5–16 %, most at slow flames, which changes the eigenvalues by a few per cent and the eigenvectors not at all.
 - **Flame grid** (check 5). With the paper's refinement criteria (ratio 2, slope 0.01, curve 0.02; p. 4), S_u is
   41.3072 cm/s on 977 points at the nominal point, 1.51 % above the stored 40.6918 cm/s, and the adjoint

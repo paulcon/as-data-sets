@@ -153,7 +153,7 @@ inputs and the seed there (p. 10). Inputs outside physical meaning: none (all in
 - w1 is the OLS direction (cosine ≥ 0.988). It is led by `intervention_effect`, R0 and `uptake` (FC);
   `trace_rate_I`, `trace_contact_reduction`, `trace_prob_E` (CT); `uptake` against R0 (IL); `uptake`,
   `pl_intervention_effect_hi`, R0 (PO).
-- Seed noise (pooled replicate variance / QoI variance): 0.0018 to 0.0387, each known to about a factor of 2
+- Seed noise (pooled replicate variance / QoI variance): 0.0018 to 0.0387, most known to about a factor of 2 (CT QoI 2 more loosely, [0.0003, 0.0039])
   (bootstrap over the six replicate groups, e.g. PO QoI 1 0.0387 [0.0217, 0.0619]); the noise varies with the
   input point (group variances 0.00 to 2.66 times the pooled value). A noise null puts the eigenvalues that seed
   noise alone produces at 1.4e-4 to 2.8e-3 of λ1 (QoI 1), with the same relative uncertainty.
