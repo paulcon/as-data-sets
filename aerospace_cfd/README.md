@@ -4,6 +4,7 @@ Aerodynamic shape design, hypersonic propulsion and other computational fluid dy
 
 Data sets (descriptions and papers are in the [top-level README](../README.md#data-sets)):
 
+- [AirfRANS_Airfoil_RANS_Forces](AirfRANS_Airfoil_RANS_Forces/)
 - [DTMB_5415_Hull_Resistance](DTMB_5415_Hull_Resistance/)
 - [HyShotII_Scramjet](HyShotII_Scramjet/)
 - [LS89_Turbine_Blade_Envelopes](LS89_Turbine_Blade_Envelopes/)

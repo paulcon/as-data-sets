@@ -14,5 +14,7 @@ Data sets (descriptions and papers are in the [top-level README](../README.md#da
 - [Kurchatov_Sr90_Groundwater_Migration](Kurchatov_Sr90_Groundwater_Migration/)
 - [Land_Surface_Energy_Fluxes](Land_Surface_Energy_Fluxes/)
 - [Photosynthesis_Stomatal_Resistance](Photosynthesis_Stomatal_Resistance/)
+- [PyGEM_Glacier_Mass_Balance](PyGEM_Glacier_Mass_Balance/)
 - [Raven_Salmon_River_Blended_Model](Raven_Salmon_River_Blended_Model/)
 - [Runoff_Permeability_Field](Runoff_Permeability_Field/)
+- [Subglacial_Drainage_GlaDS](Subglacial_Drainage_GlaDS/)
