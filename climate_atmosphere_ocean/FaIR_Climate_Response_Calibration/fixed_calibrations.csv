@@ -1,0 +1,3 @@
+# fixed v1.4.1 calibrations (row historical_best of CH4_lifetime.csv, landuse_scale_factor.csv, lapsi_scale_factor.csv; Zenodo 10.5281/zenodo.10566813)
+# ch4_lifetime_base [yr], ch4_sens_CH4 [ppb-1], ch4_sens_NOx [(Mt NO2 yr-1)-1], ch4_sens_VOC [(Mt VOC yr-1)-1], ch4_sens_HC [ppt-1], ch4_sens_N2O [ppb-1], ch4_sens_temp [K-1], landuse_CO2_AFOLU [W m-2 (Gt CO2)-1], lapsi_BC [W m-2 (Mt BC yr-1)-1]
+16.788377985363255,0.00016728318402161048,-0.003418799796856423,0.000198369651171145,2.5314611423864184e-05,-0.00094989098870082043,-0.046299999999999994,-0.00022246751390149103,0.014071929531696016

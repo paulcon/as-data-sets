@@ -1,0 +1,3 @@
+# ERA5 cell and glacier summary (glacier from the consensus thickness grid and SRTM); prepare_inputs.py
+# era5_lat (deg N),era5_lon (deg E),z_era5 (m, geopotential / 9.80665),z_med (m, median glacier pixel elevation),z_min (m),z_max (m),area (km2)
+46.75,10.75,2425.7147903584423,3060.0282387633097,2445.4490856901079,3677.3104820511371,8.0325000000000006
