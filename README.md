@@ -54,7 +54,7 @@ The data sets are grouped by application area, one directory per category. Each 
 
 * **[SIPNET_Ecosystem_Carbon_Flux](ecology_agriculture/SIPNET_Ecosystem_Carbon_Flux/):** two-year totals of net ecosystem exchange, evapotranspiration and gross primary production from the SIPNET ecosystem model over 8 calibration parameters, in a substitute set-up (the Niwot Ridge driver and template parameter values, not the paper's Bartlett Experimental Forest runs). [[paper]](https://doi.org/10.5194/bg-15-5801-2018) _Stored data, generated with SIPNET v2.2.0; `generate_data.py` regenerates it with a compiled SIPNET binary._
 
-## Energy: batteries, PV, wind, nuclear, power grids (`energy/`)
+## Energy: batteries, PV, wind, nuclear, power grids, buildings (`energy/`)
 
 * **[European_LV_Feeder_Probabilistic_Power_Flow](energy/European_LV_Feeder_Probabilistic_Power_Flow/):** phase-A voltage at bus 899, a line current and the feeder loss of the IEEE European LV Test Feeder at the 09:26 peak as functions of the 55 load powers (and 55 power factors), unbalanced power flow in OpenDSS with finite-difference gradients; nearly linear in the load powers, so the one-dimensional subspace is the regression direction, with the power factors adding curvature. [[paper]](https://doi.org/10.1109/TPWRS.2016.2558622) _Stored data._
 * **[HTGR_Microreactor_Control_Drums](energy/HTGR_Microreactor_Control_Drums/):** k<sub>eff</sub> and the quadrant powers of the HOLOS-Quad gas-cooled microreactor as functions of its 8 control-drum angles (751 Serpent Monte Carlo runs). [[paper]](https://doi.org/10.1016/j.nucengdes.2022.111776) _Stored data._
