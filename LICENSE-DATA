@@ -120,3 +120,60 @@ licence or objects, that takes precedence.
     M. Koeppel, I. Kroeker, S. Oladyshkin, G. Santin, D. Wittwar). BSD 3-clause
     (LICENSE-uqBenchmarkData.txt, kept beside the files). The saturation files,
     computed here with the archive's executable, are CC BY 4.0.
+
+  aerospace_cfd/AirfRANS_Airfoil_RANS_Forces/
+    airfrans_forces.csv, airfrans_case_names.txt
+    Derived from the AirfRANS Dataset.zip (F. Bonnet, J. A. Mazari, P. Cinnella,
+    P. Gallinari; https://data.isir.upmc.fr/extrality/NeurIPS_2022/Dataset.zip):
+    the force coefficients computed with airfrans 0.1.5.1, and the case folder
+    names. ODbL v1.0 (share-alike): these files are a derivative database and
+    stay under the ODbL. The archive itself is not hosted here.
+
+  climate_atmosphere_ocean/FaIR_Climate_Response_Calibration/
+    solar_volcanic_forcing_1750-2101.csv, ssp245_emissions_1750-2100.csv
+    Source: fair-calibrate v1.4.1 (C. Smith, github.com/chrisroadmap/fair-calibrate,
+    commit 5a31144b), MIT (LICENSE-fair-calibrate.txt, kept beside the files), for
+    the forcing file and the RCMIP v5.1.0 emissions it ships (RCMIP itself CC BY 4.0);
+    the 1750-2021 emissions are from FaIR v2.2.0 example data (OMS-NetZero/FAIR,
+    commit 453ac814), Apache-2.0. The other CSVs are CC BY 4.0.
+
+  combustion_chemical_kinetics/H2_Flame_Kinetics_Bayesian_Calibration/
+    burke2012_x1x6.yaml
+    Source: PelePhysics (AMReX-Combustion/PelePhysics, commit 5e697a009eed),
+    Mechanisms/BurkeDryer/mechanism.yaml, a conversion of the Burke et al. (2012)
+    mechanism ("(c) Burke, Chaos, Ju, Dryer, and Klippenstein; Princeton
+    University, 2011"), with CO/CO2 removed and X1, X6 (You et al. 2012) appended.
+    PelePhysics is BSD 3-clause (LICENSE-PelePhysics.txt, kept beside the file);
+    the mechanism itself states no licence. The CSVs are CC BY 4.0.
+
+  combustion_chemical_kinetics/NH3_H2_Kinetics_Uncertainty/
+    the constants table in nh3h2_kinetics_driver.py (A0, f_ini, f_red_l, f_red_u
+    and temperature ranges of the 52 reactions)
+    Transcribed from supplement mmc1.xlsx of Huang et al., Fuel 400 (2025) 135810
+    (25 of the rows are also in Table 4 of the CC BY 4.0 article); the supplement
+    states no licence. The authors' mechanism NH3_H2.yaml is not hosted (its header
+    forbids redistribution); DATA.md gives the download route. The CSVs are CC BY 4.0.
+
+  energy/European_LV_Feeder_Probabilistic_Power_Flow/
+    feeder/ (Master.dss, LineCode.txt, Lines.txt, Loads.txt, LoadShapes.txt,
+    Transformers.txt, Monitors.txt, Buscoords.txt, Daily_1min_100profiles/)
+    Source: the IEEE PES European LV Test Feeder as distributed in
+    dss-extensions/electricdss-tst (commit 3b20839), BSD 3-clause (EPRI and
+    DSS-Extensions; feeder/LICENSE-electricdss-tst.txt, kept beside the files).
+    IEEE PES states no licence for the feeder data. The CSVs are CC BY 4.0.
+
+  hydrology_subsurface_geoscience/PyGEM_Glacier_Mass_Balance/
+    climate_monthly.csv, site.csv, glacier_bins.csv
+    Source: OGGM/oggm-sample-data (commit ae1dfa73), BSD 3-clause. climate_monthly.csv
+    and the ERA5 value in site.csv are ERA5 (Hersbach et al. 2020) under the
+    Copernicus (C3S) licence, which allows redistribution with attribution:
+    "Contains modified Copernicus Climate Change Service information". glacier_bins.csv
+    is binned from the Farinotti et al. (2019) consensus thickness and SRTM elevation
+    in that repository (no separate licence stated). pygem_mb_model.py follows PyGEM
+    v0.1 (MIT; LICENSE-PyGEM.txt, kept beside it). The other CSVs are CC BY 4.0.
+
+  hydrology_subsurface_geoscience/Subglacial_Drainage_GlaDS/
+    glads_train_inputs.csv, glads_test_inputs.csv, glads_train_qoi.csv, glads_test_qoi.csv
+    Source: Zenodo 10.5281/zenodo.15053542, timghill/GladsGP v1.0.0 (T. Hill,
+    D. Bingham, G. Flowers, M. Hoffman), converted losslessly. MIT (GladsGP_LICENSE.txt,
+    kept beside the files).
