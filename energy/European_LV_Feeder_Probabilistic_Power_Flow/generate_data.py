@@ -3,8 +3,8 @@
     python generate_data.py --out DIR                                   # all files into DIR
     python generate_data.py --case 55 --rows 0:20 --out /tmp/lv --check  # subset vs shipped files
 
-The script never writes into this directory unless it is given as --out explicitly; --rows and
---check need --out DIR outside this directory and its subdirectories.
+The script never writes into this directory: --out DIR is required and must be outside this
+directory (not the directory or a folder in it), in every mode.
 
 Cases (IEEE European LV Test Feeder at 09:26, opendss_driver.py)
   55     1000 Monte Carlo samples of the 55 load active powers, P_i ~ N(P_Li, 0.1^2) kW,
@@ -152,9 +152,10 @@ def main():
     p.add_argument("--check", action="store_true", help="compare with the shipped files")
     a = p.parse_args()
     out = os.path.abspath(a.out)
-    if (a.check or a.rows) and os.path.commonpath([out, HERE]) == HERE:
-        sys.exit("--check and --rows need --out DIR outside this directory (and outside its "
-                 "subdirectories), so that the shipped files are not overwritten")
+    here = os.path.realpath(HERE)
+    if os.path.commonpath([os.path.realpath(out), here]) == here:
+        sys.exit("--out must be outside this data set's directory (not the directory or a folder in it), "
+                 "so that the shipped files are not overwritten")
     if M.dss is None:
         sys.exit(f"OpenDSSDirect.py is not installed. Install it ({M.INSTALL}, the version that "
                  "wrote the shipped files; scipy is also needed) and rerun generate_data.py.")

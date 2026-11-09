@@ -3,6 +3,9 @@
     python generate_data.py --out DIR                 # writes the six CSVs to DIR
     python generate_data.py --out DIR --check         # DIR outside this directory; compares with the files here (the safe mode)
 
+--out may not be a folder inside this directory; it may be this directory itself (`--out .`, which
+rewrites the shipped files) only without --check.
+
 Study m3: inputs (k_p, T_bias, f_snow), the three parameters calibrated by Rounce et al. (2020).
 Study m5: (k_p, T_bias, f_snow, d_prec, T_snow); the paper fixes the precipitation gradient d_prec and
 the snow/rain threshold T_snow (p. 177), and freeing them is this data set's choice.
@@ -114,9 +117,10 @@ def main():
     ap.add_argument('--fd-rows', type=int, default=FD_ROWS, help=f'draws for the finite-difference check (default {FD_ROWS})')
     args = ap.parse_args()
     out = os.path.abspath(args.out)
-    if args.check and os.path.commonpath([out, HERE]) == HERE:
-        ap.error('--check needs --out DIR outside this directory and its subdirectories, so that the shipped '
-                 'files are not overwritten')
+    here = os.path.realpath(HERE)
+    if os.path.commonpath([os.path.realpath(out), here]) == here and (args.check or os.path.realpath(out) != here):
+        ap.error('--out must be outside this data set\'s directory (not a folder in it; the directory itself only '
+                 'without --check, to rewrite the shipped files)')
     os.makedirs(out, exist_ok=True)
     t_all = time.perf_counter()
     for study in ('m3', 'm5'):

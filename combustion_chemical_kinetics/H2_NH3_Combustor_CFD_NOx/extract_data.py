@@ -38,8 +38,8 @@ computed from a surface integral at the outlet from the field files", p. 6):
     python extract_data.py --cells h2nh3_outlet_cells.npz --out DIR --check
                         # rebuild the CSV from the shipped cell values alone (no download), compare
 
-``--out`` is required (nothing is written by default); ``--check`` needs ``--out`` outside this
-directory. It compares the cell values at a relative tolerance of 1e-15, the CSV's input columns as
+``--out`` is required (nothing is written by default) and must be outside this directory (not the
+directory or a folder in it). ``--check`` compares the cell values at a relative tolerance of 1e-15, the CSV's input columns as
 text and its outlet columns at a relative tolerance of 1e-9. Needs numpy only; reads about 4 MB of the
 1.26 GB ``X.npy`` and hashes all three deposited files (a few seconds).
 """
@@ -267,8 +267,8 @@ def main():
         sys.exit('give either the deposit folder or --cells FILE')
     out = os.path.realpath(a.out)
     inside = os.path.commonpath([out, os.path.realpath(HERE)]) == os.path.realpath(HERE)
-    if a.check and inside:
-        sys.exit('--check needs --out DIR outside the data set directory')
+    if inside:
+        sys.exit("--out must be outside this data set's directory (not the directory or a folder in it)")
     os.makedirs(out, exist_ok=True)
     if a.cells is not None:
         if not os.path.isfile(a.cells):

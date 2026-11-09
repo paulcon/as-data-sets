@@ -1,16 +1,25 @@
 #!/usr/bin/env bash
 # Install R, the R packages virsim needs, and virsim v1.0.5 (built from its
-# source tarball) on Ubuntu 24.04 LTS (x86-64). Run from the kit directory:
+# source tarball) on Ubuntu 24.04 LTS (x86-64):
 #
-#     bash install_ubuntu2404.sh /path/to/virsim-v1.0.5.tar.gz
+#     bash install_ubuntu2404.sh /path/to/virsim-v1.0.5.tar.gz [INSTALL_DIR]
 #
 # All R packages come from the Ubuntu 24.04 archive at pinned versions (the
 # same versions used for the timing runs), so no CRAN mirror is needed. virsim
-# is installed into ./Rlib inside the kit. Each stage stops the script with a
-# message if it fails. Needs sudo for apt; needs no AWS or other credentials.
+# is installed into INSTALL_DIR/Rlib and the log is INSTALL_DIR/install.log.
+# INSTALL_DIR (default: the current directory) must exist and must be outside
+# this data set's directory. Each stage stops the script with a message if it
+# fails. Needs sudo for apt; needs no AWS or other credentials.
 set -euo pipefail
 
-KIT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+DEST="${2:-$PWD}"
+[ -d "$DEST" ] || { echo "INSTALL_DIR $DEST is not a directory: create it first" >&2; exit 1; }
+KIT="$(cd "$DEST" && pwd -P)"
+case "$KIT/" in
+  "$HERE/"*) echo "INSTALL_DIR must be outside this data set's directory (not the directory or a folder in it): $KIT" >&2
+             exit 1 ;;
+esac
 TARBALL="${1:-$KIT/virsim-v1.0.5.tar.gz}"
 SHA256="e6c629b537adf3ae34fdeb3e9af00fba30aa9b470fdcf7bbaec315fb375edaa6"
 LOG="$KIT/install.log"

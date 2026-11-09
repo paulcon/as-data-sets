@@ -173,8 +173,8 @@ python convert_data.py "<folder>/Urban Building Energy Stock Datasets.zip" --out
 python convert_data.py "<folder>/Urban Building Energy Stock Datasets.zip" --out DIR --check
 ```
 
-`--out` is required; with `--check` it must lie outside this directory and its subdirectories (the script
-stops otherwise), and the check prints, for each file, whether the text is identical and whether every value agrees
+`--out` is required and must lie outside this directory and its subdirectories (the script stops otherwise);
+the check prints, for each file, whether the text is identical and whether every value agrees
 within relative 1e-12. In the analysis venv (2026-11-08) the check ran in 4–13 s and printed "text
 identical; values equal within relative 1e-12" for both files.
 

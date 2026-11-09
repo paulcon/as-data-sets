@@ -183,9 +183,8 @@ The mechanism file is not part of this data set (see "License and credit"). Get 
 2. Convert it with `convert_mechanism.py` (below). It checks the sha256, reads `optimized.inp` and `thermo.dat` from
    the zip, runs Cantera's `ck2yaml` in permissive mode and checks that the result has 37 species and 246 reaction
    entries.
-3. Put the converted file where the driver finds it: either anywhere you like, with the environment variable
-   `AMMONIA_SYNGAS_MECH` set to its path, or as `ammonia_syngas_optimized.yaml` next to `ammonia_idt_driver.py`
-   (then it is in the data-set folder but not part of the repository: do not commit it).
+3. Write the converted file outside this data-set folder (`convert_mechanism.py` refuses the folder and any
+   folder in it) and set the environment variable `AMMONIA_SYNGAS_MECH` to its path; the driver reads it from there.
 
 ```bash
 # Cantera environment (Python 3.13 was used; Cantera has wheels for Linux and macOS)
@@ -202,7 +201,8 @@ Without Cantera or without the mechanism file, `generate_data.py`, `check_accura
 `IgnitionModel` stop with a message that gives these steps.
 
 `generate_data.py` writes each finished row to `DIR/rows/row_NNNN.npz` and skips it on the next run, and writes the
-CSVs when all requested rows exist. `--check` compares τ (relative tolerance 1e-6) and each gradient row (relative
+CSVs when all requested rows exist. `--out DIR` must be outside this directory (not the directory or a folder in
+it), in every mode. `--check` compares τ (relative tolerance 1e-6) and each gradient row (relative
 2-norm difference in normalized coordinates) with the shipped files, with gradient tolerances of 5e-2 at condition A
 and 2e-3 at B and C. These are set by noise in the forward differences, not by their truncation error: on the same
 platform a recomputed row matches the stored one to about 1e-11, but a rounding-level change of the inputs,

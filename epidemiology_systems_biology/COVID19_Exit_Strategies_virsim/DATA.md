@@ -21,7 +21,7 @@ per-chunk files of the run and checks them. The notebook needs only numpy, scipy
 | `generate_data.py` | writes the design (numpy + scipy) and checks it against the shipped inputs; runs `R/run_chunk.R`; merges | regenerates the runs (needs R and virsim 1.0.5) |
 | `convert_data.py` | merges the per-chunk result files into the shipped CSVs (`--out`, `--check`) | lossless conversion with checks (numpy only) |
 
-`R/strategies.R`, `R/run_chunk.R` and `install_ubuntu2404.sh` are the files that ran, unchanged (sha256 `e95f6ebc…5d60`, `3386818a…ace78` and `31dc1fa9…5152`). On the rented machine they sat in one folder with the design files and a GNU-parallel runner, `run_all.sh`; their comments call that folder "the kit", and `generate_data.py` now takes the runner's place. `run_all.sh` is not shipped: where the last message of `install_ubuntu2404.sh` says that `run_all.sh` sets `R_LIBS`, set it yourself as in step 1 of the recipe below.
+`R/strategies.R` and `R/run_chunk.R` are the files that ran, unchanged (sha256 `e95f6ebc…5d60` and `3386818a…ace78`). `install_ubuntu2404.sh` is the file that ran (sha256 `31dc1fa9…5152`, at commit 3602190) with one later change: it installs into an `INSTALL_DIR` argument (default the current directory) and refuses this directory and any folder in it, where it used to install into its own folder. On the rented machine they sat in one folder with the design files and a GNU-parallel runner, `run_all.sh`; their comments call that folder "the kit", and `generate_data.py` now takes the runner's place. `run_all.sh` is not shipped: where the last message of `install_ubuntu2404.sh` says that `run_all.sh` sets `R_LIBS`, set it yourself as in step 1 of the recipe below.
 
 Every CSV has two `#` lines (a description, then the column names with units) and reads with
 `np.loadtxt(path, delimiter=",")`.
@@ -171,10 +171,10 @@ https://gitlab.com/luccoffeng/virsim/-/tree/v1.0.5 (the file used, `virsim-v1.0.
 
 ```bash
 # 1. install R 4.3.3, the pinned R packages and virsim 1.0.5 (Ubuntu 24.04 x86-64; about 3-5 min; needs sudo).
-#    The script installs into its own folder (./Rlib, install.log), so work in a copy of this directory.
-cp -r COVID19_Exit_Strategies_virsim ~/virsim_run && cd ~/virsim_run
-bash install_ubuntu2404.sh /path/to/virsim-v1.0.5.tar.gz
-export R_LIBS=$PWD/Rlib OMP_NUM_THREADS=1
+#    It installs into INSTALL_DIR/Rlib and writes INSTALL_DIR/install.log; INSTALL_DIR must be outside this directory.
+mkdir -p ~/virsim_run
+bash install_ubuntu2404.sh /path/to/virsim-v1.0.5.tar.gz ~/virsim_run
+export R_LIBS=~/virsim_run/Rlib OMP_NUM_THREADS=1
 
 # 2. design only (numpy + scipy; any machine): writes DIR/design and checks it against the shipped inputs
 python generate_data.py --out /tmp/virsim --design-only
@@ -196,8 +196,9 @@ tarball with g++ 13 (`-O2`). `install_ubuntu2404.sh` stops at the stage that fai
 build, version check and a short virsim run).
 
 **How the shipped files were made (2026-11-08).** The design files were written by the same code as
-`generate_data.py` step 1 (`--design-only` writes identical design files here; its check prints a relative difference of 0 for the
-inputs and seeds, at tolerance 1e-15). The 572 chunks of 4 rows were run with
+`generate_data.py` step 1 (`--design-only` writes identical design files to `DIR/design`; in the Linux container its check printed a
+relative difference of 0 for the inputs, with equal seeds. In the macOS `.venv` (scipy 1.17.1) the inputs differ by up to 1.1e-15
+relative, at most 10 ulp, in the beta inverse CDFs, so the check's tolerance is 1e-14). The 572 chunks of 4 rows were run with
 `R/run_chunk.R` under GNU parallel, 16 processes, three phases (main rows 0-255, the replicates, main rows
 256-511). Before the full run, FC row 0 was run alone on the instance and gave the same QoIs as the same row
 run earlier in a Linux container with the same R and package versions (QoI 1 = 51.4833..., QoI 2 = 0; external
@@ -220,14 +221,15 @@ US$4 at the on-demand price of a c7a.4xlarge in us-east-1 at the time (an estima
 paper reports 1-2 minutes per run on a laptop (p. 20).
 
 `generate_data.py` without R or virsim stops after the design check with the install message above. It never
-writes into this directory: `--out` is required and must lie outside it; so must `convert_data.py`'s.
+writes into this directory: `--out` is required and must lie outside it (not the directory or a folder in it); so must
+`convert_data.py`'s.
 
 ## Accuracy
 
 - **QoIs vs daily series** (`convert_data.py`, and the notebook): both QoIs recomputed from `ic_prev_S.csv`
   agree with the stored QoIs to a relative 1e-15 (the rounding level) in every row.
-- **Design vs shipped inputs** (`generate_data.py --design-only`): seeds and inputs agree (relative difference 0,
-  tolerance 1e-15); IL and PO whole days equal the truncated inputs in every row (notebook).
+- **Design vs shipped inputs** (`generate_data.py --design-only`): seeds agree exactly and inputs to the rounding level
+  (relative difference 0 in the Linux container, up to 1.1e-15 in the macOS `.venv`; tolerance 1e-14); IL and PO whole days equal the truncated inputs in every row (notebook).
 - **Reproducibility of runs:** with the same seed, R and package build, a run is repeatable; the pilot on the
   rented machine matched the container's run of FC row 0 in both QoIs (external run, not reproducible from the
   repository; `generate_data.py --check` repeats the comparison where virsim is installed). Another build of R,

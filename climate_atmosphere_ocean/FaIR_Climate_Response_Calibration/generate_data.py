@@ -18,14 +18,17 @@ Stages
 
 Run stage "runs" resumes: the gradient of each parameter is cached in DIR/_cache_<rows>/ and a log is
 appended to DIR/generate_data.log. --out is required, may not be inside this directory, and may be
-this directory itself only with --overwrite (which replaces the shipped files); --check and --rows need an
+this directory itself only with --overwrite (which replaces the shipped files; the log and the cache then go
+to a temporary folder, removed at the end, so the run does not resume); --check and --rows need an
 --out outside this directory. --check compares with the shipped
 files at a relative tolerance of 1e-9 (QoIs) and 1e-6 (gradients) of each file's largest value.
 """
 import argparse
 import datetime
 import os
+import shutil
 import sys
+import tempfile
 import time
 
 import numpy as np
@@ -126,7 +129,7 @@ def make_emissions(ext_file, rcmip_file, out, log):
 
 
 # ---------------------------------------------------------------- runs stage
-def run_stage(out, rows, log):
+def run_stage(out, rows, log, work):
     if D.FAIR is None:
         sys.exit(INSTALL_FAIR)
     ids, X, seeds = D.load_posterior()
@@ -140,7 +143,7 @@ def run_stage(out, rows, log):
     t1 = time.time()
     sto = ens.run(X, seeds=seeds, stochastic=True)
     log(f"run with internal variability: {time.time() - t1:.1f} s")
-    cache = os.path.join(out, f"_cache_{tag}")
+    cache = os.path.join(work, f"_cache_{tag}")
     os.makedirs(cache, exist_ok=True)
     t2 = time.time()
     G = D.fd_gradients(ens, X, DELTA, sd_u, cache=cache, log=log)
@@ -195,7 +198,8 @@ def main():
         sys.exit("--out is this directory: use another directory; --check and --rows always need one "
                  "outside it (--overwrite replaces the shipped files)")
     os.makedirs(a.out, exist_ok=True)
-    log = logger(a.out)
+    work = tempfile.mkdtemp(prefix="fair_generate_") if same else a.out   # nothing but the shipped files here
+    log = logger(work)
     if a.stage == "emissions":
         if not (a.fair_example and a.rcmip):
             sys.exit("stage emissions needs --fair-example and --rcmip")
@@ -207,9 +211,11 @@ def main():
             rows = slice(i, j)
         else:
             rows = slice(0, 841)
-        files = run_stage(a.out, rows, log)
+        files = run_stage(a.out, rows, log, work)
     if a.check:
         check(a.out, files, rows)
+    if same:
+        shutil.rmtree(work)
 
 
 if __name__ == "__main__":

@@ -230,7 +230,8 @@ def main():
     p.add_argument("--procs", type=int, default=1, help="worker processes for the rows (default 1)")
     a = p.parse_args()
     out = os.path.abspath(a.out)
-    if out == HERE or out.startswith(HERE + os.sep):
+    here = os.path.realpath(HERE)
+    if os.path.commonpath([os.path.realpath(out), here]) == here:
         sys.exit("--out DIR must lie outside this directory, so that the shipped files are not "
                  "overwritten; compare the new files with the shipped ones and copy them in by hand")
     qois = [q.strip() for q in a.qoi.split(",") if q.strip()]

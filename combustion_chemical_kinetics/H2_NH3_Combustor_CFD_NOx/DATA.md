@@ -113,7 +113,7 @@ core-hours). Both files are regenerated from the deposit, and the CSV also from 
 
 ```
 python extract_data.py <folder with P.npy, xy.npy, X.npy> --out DIR
-python extract_data.py <same folder> --out DIR --check   # DIR outside this directory
+python extract_data.py <same folder> --out DIR --check
 python extract_data.py --cells h2nh3_outlet_cells.npz --out DIR --check   # no download needed
 ```
 
@@ -122,7 +122,8 @@ text and its outlet columns at a relative tolerance of 1e-9. From the deposit it
 files, with largest relative differences printed as 0.0e+00; from the `.npz` alone it printed "agree" for the
 CSV, likewise. Run time about 6 s from the deposit (2026-11-08, two shared CPUs, `X.npy` already in the page cache;
 longer from a cold disk), most of it the SHA-256 of `X.npy`, memory about 100 MB; under 1 s from the `.npz`.
-`--out` is required, so nothing is written by default, and `--check` refuses a `DIR` inside this directory.
+`--out` is required, so nothing is written by default, and the script refuses a `DIR` that is this directory or
+a folder in it.
 
 **Source.** Zenodo record 19348021, v2.0, CC BY 4.0, DOI
 [10.5281/zenodo.19348021](https://doi.org/10.5281/zenodo.19348021) (the DOI of ref. 29 of the paper). The

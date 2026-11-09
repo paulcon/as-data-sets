@@ -19,10 +19,9 @@ It is the same as running
 
 on the unzipped files.
 
---out is required: a path of your choice. ammonia_idt_driver.py reads the file from the path in the
-environment variable AMMONIA_SYNGAS_MECH if that is set, or else from ammonia_syngas_optimized.yaml
-next to ammonia_idt_driver.py. Either location works; the file is not part of the repository, so
-do not commit it.
+--out is required: a path of your choice outside this data set's directory (the script refuses the
+directory and any folder in it; the file is not part of the repository). Then set the environment
+variable AMMONIA_SYNGAS_MECH to that path: ammonia_idt_driver.py reads the file from there.
 """
 import argparse
 import hashlib
@@ -68,6 +67,9 @@ def main():
     out = os.path.abspath(a.out)
     if not out.endswith((".yaml", ".yml")):
         sys.exit("--out must end in .yaml")
+    here = os.path.realpath(os.path.dirname(os.path.abspath(__file__)))
+    if os.path.commonpath([os.path.realpath(out), here]) == here:
+        sys.exit("--out must be outside this data set's directory (not the directory or a folder in it)")
     with zipfile.ZipFile(a.zip) as z, tempfile.TemporaryDirectory() as tmp:
         members = {os.path.basename(n): n for n in z.namelist()}
         paths = {}
@@ -88,9 +90,7 @@ def main():
         sys.exit(f"{out}: {gas.n_species} species and {gas.n_reactions} reaction entries, expected "
                  f"{N_SPECIES} and {N_REACTIONS}")
     print(f"wrote {out}: {gas.n_species} species, {gas.n_reactions} reaction entries (Cantera {ct.__version__})")
-    here = os.path.dirname(os.path.abspath(__file__))
-    if out != os.path.join(here, "ammonia_syngas_optimized.yaml"):
-        print(f"set AMMONIA_SYNGAS_MECH={out} before running generate_data.py or check_accuracy.py")
+    print(f"set AMMONIA_SYNGAS_MECH={out} before running generate_data.py or check_accuracy.py")
 
 
 if __name__ == "__main__":

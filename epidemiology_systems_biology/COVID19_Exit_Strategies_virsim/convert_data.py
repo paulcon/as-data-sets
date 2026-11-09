@@ -212,8 +212,10 @@ def main():
     ap.add_argument("--strategy", choices=STRATEGIES, nargs="*", default=STRATEGIES)
     a = ap.parse_args()
     out = os.path.realpath(a.out)
-    if out == HERE or out.startswith(HERE + os.sep):
-        sys.exit("--out must be outside the data set directory (the shipped files are never overwritten)")
+    here = os.path.realpath(HERE)
+    if os.path.commonpath([out, here]) == here:
+        sys.exit("--out must be outside this data set's directory (not the directory or a folder in it); "
+                 "the shipped files are never overwritten")
     os.makedirs(out, exist_ok=True)
     ok, total = True, []
     for s in a.strategy:

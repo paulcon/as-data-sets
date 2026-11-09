@@ -191,7 +191,8 @@ $OUT/fairvenv/bin/python check_accuracy.py                                      
 ```
 
 `--out` may not be inside this directory; it may be this directory itself only with `--overwrite` (which
-replaces the shipped files), and `--check` and `--rows` always need an `--out` outside it. Tolerances of `--check`: maximum |new − shipped| / max |shipped|
+replaces the shipped files; the log and the gradient cache then go to a temporary folder that is removed at
+the end, so nothing else is written here), and `--check` and `--rows` always need an `--out` outside it. Tolerances of `--check`: maximum |new − shipped| / max |shipped|
 ≤ 1e-9 for the QoI files, 1e-6 for the gradients, 1e-10 for the emissions, 1e-15 for the converted files.
 
 Outside inputs (not shipped in their original form):

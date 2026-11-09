@@ -117,8 +117,10 @@ files, with a SHA-256 check of each:
 
 ```
 python convert_data.py <folder with the deposited files> --out <dir>             # writes the four CSVs
-python convert_data.py <folder with the deposited files> --check --out <dir>     # <dir> outside this directory
+python convert_data.py <folder with the deposited files> --check --out <dir>     # also compares
 ```
+
+`<dir>` must be outside this directory (not the directory or a folder in it); the script refuses it otherwise.
 
 `--check` writes the CSVs to `<dir>` and compares every number with the shipped files, relative tolerance
 1e-12; in the build environment (Python 3.13.18, numpy 2.5.4, scipy 1.18.1, active_subspaces 1.0.0.dev0; 2026-11-03) it reports a largest

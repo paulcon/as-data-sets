@@ -52,9 +52,8 @@ MECH_HELP = (f"the mechanism file was not found at {MECH}. It is not part of thi
              "Download d3re00160a1_suppl.zip (65 231 bytes, sha256 "
              "ee493371ad68aef892269bc3d19951609caa364d4ccd7d83112c3d0414a86a6b) from the article page "
              "https://doi.org/10.1039/D3RE00160A, link 'Electronic supplementary information'; convert it "
-             "with 'python convert_mechanism.py --zip d3re00160a1_suppl.zip --out PATH' (Cantera 3.2.0); "
-             "then set AMMONIA_SYNGAS_MECH=PATH, or use as PATH ammonia_syngas_optimized.yaml next to "
-             "ammonia_idt_driver.py, and rerun")
+             "with 'python convert_mechanism.py --zip d3re00160a1_suppl.zip --out PATH' (Cantera 3.2.0; "
+             "PATH outside this data set's directory); then set AMMONIA_SYNGAS_MECH=PATH and rerun")
 
 # The 41 reactions of Table 2 (p. 2076) and ESI Table S3, in that order, as printed there.
 REACTIONS = [

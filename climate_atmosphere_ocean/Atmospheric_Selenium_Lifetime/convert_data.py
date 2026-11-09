@@ -30,10 +30,10 @@ the burden divided by total deposition (paper, p. 1373). tau does not depend on 
 summed in float64; values are written with repr() (shortest round-trip decimal).
 
     python convert_data.py <folder with the deposited files> --out DIR           # write the four CSVs to DIR
-    python convert_data.py <folder with the deposited files> --check --out DIR   # write to DIR (outside this
-                                                                                  # directory), compare
+    python convert_data.py <folder with the deposited files> --check --out DIR   # write to DIR, compare
 --check compares every number with the shipped file: relative difference <= 1e-12 (the input files are
-also compared as text). Nothing is written into this directory unless --out names it. Imports numpy and
+also compared as text). DIR must be outside this directory (not the directory or a folder in it), so
+nothing is ever written into it. Imports numpy and
 scipy (scipy.io.netcdf_file reads the NetCDF classic files) and the standard library. About 10 s.
 """
 
@@ -224,11 +224,12 @@ def main(argv):
     out_dir = os.path.abspath(argv[argv.index('--out') + 1])
     src = [a for a in args if os.path.abspath(a) != out_dir][0]
     check = '--check' in argv
-    if check and os.path.realpath(out_dir) == os.path.realpath(HERE):
-        print('--check needs --out DIR outside the data set directory')
+    here = os.path.realpath(HERE)
+    if os.path.commonpath([os.path.realpath(out_dir), here]) == here:
+        print("--out must be outside this data set's directory (not the directory or a folder in it)")
         return 2
-    os.makedirs(out_dir, exist_ok=True)
     texts, info = build(src)
+    os.makedirs(out_dir, exist_ok=True)
     for name, text in texts.items():
         with open(os.path.join(out_dir, name), 'w', encoding='utf-8') as fh:
             fh.write(text)

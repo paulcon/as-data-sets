@@ -380,7 +380,8 @@ def main():
         ROWS = [int(s) for s in a.check_rows.split(",")]
     if a.save is not None:
         sv = os.path.abspath(a.save)
-        if sv == HERE or sv.startswith(HERE + os.sep):
+        here = os.path.realpath(HERE)
+        if os.path.commonpath([os.path.realpath(sv), here]) == here:
             sys.exit("--save DIR must lie outside this directory")
         os.makedirs(sv, exist_ok=True)
     if a.checks:

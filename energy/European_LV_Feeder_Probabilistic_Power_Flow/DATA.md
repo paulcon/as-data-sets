@@ -172,8 +172,8 @@ dssvenv/bin/python generate_data.py --rows 0:20 --out /tmp/lv --check         # 
 dssvenv/bin/python check_accuracy.py                                          # the Accuracy numbers (about 1 min of CPU)
 ```
 
-`generate_data.py` writes only into `--out`, which it requires; `--rows` and `--check` refuse this directory and
-its subdirectories. The
+`generate_data.py` writes only into `--out`, which it requires and which must be outside this directory (it
+refuses the directory and its subdirectories in every mode). The
 tolerance of `--check` is 1e-8 (outputs) and 1e-5 (gradients) of the largest stored value of each file.
 
 Provenance of the shipped files: generated 2026-11-03 in a Linux container (x86-64, 2 CPUs shared with other jobs,

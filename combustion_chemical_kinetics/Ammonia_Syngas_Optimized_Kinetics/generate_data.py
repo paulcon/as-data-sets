@@ -13,8 +13,8 @@ gradients of log10 tau in the node coordinates with step 1e-3 of each input's ha
 DIR/rows/row_NNNN.npz and skipped on the next run; the CSV files are written when all
 requested rows exist. Progress goes to DIR/generate_log.txt.
 
---out is required and, with --rows or --check, must lie outside this directory, so the shipped
-files are never overwritten by accident. --check compares tau (relative difference, tolerance
+--out is required and must lie outside this directory (not the directory or a folder in it), so
+the shipped files are never overwritten (copy new files in by hand after comparing them). --check compares tau (relative difference, tolerance
 1e-6) and each gradient row (relative 2-norm difference in normalized coordinates, tolerance
 5e-2 at condition A and 2e-3 at B and C) with the shipped files. The gradient tolerances are set
 by noise, not by truncation: a rounding-level change of the inputs, x (1 +- 1e-13), changes the
@@ -137,9 +137,10 @@ def main():
     p.add_argument("--check", action="store_true", help="compare with the shipped files")
     a = p.parse_args()
     out = os.path.abspath(a.out)
-    if (a.check or a.rows) and (out == HERE or out.startswith(HERE + os.sep)):
-        sys.exit("--check and --rows need --out DIR outside this directory, so that the shipped "
-                 "files are not overwritten")
+    here = os.path.realpath(HERE)
+    if os.path.commonpath([os.path.realpath(out), here]) == here:
+        sys.exit("--out must be outside this data set's directory (not the directory or a folder in it), "
+                 "so that the shipped files are not overwritten")
     if M.ct is None:
         sys.exit("Cantera is not installed. Install it (pip install cantera==3.2.0, the version that "
                  "wrote the shipped files) and rerun generate_data.py.")

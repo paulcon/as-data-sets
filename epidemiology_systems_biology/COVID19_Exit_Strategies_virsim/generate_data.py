@@ -71,8 +71,9 @@ DIST = {
 INSTALL_MSG = (
     "virsim {v} (an R package) is not installed or not found.\n"
     "Install R 4.3.3 and virsim {v} (on Ubuntu 24.04 x86-64: bash install_ubuntu2404.sh "
-    "virsim-v1.0.5.tar.gz, which builds virsim into ./Rlib), set R_LIBS to that library "
-    "(export R_LIBS=$PWD/Rlib OMP_NUM_THREADS=1) and rerun this script. The virsim source is "
+    "virsim-v1.0.5.tar.gz INSTALL_DIR, which builds virsim into INSTALL_DIR/Rlib; INSTALL_DIR outside "
+    "this data set's directory), set R_LIBS to that library "
+    "(export R_LIBS=INSTALL_DIR/Rlib OMP_NUM_THREADS=1) and rerun this script. The virsim source is "
     "at gitlab.com/luccoffeng/virsim, tag v1.0.5 (see DATA.md)."
 ).format(v=VIRSIM_VERSION)
 
@@ -118,10 +119,10 @@ def compare_design(s, A):
     m = len(C.inputs(s))
     same_int = np.array_equal(A[:, :5], shipped[:, :5])
     rel = np.max(np.abs(A[:, 5:5 + m] - shipped[:, 5:5 + m]) / np.abs(shipped[:, 5:5 + m]))
-    ok = same_int and rel <= 1e-15
+    ok = same_int and rel <= 1e-14    # rounding level: scipy's inverse CDFs differ by a few ulp between platforms
     print(f"{s}: design vs shipped runs_{s}.csv: rows/kind/group/source_row/seed "
           f"{'equal' if same_int else 'DIFFER'}; inputs max relative difference {rel:.1e} "
-          f"({'ok' if ok else 'DIFFERS'}, tolerance 1e-15)")
+          f"({'ok' if ok else 'DIFFERS'}, tolerance 1e-14)")
     return ok
 
 
@@ -167,8 +168,10 @@ def main():
     ap.add_argument("--design-only", action="store_true", help="write and check the design only")
     a = ap.parse_args()
     out = os.path.realpath(a.out)
-    if out == HERE or out.startswith(HERE + os.sep):
-        sys.exit("--out must be outside the data set directory (the shipped files are never overwritten)")
+    here = os.path.realpath(HERE)
+    if os.path.commonpath([out, here]) == here:
+        sys.exit("--out must be outside this data set's directory (not the directory or a folder in it); "
+                 "the shipped files are never overwritten")
     first, last = (0, C.N_ROWS - 1) if a.rows is None else map(int, a.rows.split(":"))
     if not 0 <= first <= last < C.N_ROWS:
         sys.exit(f"--rows must lie in 0:{C.N_ROWS - 1}")

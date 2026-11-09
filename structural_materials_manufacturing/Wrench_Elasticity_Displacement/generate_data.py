@@ -4,8 +4,8 @@
     python generate_data.py --out DIR --check         # writes to DIR and compares with the files here
     python generate_data.py --out DIR --n 100 --check # a quick partial run (first 100 samples, no reference)
 
-DIR must not be this directory with --check or --n; the shipped files were written with
-`--out .` from this directory. Steps:
+DIR must not be a folder inside this directory, and may be this directory itself only without
+--check and --n; the shipped files were written with `--out .` from this directory. Steps:
 
 1. `wrench_mesh.make_mesh()`: the 2197-triangle mesh (mesh_nodes.csv, mesh_elements.csv,
    mesh_boundary.csv).
@@ -156,8 +156,11 @@ def main():
     ap.add_argument('--n', type=int, default=None, help=f'number of samples (default {M}); skips the reference run')
     args = ap.parse_args()
     out = os.path.abspath(args.out)
-    if out == HERE and (args.check or args.n is not None):
-        ap.error('--check and --n need --out DIR outside this directory, so that the shipped files are not overwritten')
+    here = os.path.realpath(HERE)
+    if os.path.commonpath([os.path.realpath(out), here]) == here and \
+            (args.check or args.n is not None or os.path.realpath(out) != here):
+        ap.error('--out must be outside this data set\'s directory (not a folder in it; the directory itself only '
+                 'without --check and --n, to rewrite the shipped files)')
     os.makedirs(out, exist_ok=True)
     n = M if args.n is None else args.n
     t_start = time.perf_counter()

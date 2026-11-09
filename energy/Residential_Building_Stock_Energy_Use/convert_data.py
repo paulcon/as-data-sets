@@ -20,12 +20,10 @@ np.loadtxt(path, delimiter=',') reads the files. The second file starts with ``s
 can be traced. Within the kept rows and columns the conversion is lossless.
 
     python convert_data.py <zip> --out DIR            # write the two CSV files into DIR
-    python convert_data.py <zip> --out DIR --check    # write into DIR (outside this directory)
-                                                      # and compare with the shipped files
+    python convert_data.py <zip> --out DIR --check    # write into DIR and compare with the shipped files
 
---out is required. With --check it must lie outside this directory and its subdirectories, so a
-check never writes into the data set; --out . from inside this directory (without --check)
-rewrites the shipped files.
+--out is required and must lie outside this directory and its subdirectories, so the script never
+writes into the data set (copy new files in by hand after comparing them).
 The check compares the files' text and, field by field, their values (relative tolerance 1e-12),
 and prints both results. Standard library only (csv, hashlib, io, zipfile).
 """
@@ -160,9 +158,9 @@ def main(argv):
     if a.out is None:
         sys.exit('give --out DIR: the directory to write the two CSV files into')
     out_real = os.path.realpath(a.out)
-    if a.check and os.path.commonpath([out_real, os.path.realpath(HERE)]) == os.path.realpath(HERE):
-        sys.exit('--check needs --out DIR outside this directory (and outside its subdirectories), '
-                 'so that the check writes nothing into the data set')
+    if os.path.commonpath([out_real, os.path.realpath(HERE)]) == os.path.realpath(HERE):
+        sys.exit("--out must be outside this data set's directory (not the directory or a folder in it), "
+                 'so that nothing is written into the data set')
     texts = build(a.zip)
     os.makedirs(a.out, exist_ok=True)
     for name, text in texts.items():

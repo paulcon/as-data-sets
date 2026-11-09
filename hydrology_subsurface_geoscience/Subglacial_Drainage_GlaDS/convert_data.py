@@ -157,7 +157,7 @@ def build(src):
 
 def inside(path, root):
     path, root = os.path.realpath(path), os.path.realpath(root)
-    return path == root or path.startswith(root + os.sep)
+    return os.path.commonpath([path, root]) == root
 
 
 def main(argv=None):

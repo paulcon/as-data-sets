@@ -196,7 +196,8 @@ def main():
     p.add_argument("--mech", default=None, help="path of NH3_H2.yaml (default: see the driver)")
     a = p.parse_args()
     out = os.path.abspath(a.out)
-    if out == HERE or out.startswith(HERE + os.sep):
+    here = os.path.realpath(HERE)
+    if os.path.commonpath([os.path.realpath(out), here]) == here:
         sys.exit("--out must be a directory outside this one, so that the shipped files are not overwritten")
     if D.ct is None:
         sys.exit("Cantera is not installed. Install it (pip install cantera==3.2.0, the version that wrote "
