@@ -154,13 +154,17 @@ surface temperature, while the stored runs carry a non-smooth pellet-height term
 
 ## License and credit
 
-Data: from pyMAISE (P. Myers, C. Craig, V. Joynt, M. I. Radaideh et al.; University of Michigan), distributed
-under the Apache License 2.0 (`pyMAISE_LICENSE.txt`, the text in the wheel; the wheel's metadata says "License:
-UNKNOWN" and the licence file names no copyright holder; the package does not say whether the licence is meant
-to cover the data). The Zenodo record that current pyMAISE downloads the same files from
-(https://zenodo.org/records/20140559, "pyMAISE Benchmark Data", P. Myers, N. Panczyk, M. Radaideh, 2026) lists
-`fp_inp.csv` and `fp_out.csv` and gives its licence as CC BY 4.0 (record metadata read on 2026-11-10; the
-files were not downloaded). Runs by Radaideh and Kozlowski (2020), supported by the U.S. Department of Energy (award
+Data: CC BY 4.0, the licence of the Zenodo record that current pyMAISE downloads the files from
+(https://zenodo.org/records/20140559, "pyMAISE Benchmark Data", P. Myers, N. Panczyk, M. Radaideh, 2026; record
+metadata read on 2026-11-10, the files were not downloaded). The record lists `fp_inp.csv` (44,733 bytes) and
+`fp_out.csv` (17,186 bytes); putting the source header line and the CRLF line endings back on the rows of the
+two CSVs here gives files of those sizes with the record's MD5 checksums and the SHA-256 values above, so the
+files here hold the record's values character for character. This is the repository's data licence, so the
+files are not among the exceptions of `LICENSE-DATA`. The files here were taken from the pyMAISE 0.0.2 wheel
+(P. Myers, C. Craig, V. Joynt, M. I. Radaideh et al.; University of Michigan), which is distributed under the
+Apache License 2.0 (`pyMAISE_LICENSE.txt`, the text in the wheel; the wheel's metadata says "License: UNKNOWN",
+the licence file names no copyright holder, and the package does not say whether the licence is meant to cover
+the data). Runs by Radaideh and Kozlowski (2020), supported by the U.S. Department of Energy (award
 DE-NE0008573, NEUP), with the BISON input file generated from the "PinToPerform" templates (p. 30). Cite the
 paper and pyMAISE when using these files. `convert_data.py`, `check_accuracy.py` and the notebook: MIT (this
 repository).

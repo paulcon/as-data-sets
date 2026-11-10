@@ -200,14 +200,6 @@ licence or objects, that takes precedence.
     design_metadata_<basin>.csv and SLR.csv (M. Berdahl, G. Leguy, W. H. Lipscomb,
     N. M. Urban). No licence stated.
 
-  energy/BISON_Fuel_Performance_Surrogates/
-    bison_fp_inputs.csv, bison_fp_outputs.csv
-    Source: pyMAISE 0.0.2 (PyPI wheel), pyMAISE/data/fp_inp.csv and fp_out.csv
-    (P. Myers, C. Craig, V. Joynt, M. I. Radaideh); BISON runs by M. I. Radaideh and
-    T. Kozlowski. Apache-2.0 (the package licence, pyMAISE_LICENSE.txt, kept beside
-    the files); the package does not say whether it covers data. The same files are
-    in Zenodo record 20140559 ("pyMAISE Benchmark Data"), whose metadata gives CC BY 4.0.
-
   aerospace_cfd/RAE2822_SHAP_Design_Exploration/
     rae2822_hh_inputs.csv, rae2822_hh_outputs.csv
     Source: optimuspram/SHAPMODE (commit 159f915),
@@ -253,3 +245,13 @@ licence or objects, that takes precedence.
     Source: USGS data release 10.5066/P96A7ZC9 (R. J. Hunt, M. J. Haserodt,
     M. N. Fienen, J. T. White), model.zip, model/Figure5b_pilot_points_flat_bottom,
     unchanged. Public domain (U.S. Government work). The CSVs are CC BY 4.0.
+
+  combustion_chemical_kinetics/Shared_Subspace_H2_Ignition_Flame/
+    the table REACTIONS in h2_konnov_driver.py (number in Konnov's Table 1,
+    reaction equation and uncertainty factor of the 33 reactions)
+    Transcribed from Table 1 (pp. 509-510) of A. A. Konnov, "Remaining uncertainties
+    in the kinetic mechanism of hydrogen combustion", Combustion and Flame 152 (2008)
+    507-528, in the order of the article's supplementary mechanism file. No licence
+    stated for the table. The supplementary mechanism, thermodynamic and transport
+    files are not hosted; DATA.md gives the download route, and build_mechanism.py
+    rebuilds the Cantera file from them. The CSVs are CC BY 4.0.

@@ -5,6 +5,12 @@ Razavi et al. (2019), VARS-TOOL, Environmental Modelling & Software 112:95-107,
 https://doi.org/10.1016/j.envsoft.2018.10.005 (Fig. 9 and Sect. 9, pp. 104-105; parameters in
 Table 2, p. 105). No code of the VARS-TOOL implementation is used here.
 
+Licence: this module is under the MIT License of this repository (LICENSE at the repository root).
+VARS-TOOL (https://github.com/vars-tool/vars-tool, S. Razavi and contributors) is distributed under
+GPL-3.0; none of its code is copied or adapted here, and it is not needed to run this module. The
+Oldman forcing files this module reads were converted from that repository and are credited in
+DATA.md and in the exceptions of LICENSE-DATA.
+
 One day t (all water in mm over the basin; states are values at the start of the day):
 
     P = PM * P_t

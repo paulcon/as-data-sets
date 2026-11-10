@@ -227,8 +227,9 @@ Gradient errors are relative 2-norm errors of the gradient vector in x.
 
 ## License and credit
 
-Code (`*.py`, the notebook): MIT. Data (the CSVs): CC BY 4.0. The uncertainty factors in `h2_konnov_driver.py` are
-facts transcribed from Konnov (2008), Table 1; cite that paper. The Konnov mechanism, thermodynamic and transport
+Code (`*.py`, the notebook): MIT. Data (the CSVs): CC BY 4.0. The reaction list and uncertainty factors in
+`h2_konnov_driver.py` (`REACTIONS`) are facts transcribed from Konnov (2008), Table 1, which states no licence
+for them; they are listed in the exceptions of `LICENSE-DATA`. Cite that paper. The Konnov mechanism, thermodynamic and transport
 files are not included; `build_mechanism.py` rebuilds the Cantera file from them. Study design: W. Ji, J. Wang,
 O. Zahm, Y. M. Marzouk, B. Yang, Z. Ren, C. K. Law; cite their paper (above). Cantera: D. G. Goodwin,
 H. K. Moffat, I. Schoegl, R. L. Speth, B. W. Weber, https://www.cantera.org (BSD-3-Clause; not copied here).
