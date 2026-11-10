@@ -5,15 +5,14 @@ infected T cells T_L, macrophages M, infected macrophages M_I, cytotoxic
 lymphocytes CTL and virions V, with 27 parameters (Table 1 of the paper).
 
 `Tcells(p, times)` returns T(t) at the given times for each row of physical
-parameters `p`. Settings, kept from the 2016 code that produced the shipped data:
+parameters `p`. Settings:
 
 - Initial conditions are the same for every sample, by design: the uninfected
   equilibrium at the nominal parameters plus one virion,
   (T, T_I, T_L, M, M_I, CTL, V)(0) = (1000, 0, 0, 0.15/0.005, 0, 5/0.015, 1).
 - T is floored at 0.1: once T falls to 0.1 the state is frozen, and T stays 0.1
-  for the rest of the run. The paper does not have this floor. Here it is an
-  event (T = 0.1, terminal) of `solve_ivp`; the 2016 code returned a zero
-  right-hand side below 0.1, which has the same frozen values.
+  for the rest of the run. The paper does not have this floor. It is an
+  event (T = 0.1, terminal) of `solve_ivp`.
 - Solver: `scipy.integrate.solve_ivp`, LSODA, rtol = atol = 1e-10, with the
   analytic Jacobian.
 

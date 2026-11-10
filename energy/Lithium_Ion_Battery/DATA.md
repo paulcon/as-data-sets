@@ -21,7 +21,7 @@ md5 of the originals: `0.25C.txt` 6b79c1937889d1ec6eee09a97f5e6c84, `1C.txt` 750
 - **Generating code**: a finite-difference solver for Newman's porous-electrode model of a LiC₆/LiCoO₂ cell, set up by M. Hadigol, K. Maute and A. Doostan for their UQ study (J. Power Sources 300:507–524, 2015, doi:10.1016/j.jpowsour.2015.09.060). The code, its version and its settings are not recorded here.
 - **Who ran it**: Hadigol et al., on the University of Colorado Boulder's JANUS supercomputer: about 20 min per run on one core, 3600 CPU-hours for the 10,800 runs (Constantine & Doostan 2017, §4). Dr. Hadigol provided the data set (the paper's Acknowledgments). Ryan Howard added the files to this repository on 2016-07-15 (commit 0604f0d); they have not changed since.
 - **Sampling**: each run draws the 19 inputs independently from the distributions in the paper's Table 1, and the same 3600 input vectors are used at the three discharge rates (0.25C, 1C, 4C). The files store the inputs only after a shift and scale to [−1, 1].
-- The paper (§4) also points to `bitbucket.org/paulcon/time-dependent-gsa-for-batteries` for the data and scripts; that link was not checked for this port.
+- The paper (§4) also points to `bitbucket.org/paulcon/time-dependent-gsa-for-batteries` for the data and scripts; that link was not checked.
 
 ## Columns of the text files
 
@@ -55,29 +55,29 @@ The concentration columns are not in the npz: nothing uses them, and their units
 ## Units, grids and conversions
 
 - **Inputs**: normalized coordinates in [−1, 1]. The notebook's table gives the physical units, nominal values and ranges from the paper's Table 1. For the 17 uniform inputs the physical value is presumably lo + (hi − lo)(x + 1)/2; the paper says only "shift and scale". There are no gradients: the analysis uses values only (Algorithms 1 and 2), in normalized coordinates.
-- **t\* grid**: t* = 100 at the start of the discharge and 0 at the 2.8 V cutoff. The files do not record the t* of each voltage column. It is **inferred from the data**: column k (`Vol01` is k = 0) is at t* = 100(1 − k/49), so `Vol01` is the start and `Vol50` the cutoff (`battery_figs.TSTAR`; author, 2026-11-02). The evidence:
+- **t\* grid**: t* = 100 at the start of the discharge and 0 at the 2.8 V cutoff. The files do not record the t* of each voltage column. It is **inferred from the data**: column k (`Vol01` is k = 0) is at t* = 100(1 − k/49), so `Vol01` is the start and `Vol50` the cutoff (`battery_figs.TSTAR`). The evidence:
   - For each run that does not overshoot, the time at which it reaches the voltage of column k, interpolated in that run's own `Cap*` time table, divided by its `Cap50` time (at 2.8 V), gives t* = 100(1 − t/t_end). For columns 1–48, the median over the runs differs from 100(1 − k/49) by at most 0.18 at 0.25C, 0.03 at 1C and 0.01 at 4C (the notebook prints these). The mean over the runs at k = 1, 24, 47 and 48 is 97.9, 51.0, 4.09 and 2.05 at 0.25C and 1C.
   - At 0.25C and at 1C, the lowest `Vol01` equals the first voltage of `V_<rate>.txt` (exactly at 0.25C, to 1.4e-8 V at 1C), and that run (Run 1435) has `Cap01` = 0 s: column 0 is at time 0.
   - `Vol50` is within 0.5 mV of 2.8 V in every run that does not overshoot: column 49 is at the cutoff.
 
-  The 2016 code labeled column k with t* = 99 − 2k, which differs from the data by up to 0.96 (column 47: label 5, data 4.08). The paper's region labels t* = 95, 23 and 5 (Figs. 5–7) are those labels of columns 2, 38 and 47, which are at t* = 95.92, 22.45 and 4.08. The notebook analyzes columns 1–48, as the 2016 code did; the paper (§4.1, p. 252) says all 50.
-- **Capacity**: the notebook converts `Cap*` to capacity in mAh cm⁻² as rate × I_1C × t / 36000 with I_1C = 30 A m⁻² (the 2016 code's factors 7.5/36000, 30/36000, 120/36000). That `Cap*` is time in seconds and that I_1C = 30 A m⁻² are **inferred, not confirmed** (author, 2026-10-30). They are consistent with the data: the largest 0.25C value is 13,906 s ≈ 3.9 h and the largest 1C value 3,442 s ≈ 1 h, and the resulting capacities match the paper's axes (up to 2.9 mAh cm⁻² at 0.25C).
+  The paper's region labels t* = 95, 23 and 5 (Figs. 5–7) are the values of t* = 99 − 2k for columns 2, 38 and 47, which are at t* = 95.92, 22.45 and 4.08; that labeling differs from the data by up to 0.96. The notebook analyzes columns 1–48; the paper (§4.1, p. 252) says all 50.
+- **Capacity**: the notebook converts `Cap*` to capacity in mAh cm⁻² as rate × I_1C × t / 36000 with I_1C = 30 A m⁻² (the factors 7.5/36000, 30/36000, 120/36000 of the original analysis code). That `Cap*` is time in seconds and that I_1C = 30 A m⁻² are **inferred, not confirmed**. They are consistent with the data: the largest 0.25C value is 13,906 s ≈ 3.9 h and the largest 1C value 3,442 s ≈ 1 h, and the resulting capacities match the paper's axes (up to 2.9 mAh cm⁻² at 0.25C).
 
 ## Dropped runs
 
-Every run stops at the 2.8 V cutoff. Two 4C runs end below it: Run 1538 at 2.746 V (|z| = 59 among the final voltages) and Run 2969 at 2.791 V (|z| = 9.5). The rule "final voltage more than 1 mV below 2.8 V" flags exactly these two, and no 0.25C or 1C run; |z| > 5 flags the same two. The rows stay in the text files and in the npz arrays. The notebook applies the rule and checks it against `dropped_runs_<rate>`, so N = 3598 at 4C. The 2016 code dropped only Run 1538, without comment. The paper says N = 3600 for every fit. Dropping Run 2969 as well changes the 4C weights by at most 1.2e-4.
+Every run stops at the 2.8 V cutoff. Two 4C runs end below it: Run 1538 at 2.746 V (|z| = 59 among the final voltages) and Run 2969 at 2.791 V (|z| = 9.5). The rule "final voltage more than 1 mV below 2.8 V" flags exactly these two, and no 0.25C or 1C run; |z| > 5 flags the same two. The rows stay in the text files and in the npz arrays. The notebook applies the rule and checks it against `dropped_runs_<rate>`, so N = 3598 at 4C. The paper says N = 3600 for every fit. Dropping Run 2969 in addition to Run 1538 changes the 4C weights by at most 1.2e-4.
 
 ## Unknowns
 
 - The simulation code, its version and its settings.
-- The particle sizes r_a and r_c: the paper's Table 1 says N(2, 0.1354) and N(2, 0.3896), but the stored values are uniform on [−1, 1] like the other inputs (excess kurtosis −1.22 and −1.20). Unknown which is right, and how a Normal sample would have been mapped to [−1, 1] (author, 2026-10-30).
+- The particle sizes r_a and r_c: the paper's Table 1 says N(2, 0.1354) and N(2, 0.3896), but the stored values are uniform on [−1, 1] like the other inputs (excess kurtosis −1.22 and −1.20). Unknown which is right, and how a Normal sample would have been mapped to [−1, 1].
 - That `Cap*` is elapsed time in seconds, and I_1C = 30 A m⁻² (see above).
 - The t* grid of the voltage columns is not recorded; it is inferred from the data (see above).
 - The units and positions of the concentration columns.
 
 ## Originals and Zenodo
 
-The author decided (2026-10-30) that full originals of large data sets go to Zenodo with a DOI, and the repository ships the used columns. The deposit of the three text files (with the concentration columns) and the voltage grids, with Hadigol et al. as data authors, has not been made yet. Until it has a DOI, the original text files stay in this directory. The notebook reads only `battery_data.npz`; `make_battery_npz.py` is the only reader of the text files. When the DOI exists, the text files can be removed from HEAD and the DOI added here; their md5s above identify them.
+Full originals of large data sets go to Zenodo with a DOI, and the repository ships the used columns. The deposit of the three text files (with the concentration columns) and the voltage grids, with Hadigol et al. as data authors, has not been made yet. Until it has a DOI, the original text files stay in this directory. The notebook reads only `battery_data.npz`; `make_battery_npz.py` is the only reader of the text files. When the DOI exists, the text files can be removed from HEAD and the DOI added here; their md5s above identify them.
 
 ## License and credit
 

@@ -60,8 +60,7 @@ none of which the paper mentions:
 The paper says that the factors p_i "allow the original model formulation to be used without
 modification" (p. 5) and that it uses "a machine readable model specification file available from the
 CellML model repository" (p. 5). Its Fig 2(d) (p. 12) shows a baseline AP peaking near 26 mV, as this file
-does, so the paper's runs used the modified file too. We keep it, because it is what the paper ran (author's
-decision, 2026-11-02). The fixed E_Na_SL matters: see "Accuracy" (check 3 of `check_accuracy.py`). Whether it
+does, so the paper's runs used the modified file too. We keep it, because it is what the paper ran. The fixed E_Na_SL matters: see "Accuracy" (check 3 of `check_accuracy.py`). Whether it
 was intended is asked of the authors (open).
 
 **Inputs** (paper Table 4, p. 12, "parameter subspace of normal response"; uniform on a linear scale, as
@@ -312,7 +311,7 @@ Code (the notebook, `shannon_driver.py`, `generate_data.py`, `check_accuracy.py`
 (https://github.com/ZhechaoYanggla/Sobol_paper, `Code for Sobol analysis/`, commit
 f11c5e627c33b63479baaa4dae821eb342a82e68 of 2025-07-16, the latest; byte-identical, SHA-256
 0eebd3bfdbb5e0f3f429ffdd7e5f831c7e2a28db2395cd30b3ca0ba3b3a22202). **That repository states no licence**, so
-the file is hosted here with the source credited (decision of 2026-10-30) and is listed in the exceptions list
+the file is hosted here with the source credited and is listed in the exceptions list
 of `LICENSE-DATA`; if the authors attach a licence or object, that takes precedence. It is Shannon et al. 2004
 with E_Na_SL fixed at −15 mV, as distributed by Yang et al. (see "Model"): Myokit's import of the model from the
 CellML Model Repository (C. M. Lloyd, J. R. Lawson, P. J. Hunter, P. F. Nielsen, The CellML Model Repository,

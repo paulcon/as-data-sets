@@ -9,7 +9,7 @@ Monte Carlo with active subspaces", SIAM J. Sci. Comput. 38(5):A2779-A2805,
 - `ActiveSubspaceMCMC.sample_active_variables`: random-walk
   Metropolis-Hastings on the active variables y = W1^T x with the Monte Carlo
   misfit estimate ghat(y). By default ghat is recomputed at the current state
-  and at the proposal at every step, as the 2016 code that produced the
+  and at the proposal at every step, as the code that produced the
   paper's results did (an approximate, noisy Metropolis-Hastings);
   recompute=False keeps ghat with the state, the paper's Algorithm 1 as printed;
 - `ActiveSubspaceMCMC.sample_original_variables`: the reconstruction (4.2),
@@ -120,7 +120,7 @@ class ActiveSubspaceMCMC:
     def sample_active_variables(self, y0, N, M, prop, rng, recompute=True, progress=None):
         """Random-walk Metropolis-Hastings on y with the misfit estimate ghat.
 
-        recompute=True (the default; the 2016 code, which produced the paper's
+        recompute=True (the default; as in the code that produced the paper's
         results): at every step ghat is computed afresh, with new draws of z,
         at both the current state and the proposal, 2M misfit evaluations per
         step. Because ghat is noisy, this is an approximate (noisy)

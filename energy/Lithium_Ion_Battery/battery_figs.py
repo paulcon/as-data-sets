@@ -14,7 +14,7 @@ import active_subspaces as ac
 
 DATA = Path(__file__).with_name('battery_data.npz')
 RATES = {'0.25C': ('025C', 0.25), '1C': ('1C', 1.0), '4C': ('4C', 4.0)}   # npz key, multiple of 1C
-I_1C = 30.0             # A m^-2: current density of a 1C discharge. Inferred from the 2016 code, not confirmed
+I_1C = 30.0             # A m^-2: current density of a 1C discharge. Inferred from the original analysis code, not confirmed
 CUTOFF, TOL = 2.8, 1e-3                  # V: every run stops at the cutoff; TOL decides an overshoot
 TSTAR = 100 * (1 - np.arange(50) / 49)    # t* of voltage column k, inferred from the data (DATA.md)
 # Grid columns analyzed: every voltage of the capacity grid; every t* but the start (100) and the cutoff (0)
@@ -24,7 +24,7 @@ BANDS = {('capacity', '0.25C'): (2, 17, 38), ('capacity', '1C'): (5, 34, 48), ('
 YLABEL = {'capacity': r'Capacity [mAh cm$^{-2}$]', 'voltage': 'Voltage [V]'}
 XLABEL = {'capacity': 'Voltage [V]', 'voltage': r'$t^*$'}
 
-# The 19 inputs in data-column order, with the 2016 line styles (style, color, width).
+# The 19 inputs in data-column order, with their line styles (style, color, width).
 LABELS = [r'$\epsilon_a$', r'$\epsilon_s$', r'$\epsilon_c$', r'brugg$_a$', r'brugg$_s$', r'brugg$_c$',
           r'$t_+^0$', r'$D$', r'$D_a$', r'$D_c$', r'$\sigma_a$', r'$\sigma_c$', r'$k_a$', r'$k_c$',
           r'$r_a$', r'$r_c$', r'$L_a$', r'$L_s$', r'$L_c$']

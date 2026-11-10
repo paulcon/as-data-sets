@@ -5,7 +5,7 @@
 # normalize with z = (x - (upper + lower)/2) / ((upper - lower)/2), bounds in DATA.md.
 # exit_pressure: pressure averaged over the last 10 mm of the combustor (0.64 <= x <= 0.65 m).
 # validation = 1: the two runs made after w was computed, near opposite corners of the input box.
-# exit_pressure_phi030 is nan for runs 15-16: those two runs are unavailable (author, 2026-10-30).
+# exit_pressure_phi030 is nan for runs 15-16: those two runs are unavailable.
 # Written by convert_legacy_data.py from HyShotII35.txt (tag legacy-master), whose runs 15-16 had
 # normalized inputs and 0 placeholders; converting back reproduces the inputs to 2e-15.
 # columns: run, angle_of_attack [deg], turbulence_intensity [%], turbulence_length_scale [mm], stagnation_pressure [Pa], stagnation_enthalpy [J/kg], cowl_transition_location [m], ramp_transition_location [m], exit_pressure_phi030 [bar], exit_pressure_phi035 [bar], validation

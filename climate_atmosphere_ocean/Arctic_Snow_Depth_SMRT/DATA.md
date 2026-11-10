@@ -12,9 +12,8 @@ directory.
 
 **Source version.** The published paper, The Cryosphere 20(11):6157–6180, 30 October 2026
 (doi:10.5194/tc-20-6157-2026, CC BY 4.0), and its Supplement (doi:10.5194/tc-20-6157-2026-supplement).
-Page, table and figure numbers below are those of the published paper. An earlier version of these data used the
-EGUsphere preprint (doi:10.5194/egusphere-2026-1680); Tables 1 and 4 and the numbers printed in Fig. 3a
-are the same in both versions.
+Page, table and figure numbers below are those of the published paper. The EGUsphere preprint
+(doi:10.5194/egusphere-2026-1680) has the same Tables 1 and 4 and the same numbers printed in Fig. 3a.
 
 ## Files
 
@@ -160,8 +159,8 @@ recorded), numpy 2.5.4, scipy 1.18.1, xarray 2026.9.0, pandas 3.1.0, numba 0.68.
 the differences are deterministic). `--rows 173:178 --check` after the run (it covers sample 175, the only
 one with jump flags) reproduced all four files bit for bit (max relative difference 0).
 
-**Effect of the switch from an earlier version of these data** (SMRT 1.7.3, plain IBA; same inputs; external run,
-not reproducible from the repository): below the dense-snow
+**Sensitivity to the SMRT version and the dense-snow correction** (a run with SMRT 1.7.3 and plain IBA on the same
+inputs, not shipped; external run, not reproducible from the repository): below the dense-snow
 threshold TB changed by at most 0.3 K up to 36 GHz and 1.3 K at 89 GHz (SMRT version), and the normalized
 gradients by a median 0.2 % (at most 8 %); above it TB changed by up to 31 K at 36 GHz and 70 K at 89 GHz
 (dense-snow correction). Another SMRT version, or other numerical libraries, may change TB in the last digits,
@@ -203,11 +202,11 @@ the same quantity was computed when the data were made, it agreed to the digits 
   λ2/λ3 = 2.14, |w1·w1(all)| = 0.9995. So the 41 samples above the step change λ2/λ3 (1.41 → 2.14) but not
   w1; the bootstrap intervals of λ2/λ3 overlap ([1.08, 2.18] and [1.19, 3.48]). Above the step the medium is
   inverted and the mean normalized density derivative of TB36V changes sign (+9.1 K below, −6.1 K above), so
-  averaging the two branches fills in λ2 and λ3. An earlier version of these data (SMRT 1.7.3, plain IBA, no step) had λ2/λ3 = 2.15.
+  averaging the two branches fills in λ2 and λ3. A run with SMRT 1.7.3 and plain IBA (no step; not shipped) had λ2/λ3 = 2.15.
 - **Stream-count jumps.** DORT takes 32 Gauss–Legendre streams in the most refringent layer (the ice) and
   carries them into the snow by Snell's law; the number of streams that are not totally reflected changes
   in steps with the snow's refractive index, so TB is piecewise smooth with small jumps across surfaces in
-  (density, temperature). Example from an earlier version of these data (SMRT 1.7.3; external run, not
+  (density, temperature). Example from a run with SMRT 1.7.3 (not shipped; external run, not
   reproducible from the repository): at depth 0.558 m, density 236.06 kg m⁻³, 249.3 K, r 0.217 mm, τ 0.154,
   TB18V drops by 0.114 K between densities 236.06 and 236.11 kg m⁻³ with 32 streams; with 64 streams there is
   no jump in that interval. The detector handles the gradients; the jumps remain in the TB values (about 0.1 K,
@@ -219,7 +218,7 @@ the same quantity was computed when the data were made, it agreed to the digits 
   SMRT 1.5.1). TB differs by a median of 0.27–0.50 K per channel, at most 0.36–0.61 K below 36 GHz and
   3.25–4.62 K at 36 and 89 GHz; the normalized gradients differ by a median of 1.8–8.0 % per channel. The
   active subspace does not move: on those 40 samples TB36V has λ1/λ2 = 9.28 with 32 streams and 9.85 with 64,
-  and |w1(32)·w1(64)| = 1.0000. (An earlier version of these data, with SMRT 1.7.3 and plain IBA, gave TB
+  and |w1(32)·w1(64)| = 1.0000. (A run with SMRT 1.7.3 and plain IBA gave TB
   differences of 0.27–0.41 K median, gradient differences of 0.6–6.5 %, and λ1/λ2 = 14.15 with either stream
   count.)
 - **Zero depth** (`check_accuracy.py` check 3). SMRT drops a zero-thickness layer (bare ice), and TB is

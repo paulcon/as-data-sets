@@ -29,7 +29,7 @@ listed in STREAMS, one stream per job.
    - 'cached': ghat kept with the state, the paper's Algorithm 1 as printed
      (a pseudo-marginal method, exact for pi_M);
    - 'recompute': ghat recomputed at the current state and at the proposal at
-     every step, the 2016 code behind the paper's results (a noisy
+     every step, as in the code behind the paper's results (a noisy
      Metropolis-Hastings).
 5. A grid for the densities that the active-variable chains approximate: the
    misfit at y W1 + W2 z for GRID_N x GRID_N points y and common prior draws z
@@ -60,7 +60,7 @@ OUT = os.path.join(HERE, 'pde_mcmc_chains.npz')
 
 SEED = 2779            # the paper's first page, A2779
 N_CHAINS = 4           # independent chains per active-variable sampler
-N_VAN_CHAINS = 20      # independent vanilla chains (4 at first; 16 added 2026-10-31)
+N_VAN_CHAINS = 20      # independent vanilla chains
 # Chains 5-20 have their streams at the end: SeedSequence.spawn gives child i the same seed
 # whatever the number of children, so every earlier job keeps its stream.
 STREAMS = (('data', 'grad_points', 'bootstrap', 'vanilla_1', 'unused', 'grid')
@@ -97,7 +97,7 @@ GRID_DRAWS = 2560      # draws of z at the coarse points
 
 
 def streams(seed=SEED):
-    """One numpy Generator per entry of STREAMS ('unused' fed the first versions' AV chain)."""
+    """One numpy Generator per entry of STREAMS ('unused' is drawn from by nothing; it keeps the others' seeds)."""
     children = np.random.SeedSequence(seed).spawn(len(STREAMS))
     return {name: np.random.default_rng(s) for name, s in zip(STREAMS, children)}
 
@@ -112,7 +112,7 @@ def synthetic_data(model, rng):
 
 
 def misfit_subspace(G, rng):
-    """v1 active subspace of the misfit gradients G, n = 2, 2016 sign rule."""
+    """Active subspace of the misfit gradients G, n = 2, first components of w1 and w2 positive."""
     sub = ac.active_subspace(space=ac.Gaussian.reference(G.shape[1]), grads=G,
                              nboot=NBOOT, rng=rng, n=N_ACTIVE)
     return ac.orient(sub, by='reference', reference=np.eye(G.shape[1])[:, [0, 0]],

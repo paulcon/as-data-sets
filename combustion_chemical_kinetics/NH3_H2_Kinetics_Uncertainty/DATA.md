@@ -1,8 +1,8 @@
 # NH3_H2_Kinetics_Uncertainty: data
 
 Kind: **stored data (generated with Cantera 3.2.0), with a regeneration script.** The model runs in Cantera, an
-outside code, so it is not a numpy/scipy "Python model" in the repository's sense (CLAUDE.md, "Two kinds of data
-sets"), even though the Cantera driver is a Python module (`nh3h2_kinetics_driver.py`). The data were generated
+outside code, so it is not a numpy/scipy "Python model" in the repository's sense (`CONTRIBUTING.md`, "Decide which kind of data
+set it is"), even though the Cantera driver is a Python module (`nh3h2_kinetics_driver.py`). The data were generated
 for this repository in a Linux container; the shipped CSVs are the record. **Regenerating the data, or rerunning
 the accuracy checks, needs Cantera 3.2.0 (`pip install cantera==3.2.0`) and the authors' mechanism file
 `NH3_H2.yaml` from the paper's supplement**, which is not distributed here (see "License and credit"). Without
@@ -358,7 +358,7 @@ transcribed from the supplement's `mmc1.xlsx` (credit: the authors; the article 
 states no licence). **The mechanism file `NH3_H2.yaml` is not distributed here**: its header says it "is intended
 for use by not-for-profit researchers only. Any copying or distribution of this mechanism, or use (in part or
 whole) in any commercial software is strictly forbidden without the written consent of the authors." It is linked, not
-copied (decision of 2026-11-08 for publisher-supplement mechanism files): get it from the supplementary data at
+copied: get it from the supplementary data at
 https://doi.org/10.1016/j.fuel.2025.135810 (Appendix A, `mmc3.zip`) as described under "Regenerating"; the driver
 checks its sha256. The article is cited and linked, not redistributed. Cantera: D. G. Goodwin, H. K. Moffat, I. Schoegl, R. L. Speth, B. W. Weber,
 https://www.cantera.org (BSD-3-Clause).

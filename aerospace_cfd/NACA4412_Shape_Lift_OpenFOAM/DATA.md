@@ -160,7 +160,7 @@ camber. The GPR and DMD results (Figs. 10–11) are not reproduced.
 
 Data: © Tezzele, Demo, Stabile, Mola, Rozza; from github.com/mtezzele/MORtech-2019-Special-Issue (commit
 ec05216). **No licence is stated** for the repository; the files are hosted with the source credited and are
-listed in the exceptions of `LICENSE-DATA` (decision of 2026-10-30). Article CC BY 4.0. Cite the paper when
+listed in the exceptions of `LICENSE-DATA`. Article CC BY 4.0. Cite the paper when
 using these files. `convert_data.py`, `check_accuracy.py` and the notebook: MIT (this repository). No code of
 the authors' repository is included (the shape-function formulas are quoted from `MORTECH.C` as facts of the
 model).

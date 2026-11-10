@@ -1,8 +1,8 @@
 # H2_Flame_Kinetics_Bayesian_Calibration: data
 
 Kind: **stored data (generated with Cantera 3.2.0), with a regeneration script.** The model runs in Cantera, an
-outside code, so it is not a numpy/scipy "Python model" in the repository's sense (CLAUDE.md, "Two kinds of data
-sets"), even though the driver is a Python module (`h2_flame_driver.py`). A numpy/scipy port (a stiff reactor with
+outside code, so it is not a numpy/scipy "Python model" in the repository's sense (`CONTRIBUTING.md`, "Decide which kind of data
+set it is"), even though the driver is a Python module (`h2_flame_driver.py`). A numpy/scipy port (a stiff reactor with
 Troe falloff and a 1-D premixed flame with mixture-averaged transport) would be a second, unchecked combustion
 code. Cantera was installed in a separate environment (a Linux container), the data were generated there (the Su20
 gradients on a 16-core cloud instance), and the provenance is recorded below. The shipped CSVs are the record. **Regenerating the data, or rerunning the accuracy

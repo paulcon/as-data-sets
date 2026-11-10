@@ -173,8 +173,7 @@ Recorded here; none affects the data or the notebook.
 ## License and credit
 
 The VLSE page and the GdR MASCOT-NUM source state no licence for the data. `marthedata.txt` is
-therefore hosted with the source credited (the repository author's decision of 2026-10-30 on data with
-no stated licence) and is listed in the exceptions list of `LICENSE-DATA`; `inputs.csv` and
+therefore hosted with the source credited and is listed in the exceptions list of `LICENSE-DATA`; `inputs.csv` and
 `outputs.csv` are a lossless conversion of it and carry the same credit. Please cite Volkova, Iooss and
 Van Dorpe (2008), doi:10.1007/s00477-006-0093-y, for the model and runs, and the Virtual Library of
 Simulation Experiments (S. Surjanovic and D. Bingham, https://www.sfu.ca/~ssurjano/marthe.html) for the

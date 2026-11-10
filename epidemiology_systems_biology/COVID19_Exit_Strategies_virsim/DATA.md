@@ -293,7 +293,7 @@ writes into this directory: `--out` is required and must lie outside it (not the
 
 Code (`*.py`, `R/*.R`, `install_ubuntu2404.sh`, the notebook): MIT, written for this repository. Data (the
 CSVs): CC BY 4.0. They are outputs of runs made here with virsim, whose own licence is CC BY-NC-ND 4.0 (stated
-in its `DESCRIPTION` and `LICENSE`). The repository's position, a decision of its maintainer, is that this
+in its `DESCRIPTION` and `LICENSE`). The repository's position is that this
 licence covers the virsim code and not outputs computed with it. No virsim code is included, and neither is
 virsim's bundled data (`param_sim.rda`). The driver contains no code from the paper's study scripts (LGPL-3.0); it uses the parameter values
 they pass to virsim. Model: L. E. Coffeng (virsim). Study design, distributions and QoIs: F. Gugole,
