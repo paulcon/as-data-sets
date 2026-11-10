@@ -26,6 +26,8 @@ jupyter lab                                   # interactive
 cd epidemiology_systems_biology/HIV_Long_Term_Dynamics && jupyter nbconvert --to notebook --execute --inplace HIV_Long_Term_Dynamics.ipynb
 ```
 
+Jupyter renders each markdown cell on its own, so a reference link resolves only in the cell that defines it. Write links in a notebook inline, `[[1]](https://doi.org/...)`, unless the definition is in the same cell. Where the local, git-ignored script `check_notebook_links.py` is present at the repository root, run `python check_notebook_links.py` (all notebooks, or pass paths; exits 1 on an unresolved link) before committing a new or edited notebook.
+
 ## Branches
 
 The default branch is `main` (renamed from `master` 2026-10-30). It is protected: every change, the owner's included, lands through a PR merged with "Create a merge commit". Force-pushes and deletion are blocked. The 2016 state is the tag `legacy-master`.
