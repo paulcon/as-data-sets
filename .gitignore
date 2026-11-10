@@ -16,3 +16,5 @@ gurobi.log
 .idea/
 # publisher-supplement mechanism rebuilt locally by build_mechanism.py; not for redistribution
 combustion_chemical_kinetics/Shared_Subspace_H2_Ignition_Flame/konnov2008_h2.yaml
+# local check for notebook reference links; kept out of the repository
+check_notebook_links.py
