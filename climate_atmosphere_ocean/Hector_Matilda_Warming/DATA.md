@@ -156,7 +156,9 @@ another platform or compiler may differ at the level of Hector's jumps (up to ab
 
 ## Accuracy
 
-All numbers from `check_accuracy.py` (needs R, hector 3.1.1, matilda v1.0.0; part 5 needs only numpy, `--weights`):
+All numbers from `check_accuracy.py` (needs R, hector 3.1.1, matilda v1.0.0; part 5 needs only numpy, `--weights`).
+Parts 1–4 were run in the Linux container where the files were written. Part 5 was also rerun in the repository's
+`.venv` (`python check_accuracy.py --weights`, under 1 s) and printed the values given in the table:
 
 | check | result | script |
 |---|---|---|
@@ -173,7 +175,7 @@ All numbers from `check_accuracy.py` (needs R, hector 3.1.1, matilda v1.0.0; par
 | same, CO₂ | 7.4 ppmv (row 273, NPP₀); 5–6 ppmv along most inputs at rows 249 and 273; ≤ 2.2 ppmv at row 376 | part 3 |
 | same scans, largest departure of f itself from the quadratic fit | warming 9.2e-03 °C, CO₂ 4.5 ppmv | part 3 |
 | slope of the quadratic fit at the sample vs shipped gradient, / gradient norm | warming median 0.007, max 0.016; CO₂ median 0.037, max 0.085 | part 3 |
-| paper's draws (seed 245) under SSP2-4.5 (weights from the SSP2-4.5 series alone), weighted P(1.7 < T ≤ 3.8 °C) for raw / ensemble-baseline / own-baseline metric | 95.2 % / 96.2 % / 95.2 % (unweighted 92.2 / 93.1 / 92.6 %); 0 of 1000 runs failed; weights' effective sample size 578 | `check_accuracy.py --paper`, part 4(b) (35 min wall in the build run) |
+| paper's draws (seed 245) under SSP2-4.5 (weights from the SSP2-4.5 series alone), weighted P(1.7 < T ≤ 3.8 °C) for raw / ensemble-baseline / own-baseline metric | 95.2 % / 96.2 % / 95.2 % (unweighted 92.2 / 93.1 / 92.6 %); 0 of 1000 runs failed; weights' effective sample size 578 | `check_accuracy.py --paper`, part 4(b) |
 | paper's draws under SSP3-7.0: sets that fail | sets 114 and 930 (NPP₀ 14.2 and 13.9 Pg C yr⁻¹; the smallest NPP₀ that runs is 17.6); 0 fail under SSP2-4.5 | part 4(a) |
 | paper's draws, SSP2-4.5, raw metric, weights misaligned as in part 5 with the sets of 4(a) | P(1.7 < T ≤ 3.8) = 92.7 % (paper 92 %); bins 0.018, 0.185, 0.389, 0.275, 0.100, 0.029, 0.003 (Fig. 6B ≈ 0.02, 0.185, 0.39, 0.275, 0.095, 0.03, 0.005); 27 min wall for (a)–(c) | part 4(c) |
 | Fig. 6B pipeline emulated on the 999 finite runs (numbered 1–999, runs 114 and 930 dropped, `metric_calc` renumbering, merge by run number), raw-GMST metric: P(1.7 < T ≤ 3.8) | correct weights 96.5 %, unweighted 92.6 %, misaligned 93.2 % | part 5 |

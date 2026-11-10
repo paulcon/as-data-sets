@@ -2,8 +2,8 @@
 
 Kind: **stored data (generated with pyrcel 2.0.0), with a regeneration script.** The model is the adiabatic
 cloud-parcel model of Rothenberg and Wang (2016) as released by the first author in pyrcel, a JAX/diffrax code
-outside this repository, so it is not a numpy/scipy "Python model" in the repository's sense (CLAUDE.md, "Two
-kinds of data sets"), even though the driver is a Python module (`pyrcel_parcel_driver.py`). The data were
+outside this repository, so it is not a numpy/scipy "Python model" in the repository's sense (`docs/README.md`,
+"Two kinds of data sets"), even though the driver is a Python module (`pyrcel_parcel_driver.py`). The data were
 generated for this repository in a Linux container (x86-64, Python 3.13.18) on 2026-11-09/10. The shipped CSVs
 are the record. **Regenerating the data, or rerunning the accuracy checks, needs pyrcel 2.0.0**
 (`pip install pyrcel==2.0.0`, which brings JAX and diffrax): `generate_data.py` and `check_accuracy.py` stop with
@@ -83,8 +83,8 @@ directory.
 A Latin hypercube of M = 300 points in the Table 1 box (numpy `default_rng(4482016)`: in each column a random
 permutation of the 300 strata and a uniform position within each stratum). It is not the paper's design: the
 paper computed Sobol' indices of the parcel model with the column swap-out Latin hypercube scheme of Weirs et
-al. (2012), n = 1280, (2 + M) n runs (p. 1261), and validated its emulators on two maximin Latin hypercubes of
-10 000 points each (p. 1261). Points near the edges of physical meaning, counted: the smallest sampled κ is
+al. (2012), n = 1280, (2 + M) n runs (p. 1261), and validated its emulators on two sets of 10 000 samples drawn
+"using maximum Latin hypercube sampling" (p. 1261). Points near the edges of physical meaning, counted: the smallest sampled κ is
 0.00209 (κ = 0 itself cannot be run: an insoluble particle has no equilibrium at 100 % RH), and in the 37 rows
 with μ_g < 3.16 nm the smallest dry bin radius is 0.038–0.222 nm, below the size of a water molecule.
 

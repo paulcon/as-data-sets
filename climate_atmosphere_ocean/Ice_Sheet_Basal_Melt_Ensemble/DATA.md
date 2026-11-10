@@ -131,9 +131,13 @@ python convert_data.py EmulatorPaper --out DIR --check       # also compares wit
 ```
 
 `DIR` must lie outside this directory (the script refuses otherwise). `--check` passes when the largest
-relative difference is at most 1e-12 and also reports whether the text is identical; on 2026-11-09 it
-reported a largest relative difference of 0.0e+00 and identical text for both files, in under 1 s.
-The notebook runs in 11–50 s (depending on machine load), most of it the two 500-replicate bootstraps.
+relative difference is at most 1e-12 and also reports whether the text is identical; on 2026-11-09, in the
+Linux container where the shipped files were written, it reported a largest relative difference of 0.0e+00
+and identical text for both files, in under 1 s. It was not rerun in the repository's `.venv`, which has no
+copy of the authors' files.
+In the repository's `.venv` the notebook runs in about 20–30 s under nbconvert (18 and 29 s of wall time in
+two runs on 2026-11-10, with other notebooks running at the same time), most of it the two 500-replicate
+bootstraps.
 
 **Source.** GitHub repository mberdahl-uw/EmulatorPaper, commit dd8643c (2020-06-19, "Add files via upload";
 cloned 2026-11-09). Files and SHA-256:

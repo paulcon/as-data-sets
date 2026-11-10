@@ -109,9 +109,9 @@ python convert_data.py src --out /tmp/citycovid            # writes the four CSV
 python convert_data.py src --out /tmp/citycovid --check    # prints "same within tolerance" for the four files
 ```
 
-`--out` is required and may not be this directory. `--check` compares every value with the shipped file
-(absolute tolerance 1e-12, NaN equal to NaN); it ran in about 0.2 s on 2026-11-09 and printed "same within tolerance" for
-all four files.
+`--out` is required and must be outside this directory. `--check` compares every value with the shipped file
+(absolute tolerance 1e-12, NaN equal to NaN); it ran in about 0.2 s on 2026-11-09, in the Linux container where the
+shipped files were written, and printed "same within tolerance" for all four files.
 
 **Source.** Repository commit `e4c1e0e30e9e99381d3904fc238bcbf9444cce86` (2025-03-27). Files and SHA-256:
 `data/citycovid_parameters.csv` (64,949 bytes,
@@ -122,7 +122,8 @@ all four files.
 `d338b72b1fa14b2e03ac6a1cc2c13faee7105cb0755fc21a76f0809ef5bf1a88`). The repository's README states that it
 "contains hospitalization and death data produced by the CityCOVID agent based model".
 
-The notebook runs in 5–8 s (nbconvert, 2026-11-09, shared machine).
+The notebook runs in about 12 s in the repository's `.venv` (nbconvert, 2026-11-10, with other notebooks running at
+the same time).
 
 ## Accuracy
 

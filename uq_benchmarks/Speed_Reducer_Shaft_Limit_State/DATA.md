@@ -66,16 +66,16 @@ python generate_data.py --out .                 # from this directory: rewrites 
 python check_accuracy.py                        # the numbers marked below
 ```
 
-`--out` is required, and `--check` refuses this directory. One process. The shipped files were written on 2026-11-09 in a Linux container (Python 3.11.18, numpy 2.4.6, scipy 1.17.1); there `python generate_data.py --out DIR --check` takes 0.02 s and reproduces the files with a maximum |difference| / max |shipped value| per column of 0 (printed as 0.0e+00) for all three files. The stated tolerance is 1e-12 for that measure: the inputs pass through `scipy.special` (`ndtr`, `log_ndtr`), whose last bits can differ between platforms and library versions.
+`--out` is required, and `--check` refuses this directory and any directory inside it. One process. The shipped files were written on 2026-11-09 in a Linux container (Python 3.11.18, numpy 2.4.6, scipy 1.17.1). In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-11-10) `python generate_data.py --out DIR --check` takes under 1 s (the script reports 0.04 s for the draws, the model, the writing and the comparison) and passes: the maximum |difference| / max |shipped value| per column is at the rounding level, of order 1e-16, for all three files. The stated tolerance is 1e-12 for that measure: the inputs pass through `scipy.special` (`ndtr`, `log_ndtr`), whose last bits can differ between platforms and library versions.
 
 ## Accuracy
 
 - **Gradients** against central differences (step 10⁻⁶ × the input's mean), each component scaled by the input's sd: largest relative error (row 2-norm) 3.6 × 10⁻¹⁰ over all 1000 samples (`generate_data.py`); 2.3 × 10⁻¹⁰ on the first 20 (notebook).
-- **Gradients in the standard normal coordinates**, ∂g/∂ξ, against central differences in ξ (step 10⁻⁶): 3.2 × 10⁻⁹ (`check_accuracy.py`, check 2). dx/dξ against central differences of the map: 2.2 × 10⁻⁷, the differences' truncation error in the Gumbel tail (check 1). Round trip ξ → x → ξ on the shipped samples: 9 × 10⁻¹⁶ (check 1).
-- **Against UQTestFuns 0.7.0** at the shipped inputs: g agrees to 9 × 10⁻¹⁶ of max |g| (check 3); Φ⁻¹ of UQTestFuns' marginal CDFs agrees with `to_normal` to 3 × 10⁻¹⁴ or less per input, and its Gumbel location and scale equal `MU_F`, `BETA_F` to the six printed decimals (check 4).
-- **Failure probability with UQTestFuns' own sampler**, 10⁷ samples (seed 2026): 7.7250e-04, 95 % interval [7.5528e-04, 7.8972e-04] (check 5), consistent with the notebook's 7.7205e-04 from `shaft_model`'s sampler.
+- **Gradients in the standard normal coordinates**, ∂g/∂ξ, against central differences in ξ (step 10⁻⁶): 3.2 × 10⁻⁹ (`check_accuracy.py`, check 2). dx/dξ against central differences of the map: 2.2 × 10⁻⁷, the differences' truncation error in the Gumbel tail (check 1). Round trip ξ → x → ξ on the shipped samples: at the rounding level, about 10⁻¹⁵ (check 1).
+- **Against UQTestFuns 0.7.0** at the shipped inputs (run on 2026-11-09 in the Linux container; `.venv` does not have the package): g agrees to about 10⁻¹⁵ of max |g| (check 3); Φ⁻¹ of UQTestFuns' marginal CDFs agrees with `to_normal` to 3 × 10⁻¹⁴ or less per input, and its Gumbel location and scale equal `MU_F`, `BETA_F` to the six printed decimals (check 4).
+- **Failure probability with UQTestFuns' own sampler** (same run in the Linux container), 10⁷ samples (seed 2026): 7.7250e-04, 95 % interval [7.5528e-04, 7.8972e-04] (check 5), consistent with the notebook's 7.7205e-04 from `shaft_model`'s sampler.
 
-`check_accuracy.py` takes about 3 s. Checks 3–5 need `pip install uqtestfuns==0.7.0`; without it the script runs checks 1–2 and exits with an error naming the package.
+Checks 3–5 need `pip install uqtestfuns==0.7.0`; without it the script runs checks 1–2 and exits with an error naming the package. In `.venv` (no uqtestfuns; 2026-11-10) it prints the check 1–2 values above and exits with that error in under 1 s. With the package, in the Linux container, the whole script took about 3 s.
 
 ## How these files relate to the paper
 

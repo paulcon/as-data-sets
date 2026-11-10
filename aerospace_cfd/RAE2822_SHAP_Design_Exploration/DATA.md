@@ -95,8 +95,8 @@ python convert_data.py SHAPMODE/SHAP_MODE/test_problems_and_data --out DIR --che
 
 `--out` is required; `--check` refuses a DIR inside this directory, builds the files there and compares them
 with the shipped ones entry by entry with relative tolerance 1e-15 (it prints the largest difference). On
-2026-11-09 it reported agreement for both files, in under 1 s (container, numpy and scipy of the analysis
-environment).
+2026-11-09, in the Linux container where the shipped files were written, it reported agreement for both
+files in under 1 s. It was not rerun in the repository's `.venv`, which has no copy of the authors' file.
 
 **Source.** github.com/optimuspram/SHAPMODE, commit `159f915d57f50d6a70d1e3147e140ddbdcd107e6`
 (2023-12-13, branch `main`, the only branch), fetched 2026-11-09 by `git clone`. File
@@ -105,7 +105,8 @@ environment).
 2023-12-12 on PCWIN64; arrays `X` (98 × 20) and `ff` (98 × 2), float64. The file is under
 `SHAP_MODE/test_problems_and_data/`, not at the repository root.
 
-The notebook runs in about 30 s (shared container).
+In the repository's `.venv` the notebook runs in about 12 s under nbconvert (11 and 13 s of wall time in two
+runs on 2026-11-10, with other notebooks running at the same time), and `check_accuracy.py` in under 1 s.
 
 ## Accuracy
 

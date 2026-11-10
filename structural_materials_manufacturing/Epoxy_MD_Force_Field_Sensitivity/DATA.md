@@ -36,7 +36,7 @@ and not shipped.
 
 **Citation.** W. Edeling, M. Vassaux, Y. Yang, S. Wan, S. Guillas, P. V. Coveney, "Global ranking of the
 sensitivity of interaction potential contributions within classical molecular dynamics force fields",
-*npj Computational Materials* 10:87 (2024), doi:10.1038/s41524-024-01272-z (publisher PDF read, open access,
+*npj Computational Materials* 10:87 (2024), [doi:10.1038/s41524-024-01272-z](https://doi.org/10.1038/s41524-024-01272-z) (publisher PDF read, open access,
 CC BY 4.0). Code and data: the repository above, tag 1.1 (commit 76784ca, 2024-03-14), whose Jupyter
 notebooks reproduce the paper's DAS (EasySurrogate) and KAS-GP (mogp-emulator) results. The paper's Data and
 Code availability statements (p. 11) point to the Zenodo record of the same release (ref. 75).
@@ -122,8 +122,9 @@ python convert_data.py MD-active-subspace/epoxy --out /tmp/epoxy_csv --check    
 ```
 
 `--out` must be outside this directory (the script refuses otherwise). `--check` compares every value with the
-shipped file with a relative tolerance of 1e-15 and reports whether the texts are identical; on 2026-11-09 it
-reported a maximum relative difference of 0.0e+00 and identical text for all eight files, in under 1 s. The
+shipped file with a relative tolerance of 1e-15 and reports whether the texts are identical; on 2026-11-09, in the
+Linux container where the shipped files were written, it reported a maximum relative difference of 0.0e+00 and
+identical text for all eight files, in under 1 s. The
 Zenodo archive of the same release (doi:10.5281/zenodo.10817481; not opened for this data set) should give the same files; the SHA-256 checks decide.
 
 **Source files** (tag 1.1, commit 76784ca44570380ba9c0edd6180486d9497f2636), SHA-256:
@@ -140,8 +141,8 @@ Zenodo archive of the same release (doi:10.5281/zenodo.10817481; not opened for 
 | `epoxy/epoxy.params.json` | `68feaa1a31389fe75bcfa5a51d8773c1d99d098f426914a73f72bc64e607fc2a` |
 | `molecular_models/epoxy_elasticity/epoxy.data` (check 4 of `check_accuracy.py` only) | `7c38ddf03da84829398c969f2a8c8458c8441e7bf2283ef83933be4c0f6f54a3` |
 
-The notebook runs in about 9–19 min in the analysis environment (512 s, 697 s and 1104 s in three runs on 2026-11-09, other jobs sharing two
-CPUs; the notebook prints its run time); most of it is the 200-replicate OPG bootstrap for both QoIs (554 s in
+The notebook runs in about 7 min in the repository's `.venv` (409 s printed by the committed run, 2026-11-10, with
+other notebooks running at the same time); most of it is the 200-replicate OPG bootstrap for both QoIs (248 s in
 the committed run) and the null and neighbourhood-size studies.
 
 ## Accuracy
@@ -203,8 +204,8 @@ eigenvector components are reversed relative to the authors' coordinates.
 ## License and credit
 
 Data: © Edeling et al., from github.com/wedeling/MD-active-subspace (tag 1.1), MIT licence (Copyright (c) 2023
-Wouter Edeling; `LICENSE-MD-active-subspace.txt`, kept beside the files); the Zenodo record of the same
-release is listed as CC BY 4.0 (not verified here). Article: CC BY 4.0. Cite the paper and the Zenodo record
+Wouter Edeling; `LICENSE-MD-active-subspace.txt`, kept beside the files), so the eight CSVs are listed in the
+exceptions of `LICENSE-DATA`; the Zenodo record of the same release is listed as CC BY 4.0 (not verified here). Article: CC BY 4.0. Cite the paper and the Zenodo record
 when using these files. `convert_data.py`, `check_accuracy.py` and the notebook: MIT (this repository). No code
 of the authors' repository is included; the notebook reimplements nothing of theirs (it uses
 active_subspaces v1).

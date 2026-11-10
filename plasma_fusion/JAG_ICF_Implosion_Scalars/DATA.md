@@ -87,9 +87,10 @@ python convert_data.py macc/data/icf-jag-10k.tar.gz --out DIR --check    # ... a
 
 `--out` is required and may not be this directory. `--check` passes when every written value is within 1e-12
 (inputs) or 1e-8 (scalars) of the shipped one and of the `.npy` value, and every value converts back to the
-stored binary value (float64 inputs, float32 scalars). On 2026-11-09 it printed `OK` for both files (no
-difference from the shipped files above the tolerance; scalars within 5.0e-10 of the float32 values; no value
-failing the round trip) in about 2 s.
+stored binary value (float64 inputs, float32 scalars). On 2026-11-09, in the Linux container where the
+shipped files were written, it printed `OK` for both files (no difference from the shipped files above the
+tolerance; scalars within 5.0e-10 of the float32 values; no value failing the round trip) in about 2 s. It
+was not rerun in the repository's `.venv`, which has no copy of the tarball.
 
 **Source.** github.com/llnl/macc, commit a0318c2216d3e09a9c4c59f61066043e6e8a8799 (2022-08-11),
 `data/icf-jag-10k.tar.gz`, 66,417,328 bytes, SHA-256
@@ -97,9 +98,10 @@ failing the round trip) in about 2 s.
 gives the dataset citation Gaffney et al. 2020, doi:10.6075/J0RV0M27 (UC San Diego Library; not read). The
 tarball is not shipped.
 
-The notebook takes several minutes (489 s on 2026-11-09 on two heavily shared CPUs, about 160 s of CPU time); most of
-it is the 60 polynomial fits of the smoothness check, the neighbour-count comparison and the per-column fits of
-the last section.
+In the repository's `.venv` the notebook takes 3 to 4 minutes (it prints 185 s in the committed run, and
+printed 210 s and 220 s in two earlier runs with other notebooks running at the same time; all under
+nbconvert on 2026-11-10); most of it is the 60 polynomial fits of the smoothness check, the neighbour-count comparison and
+the per-column fits of the last section. `check_accuracy.py` (without the tarball) takes under 1 s.
 
 ## Accuracy
 
@@ -156,8 +158,10 @@ CC BY-NC-ND 4.0 (Crossref) and is not included. `convert_data.py`, `check_accura
   not explained by "a random subset of a Latin hypercube"); why the README says 9,984
   rows and prints a 22-scalar example that is not in the file.
 - JAG's version, settings and run cost.
-- Before merge: the licence terms of the UC San Diego dataset record doi:10.6075/J0RV0M27 must be checked by hand
-  (the page could not be read from here), in case they differ from the repository's MIT licence.
+- The UC San Diego dataset record doi:10.6075/J0RV0M27 itself was not read (its page refuses scripted
+  requests). Its DataCite metadata (read on 2026-11-10) gives the licence as CC BY 4.0 and describes the
+  tarball of llnl/macc; the files are hosted here under the MIT licence of llnl/macc, from which they were
+  taken.
 
 ## Open questions
 

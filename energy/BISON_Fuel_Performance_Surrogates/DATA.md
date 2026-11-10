@@ -108,8 +108,9 @@ python convert_data.py SRC/pyMAISE-0.0.2-py3-none-any.whl --out DIR --check
 
 `--out` is required and must lie outside this directory, subdirectories included (the script exits
 otherwise, with or without `--check`); it never writes into the data set. `--check` compares the values with a
-relative tolerance of 1e-12 and also reports whether the text is identical; run 2026-11-09 it printed "True"
-for both files, both tests (under 1 s).
+relative tolerance of 1e-12 and also reports whether the text is identical; run on 2026-11-09 in the Linux
+container where the shipped files were written, it printed "True" for both files, both tests (under 1 s). The
+wheel is not in this repository, so the check was not repeated in `.venv`.
 
 **Source.** PyPI `pyMAISE-0.0.2-py3-none-any.whl` (402,517 bytes, SHA-256
 `feca174a5e0ed1a29a8903f07610b99b39c4d52b7b20d070b2977b78d8286f81`), members `pyMAISE/data/fp_inp.csv`
@@ -120,7 +121,8 @@ which fetches the files from Zenodo record https://zenodo.org/records/20140559; 
 same bytes, and `convert_data.py` also accepts a folder with them. The original files have CRLF line endings;
 the CSVs here use LF.
 
-The notebook runs in about 30 s (25 s of cells) in the analysis environment (2026-11-09).
+In the repository's `.venv` the notebook runs in about 30 s under nbconvert (22 s by its own timer in the
+committed run, with other jobs running), and `check_accuracy.py` in under 1 s.
 
 ## Accuracy
 
@@ -155,7 +157,10 @@ surface temperature, while the stored runs carry a non-smooth pellet-height term
 Data: from pyMAISE (P. Myers, C. Craig, V. Joynt, M. I. Radaideh et al.; University of Michigan), distributed
 under the Apache License 2.0 (`pyMAISE_LICENSE.txt`, the text in the wheel; the wheel's metadata says "License:
 UNKNOWN" and the licence file names no copyright holder; the package does not say whether the licence is meant
-to cover the data). Runs by Radaideh and Kozlowski (2020), supported by the U.S. Department of Energy (award
+to cover the data). The Zenodo record that current pyMAISE downloads the same files from
+(https://zenodo.org/records/20140559, "pyMAISE Benchmark Data", P. Myers, N. Panczyk, M. Radaideh, 2026) lists
+`fp_inp.csv` and `fp_out.csv` and gives its licence as CC BY 4.0 (record metadata read on 2026-11-10; the
+files were not downloaded). Runs by Radaideh and Kozlowski (2020), supported by the U.S. Department of Energy (award
 DE-NE0008573, NEUP), with the BISON input file generated from the "PinToPerform" templates (p. 30). Cite the
 paper and pyMAISE when using these files. `convert_data.py`, `check_accuracy.py` and the notebook: MIT (this
 repository).

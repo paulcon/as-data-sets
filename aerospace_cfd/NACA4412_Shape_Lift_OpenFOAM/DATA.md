@@ -107,8 +107,9 @@ python convert_data.py MORtech-2019-Special-Issue --out <DIR outside this folder
 ```
 
 `--check` writes into DIR and compares with the shipped files; it passes when no value differs by more than
-1e-12 and prints the largest difference (0 for both files, no value differing, in the analysis venv on
-2026-11-09; under 1 s). Source files (commit ec05216, 2020-05-04):
+1e-12 and prints the largest difference (0 for both files, no value differing, in the Linux container
+where the shipped files were written, on 2026-11-09; under 1 s; not rerun in the repository's `.venv`, which
+has no copy of the authors' files). Source files (commit ec05216, 2020-05-04):
 
 | file | bytes | SHA-256 |
 |---|---|---|
@@ -117,7 +118,9 @@ python convert_data.py MORtech-2019-Special-Issue --out <DIR outside this folder
 | `outputs/lift_170par_30000t.npy` | 40,800,128 | `24ca1ddfc49016455d5ff4edd262931bc227ea6b83d91ca8c2e3604798b96c3b` |
 | `outputs/lift_170par_20000t.npy` | 27,200,128 | `0c52794f03ee7881e11fe14ac3064bb51fe4144994b2b2b9910142fcaa9f6e9a` |
 
-The notebook runs in about 10 s (9 s on 2026-11-09 with other jobs sharing the machine).
+In the repository's `.venv` the notebook runs in about 10 s (it prints 7 s in the committed run; 9 and 15 s
+of wall time under nbconvert in two runs on 2026-11-10, with other notebooks running at the same time), and
+`check_accuracy.py` in under 1 s.
 
 **Rerunning the CFD (external run, not done here).** Install OpenFOAM v6 (openfoam.org; the README says v5,
 v1812 and v1906 also work) and ITHACA-FV (github.com/mathLab/ITHACA-FV), source both `etc/bashrc` files, run

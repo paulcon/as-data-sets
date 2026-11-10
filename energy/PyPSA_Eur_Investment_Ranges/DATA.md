@@ -116,8 +116,10 @@ python convert_data.py broad-ranges --out /tmp/pypsa --check        # ... and co
 
 `--out` is required and must be a folder outside this directory (the script refuses this directory), so the shipped files are never overwritten.
 `--check` compares every value with a relative tolerance of 1e-15 and says whether the CSV text is identical;
-it prints "same within tolerance" for all four files and "text identical: True" for the three CSVs. Run time
-about 1.4 s.
+run on 2026-11-09 in the Linux container where the shipped files were written, on a clone at commit b95bbc98,
+it printed "same within tolerance" for all four files and "text identical: True" for the three CSVs, in about
+1.4 s. The authors' files are not in this repository, so the check was not repeated in `.venv`;
+`check_accuracy.py` runs there in under 1 s and prints the numbers quoted under Accuracy.
 
 **Source.** Commit b95bbc98 (2023-04-14) of https://github.com/fneum/broad-ranges; the four files are unchanged
 since tag v0.1.0 (2022-06-14), the version archived at Zenodo as
@@ -156,7 +158,7 @@ confirms the order: the stored low-fidelity polynomial predicts the 500 runs wit
   `all_runs.npz`.
 - **Annuity ratios and hydrogen CAPEX sums** (`check_accuracy.py`): see Inputs and Unknowns.
 - **PCE gradients** (notebook): the analytic gradient of the stored multi-fidelity polynomial matches central
-  differences to a relative 2.8e-10.
+  differences to a relative error of order 1e-10.
 
 ## How these files relate to the paper
 

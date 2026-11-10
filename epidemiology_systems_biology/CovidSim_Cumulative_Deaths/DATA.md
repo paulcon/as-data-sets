@@ -31,7 +31,7 @@ error file `COVID19/errors_n_neurons10.hdf5` behind Fig. 15 (not shipped; `check
 ## Model
 
 **Citation.** W. Edeling, "On the deep active-subspace method", *SIAM/ASA Journal on Uncertainty
-Quantification* 11(1):62–90, 2023, doi:10.1137/21M1463240 (publisher PDF read). Single author: Centrum
+Quantification* 11(1):62–90, 2023, [doi:10.1137/21M1463240](https://doi.org/10.1137/21M1463240) (publisher PDF read). Single author: Centrum
 Wiskunde & Informatica, Scientific Computing Group, Amsterdam. The paper applies the deep active-subspace
 (DAS) method of Tripathy and Bilionis (2019) to an HIV model (Sec. 8.1) and to CovidSim (Sec. 8.2, pp. 80–82);
 only the CovidSim case is used here.
@@ -142,8 +142,8 @@ python convert_data.py deep_active_subspace_data/COVID19 --check --out DIR   # D
 
 `--out` is required (the script never writes into this directory unless it is named explicitly), and
 `--check` refuses an `--out` inside this directory. `--check` compares every value with the shipped files at
-a relative tolerance of 1e-15; on 2026-11-09 it printed a maximum relative difference of 0.0e+00 for all
-five arrays, in under 2 s. Source files and checksums:
+a relative tolerance of 1e-15; on 2026-11-09, in the Linux container where the shipped files were written, it
+printed a maximum relative difference of 0.0e+00 for all five arrays, in under 2 s. Source files and checksums:
 
 | file (folder `COVID19/`) | size | SHA-256 |
 |---|---|---|
@@ -155,8 +155,9 @@ The HDF5 file is kept out of this directory; the npz holds all of its values (5.
 Zenodo archive 10.5281/zenodo.7009160 ("Final Revision of DAS Article") was not compared with the GitHub
 commit used here.
 
-The notebook runs in about 4–17 min (264–1019 s in a Linux container with 2 CPUs shared with other jobs; 1019 s for the committed run under heavy load); most
-of it is the 200 QPHD bootstrap replicates (2–6 min) and the 30 polynomial-ridge fits (2–10 min).
+The notebook runs in about 6 min in the repository's `.venv` (353 s printed by the committed run, 2026-11-10, with
+other notebooks running at the same time); most of it is the 200 QPHD bootstrap replicates (118 s) and the 30
+polynomial-ridge fits (205 s).
 
 ## Accuracy
 

@@ -44,8 +44,7 @@ here (the paper also treats methane and DME).
 
 Mechanism and uncertainty factors: A. A. Konnov, "Remaining uncertainties in the kinetic mechanism of hydrogen
 combustion", *Combustion and Flame* 152 (2008) 507–528, doi:10.1016/j.combustflame.2007.10.024 (paper's ref. [29];
-publisher's version read). The citations were checked against the articles' own title pages; Crossref could not
-be reached from the build machine.
+publisher's version read). The citations were checked against the articles' own title pages, not on Crossref.
 
 ### Physics and solver
 

@@ -32,7 +32,7 @@ backward difference (forward point outside the box); 2 = the base run failed (ou
 
 Of the 160 rows, 158 have status 0 and 2 have status 2 (rows 38 and 55: the solver stopped with
 "TOO MANY CYCLES": the 100-cycle cap was reached before the cycle-to-cycle tolerance; both have ln k3 within
-0.25 of its lower bound and large distal resistances). No row needed a backward difference and no perturbed
+about 0.25 of its lower bound and large distal resistances). No row needed a backward difference and no perturbed
 run failed. Dropping the two rows by the status flag censors the slowest-converging corner of the box.
 
 ## Model
@@ -148,8 +148,9 @@ repository's Makefile names a Windows compiler path, so the driver compiles dire
 each `sor06 k1 k2 k3 Rp1 Rp2 Rd1 Rd2 CT1 CT2 ID` in its own temporary directory, which writes
 `output_ID.2d` (512 times × 9 locations: proximal, midpoint, distal of MPA, LPA, RPA; columns t, x, p, q, A,
 wave speed). Without g++ or git the script stops with a message that names them. `--out` is required;
-`--check` and `--rows` refuse this directory. Finished rows are cached in `<work>/rows.jsonl`, so an
-interrupted run resumes.
+`--check` and `--rows` refuse an `--out` that is this directory or inside it, and `--work` must be outside
+it (symbolic links are resolved). Finished rows are cached in `<work>/rows.jsonl`, so an interrupted run
+resumes.
 
 Run time: the full design (160 rows, 1600 solver runs) took 4057 s of solver CPU (2.5 CPU-s per run,
 25 CPU-s per row on average, 95 CPU-s for the slowest row) and 8267 s of wall time on a shared 2-CPU

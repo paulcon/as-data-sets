@@ -94,8 +94,10 @@ python convert_data.py <path of pone.0145180.s004.zip> --out DIR           # wri
 python convert_data.py <path of pone.0145180.s004.zip> --out DIR --check   # also compares with the shipped files
 ```
 
-`--out` must be outside this directory; `--check` compares numerically with tolerance 1e-12 (and the `nan`
-pattern exactly) and printed "identical within 1e-12" for both files (2026-11-09, under 1 s).
+`--out` must be outside this directory (subdirectories and links into it are refused, with or without
+`--check`); `--check` compares numerically with tolerance 1e-12 (and the `nan` pattern exactly). Run on
+2026-11-09 in the Linux container where the shipped files were written, it printed "identical within 1e-12" for
+both files (under 1 s). The archive is not in this repository, so the check was not repeated in `.venv`.
 
 **Source.** PLOS ONE supporting file S4, "Simulation results of the CMF model with MC, LHS and MLE",
 doi:10.1371/journal.pone.0145180.s004, file `pone.0145180.s004.zip`, 9,153,529 bytes, SHA-256
@@ -103,16 +105,19 @@ doi:10.1371/journal.pone.0145180.s004, file `pone.0145180.s004.zip`, 9,153,529 b
 (`S4_File_..._MC.zip`, `S5_File_..._LHS.zip`, `S6_File_..._MLE.zip`, named S4–S6 inside although the article
 numbers them as parts of S4); the archive is not shipped.
 
-The notebook runs in about 7–22 s depending on machine load (2026-11-09, shared container).
+In the repository's `.venv` the notebook runs in about 17 s under nbconvert (9.7 s by its own timer in the
+committed run, with other jobs running).
 
 ## Accuracy
 
 - Conversion: lossless (`convert_data.py --check`, above).
-- Objective (`check_accuracy.py <zip>`): one fixed observation vector, fitted to all 19,950 valid runs,
+- Objective (`check_accuracy.py <zip>`, which needs the deposited archive; run on 2026-11-09 in the Linux
+  container where the shipped files were written, not repeated in `.venv`): one fixed observation vector, fitted to all 19,950 valid runs,
   reproduces the stored RMSE as the RMSE of each run's 239 stored simulations with rms difference 0.0029 (MC
   and LHS) and maximum 0.0067 (MC) and 0.0085 (LHS); the objective's 2-decimal rounding alone gives rms
   0.0029. So `like` is −RMSE against the same observations in both designs.
-- Failed runs (`check_accuracy.py`): all 29 MC and 23 LHS rows with `valid` = 0 have a stored parameter
+- Failed runs (`check_accuracy.py`; this and the next check need only the shipped files and print the same
+  numbers in `.venv`, in under 1 s): all 29 MC and 23 LHS rows with `valid` = 0 have a stored parameter
   outside or on a plausibility bound of the example setup; no valid row is outside by more than half a
   rounding step.
 - Stored precision (`check_accuracy.py`): 2 decimals for every value; a rounding step is 0.102, 0.284,
