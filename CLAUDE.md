@@ -24,7 +24,11 @@ source .venv/bin/activate
 jupyter lab                                   # interactive
 # Execute a notebook headless. Run it from inside its directory, because notebooks and helper modules load data by relative path:
 cd epidemiology_systems_biology/HIV_Long_Term_Dynamics && jupyter nbconvert --to notebook --execute --inplace HIV_Long_Term_Dynamics.ipynb
+# Check that every reference link ([[1]][R1]) is defined in its own markdown cell; exits 1 otherwise:
+python check_notebook_links.py                # all notebooks, or pass paths
 ```
+
+Jupyter renders each markdown cell on its own, so a reference link resolves only in the cell that defines it. Write links in a notebook inline, `[[1]](https://doi.org/...)`, unless the definition is in the same cell, and run `check_notebook_links.py` before committing a new or edited notebook.
 
 ## Branches
 
