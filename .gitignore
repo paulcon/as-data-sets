@@ -14,3 +14,5 @@ gurobi.log
 .mcp.json
 .claude/settings.local.json
 .idea/
+# publisher-supplement mechanism rebuilt locally by build_mechanism.py; not for redistribution
+combustion_chemical_kinetics/Shared_Subspace_H2_Ignition_Flame/konnov2008_h2.yaml

@@ -6,5 +6,6 @@ Data sets (descriptions and papers are in the [top-level README](../README.md#da
 
 - [EU_DEMO_PROCESS_Major_Radius](EU_DEMO_PROCESS_Major_Radius/)
 - [Hall_Thruster_Multi_Component](Hall_Thruster_Multi_Component/)
+- [JAG_ICF_Implosion_Scalars](JAG_ICF_Implosion_Scalars/)
 - [MHD_Generator](MHD_Generator/)
 - [Vlasov_Poisson_Instability_Growth_Rate](Vlasov_Poisson_Instability_Growth_Rate/)
