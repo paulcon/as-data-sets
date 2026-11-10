@@ -156,9 +156,11 @@ def qoi(x, C=2, T=T_ON, grad=False, rtol=RTOL, atol=ATOL, return_info=False):
 
     The end state of the LSODA trajectory is polished to the equilibrium it has reached by
     Newton's method; RuntimeError is raised if the end state is not within 1e-6 (relative) of an
-    equilibrium, or if Newton's method does not converge. With return_info, a dict is also
-    returned with the integrated end state, the polish correction, the eigenvalues of the
-    Jacobian and the number of equilibria."""
+    equilibrium, or if Newton's method does not converge. The iteration stops when the correction
+    is below 1e-15 (relative). At some inputs the corrections cycle at the rounding level, a few
+    1e-15, without meeting that; the state after 20 iterations is then accepted if its last
+    correction is below 1e-12. With return_info, a dict is also returned with the integrated end
+    state, the polish correction, the eigenvalues of the Jacobian and the number of equilibria."""
     x = np.asarray(x, float)
     sol = trajectory(x, C, T, rtol=rtol, atol=atol)
     y_end = sol.y[:, -1].copy()
@@ -170,7 +172,8 @@ def qoi(x, C=2, T=T_ON, grad=False, rtol=RTOL, atol=ATOL, return_info=False):
         if np.all(np.abs(dy) <= 1e-15 * np.maximum(np.abs(y), 1e-12)):
             break
     else:
-        raise RuntimeError('Newton polish did not converge')
+        if not np.all(np.abs(dy) <= 1e-12 * np.maximum(np.abs(y), 1e-12)):
+            raise RuntimeError('Newton polish did not converge')
     corr = np.abs(y - y_end) / np.abs(y)
     if np.max(corr) > 1e-6:
         raise RuntimeError(f'state at t = {T_END:g} min is not at an equilibrium (relative gap {np.max(corr):.1e})')
