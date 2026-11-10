@@ -33,7 +33,7 @@ model runs, so each output belongs exactly to its stored input row.
 ### Citation
 
 N. Wycoff, M. Binois and S. M. Wild, "Sequential learning of active subspaces", *Journal of Computational and
-Graphical Statistics* 30(4) (2021) 1224–1237, doi:10.1080/10618600.2021.1874962 (Crossref-checked). The PDF read is
+Graphical Statistics* 30(4) (2021) 1224–1237, [doi:10.1080/10618600.2021.1874962](https://doi.org/10.1080/10618600.2021.1874962) (Crossref-checked). The PDF read is
 the author manuscript (HAL hal-02367750, the arXiv:1907.11572v2 text of 20 September 2020, CC BY 4.0); page numbers
 below are that manuscript's printed page numbers. The example is Sec. 4.3, p. 24, with Fig. 5 (right, p. 25) and
 Fig. 6 (p. 26). Supplement: appendices and `code.zip`, figshare, doi:10.6084/m9.figshare.13611284; `code.zip`

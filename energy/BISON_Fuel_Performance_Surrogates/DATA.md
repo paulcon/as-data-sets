@@ -24,7 +24,7 @@ them. Column names are those of the source files.
 
 **Citation.** M. I. Radaideh, T. Kozlowski, "Surrogate modeling of advanced computer simulations using deep
 Gaussian processes", *Reliability Engineering & System Safety* 195:106731 (March 2020),
-doi:10.1016/j.ress.2019.106731 (version of record; checked on Crossref). The paper was read in the authors'
+[doi:10.1016/j.ress.2019.106731](https://doi.org/10.1016/j.ress.2019.106731) (version of record; checked on Crossref). The paper was read in the authors'
 accepted manuscript (33 pages); **page, table and equation numbers in this file and the notebook are those of
 the accepted manuscript**. The pyMAISE documentation states that the data "originates from" this article.
 

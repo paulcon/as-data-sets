@@ -18,7 +18,7 @@ Each CSV has two `#` lines (a description and the column names with units) and i
 
 ## Model
 
-**Source.** P. G. Constantine, Z. del Rosario, G. Iaccarino, "Data-driven dimensional analysis: algorithms for unique and relevant dimensionless groups", arXiv:1708.04303, 2017, doi:10.48550/arXiv.1708.04303 (preprint read; we found no journal version: the arXiv DOI is not in Crossref and no published version is known to us). Sec. 6, "Example: viscous pipe flow", pp. 27–41.
+**Source.** P. G. Constantine, Z. del Rosario, G. Iaccarino, "Data-driven dimensional analysis: algorithms for unique and relevant dimensionless groups", arXiv:1708.04303, 2017, [doi:10.48550/arXiv.1708.04303](https://doi.org/10.48550/arXiv.1708.04303) (preprint read; we found no journal version: the arXiv DOI is not in Crossref and no published version is known to us). Sec. 6, "Example: viscous pipe flow", pp. 27–41.
 
 **Equations.** Re = ρVD/μ. The paper's computational model solves the Colebrook equation (Eq. (60), p. 30), 1/√λ = −2.0 log₁₀(ε/(3.7D) + 2.51/(Re√λ)), for the friction factor λ with a Newton method, "valid over a wide range of flow conditions, i.e., laminar and turbulent regimes" (p. 30), and computes dp/dx = λρV²/(2D) (Eq. (61), p. 30). The Poiseuille relation λ = 64/Re (Eq. (59)) is stated for Re < Re_c ≈ 3000 but is not the paper's model; `law="poiseuille"` exists only for the comparison in the notebook, which shows that it does not reproduce Table 5. `pipe_model.colebrook` iterates on s = 1/√λ from s = 8 until the relative Newton step is below 10⁻¹⁵ (at most 50 iterations; it raises RuntimeError otherwise).
 

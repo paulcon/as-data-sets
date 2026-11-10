@@ -19,7 +19,7 @@ The CSVs have two `#` lines (a description and the column names with units) and 
 
 ## Model
 
-**Source.** M. R. Rajashekhar and B. R. Ellingwood, "A new look at the response surface approach for reliability analysis", *Structural Safety* 12(3):205–220, 1993, doi:10.1016/0167-4730(93)90003-J (publisher PDF read, a scan with a text layer). Example 2, Sec. 4.2 "Dynamic response of a nonlinear oscillator", pp. 217–219, Fig. 10, Eq. (12), Tables 7–9. The paper takes the example from Bucher and Bourgund (1990), doi:10.1016/0167-4730(90)90012-E, and Bucher, Chen and Schuëller (1989) (its refs. [15], [17]; not read).
+**Source.** M. R. Rajashekhar and B. R. Ellingwood, "A new look at the response surface approach for reliability analysis", *Structural Safety* 12(3):205–220, 1993, [doi:10.1016/0167-4730(93)90003-J](https://doi.org/10.1016/0167-4730(93)90003-J) (publisher PDF read, a scan with a text layer). Example 2, Sec. 4.2 "Dynamic response of a nonlinear oscillator", pp. 217–219, Fig. 10, Eq. (12), Tables 7–9. The paper takes the example from Bucher and Bourgund (1990), doi:10.1016/0167-4730(90)90012-E, and Bucher, Chen and Schuëller (1989) (its refs. [15], [17]; not read).
 
 **Limit state** (Eq. (12), p. 217): g(x) = 3r − |z_max|, "in which z_max is the maximum displacement response of the system and r is the displacement at which one of the springs yields"; g ≤ 0 is failure (p. 205).
 

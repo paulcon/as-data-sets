@@ -32,7 +32,7 @@ Every CSV has two `#` lines (a description, then the column names with units) an
 
 J. K. Brown, L. Pressburger, A. Snyder, K. Dorheim, S. J. Smith, C. Tebaldi, B. Bond-Lamberty, "Matilda v1.0: An R
 package for probabilistic climate projections using a reduced complexity climate model", *PLOS Climate* 3(5):
-e0000295 (2024), doi:10.1371/journal.pclm.0000295 (Crossref-checked). The PDF read is the publisher's version (CC BY).
+e0000295 (2024), [doi:10.1371/journal.pclm.0000295](https://doi.org/10.1371/journal.pclm.0000295) (Crossref-checked). The PDF read is the publisher's version (CC BY).
 Hector: K. Dorheim et al., *Geosci. Model Dev.* 17, 4855–4869 (2024), doi:10.5194/gmd-17-4855-2024 (the paper cites
 its discussion version, "Hector V3.1.1", doi:10.5194/egusphere-2023-1477, ref. 22); C. A. Hartin et al.,
 *Geosci. Model Dev.* 8, 939–955 (2015), doi:10.5194/gmd-8-939-2015.

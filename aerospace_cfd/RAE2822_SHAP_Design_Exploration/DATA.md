@@ -30,7 +30,7 @@ identified in the paper or the scripts.
 
 **Citation.** P. S. Palar, Y. B. Dwianto, L. R. Zuhal, J. Morlier, K. Shimoyama, S. Obayashi,
 "Multi-objective design space exploration using explainable surrogate models", *Structural and
-Multidisciplinary Optimization* 67(3):38 (2024), doi:10.1007/s00158-024-03769-z (checked on Crossref). The
+Multidisciplinary Optimization* 67(3):38 (2024), [doi:10.1007/s00158-024-03769-z](https://doi.org/10.1007/s00158-024-03769-z) (checked on Crossref). The
 version read is the HAL deposit hal-04512428 (submitted 2024-03-20) in the publisher's layout; page numbers
 below are its pages. Code: MATLAB, needs UQLab and the MATLAB Statistics and Machine Learning Toolbox; no
 licence file.

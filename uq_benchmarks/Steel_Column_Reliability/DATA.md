@@ -19,7 +19,7 @@ The CSVs have two `#` lines (a description and the column names with units) and 
 
 ## Model
 
-**Source.** N. Kuschel and R. Rackwitz, "Two basic problems in reliability-based structural optimization", *Mathematical Methods of Operations Research* 46(3):309–333, 1997, doi:10.1007/BF01194859 (publisher scan read; Technische Universität München). Section 6, second numerical example, pp. 326–327. The first example (rectangular section, pp. 325–326) and the third (reinforced concrete beam, pp. 328–) are not built.
+**Source.** N. Kuschel and R. Rackwitz, "Two basic problems in reliability-based structural optimization", *Mathematical Methods of Operations Research* 46(3):309–333, 1997, [doi:10.1007/BF01194859](https://doi.org/10.1007/BF01194859) (publisher scan read; Technische Universität München). Section 6, second numerical example, pp. 326–327. The first example (rectangular section, pp. 325–326) and the third (reinforced concrete beam, pp. 328–) are not built.
 
 **Limit state** (p. 327, as printed): G(x, p) = F_s − 𝒫 (1/𝒜_s + F_0/ℳ_s · ℰ_b/(ℰ_b − 𝒫)), with 𝒫 = P_1 + P_2 + P_3, 𝒜_s = 2BD (area of section), ℳ_s = BDH (modulus of section), ℳ_i = ½BDH² (moment of inertia; printed "iteria"), ℰ_b = π²Eℳ_i/s² (Euler buckling load). The symbol s is not defined on the page; we read it as the column length, "a constant length of 7500 mm" (p. 326). G ≤ 0 is failure. The quantity of interest is G (MPa). The formulas are those of two flanges of area BD at distance H with the web neglected (our reading; the paper calls the profile "T-shaped", p. 327).
 

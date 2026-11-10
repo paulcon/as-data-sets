@@ -42,7 +42,7 @@ round-trips, and `--check` reports no value differing. Column k (0-based) is tim
 
 **Citation.** M. Tezzele, N. Demo, G. Stabile, A. Mola, G. Rozza, "Enhancing CFD predictions in shape design
 problems by model and parameter space reduction", *Advanced Modeling and Simulation in Engineering Sciences*
-7(1):40 (2020), doi:10.1186/s40323-020-00177-y (publisher PDF read, CC BY 4.0; volume, issue, article number and
+7(1):40 (2020), [doi:10.1186/s40323-020-00177-y](https://doi.org/10.1186/s40323-020-00177-y) (publisher PDF read, CC BY 4.0; volume, issue, article number and
 authors checked on Crossref; the other references were not). All
 authors: Mathematics Area, mathLab, SISSA, Trieste.
 

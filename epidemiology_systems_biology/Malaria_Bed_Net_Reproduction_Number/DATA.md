@@ -18,7 +18,7 @@ The CSVs have two `#` lines (a description and the column names with units) and 
 
 ## Model
 
-**Source.** S. Bala and B. Gimba, "Global sensitivity analysis to study the impacts of bed-nets, drug treatment, and their efficacies on a two-strain malaria model", *Mathematical and Computational Applications* 24(1):32, 2019, doi:10.3390/mca24010032 (publisher PDF, open access under CC BY 4.0). No code or data were released with the paper.
+**Source.** S. Bala and B. Gimba, "Global sensitivity analysis to study the impacts of bed-nets, drug treatment, and their efficacies on a two-strain malaria model", *Mathematical and Computational Applications* 24(1):32, 2019, [doi:10.3390/mca24010032](https://doi.org/10.3390/mca24010032) (publisher PDF, open access under CC BY 4.0). No code or data were released with the paper.
 
 **Equations.** Biting rate (Eq. 1, p. 4): a = β_max β_min / ((β_max − β_min) b γ + β_min). The eight-compartment model (Eq. 3, p. 6) is scaled to six equations (Eq. 15, p. 10) with ξ1 = a b1 N_v/N_h = a b1 k_v ρ1/k_h, ρ1 = N_v*/N_h*, and k1 = a b2 (p. 10), carrying capacities k_v = (ψ_v − μ_v − μ_v3 b γ)/μ_v2 and k_h = (ψ_h − μ_h)/μ_h2 (proof of Lemma 1, p. 8), and p1 = r_s + δ_h + T_s + ψ_h, p2 = r_r + δ_h + ψ_h, p3 = T_s(1 − e) (p. 10). The next-generation matrices F, V (Eqs. 16–17, pp. 10–11) give Eq. (19), p. 11:
 

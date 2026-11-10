@@ -33,7 +33,7 @@ digits before the model runs, so each output belongs exactly to the stored input
 
 R. J. Hunt, M. N. Fienen and J. T. White, "Revisiting 'An Exercise in Groundwater Model Calibration and
 Prediction' After 30 Years: Insights and New Directions", *Groundwater* 58(2) (2020) 168–182,
-doi:10.1111/gwat.12907 (publisher's open-access version read). Model files: R. J. Hunt, M. J. Haserodt,
+[doi:10.1111/gwat.12907](https://doi.org/10.1111/gwat.12907) (publisher's open-access version read). Model files: R. J. Hunt, M. J. Haserodt,
 M. N. Fienen and J. T. White, MODFLOW-2005 models for revisiting "An Exercise in Groundwater Model
 Calibration and Prediction", U.S. Geological Survey data release, doi:10.5066/P96A7ZC9, `model.zip`
 (137 689 166 bytes, sha256 9009ae19a801405c889c3793d50df17861d95c15fd44d2a394fb1791dace660b; not shipped:

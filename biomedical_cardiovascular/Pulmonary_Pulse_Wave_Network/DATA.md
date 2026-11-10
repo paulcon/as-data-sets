@@ -41,7 +41,7 @@ run failed. Dropping the two rows by the status flag censors the slowest-converg
 
 M. J. Colebank, "Assessing parameter identifiability of a hemodynamics PDE model using spectral surrogates
 and dimension reduction", *PLOS Computational Biology* 21(10): e1013553 (2025),
-doi:10.1371/journal.pcbi.1013553 (publisher's version read; CC BY). Code: github.com/mjcolebank/Colebank_Identifiability_PDE,
+[doi:10.1371/journal.pcbi.1013553](https://doi.org/10.1371/journal.pcbi.1013553) (publisher's version read; CC BY). Code: github.com/mjcolebank/Colebank_Identifiability_PDE,
 commit `9b2741f89faf1c12127c2a05a5c229be32c9905a` (2025-06-04), directory `WK_Simulator/` (CC BY-NC 4.0,
 © M. J. Colebank 2025; solver by M. S. Olufsen, M. U. Qureshi and M. J. Colebank).
 

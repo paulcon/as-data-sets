@@ -39,7 +39,7 @@ Output order (columns of `outputs.csv`, `mc_outputs.csv`): τ at (1.59 bar = 1.5
 
 W. Ji, J. Wang, O. Zahm, Y. M. Marzouk, B. Yang, Z. Ren, C. K. Law, "Shared low-dimensional subspaces for
 propagating kinetic uncertainty to multiple outputs", *Combustion and Flame* 190 (2018) 146–157,
-doi:10.1016/j.combustflame.2017.11.021. The PDF read is the publisher's version. Only the hydrogen case is built
+[doi:10.1016/j.combustflame.2017.11.021](https://doi.org/10.1016/j.combustflame.2017.11.021). The PDF read is the publisher's version. Only the hydrogen case is built
 here (the paper also treats methane and DME).
 
 Mechanism and uncertainty factors: A. A. Konnov, "Remaining uncertainties in the kinetic mechanism of hydrogen

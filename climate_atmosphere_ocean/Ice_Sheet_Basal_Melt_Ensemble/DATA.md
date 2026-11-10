@@ -30,7 +30,7 @@ prior propagation) are not shipped.
 
 **Citation.** M. Berdahl, G. Leguy, W. H. Lipscomb, N. M. Urban, "Statistical emulation of a perturbed basal
 melt ensemble of an ice sheet model to better quantify Antarctic sea level rise uncertainties", *The
-Cryosphere* 15(6), 2683–2699 (2021), doi:10.5194/tc-15-2683-2021 (publisher PDF read, CC BY 4.0; checked on
+Cryosphere* 15(6), 2683–2699 (2021), [doi:10.5194/tc-15-2683-2021](https://doi.org/10.5194/tc-15-2683-2021) (publisher PDF read, CC BY 4.0; checked on
 Crossref). CISM v2.1: Lipscomb et al., *Geosci. Model Dev.* 12, 387–424 (2019), doi:10.5194/gmd-12-387-2019.
 
 **Simulator** (Sect. 2.1, pp. 2685–2687). CISM v2.1 on a uniform 4 km Antarctic grid: depth-integrated

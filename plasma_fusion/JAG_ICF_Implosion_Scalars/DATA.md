@@ -28,7 +28,7 @@ float32: four 64 × 64 X-ray images per run), is not used and not shipped.
 
 **Citation.** R. Anirudh, J. J. Thiagarajan, P.-T. Bremer, B. K. Spears, "Improved surrogates in inertial
 confinement fusion with manifold and cycle consistencies", *Proc. Natl. Acad. Sci. USA* 117(18):9741–9746
-(2020), doi:10.1073/pnas.1916634117 (checked on Crossref). Read: the arXiv preprint 1912.08113v1 (a
+(2020), [doi:10.1073/pnas.1916634117](https://doi.org/10.1073/pnas.1916634117) (checked on Crossref). Read: the arXiv preprint 1912.08113v1 (a
 preprint; page numbers below are its pages). The published article and its supplement were not read; they
 might name the inputs.
 

@@ -27,7 +27,7 @@ not stored.
 ## Model
 
 **Citation.** F. Neumann and T. Brown, "Broad ranges of investment configurations for renewable power systems,
-robust to cost uncertainty and near-optimality", *iScience* 26(5):106702 (2023), doi:10.1016/j.isci.2023.106702
+robust to cost uncertainty and near-optimality", *iScience* 26(5):106702 (2023), [doi:10.1016/j.isci.2023.106702](https://doi.org/10.1016/j.isci.2023.106702)
 (publisher PDF read, open access, CC BY; page numbers below are the journal's printed ones). Volume, issue,
 article number and authors checked on Crossref. Of the other references, Hörsch et al. (2018) was checked on
 Crossref; the rest were not, and their details are those printed in the paper's reference list and the DOIs

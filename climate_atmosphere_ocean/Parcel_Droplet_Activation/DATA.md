@@ -36,7 +36,7 @@ model runs, so each output belongs exactly to its stored input row.
 ### Citation
 
 D. Rothenberg and C. Wang, "Metamodeling of droplet activation for global climate models", *Journal of the
-Atmospheric Sciences* 73(3) (2016) 1255–1272, doi:10.1175/JAS-D-15-0223.1 (Crossref-checked: volume 73,
+Atmospheric Sciences* 73(3) (2016) 1255–1272, [doi:10.1175/JAS-D-15-0223.1](https://doi.org/10.1175/JAS-D-15-0223.1) (Crossref-checked: volume 73,
 issue 3, pp. 1255–1272, print March 2016). The PDF read is the publisher's version. No PDF is in this
 directory.
 

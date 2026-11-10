@@ -28,7 +28,7 @@ S4 member with the MLE runs (an optimizer trajectory, not a design).
 ## Model
 
 **Citation.** T. Houska, P. Kraft, A. Chamorro-Chavez, L. Breuer, "SPOTting Model Parameters Using a
-Ready-Made Python Package", *PLOS ONE* 10(12):e0145180 (2015), doi:10.1371/journal.pone.0145180 (publisher
+Ready-Made Python Package", *PLOS ONE* 10(12):e0145180 (2015), [doi:10.1371/journal.pone.0145180](https://doi.org/10.1371/journal.pone.0145180) (publisher
 PDF read; CC BY 4.0; checked on Crossref). Affiliations: Institute for Landscape Ecology and Resources
 Management (IFZ), Justus Liebig University Giessen; Breuer also Centre for International Development and
 Environmental Research, JLU Giessen.
