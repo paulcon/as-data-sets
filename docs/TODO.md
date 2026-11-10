@@ -273,6 +273,12 @@ Left open from this step:
 #### Done in [#81](https://github.com/paulcon/as-data-sets/pull/81): cross-cell reference links in the other notebooks (2026-11-10)
 
 The sweep in 7448a99 covered only the 11 batch-6 notebooks. A scan of every notebook found 137 more references such as `[[1]][R1]` in 17 notebooks (the #64, #68 and #76 data sets and Transonic_Fan_Blade_Performance_Maps) whose definition sits in another cell, where Jupyter does not resolve them; Two_Stage_CMOS_Op_Amp's Summary cell was the one reported (author, 2026-11-10). Each is now an inline link to the same target. Parentheses in the five DOIs that contain them (PyCO2SYS, Two_DOF_Equipment_Structure_Oscillator) are written `%28`/`%29`, so the nested ASCE DOIs work in every Markdown renderer. Markdown only; code cells and outputs are unchanged. A rescan finds no reference used outside its defining cell (one false hit in PyCO2SYS is LaTeX, `[\mathrm{Ca^{2+}}][\mathrm{CO_3^{2-}}]`).
+#### Done in [#80](https://github.com/paulcon/as-data-sets/pull/80): absolute-value bars in markdown tables (2026-11-10)
+
+nbviewer (and GitHub) split a markdown table into cells before MathJax renders the math, so a `|` inside `$...$` in a table row ends the cell: the comparison table of RAE2822_SHAP_Design_Exploration rendered with broken rows (`$|C_m|$`, `$|t|$`), while PyCharm's preview, which renders the math first, showed it correctly. In table rows the bars are now `\lvert ... \rvert`, which render the same: 16 rows in 7 notebooks (RAE2822_SHAP_Design_Exploration, NACA4412_Shape_Lift_OpenFOAM, Transonic_Fan_Blade_Performance_Maps, Pyloric_Circuit_Energy_Consumption, Atmospheric_Selenium_Lifetime, Lorenz96_Initial_State_Inference, Powder_Bed_Fusion_Residual_Stress). Markdown only; no notebook re-executed. A scan of every notebook finds no `|` left inside math in a table row, and every table row has as many cells as its header. Bars in math outside tables are unaffected and unchanged. Use `\lvert ... \rvert` (or `\vert`) for absolute values and norms inside tables.
+
+Left open from this step:
+- [ ] Powder_Bed_Fusion_Residual_Stress writes the agreement of a variant's $\mathbf w_1$ with the full-sample $\mathbf w_1$ as $|\mathbf w_1\cdot\mathbf w_1|$ (cells 2, 23 and the comparison table), which reads as a unit vector dotted with itself; cell 29 uses $\mathbf w_1^{\sigma}$ for the same kind of comparison. Notation not changed here
 
 ### Author interview, 2026-10-30
 
