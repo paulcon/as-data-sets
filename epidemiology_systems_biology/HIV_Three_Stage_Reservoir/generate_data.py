@@ -99,11 +99,12 @@ def main():
     ap.add_argument('--fd-rows', type=int, default=FD_ROWS, help=f'samples for the finite-difference check (default {FD_ROWS})')
     ap.add_argument('--max-blocks', type=int, default=None, help='compute at most this many new blocks, then stop')
     args = ap.parse_args()
-    out = os.path.abspath(args.out)
-    if out == HERE and not args.here:
-        ap.error('--out is this directory: add --here to rewrite the shipped files')
-    if out == HERE and (args.check or args.rows):
-        ap.error('--check and --rows need --out DIR outside this directory')
+    here, out = os.path.realpath(HERE), os.path.realpath(args.out)
+    inside = os.path.commonpath([here, out]) == here      # this directory or a subdirectory of it (links resolved)
+    if inside and (args.check or args.rows):
+        ap.error('--check and --rows need --out DIR outside this directory (not this directory or a subdirectory of it)')
+    if inside and not args.here:
+        ap.error('--out is this directory or inside it: add --here to rewrite the shipped files')
     os.makedirs(out, exist_ok=True)
     # finished blocks are kept under DIR/_blocks (a temporary directory with --here)
     blocks = tempfile.mkdtemp(prefix='hiv3_blocks_') if args.here else os.path.join(out, '_blocks')

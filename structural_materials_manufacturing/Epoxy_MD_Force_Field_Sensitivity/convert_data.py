@@ -28,7 +28,7 @@ import sys
 
 import numpy as np
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+HERE = os.path.dirname(os.path.realpath(__file__))
 TOL = 1e-15
 
 SHA256 = {
@@ -134,7 +134,7 @@ def main(argv):
     if '--out' not in argv or len(args) != 2:
         print(__doc__)
         return 2
-    src, out = args[0], os.path.abspath(argv[argv.index('--out') + 1])
+    src, out = args[0], os.path.realpath(argv[argv.index('--out') + 1])
     if os.path.commonpath([out, HERE]) == HERE:
         print('--out must be a folder outside this data set directory')
         return 2

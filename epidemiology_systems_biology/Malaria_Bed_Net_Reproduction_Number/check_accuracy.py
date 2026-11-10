@@ -10,7 +10,7 @@ Check 3: the printed radicand of Eq. (18) against the corrected one, at all samp
 Check 4: the other reading of xi1 (xi1 = a b1 rho, without k_v/k_h; 15 inputs): its PRCC values
          and count of R_eff < 1 on the shipped design and on 50 further designs, against Fig. 5.
 
-Only numpy and the standard library are imported. About 30 s.
+Only numpy and the standard library are imported. A few seconds.
 """
 import os
 import sys

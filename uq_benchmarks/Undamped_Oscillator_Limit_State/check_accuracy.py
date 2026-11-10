@@ -29,7 +29,7 @@ Linear closed form (the secondary study):
     95 % Wilson interval.
 Both models:
  7. Failure probability with the paper's lognormal inputs by plain Monte Carlo, 10^7 draws (seed
-    31), 95 % Wilson intervals (slow: about 2 min for the yielding model).
+    31), 95 % Wilson intervals (slow: about 70 s for the yielding model).
 
 Deterministic. Imports numpy, the standard library and, for check 5 only, uqtestfuns.
 """

@@ -43,7 +43,7 @@ import sys
 
 import numpy as np
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+HERE = os.path.dirname(os.path.realpath(__file__))
 SHA256 = {
     'covidsim_samples_only_cont.hdf5': '09182744645145a4c1769b2ae92c4d12a474f12d8a89052d7c8210d69226935f',
     'vary.py': '5b3611b7ef7f6f2cefeff0af071b786d84abb7409d54a70d17e854db8c9f785d',
@@ -173,8 +173,8 @@ def main(argv):
     a = ap.parse_args(argv)
     if not a.out:
         ap.error('--out DIR is required')
-    out = os.path.abspath(a.out)
-    if a.check and (out == HERE or out.startswith(HERE + os.sep)):
+    out = os.path.realpath(a.out)
+    if a.check and os.path.commonpath([out, HERE]) == HERE:
         ap.error('--check needs --out outside the data set directory')
     texts, D = build(a.src)
     write(out, texts, D)

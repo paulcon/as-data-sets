@@ -1,5 +1,5 @@
 # Weights of a Hector ensemble with Matilda's score_runs(criterion_gmst_obs(), score_bayesian),
-# the scoring used in the case study of Brown et al. (2024), Sec. 3, p. 16.
+# the scoring used in the case study of Brown et al. (2024), Sec. 3, p. 17.
 # Usage: Rscript matilda_score.R <gmst.csv> <out.csv>
 #   <gmst.csv> header gmst_1950..gmst_2023, one row per run (raw Hector gmst, degC)
 #   <out.csv>  columns rmse (Matilda's RMSE_calc with sigma = sd(observed)), weight

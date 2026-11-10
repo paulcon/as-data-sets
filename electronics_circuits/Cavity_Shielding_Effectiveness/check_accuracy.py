@@ -4,7 +4,7 @@ generate_data.py prints.
     python check_accuracy.py
 
 Run it from any directory; it reads the shipped files next to this file. Each line prints the
-recomputed value; DATA.md quotes these values. About 15 s.
+recomputed value; DATA.md quotes these values. A few seconds.
 
 Checks:
  1. Special functions: the power series for Si and Cin in cavity_se_model against

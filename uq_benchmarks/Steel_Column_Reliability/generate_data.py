@@ -3,9 +3,9 @@
     python generate_data.py --out DIR            # writes the six CSVs to DIR
     python generate_data.py --out DIR --check    # ... and compares them with the shipped files
 
-DIR must be given. `--check` refuses DIR = this directory, so the shipped files are never
-overwritten by a check; to rewrite the shipped files, pass `--out .` from this directory without
-`--check`.
+DIR must be given. `--check` refuses this directory and any directory inside it, so the shipped
+files are never overwritten by a check; to rewrite the shipped files, pass `--out .` from this
+directory without `--check`.
 
 For each configuration of steel_column_model.CONFIGS ('benchmark', 'paper') it draws M = 2000
 independent Monte Carlo samples u ~ N(0, I_9) with numpy's default generator (seed SEEDS[config]),
@@ -77,7 +77,9 @@ def main():
     ap.add_argument('--out', required=True, help='output directory (required)')
     ap.add_argument('--check', action='store_true', help='compare with the CSVs in this directory')
     args = ap.parse_args()
-    if args.check and os.path.abspath(args.out) == HERE:
+    here = os.path.realpath(HERE)
+    out_real = os.path.realpath(args.out)
+    if args.check and os.path.commonpath([out_real, here]) == here:
         ap.error('--check needs --out DIR outside this directory, so that the shipped files are not overwritten')
     os.makedirs(args.out, exist_ok=True)
     t0 = time.perf_counter()

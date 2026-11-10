@@ -143,7 +143,8 @@ def main(argv):
     if src is None:
         print('error: give the source folder')
         return 2
-    if os.path.commonpath([out, HERE]) == HERE:
+    here = os.path.realpath(HERE)
+    if os.path.commonpath([os.path.realpath(out), here]) == here:  # symbolic links resolved
         print(f'error: --out must be outside this data set directory ({HERE})')
         return 2
     os.makedirs(out, exist_ok=True)

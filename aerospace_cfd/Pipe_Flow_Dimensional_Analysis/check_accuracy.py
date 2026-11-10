@@ -4,7 +4,7 @@ generate_data.py prints.
     python check_accuracy.py
 
 Run it from any directory; it reads the shipped CSVs next to this file and evaluates
-pipe_model.py. Deterministic; about 10 s. Imports numpy and the standard library.
+pipe_model.py. Deterministic; a few seconds. Imports numpy and the standard library.
 
 Checks:
  1. Gradients: the shipped d(dp/dx)/d ln q of all 3000 rows against complex-step derivatives

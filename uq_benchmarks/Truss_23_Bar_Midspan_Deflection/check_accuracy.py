@@ -1,6 +1,6 @@
 """Recompute the numbers of DATA.md's Accuracy section that the notebook and generate_data.py do not print.
 
-    python check_accuracy.py            # about 3.5-4 minutes, one process
+    python check_accuracy.py            # about 2 minutes, one process
 
 1. Unit-load (virtual-work) form of the deflection. The truss is statically determinate, so the bar
    forces follow from equilibrium alone and V1 = sum_j P_j (a_j / (E1 A1) + b_j / (E2 A2)) with

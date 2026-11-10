@@ -11,7 +11,8 @@ It prints the largest relative rounding of a gradient row (2-norm) over the rows
 normal range, the number of rows below it (q_sec gradients at points where q_sec is 0 or 1 to
 far below rounding; they become float32 subnormals or 0) and the file sizes.
 
---out must be a directory other than this one, so that the shipped file is not overwritten.
+--out must be a directory outside this one (not this directory or a subdirectory of it), so that
+the shipped file is not overwritten.
 Imports numpy and generate_data (for FILE, DESCRIPTION, GRAD_DTYPE). Deterministic.
 """
 import argparse
@@ -30,11 +31,11 @@ def main():
                                  formatter_class=argparse.RawDescriptionHelpFormatter,
                                  epilog='\n'.join(__doc__.split('\n')[1:]))
     ap.add_argument('--in', dest='inp', required=True, help='lv_samples.npz with float64 gradients')
-    ap.add_argument('--out', required=True, help='output directory (not this directory)')
+    ap.add_argument('--out', required=True, help='output directory (outside this directory)')
     args = ap.parse_args()
-    out = os.path.abspath(args.out)
-    if out == HERE:
-        ap.error('--out must be a directory other than this one')
+    here, out = os.path.realpath(HERE), os.path.realpath(args.out)
+    if os.path.commonpath([here, out]) == here:
+        ap.error('--out must be a directory outside this one (not this directory or a subdirectory of it)')
     os.makedirs(out, exist_ok=True)
     D = np.load(args.inp)
     data = {}

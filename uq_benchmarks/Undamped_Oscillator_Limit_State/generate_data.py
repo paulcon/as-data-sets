@@ -101,7 +101,9 @@ def main():
     ap.add_argument('--check', action='store_true',
                     help='compare with the CSVs in this directory (needs --out DIR elsewhere)')
     args = ap.parse_args()
-    if args.check and os.path.abspath(args.out) == HERE:
+    here = os.path.realpath(HERE)
+    out_real = os.path.realpath(args.out)
+    if args.check and os.path.commonpath([out_real, here]) == here:
         ap.error('--check needs --out DIR outside this directory, so that the shipped files are not overwritten')
     os.makedirs(args.out, exist_ok=True)
 

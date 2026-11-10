@@ -23,7 +23,7 @@ import time
 
 import numpy as np
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+HERE = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, HERE)
 import pipe_model as pm  # noqa: E402
 
@@ -67,8 +67,8 @@ def main():
     ap.add_argument('--out', required=True, help='output directory, outside this directory')
     ap.add_argument('--check', action='store_true', help='compare with the CSVs in this directory')
     args = ap.parse_args()
-    out = os.path.abspath(args.out)
-    if out == HERE or out.startswith(HERE + os.sep):
+    out = os.path.realpath(args.out)                      # symbolic links resolved
+    if os.path.commonpath([out, HERE]) == HERE:
         ap.error('--out must be a directory outside this data set, so that the shipped files are not overwritten')
     os.makedirs(out, exist_ok=True)
     t0 = time.perf_counter()

@@ -22,7 +22,7 @@ import time
 
 import numpy as np
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+HERE = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, HERE)
 import cavity_se_model as cm  # noqa: E402
 
@@ -88,8 +88,8 @@ def main():
     else:
         if not args.out:
             ap.error('give --out DIR (outside this directory), or --here to rewrite the shipped files')
-        out = os.path.abspath(args.out)
-        if out == HERE or out.startswith(HERE + os.sep):
+        out = os.path.realpath(args.out)                  # symbolic links resolved
+        if os.path.commonpath([out, HERE]) == HERE:
             ap.error('--out must be outside this directory, so that the shipped files are not overwritten')
     os.makedirs(out, exist_ok=True)
 
@@ -117,6 +117,8 @@ def main():
             print(f'{n}: max relative difference from the shipped file {rel:.1e} (tolerance {tol:g})')
         print('check passed' if ok else 'CHECK FAILED')
     print(f'total {time.perf_counter() - t0:.1f} s')
+    if args.check and not ok:
+        sys.exit(1)
 
 
 if __name__ == '__main__':

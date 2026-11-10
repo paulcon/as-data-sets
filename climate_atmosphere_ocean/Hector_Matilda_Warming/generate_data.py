@@ -143,6 +143,7 @@ def generate(out, rows):
 
 def check(out, rows, grows):
     full = rows.start == 0 and rows.stop == M
+    ok = True
     for fn, sl in [("inputs.csv", rows), ("outputs.csv", rows), ("gmst_1950_2023.csv", rows),
                    ("gradients.csv", slice(grows.start, grows.stop))]:
         if not os.path.exists(os.path.join(out, fn)):
@@ -151,9 +152,14 @@ def check(out, rows, grows):
         old = np.loadtxt(os.path.join(HERE, fn), delimiter=",", ndmin=2)[sl]
         if fn == "outputs.csv" and not full:
             new, old = new[:, :4], old[:, :4]
-        rel = np.max(np.abs(new - old)) / np.max(np.abs(old))
+        # a failed run is nan in both files; the nan entries must be the same ones
+        same_nan = new.shape == old.shape and np.array_equal(np.isnan(new), np.isnan(old))
+        rel = np.nanmax(np.abs(new - old)) / np.nanmax(np.abs(old)) if same_nan else np.inf
+        ok &= bool(rel <= TOL)
         print(f"  {fn}: max |new - shipped| / max |shipped| = {rel:.2e} "
-              f"({'within' if rel <= TOL else 'OUTSIDE'} tolerance {TOL:.0e})")
+              f"({'within' if rel <= TOL else 'OUTSIDE'} tolerance {TOL:.0e})"
+              + ("" if same_nan else "; shape or nan entries differ"))
+    return ok
 
 
 def main():
@@ -180,8 +186,8 @@ def main():
         rows = slice(i, j)
     os.makedirs(a.out, exist_ok=True)
     grows = generate(a.out, rows)
-    if a.check:
-        check(a.out, rows, grows)
+    if a.check and not check(a.out, rows, grows):
+        sys.exit(1)
 
 
 if __name__ == "__main__":

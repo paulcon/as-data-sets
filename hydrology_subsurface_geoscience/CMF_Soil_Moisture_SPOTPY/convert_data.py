@@ -101,9 +101,11 @@ def main(argv=None):
     ap.add_argument('--out', required=True, help='output directory, outside this data set directory')
     ap.add_argument('--check', action='store_true', help='compare the written files with the shipped ones')
     a = ap.parse_args(argv)
-    out = os.path.abspath(a.out)
-    if out == HERE or out.startswith(HERE + os.sep):
-        sys.exit('--out must be outside the data set directory (the shipped files are the record)')
+    out = os.path.realpath(a.out)
+    here = os.path.realpath(HERE)
+    if os.path.commonpath([out, here]) == here:
+        sys.exit('--out must be outside the data set directory, subdirectories included '
+                 '(the shipped files are the record)')
     if os.path.getsize(a.archive) != ARCHIVE_SIZE or sha256(a.archive) != ARCHIVE_SHA256:
         sys.exit('the archive is not the deposited S4 file (size or SHA-256 differ); see DATA.md')
     os.makedirs(out, exist_ok=True)

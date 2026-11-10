@@ -34,9 +34,15 @@ import time
 
 import numpy as np
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+HERE = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, HERE)
 import pulmonary_wk_driver as D  # noqa: E402
+
+
+def inside(path):
+    """True if path is this directory or below it (symbolic links resolved)."""
+    return os.path.commonpath([os.path.realpath(path), HERE]) == HERE
+
 
 SEED = 2025130
 M = 160
@@ -130,10 +136,10 @@ def main():
     p.add_argument("--out", required=True, help="output directory (pass this directory itself, explicitly, to rewrite the shipped files)")
     p.add_argument("--check", action="store_true", help="compare with the shipped files")
     a = p.parse_args()
-    if (a.check or a.rows) and os.path.abspath(a.out) == os.path.abspath(HERE):
+    if (a.check or a.rows) and inside(a.out):
         sys.exit("--check and --rows need --out DIR outside this directory, so that the shipped "
                  "files are not overwritten")
-    if os.path.abspath(a.work).startswith(HERE):
+    if inside(a.work):
         sys.exit("--work must be outside this directory")
     try:
         exe = D.build(a.work, a.source)

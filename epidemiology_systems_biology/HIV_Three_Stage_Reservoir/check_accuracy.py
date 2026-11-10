@@ -1,7 +1,7 @@
 """Recompute the numbers of DATA.md (HIV_Three_Stage_Reservoir) that neither the notebook nor
 generate_data.py prints.
 
-    python check_accuracy.py               all checks (about 7 min on one loaded core)
+    python check_accuracy.py               all checks (a few minutes; see DATA.md)
     python check_accuracy.py --skip-slow   without checks 3, 4 and 7
 
 Run it from any directory; it reads the shipped CSVs next to this file and evaluates hiv3_model.py.

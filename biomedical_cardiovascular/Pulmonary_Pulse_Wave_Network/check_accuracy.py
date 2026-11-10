@@ -19,7 +19,7 @@ import sys
 
 import numpy as np
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+HERE = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, HERE)
 import pulmonary_wk_driver as D  # noqa: E402
 
@@ -30,7 +30,7 @@ def main():
     p.add_argument("--source", default=None, help="an existing clone of the authors' repository")
     p.add_argument("--rows", default="0:5")
     a = p.parse_args()
-    if os.path.abspath(a.work).startswith(HERE):
+    if os.path.commonpath([os.path.realpath(a.work), HERE]) == HERE:
         sys.exit("--work must be outside this directory")
     try:
         exe = D.build(a.work, a.source)

@@ -22,9 +22,9 @@ is instance i + 1. Each output has two ``#`` header lines (a description; column
     python convert_data.py <repo checkout> --out DIR --check    # also compare DIR with the shipped files
 
 ``<repo checkout>`` is the root of the authors' repository (the folder holding ``data/``). ``--out`` is
-required and must not be this data set's directory, so the shipped files are never overwritten by
-default. ``--check`` compares every value with the shipped file (absolute tolerance 1e-12, NaN equal
-to NaN) and prints "same within tolerance" or "DIFFERENT" per file. Standard library only, plus numpy for --check.
+required and must be outside this data set's directory, so the shipped files are never overwritten.
+``--check`` compares every value with the shipped file (absolute tolerance 1e-12, NaN equal to NaN)
+and prints "same within tolerance" or "DIFFERENT" per file. Standard library only, plus numpy for --check.
 """
 
 import csv
@@ -33,7 +33,7 @@ import hashlib
 import os
 import sys
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+HERE = os.path.dirname(os.path.realpath(__file__))
 
 SHA256 = {
     'citycovid_parameters.csv': '1d65d3f26674c3a46471e5f8e735d96541ae80a079a5845f76a2a7fa5af7f80d',
@@ -140,9 +140,9 @@ def main(argv):
         print(__doc__)
         return 2
     src = args[0]
-    dest = os.path.abspath(argv[argv.index('--out') + 1])
-    if os.path.realpath(dest) == os.path.realpath(HERE):
-        print('--out must not be this data set\'s directory (the shipped files are never overwritten)')
+    dest = os.path.realpath(argv[argv.index('--out') + 1])
+    if os.path.commonpath([dest, HERE]) == HERE:
+        print('--out must be outside this data set\'s directory (the shipped files are never overwritten)')
         return 2
     os.makedirs(dest, exist_ok=True)
     texts = build(src)

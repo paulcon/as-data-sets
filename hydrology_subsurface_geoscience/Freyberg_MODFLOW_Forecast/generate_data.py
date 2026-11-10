@@ -202,6 +202,7 @@ def check(out, i0, i1):
     print("  calibrated.csv: max relative difference = %.2e (tolerance 1e-4)" % rc)
     ok &= bool(rc <= 1e-4)
     print("CHECK", "PASSED" if ok else "FAILED")
+    return ok
 
 
 def main():
@@ -210,8 +211,8 @@ def main():
     p.add_argument("--rows", default=None, help="a:b, a subset of the rows")
     p.add_argument("--check", action="store_true", help="compare with the shipped files")
     a = p.parse_args()
-    out = os.path.abspath(a.out)
-    if out == HERE or out.startswith(HERE + os.sep):
+    here, out = os.path.realpath(HERE), os.path.realpath(a.out)
+    if os.path.commonpath([here, out]) == here:      # this directory, a subdirectory, or a link into it
         sys.exit("--out must be a directory outside this data set, so the shipped files are not "
                  "overwritten")
     try:
@@ -231,8 +232,8 @@ def main():
     if a.rows is None or a.check:
         calibrated(out)
     print("rows %d:%d written to %s in %.1f s" % (i0, i1, out, time.time() - t0))
-    if a.check:
-        check(out, i0, i1)
+    if a.check and not check(out, i0, i1):
+        sys.exit(1)
 
 
 if __name__ == "__main__":

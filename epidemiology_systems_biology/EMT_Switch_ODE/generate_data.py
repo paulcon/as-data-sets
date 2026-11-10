@@ -98,8 +98,10 @@ def main():
     ap.add_argument('--fd-rows', type=int, default=FD_ROWS,
                     help=f'draws per box for the finite-difference check (default {FD_ROWS})')
     args = ap.parse_args()
-    if os.path.abspath(args.out) == HERE and args.check:
-        ap.error('--check needs --out DIR outside this directory, so that the shipped files are not overwritten')
+    here, out = os.path.realpath(HERE), os.path.realpath(args.out)
+    if args.check and os.path.commonpath([here, out]) == here:
+        ap.error('--check needs --out DIR outside this directory (not this directory or a subdirectory of it), '
+                 'so that the shipped files are not overwritten')
     os.makedirs(args.out, exist_ok=True)
     t0 = time.perf_counter()
     for box in (10, 25):

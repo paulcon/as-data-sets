@@ -1,8 +1,8 @@
 """Write lv_samples.npz for the competitive Lotka-Volterra tumour model (Zou and Lewis 2026).
 
-    python generate_data.py                                   # writes lv_samples.npz here (about 60 min)
+    python generate_data.py                                   # writes lv_samples.npz here (22 to 60 min, DATA.md)
     python generate_data.py --out DIR --check --blocks 1      # regenerates the first block of each
-                                                              # design in DIR and compares (about 2.5 min)
+                                                              # design in DIR and compares (about 1.5 min)
     python generate_data.py --out DIR --cache CDIR --max-minutes 9   # resumable chunks
 
 Two designs, each 4096 regions x 25 points = 102,400 points of x = (r_S, r_R, K_S, K_R, gamma_S,
@@ -144,11 +144,12 @@ def main():
     ap.add_argument('--cache', default=None, help='directory for resumable block files')
     ap.add_argument('--max-minutes', type=float, default=None, help='stop after the block that passes this time')
     args = ap.parse_args()
-    out = os.path.abspath(args.out)
-    if out == HERE and (args.check or args.blocks is not None):
-        ap.error('--check and --blocks need --out DIR outside this directory, so that the shipped file is not overwritten')
-    if args.cache is not None and os.path.abspath(args.cache) == HERE:
-        ap.error('--cache must not be this directory')
+    here, out = os.path.realpath(HERE), os.path.realpath(args.out)
+    if os.path.commonpath([here, out]) == here and (args.check or args.blocks is not None):
+        ap.error('--check and --blocks need --out DIR outside this directory (not this directory or a subdirectory '
+                 'of it), so that the shipped file is not overwritten')
+    if args.cache is not None and os.path.commonpath([here, os.path.realpath(args.cache)]) == here:
+        ap.error('--cache must be outside this directory (not this directory or a subdirectory of it)')
     os.makedirs(out, exist_ok=True)
     if args.cache:
         os.makedirs(args.cache, exist_ok=True)
