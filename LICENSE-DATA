@@ -11,7 +11,7 @@ listed in README.md.
 
 Exceptions. The files below are not under CC BY 4.0: their sources state no
 licence, or a different one. They are hosted here, unchanged in value, with
-the source credited (decision of 2026-10-30); each data set's DATA.md gives
+the source credited; each data set's DATA.md gives
 the source, version or commit, checksum and credit. If an owner attaches a
 licence or objects, that takes precedence.
 
@@ -235,8 +235,7 @@ licence or objects, that takes precedence.
     (Precipitation_Temperature.inp, streamflow.inp, monthly_data.inp,
     initial_condition.inp; S. Razavi et al.), converted by convert_forcing.py. The
     repository is GPL-3.0 and states no separate licence for the data; hosted with
-    credit (decision of 2026-11-10). inputs.csv, outputs.csv, gradients.csv and
-    tt_tangent.csv are CC BY 4.0.
+    credit. inputs.csv, outputs.csv, gradients.csv and tt_tangent.csv are CC BY 4.0.
 
   hydrology_subsurface_geoscience/Freyberg_MODFLOW_Forecast/
     modflow_files/ (freyberg_revisit_pp.bas, .dis, .wel, .riv, .oc, factors1.dat,

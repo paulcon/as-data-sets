@@ -25,7 +25,7 @@ CSV with one header row, 10,000 rows × 12 columns, values written as `%.16e`. S
 | `Pmax` | maximum power P_max, 0.0143 to 0.2032 | W | |
 | `dISC`, `dIS`, `dn`, `dRS`, `dRP` | ∂P_max/∂x_i | W | **normalized** x, with I_S through log I_S |
 
-**Gradient coordinates.** The gradients are taken with respect to x ∈ [−1, 1]⁵, where x_i = 2(q_i − L_i)/(U_i − L_i) − 1, q = (I_SC, log I_S, n, R_S, R_P), and L, U are the bounds below (the paper's eq. (13)). To get gradients with respect to q, divide by (U − L)/2. active_subspaces v1 expects gradients with respect to the inputs of its space and applies the factor (U − L)/2 itself. So with `ac.Uniform(lower=L, upper=U)` on q, pass `G / ((U - L) / 2)`. Passing the stored `G` unchanged scales it twice, and the first eigenvector then comes out dominated by R_P.
+**Gradient coordinates.** The gradients are taken with respect to x ∈ [−1, 1]⁵, where x_i = 2(q_i − L_i)/(U_i − L_i) − 1, q = (I_SC, log I_S, n, R_S, R_P), and L, U are the bounds below (the paper's eq. (13)). To get gradients with respect to q, divide by (U − L)/2. active_subspaces expects gradients with respect to the inputs of its space and applies the factor (U − L)/2 itself. So with `ac.Uniform(lower=L, upper=U)` on q, pass `G / ((U - L) / 2)`. Passing the stored `G` unchanged scales it twice, and the first eigenvector then comes out dominated by R_P.
 
 **Inputs.** The paper's Table 1 gives the ranges (typical 2 cm² crystalline silicon cells). I_S is log-uniform, and the other inputs are uniform:
 

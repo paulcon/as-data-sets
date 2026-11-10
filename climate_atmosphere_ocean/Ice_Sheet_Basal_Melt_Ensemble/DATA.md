@@ -191,7 +191,7 @@ does not mention the 9 failed runs. Eq. (1) is printed with an unmatched parenth
 ## License and credit
 
 Data: © M. Berdahl, G. Leguy, W. H. Lipscomb, N. M. Urban; the repository states no licence, so the two CSVs
-are hosted with the source credited (repository decision of 2026-10-30) and are listed in the exceptions of
+are hosted with the source credited and are listed in the exceptions of
 `LICENSE-DATA`. The article is CC BY 4.0. Cite the paper and the Zenodo record when using these files.
 `convert_data.py`, `check_accuracy.py` and the notebook: MIT (this repository). No code of the authors'
 repository is included.

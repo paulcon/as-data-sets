@@ -18,23 +18,23 @@ Kind: **Python model**. The model is `pde_model.py` (class `PDEMisfit`). `genera
 
 `-∇·(a ∇u) = 1` on [0, 1]², u = 0 on the left, top and bottom sides, zero flux on the right side, `log a = B x` with `B = K * sqrt(lam)` and x ~ N(0, I_100). The KL kernel is exp(−‖s − t‖₁/0.02), which is the paper's eq. (5.5) with β = 0.02. The discretization (five-point vertex-centred finite volumes on 100 × 100 cells, sparse LU, discrete adjoint for the gradient) is described in `../Elliptic_PDE_Random_Coefficients/DATA.md`.
 
-- **Observations**: u at the unknown rows `indz = [19, 29, …, 79]` of the last unknown column, i.e. s2 = 0.2, 0.3, …, 0.8 at s1 = 0.99. The paper puts the sensors on the boundary, s1 = 1. The 2016 code used rows 20, …, 80 (s2 = 0.21, …, 0.81).
+- **Observations**: u at the unknown rows `indz = [19, 29, …, 79]` of the last unknown column, i.e. s2 = 0.2, 0.3, …, 0.8 at s1 = 0.99. The paper puts the sensors on the boundary, s1 = 1.
 - **Misfit**: f(x) = ‖d − m(x)‖²/(2σ²), with gradient from one adjoint solve.
 - **Check**: `python uq_benchmarks/check_pde_model.py`.
 
-## What was run (author's decisions, 2026-10-30)
+## What was run
 
 | sampler | chains × steps | proposal | ĝ | solves |
 |---|---|---|---|---|
 | vanilla | 20 × 100,000 | x' = x + 0.1 e (paper) | — | 2 × 10⁶ |
 | cached | 4 × 16,000 | y' = y + 1.2 L e | M = 10, kept with the state (Algorithm 1 as printed; pseudo-marginal, exact for π_M) | 6.4 × 10⁵ |
-| recompute | 4 × 5,000 | y' = y + 1.7 L e | M = 10, recomputed at the current state and the proposal every step (the 2016 code behind the paper's results; noisy Metropolis–Hastings) | 4 × 10⁵ |
+| recompute | 4 × 5,000 | y' = y + 1.7 L e | M = 10, recomputed at the current state and the proposal every step (as in the code behind the paper's results; noisy Metropolis–Hastings) | 4 × 10⁵ |
 
 - **Starts and burn-in.** Every chain starts at its own prior draw, and the notebook discards the first 20%.
 - **The factor L** is the Cholesky factor of the posterior covariance of (y1, y2) from vanilla chain 1 after burn-in, rounded to 4 decimals: [[0.2438, 0], [−0.1044, 0.3561]].
 - **The scales s** come from the pilot below and are fixed during the stored runs.
 - **Chain lengths** come from the pilot autocorrelation times τ: 4 × steps × 0.8 / τ ≥ 1000 × 1.5 for y1 and y2 in each active-variable sampler.
-- **Vanilla chains.** One chain of 100,000 steps gives an ESS of about 350 for y1, y2 (τ ≈ 230 steps) after burn-in. The first run had 4 vanilla chains: ESS about 1100–1400 for y1, y2, but split R̂ = 1.011 for y2, and the spread of the 4 chain means suggested a standard error twice the computed 0.011. For the 100 x-moments the smallest ESS was 290 and the largest R̂ 1.027. The author added 16 chains (2026-10-31; the 10 MB cap on this file was lifted for them). With 20 chains, the ESS of y1, y2 is about 7000, split R̂ ≤ 1.004, the spread of the 20 chain means agrees with the computed standard errors, and the smallest ESS of the x-moments is 1761 (largest R̂ 1.016).
+- **Vanilla chains.** One chain of 100,000 steps gives an ESS of about 350 for y1, y2 (τ ≈ 230 steps) after burn-in. Four vanilla chains are not enough: they give an ESS of about 1100–1400 for y1, y2, but split R̂ = 1.011 for y2, and the spread of the 4 chain means suggests a standard error twice the computed 0.011. For the 100 x-moments the smallest ESS is 290 and the largest R̂ 1.027. With 20 chains, the ESS of y1, y2 is about 7000, split R̂ ≤ 1.004, the spread of the 20 chain means agrees with the computed standard errors, and the smallest ESS of the x-moments is 1761 (largest R̂ 1.016).
 
 **Pilot (`tune_proposal.py`).** Each run is one chain of 2,500 steps started at the vanilla posterior mean, with τ measured after 300 steps. The proposal used L from the unrounded factor. Seeds were 100–107, from a scratch version of the script; the shipped script uses `SeedSequence([2779, 1])` and the rounded L, so a rerun differs statistically.
 
@@ -49,7 +49,7 @@ Kind: **Python model**. The model is `pde_model.py` (class `PDEMisfit`). `genera
 | cached | **1.20** | 0.159 | 14.5 | 33.0 |
 | cached | 1.70 | 0.107 | 17.4 | 71.8 |
 
-For comparison, the first version of this file ran one chain of each sampler with the paper's isotropic proposal, standard deviation 0.1, 10,000 steps. τ for (y1, y2) was:
+For comparison, an earlier run (not shipped) of one chain of each sampler with the paper's isotropic proposal, standard deviation 0.1, 10,000 steps, gave τ for (y1, y2):
 - recompute: (87, 217) steps, ESS (91, 37) after burn-in;
 - cached: (57, 126) steps, ESS (141, 63).
 
@@ -59,7 +59,7 @@ Load with `np.load` (no pickle). Indices are 0-based; `k` is the chain: 1, …, 
 
 | key | shape, dtype | contents |
 |---|---|---|
-| `seed`, `streams` | (), (33,) str | master seed 2779. `np.random.SeedSequence(seed).spawn(33)` gives one generator per stream, in the order of `streams`: `data`, `grad_points`, `bootstrap`, `vanilla_1`, `unused` (the first versions' active-variable chain), `grid`, `vanilla_2..4`, `cached_1..4`, `recompute_1..4`, `vanilla_5..20`. Child i of `spawn` has the same seed whatever the number of children, so appending `vanilla_5..20` left every earlier stream unchanged |
+| `seed`, `streams` | (), (33,) str | master seed 2779. `np.random.SeedSequence(seed).spawn(33)` gives one generator per stream, in the order of `streams`: `data`, `grad_points`, `bootstrap`, `vanilla_1`, `unused` (no draws; kept so that the other streams keep their seeds), `grid`, `vanilla_2..4`, `cached_1..4`, `recompute_1..4`, `vanilla_5..20`. Child i of `spawn` has the same seed whatever the number of children, so appending `vanilla_5..20` left every earlier stream unchanged |
 | `x_true`, `d`, `sig2` | (100,), (7,), () | synthetic data: x_true ~ N(0, I), d = m(x_true) + e, e ~ N(0, σ² I), σ² = 1e-4 ‖m(x_true)‖² |
 | `indz`, `sensor_s1`, `sensor_s2` | (7,) | sensor rows and coordinates |
 | `kl_md5` | () str | md5 of `kl-short.npz` (079370cfa2411de13b20ab62c7b22879) |
@@ -99,7 +99,7 @@ python tune_proposal.py --workers 6             # the pilot (needs pde_mcmc_chai
 - **How the shipped file was made** (2026-10-31, on the AWS instance above: Amazon Linux 2023, Python 3.11.18, numpy 2.4.6, scipy 1.17.1). One run computed the 12 original chains and the grid from scratch; a second run added vanilla chains 5–20 with `--reuse` of the first run's output, which copies the first 12 chains and the grid unchanged.
 - **Seeds.** Every random draw comes from the streams above, drawn one step at a time in a fixed order, so a shorter run reproduces the first steps of a longer one. The grid draws are one block, so the first K draws of a shorter run equal the first K of a longer one.
 - **Reproduction checks** (2026-10-30 and 2026-10-31):
-  - The 12 original chains and the grid were also run in full on a Mac (macOS 14, Python 3.11.16, the same numpy and scipy, 6 workers). All 87 fields agree with the shipped file to rounding (at most 4 × 10⁻¹³ relative, 1.9 × 10⁻⁸ for the float32 grid), and 54 are bitwise equal, including every accept/reject array: the same seeds give the same chains, so this run is a reproduction, not an independent sample. Its vanilla chain 1 was copied from the first version of this file, so that version is reproduced as well.
+  - The 12 original chains and the grid were also run in full on a Mac (macOS 14, Python 3.11.16, the same numpy and scipy, 6 workers). All 87 fields agree with the shipped file to rounding (at most 4 × 10⁻¹³ relative, 1.9 × 10⁻⁸ for the float32 grid), and 54 are bitwise equal, including every accept/reject array: the same seeds give the same chains, so this run is a reproduction, not an independent sample.
   - A short run on the Mac (`--n-van 1000 --n-cached 100 --n-recompute 50 --grid-draws 20`) matches the start of all 28 chains and the grid: 121 of 160 fields bitwise, the rest to at most 5.5 × 10⁻¹³ relative, every accept array bitwise.
   - Short runs with `--workers 1` and `--workers 6` agree bitwise, and a short run of the 20-chain generator reproduces every field of the 12-chain generator bitwise.
   - The notebook reruns the first steps of chain 1 of each sampler and prints the differences, which are at the rounding level (at most 5 × 10⁻¹² in the misfit, 0 in the accept flags).
@@ -117,18 +117,18 @@ Mean ± standard error of (y1, y2) = W1ᵀx; standard errors from the autocorrel
 | π_ε (grid) | | | | | 0.629 ± 0.003 | −0.601 ± 0.005 |
 | π_M, M = 10 (grid) | | | | | 0.649 ± 0.005 | −0.651 ± 0.006 |
 
-- **Cached vs π_M** (the test of spec §9: |offset| ≤ 3 combined SE): +1.3 and −1.4 SE, pass. Recompute vs π_M: −0.7 and +1.2 SE.
+- **Cached vs π_M** (acceptance test: |offset| ≤ 3 combined SE): +1.3 and −1.4 SE, pass. Recompute vs π_M: −0.7 and +1.2 SE.
 - **Active-variable chains vs the posterior:** the cached chains are off by −0.082 and +0.165 (−16 and +20 SE), the recompute chains by −0.095 and +0.193 (−15 and +16 SE), 0.35–0.5 posterior standard deviations. This is the approximation error of the two-dimensional subspace (λ3 + … + λ100 = 124, against λ1 + λ2 = 1934). The data also inform y3 (posterior mean −1.28, standard deviation 0.53), which the active-variable samplers draw from the prior.
 - **Moments of x** (the paper's Fig. 5.9): 44% (cached) and 45% (recompute) of the 100 posterior means, and 84% and 82% of the variances, fall inside the vanilla 99% intervals (median half-widths 0.054 and 0.053). Of the squared difference of the means, 65% lies along w3 and 99% along w3, …, w100.
 - **Grid convergence:** halving the spacing and shrinking the extent change the means by less than 10⁻⁴; doubling the draws changes them by 0.003, consistent with the grid's bootstrap standard errors (0.003–0.006).
 
 ## Relation to the paper's runs
 
-Constantine, Kent & Bui-Thanh (2016) §5.2–5.6 ran one vanilla chain of 500,000 steps and two active-variable chains of 50,000 steps with the numpad model on the Mio cluster; their data, seeds and chains are not in this repository. The 2016 `.mat` files that this file replaces (`Vanilla_Chain.mat`, `Vanilla_Acceptance.mat`, `AV_Chain.mat`, `AV_Acceptance.mat`, `Gradient_Samples.mat`; 2016-07-12/13) were a smaller rerun at 10⁵ / 10⁴ steps, without seeds or synthetic data saved; they are removed from `main` but remain in the git history. Departures from the paper (all listed in the notebook):
+Constantine, Kent & Bui-Thanh (2016) §5.2–5.6 ran one vanilla chain of 500,000 steps and two active-variable chains of 50,000 steps with the numpad model on the Mio cluster; their data, seeds and chains are not in this repository. Departures from the paper (all listed in the notebook):
 
 1. different synthetic data and sensors at s1 = 0.99, s2 = 0.2, …, 0.8;
 2. a finite-volume solver, not the paper's finite differences;
-3. two active-variable samplers: Algorithm 1 as printed (cached ĝ), and the 2016 code's variant (recomputed ĝ) that produced the paper's numbers;
+3. two active-variable samplers: Algorithm 1 as printed (cached ĝ), and the variant (recomputed ĝ) of the code that produced the paper's numbers;
 4. a tuned proposal on y (full covariance, scale from a pilot), not the paper's isotropic standard deviation 0.1 (printed as "variance") or 0.3;
 5. 20 vanilla chains and 4 chains per active-variable sampler at the lengths above, with split R̂ and autocorrelation-based standard errors (the paper: one chain each, batch means);
 6. reference densities π_ε and π_M on a grid (not in the paper).

@@ -38,7 +38,7 @@ All files are space-separated text with one header row of quoted names and no in
 - **Row 0 is the default run.** All 20 values equal the Default column of Table 1 of the paper. The paper keeps it apart from "the 300 realizations" (p. 909). Rows 1–300 are the realizations. The notebook fits rows 1–300 only; the file is unchanged.
 - Ranges, defaults and units are those of Table 1 of the paper; the notebook's table lists them all. Units: vcmx25 µmol CO2 m⁻² s⁻¹; hv J mol⁻¹; sv J mol⁻¹ K⁻¹; kc25, ko25 Pa; ecp µmol J⁻¹; qe25 µmol CO2 µmol photon⁻¹; bp µmol m⁻² s⁻¹; rsmax0 s m⁻¹; ppcd see below; the other inputs are dimensionless.
 - **ppcd** is stored as a mole fraction, mol mol⁻¹ (bounds 3.55e-4 to 4e-4). The paper gives 355–400 ppm.
-- **wj1 and wj2 are discrete.** wj1 ∈ {1, 4, 4.5} and wj2 ∈ {2, 8, 10.5}, the sets of Table 1 of the paper (hard-coded constants in CLM). In rows 1–300 the levels have 93, 98, 109 runs (wj1) and 87, 104, 109 runs (wj2), and all 9 combinations occur (28 to 41 runs each). The 2016 notebook described them as U(1, 4.5) and U(2, 10.5). The other 18 inputs lie inside their bounds; how they were sampled (step 1 of the paper says uniform draws) is not recorded beyond that.
+- **wj1 and wj2 are discrete.** wj1 ∈ {1, 4, 4.5} and wj2 ∈ {2, 8, 10.5}, the sets of Table 1 of the paper (hard-coded constants in CLM). In rows 1–300 the levels have 93, 98, 109 runs (wj1) and 87, 104, 109 runs (wj2), and all 9 combinations occur (28 to 41 runs each). The other 18 inputs lie inside their bounds; how they were sampled (step 1 of the paper says uniform draws) is not recorded beyond that.
 
 ## Outputs (`Tonzi_Stomata_SC.*.txt`)
 
@@ -55,18 +55,18 @@ Forcing: Tonzi Ranch, California, September 2002 to August 2003, the average yea
 | sunlit stomatal resistance | `rssun` | s m⁻¹ | monthly 241 to 7.89e3; hourly 380 to 9.69e3 |
 | shaded stomatal resistance | `rssha` | s m⁻¹ | monthly 1.01e3 to 2.32e4; hourly 1.2e3 to 3.2e4 |
 
-- **Units are not stated in the files and are not confirmed** (author, 2026-10-30). They are inferred from the paper: transpiration × 86400 gives 0.04 to 7.2 mm d⁻¹ (monthly) and 0.03 to 10.4 mm d⁻¹ (hourly), on the scales of Figs. 4f and 9d, and the resistances match the s m⁻¹ axes of Figs. 7 and 9.
-- **Local time is not settled.** The hourly columns are in UTC. Fig. 8 of the paper labels UTC 12 as 6 am, i.e. UTC−6; Pacific daylight time, in effect at Tonzi Ranch in summer, is UTC−7. Which is right is unknown (author, 2026-10-30).
+- **Units are not stated in the files and are not confirmed**. They are inferred from the paper: transpiration × 86400 gives 0.04 to 7.2 mm d⁻¹ (monthly) and 0.03 to 10.4 mm d⁻¹ (hourly), on the scales of Figs. 4f and 9d, and the resistances match the s m⁻¹ axes of Figs. 7 and 9.
+- **Local time is not settled.** The hourly columns are in UTC. Fig. 8 of the paper labels UTC 12 as 6 am, i.e. UTC−6; Pacific daylight time, in effect at Tonzi Ranch in summer, is UTC−7. Which is right is unknown.
 
 ## Provenance
 
-- Generating code: ParFlow coupled to the Common Land Model (PF-CLM), single-column domain, deciduous tree cover, loam soil (paper §2b). The PF-CLM version, the run date and the machine are **not recorded** (author, 2026-10-30). The runs were made for the study of Jefferson, Maxwell and Constantine at the Colorado School of Mines.
+- Generating code: ParFlow coupled to the Common Land Model (PF-CLM), single-column domain, deciduous tree cover, loam soil (paper §2b). The PF-CLM version, the run date and the machine are **not recorded**. The runs were made for the study of Jefferson, Maxwell and Constantine at the Colorado School of Mines.
 - The paper made 2,100 runs: these 300 realizations with 5 forcing sets plus 2 extra scenarios. Only the Tonzi average-year runs (and the default run) are in this repository.
 - The processing from hourly PF-CLM output to monthly and hourly means is not in the repository.
 
 ## Regenerating
 
-The files cannot be regenerated from this repository. The notebook reads them and runs in about 10 s on an idle machine (25 s under load). It uses no random numbers, and two runs give identical printed output. With all 301 rows, the v1 directions equal those of the 2016 notebook up to sign to 4.4e-16; with row 0 dropped, |cos| ≥ 0.9997.
+The files cannot be regenerated from this repository. The notebook reads them and runs in about 10 s on an idle machine (25 s under load). It uses no random numbers, and two runs give identical printed output.
 
 ## License and credit
 

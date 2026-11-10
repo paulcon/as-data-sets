@@ -43,7 +43,7 @@ import numpy as np
 
 HERE = Path(__file__).resolve().parent
 
-# Normalization bounds (2016 notebook, cell 5; JCP 2015 Table 2 in the units of the data).
+# Normalization bounds (the original notebook, tag legacy-master; JCP 2015 Table 2 in the units of the data).
 LOWER = np.array([2.6, 0.1, 122.5, 1.6448e7, 3.0551e6, 0.03, 0.087])
 UPPER = np.array([4.6, 1.9, 367.5, 1.9012e7, 3.4280e6, 0.07, 0.203])
 MID, HALF = (UPPER + LOWER) / 2, (UPPER - LOWER) / 2
@@ -76,7 +76,7 @@ HEADER35 = """\
 # normalize with z = (x - (upper + lower)/2) / ((upper - lower)/2), bounds in DATA.md.
 # exit_pressure: pressure averaged over the last 10 mm of the combustor (0.64 <= x <= 0.65 m).
 # validation = 1: the two runs made after w was computed, near opposite corners of the input box.
-# exit_pressure_phi030 is nan for runs 15-16: those two runs are unavailable (author, 2026-10-30).
+# exit_pressure_phi030 is nan for runs 15-16: those two runs are unavailable.
 # Written by convert_legacy_data.py from HyShotII35.txt (tag legacy-master), whose runs 15-16 had
 # normalized inputs and 0 placeholders; converting back reproduces the inputs to 2e-15.
 """

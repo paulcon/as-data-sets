@@ -1,8 +1,8 @@
 # H2_O2_Ignition_Delay_Kinetics: data
 
 Kind: **stored data (generated with Cantera 3.2.0), with a regeneration script.** The model runs in
-Cantera, an outside code, so it is not a numpy/scipy "Python model" in the repository's sense (CLAUDE.md,
-"Two kinds of data sets"), even though the Cantera driver is a Python module (`h2o2_ignition_driver.py`). A port
+Cantera, an outside code, so it is not a numpy/scipy "Python model" in the repository's sense (`CONTRIBUTING.md`,
+"Decide which kind of data set it is"), even though the Cantera driver is a Python module (`h2o2_ignition_driver.py`). A port
 to numpy/scipy (a stiff 9-species ODE with Troe falloff, reverse rates from NASA polynomials, and dense output
 for the ignition time) was judged not worth the risk of a second, unchecked kinetics code. Cantera was
 installed in a separate environment (a Linux container), the data were generated there, and the full

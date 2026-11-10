@@ -50,8 +50,8 @@ Space-separated text, no header, 300 rows × 5 columns. Columns are numbered fro
 | 3 | unknown | 16.6 – 25.0 | 7.4 – 22.1 | no |
 | 4 | unknown (values 301.6 – 309.2 suggest a temperature in K; not confirmed) | 302.6 – 309.2 | 301.6 – 308.3 | no |
 
-- The quantities in columns 0–2 are the total latent, sensible and ground heat over the 144-hour forcing period (paper §4.3). Their units and normalization are **unknown** (author, 2026-10-30). The paper labels its outputs W m⁻² (p. 17; page numbers here refer to the paper's accepted manuscript). The constant terms of the quadratic fits to these files are 103 to 617 times those of the paper's Table 4, with a different factor for each flux (printed by the notebook). So these files are not the paper's outputs in other units.
-- The meaning of columns 3 and 4 is **unknown** (author, 2026-10-30).
+- The quantities in columns 0–2 are the total latent, sensible and ground heat over the 144-hour forcing period (paper §4.3). Their units and normalization are **unknown**. The paper labels its outputs W m⁻² (p. 17; page numbers here refer to the paper's accepted manuscript). The constant terms of the quadratic fits to these files are 103 to 617 times those of the paper's Table 4, with a different factor for each flux (printed by the notebook). So these files are not the paper's outputs in other units.
+- The meaning of columns 3 and 4 is **unknown**.
 
 ## Provenance
 
@@ -61,7 +61,7 @@ Space-separated text, no header, 300 rows × 5 columns. Columns are numbered fro
 
 ## Regenerating
 
-The files cannot be regenerated from this repository. The notebook reads them and runs in a few seconds. It uses no random numbers, so two runs give identical output. The 2016 notebook's least-squares eigenvalues ‖â‖² are reproduced to a relative 1e-14, and its in-sample R² to two decimals.
+The files cannot be regenerated from this repository. The notebook reads them and runs in a few seconds. It uses no random numbers, so two runs give identical output.
 
 ## License and credit
 

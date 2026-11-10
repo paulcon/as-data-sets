@@ -1,8 +1,8 @@
 # Ammonia_Syngas_Optimized_Kinetics: data
 
 Kind: **stored data (generated with Cantera 3.2.0), with a regeneration script.** The model runs in Cantera, an
-outside code, so it is not a numpy/scipy "Python model" in the repository's sense (CLAUDE.md, "Two kinds of data
-sets"); the Cantera driver is `ammonia_idt_driver.py`. A numpy/scipy port of a 37-species, 246-entry stiff
+outside code, so it is not a numpy/scipy "Python model" in the repository's sense (`CONTRIBUTING.md`, "Decide which kind of data
+set it is"); the Cantera driver is `ammonia_idt_driver.py`. A numpy/scipy port of a 37-species, 246-entry stiff
 mechanism with falloff, duplicate reactions and an excited-state species (OH\*) would be a second, unchecked kinetics
 code, so none was written. The shipped CSVs are the record. **Regenerating the data, or rerunning the accuracy
 checks, needs Cantera 3.2.0** (`pip install cantera==3.2.0`) **and the paper's mechanism file, which is not part of

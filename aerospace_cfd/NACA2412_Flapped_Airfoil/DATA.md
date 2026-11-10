@@ -110,7 +110,7 @@ dropped from a file.
 7e5 * 1.005]`; `uqlib.py` lines 25–26, `DEFAULT_BOUNDS`; read at commit 73eaec9 on 2026-11-02).
 **The paper prints 665,000–735,000** (±5 %, p. 3: "and Reynolds number from 665000 to 735000"; the
 same text is in the authors' AIAA Journal source, `paper/aiaa_journal_submission/main_aiaa_journal.tex`,
-line 168). We use the code's range (author's decision, 2026-11-02). The independent evidence is the
+line 168). We use the code's range. The independent evidence is the
 code and the authors' data: their 98 training rows fall in 98 different Re strata of a 100-point Latin
 hypercube on ±0.5 % (as they do in α and β), but in only 10 strata on ±5 % (notebook, comparison
 section), and their Re values lie between 696,565 and 703,451 (`check_accuracy.py`), so their design was
@@ -284,7 +284,7 @@ written here (all CSVs except `davis_training_98.csv`): CC BY 4.0 (`LICENSE-DATA
 and Harold Youngren, MIT, GPL; it is run as an outside program and none of its code is in this
 directory. `davis_training_98.csv` is from github.com/csdlpsu/uqchallenge2 (G. Davis and
 A. Renganathan, Penn State), commit `73eaec9`. **That repository states no licence**, so the file
-is not under CC BY 4.0: it is hosted here with the source credited (decision of 2026-10-30) and is
+is not under CC BY 4.0: it is hosted here with the source credited and is
 listed in the exceptions list of `LICENSE-DATA`. Whether the authors will release it under CC BY 4.0
 is an open question; if they attach a licence or object, that takes precedence. Cite
 G. Davis and A. Renganathan, arXiv:2606.28871 (2026), doi:10.48550/arXiv.2606.28871; the
