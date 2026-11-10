@@ -4,6 +4,8 @@ Many problems in computational science and engineering involve varying model inp
 
 # Data sets
 
+[docs/using-the-notebooks.md](docs/using-the-notebooks.md) explains how to run the notebooks and read their results, and [docs/notebook-index.md](docs/notebook-index.md) lists them by the methods they use.
+
 Each data set's directory contains a Jupyter notebook (`.ipynb`), the data or model it analyzes, and a `DATA.md` that describes the files, their provenance and license, and what is unknown about them. Data files are mostly text (`.txt`, `.csv`) or NumPy `.npz`. Github renders the notebooks when you click an `.ipynb` file, but its rendering of mathematical expressions is not as robust as [nbviewer.org](https://nbviewer.org/). To view a notebook there, paste its Github link into the box at [nbviewer.org](https://nbviewer.org/). Each notebook also has links to associated publications for more details.
 
 The data sets are grouped by application area, one directory per category. Each data set is one of two kinds, marked at the end of its entry:
@@ -157,7 +159,7 @@ The data sets are grouped by application area, one directory per category. Each 
 
 # Contributing
 
-If you have a data set from a model, feel free to contribute a notebook to our repository. Put it in its own directory under the matching category. 
+If you have a data set from a model, feel free to contribute a notebook to our repository. [CONTRIBUTING.md](CONTRIBUTING.md) says what a data set directory contains and how to submit it.
 
 # Installation
 
