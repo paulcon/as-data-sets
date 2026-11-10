@@ -1,12 +1,11 @@
 """Elliptic PDE model -div(a grad u) = 1 on [0,1]^2, numpy/scipy only.
 
-Replaces the numpad-based pde_model.py files in
-uq_benchmarks/Elliptic_PDE_Random_Coefficients/ and
+Used by uq_benchmarks/Elliptic_PDE_Random_Coefficients/ and
 uq_benchmarks/PDE_Inverse_Problem_MCMC/. The two copies must stay
-byte-identical (uq_benchmarks/check_pde_model.py checks this). Reproduces
-the legacy finite-volume residual exactly (same grid, same face averaging,
-same boundary padding) and computes gradients with a hand-coded discrete
-adjoint. See docs/port-2026/numpad_replacement.md.
+byte-identical (uq_benchmarks/check_pde_model.py checks this). A five-point
+vertex-centred finite-volume scheme (face coefficients averaged from the
+two adjacent cells), solved with a sparse LU factorization; gradients come
+from a discrete adjoint that reuses the factorization.
 
 Grid: nx x nx cells (nx = 100), coefficient a is cell-centred, u lives on
 the (nx+1) x (nx+1) vertices; unknowns are the (nx-1) x (nx-1) interior
@@ -87,7 +86,7 @@ class _EllipticPDE:
         return np.concatenate([a_hor[:, :nx - 1].ravel(), a_ver.ravel()])
 
     def stiffness(self, a):
-        """SPD matrix A with A u = 1 equivalent to legacy residual(u) = 0."""
+        """SPD matrix A with A u = 1 equivalent to residual(u) = 0."""
         k = self._face_coeff(a) / self.dx**2
         data = np.bincount(self._slot, weights=self._sgn * k[self._face],
                            minlength=self._csc_indices.size)
@@ -125,7 +124,7 @@ class _EllipticPDE:
         return self.B.T @ (a * g_a).ravel()
 
     def residual(self, u, a):
-        """Legacy numpad residual, plain numpy (for testing)."""
+        """Finite-volume residual, evaluated directly (a test oracle for the solve)."""
         nx, dx = self.nx, self.dx
         u = np.hstack([np.zeros([nx - 1, 1]), u, u[:, -1:]])
         u = np.vstack([np.zeros([1, nx + 1]), u, np.zeros([1, nx + 1])])
@@ -169,7 +168,7 @@ class PDEMisfit(_EllipticPDE):
     def __init__(self, corrcase='short', datadir=None):
         super().__init__(corrcase, datadir)
         # unknown row r is vertex row r+1, so rows 19..79 are the sensors at
-        # s2 = 0.2, ..., 0.8 (s1 = 0.99), as in the paper. Legacy: 20..80.
+        # s2 = 0.2, ..., 0.8 (s1 = 0.99), as in the paper.
         self.indz = [19, 29, 39, 49, 59, 69, 79]
 
     def observations(self, x):

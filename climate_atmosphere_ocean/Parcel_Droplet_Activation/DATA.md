@@ -2,8 +2,8 @@
 
 Kind: **stored data (generated with pyrcel 2.0.0), with a regeneration script.** The model is the adiabatic
 cloud-parcel model of Rothenberg and Wang (2016) as released by the first author in pyrcel, a JAX/diffrax code
-outside this repository, so it is not a numpy/scipy "Python model" in the repository's sense (`docs/README.md`,
-"Two kinds of data sets"), even though the driver is a Python module (`pyrcel_parcel_driver.py`). The data were
+outside this repository, so it is not a numpy/scipy "Python model" in the repository's sense (`CONTRIBUTING.md`,
+"Decide which kind of data set it is"), even though the driver is a Python module (`pyrcel_parcel_driver.py`). The data were
 generated for this repository in a Linux container (x86-64, Python 3.13.18) on 2026-11-09/10. The shipped CSVs
 are the record. **Regenerating the data, or rerunning the accuracy checks, needs pyrcel 2.0.0**
 (`pip install pyrcel==2.0.0`, which brings JAX and diffrax): `generate_data.py` and `check_accuracy.py` stop with

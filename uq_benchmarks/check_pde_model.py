@@ -1,7 +1,10 @@
 """Acceptance check for the shared elliptic PDE solver (pde_model.py).
 
-Runs the criteria in docs/port-2026/numpad_replacement.md section 8 on both copies:
-Elliptic_PDE_Random_Coefficients/ and PDE_Inverse_Problem_MCMC/. Run it from
+Checks both copies, Elliptic_PDE_Random_Coefficients/ and PDE_Inverse_Problem_MCMC/:
+they are identical; the finite-volume residual at the solution is below 1e-10;
+q(0) = 0.07608 and, for the long correlation length, q(t e_0) matches reference
+values to 1e-4; the adjoint gradients of the QoI and of the misfit match central
+finite differences to 1e-6; and each call takes at most 30 ms. Run it from
 anywhere after any change to pde_model.py:
 
     python uq_benchmarks/check_pde_model.py
@@ -11,7 +14,6 @@ Exits nonzero if a check fails. Takes about a minute.
 import filecmp
 import importlib.util
 import os
-import re
 import sys
 import time
 
@@ -52,7 +54,7 @@ for name, d in DIRS.items():
         rng = np.random.default_rng(20261030)
         S = pdem.PDESolver(case)
 
-        # legacy residual at the new solution
+        # finite-volume residual at the solution
         res = 0.0
         for _ in range(5):
             u, a, _ = S.solve(rng.standard_normal(S.m))
@@ -99,11 +101,6 @@ for name, d in DIRS.items():
                 fn(xx)
             ms = 1e3*(time.perf_counter() - t0)/len(X)
             report(ms <= 30, '{} {} time'.format(tag, fname), '{:.1f} ms per call (<= 30)'.format(ms))
-
-imp = re.compile(r'^\s*(import|from)\s+numpad\b', re.M)
-hits = [os.path.join(r, f) for r, _, fs in os.walk(HERE) for f in fs
-        if f.endswith('.py') and imp.search(open(os.path.join(r, f)).read())]
-report(not hits, 'no numpad import in .py files', ', '.join(os.path.relpath(h, HERE) for h in hits) or 'none')
 
 print('{} failed'.format(len(failures)) if failures else 'all passed')
 sys.exit(1 if failures else 0)

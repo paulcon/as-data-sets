@@ -54,8 +54,6 @@ The notebook's check cell re-solves five samples with `HIV_model.py` and prints 
   - (Check 4.) At the floor the 2016 gradients have norms of about 0.1–230 (finite-difference noise); the exact value under the model is 0, which is what the new files hold.
   - (Check 5.) The 2016 code cannot be rerun to reproduce its own files: under scipy 1.17.1 its `Tcells` differs from the 2016 outputs by up to 0.45 (relative). At 20 samples one run is at the floor and the other is not; where both are above the floor the difference is up to 0.10 (row 714, t = 3400) and exceeds 1e-3 at 176 samples.
   - (Check 6.) The analysis is unchanged to the printed digits: on the 2016 files, the mean outer product of the gradients (the matrix v1 estimates) gives λ1 = 1.0461e4 and λ1/λ2 = 3957 at t = 24 (new files: 1.046e4, 3954), and λ1 = 4.5356e5 and λ1/λ2 = 853 at t = 3400 with the floor samples included (new: 4.535e5, 874; the ratio differs because the 2016 floor rows are noise rather than 0). The first eigenvectors (all samples, unoriented) differ by at most 9e-5 in any component at any of the 18 common times.
-
-  The tolerance of 1e-5 that `docs/port-2026/HIV.md` §7 expected for reproducing the 2016 files holds for 99 % of the outputs but not for the gradients, for the reason above.
 - **What changed in the files.** `inputs.csv` holds the same values (checked bit for bit by `generate_data.py` when it rewrote the file). `outputs.csv` and `gradients.csv` are new: written by `generate_data.py` at the 19 times, without the pandas index column, with a `#` header.
 
 ## License and credit
