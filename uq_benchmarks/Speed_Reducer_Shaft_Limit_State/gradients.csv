@@ -1,4 +1,4 @@
-# Exact gradients of g with respect to the PHYSICAL inputs (closed form). shaft_model.py (limit state of Du and Sudjianto 2004 as defined in uqtestfuns 0.7.0 RSSpeedReducerShaft); Monte Carlo, xi = numpy default_rng(2004).standard_normal((1000, 5)), x = F^-1(Phi(xi)); written by generate_data.py
+# Exact gradients of g with respect to the PHYSICAL inputs (closed form). shaft_model.py (limit state of Du and Sudjianto 2004, Eq. 34 and Table 8, p. 1205); Monte Carlo, xi = numpy default_rng(2004).standard_normal((1000, 5)), x = F^-1(Phi(xi)); written by generate_data.py
 # dg/dD (Pa/mm),dg/dL (Pa/mm),dg/dF (Pa/N),dg/dT (Pa/N m),dg/dS (Pa/MPa)
 4083712.7601886159,-37120.227190205318,-9064.8611667021269,-145489.64611705468,1000000
 4003177.169306715,-32236.663657233836,-8640.7270777704889,-150162.05852729271,1000000

@@ -5,7 +5,7 @@ generate_data.py prints.
 
 Checks 1-2 need only numpy and scipy. Checks 3-5 compare with the uqtestfuns package
 (pip install uqtestfuns==0.7.0); if it is not installed the script runs checks 1-2 and then exits
-with an error that says what to install. Deterministic (check 5 uses seed 2026). About 10 s.
+with an error that says what to install. Deterministic (check 5 uses seed 2026). About 3 s.
 
 Checks:
  1. The map to standard normal coordinates: round trip to_normal(from_normal(xi)) on the shipped

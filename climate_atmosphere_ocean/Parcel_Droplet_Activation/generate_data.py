@@ -1,6 +1,6 @@
 """Regenerate the data files of Parcel_Droplet_Activation (needs pyrcel 2.0.0).
 
-    python generate_data.py --out DIR                       # all 300 rows (about 2 h on one core)
+    python generate_data.py --out DIR                       # all 300 rows (about 1.4 CPU-hours)
     python generate_data.py --out DIR --rows 0:10 --check   # a subset, compared with the shipped files
 
 Design: a Latin hypercube of M = 300 points in the Table 1 box of Rothenberg and Wang (2016,

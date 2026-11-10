@@ -15,6 +15,7 @@
    follows the paper (pp. 4, 17); this is this data set's reconstruction, not the authors' code.
 5. Hydrogen CAPEX sums, electrolysis + fuel cell + 168 h of cavern (EUR/kW), from the same cost files, with
    each file's own cavern cost and with the other file's, for comparison with Table 1 (668-2002 EUR/kW).
+6. The range of the stored `gini` output over the least-cost runs of each fidelity.
 """
 import os
 
@@ -65,6 +66,8 @@ def main():
         csv = np.loadtxt(os.path.join(HERE, f'least_cost_{fid}.csv'), delimiter=',')
         same = np.array_equal(csv, np.column_stack([X[lc], Y[lc]]))
         print(f'[{fid}] least_cost_{fid}.csv equals the least-cost rows of all_runs.npz: {same}')
+        gini = Y[lc, outs.index('gini')]
+        print(f'[{fid}] gini of the least-cost runs: {gini.min():.2f} to {gini.max():.2f}')
         # map each run to its least-cost run by the cost sample
         keys = {tuple(x): i for i, x in zip(np.flatnonzero(lc), X[lc])}
         ref = np.array([keys[tuple(x)] for x in X])

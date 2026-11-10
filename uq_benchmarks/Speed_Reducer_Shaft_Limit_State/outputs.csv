@@ -1,4 +1,4 @@
-# Limit state g = strength - stress (g <= 0 is failure). shaft_model.py (limit state of Du and Sudjianto 2004 as defined in uqtestfuns 0.7.0 RSSpeedReducerShaft); Monte Carlo, xi = numpy default_rng(2004).standard_normal((1000, 5)), x = F^-1(Phi(xi)); written by generate_data.py
+# Limit state g = strength - stress (g <= 0 is failure). shaft_model.py (limit state of Du and Sudjianto 2004, Eq. 34 and Table 8, p. 1205); Monte Carlo, xi = numpy default_rng(2004).standard_normal((1000, 5)), x = F^-1(Phi(xi)); written by generate_data.py
 # g (Pa)
 19764150.474576786
 20736861.195305414

@@ -105,7 +105,7 @@ entries outside [−3, 3] redrawn): 350 samples with gradients (seed 2018033) an
 the paper's M = αβ log d with α = β = 10 and d = 33 (Algorithm 2.1, p. 148; α, β p. 151): 100 ln 33 = 349.7. The
 paper reports no seed and used 100 bootstrap replicates; the notebook uses 200. `line_runs.csv`: 49 equally
 spaced ξ in [−4, 4] along v and along each u_i (2058 runs), for the paper's Approximations II and III (p. 151) and
-Algorithm 2.2 (p. 150). At ξ = ±4 along v the largest |x_j| is 4.6, beyond the ±3 truncation (rate constants still
+Algorithm 2.2 (p. 150). At ξ = ±4 along v the largest |x_j| is about 4.6 (4/3 of the max |v_j| × 3 = 3.44 that the notebook prints), beyond the ±3 truncation (rate constants still
 positive and finite): these runs lie outside the input distribution by construction.
 
 ### Shared direction

@@ -165,4 +165,8 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except (FileNotFoundError, NotADirectoryError) as err:
+        sys.exit(f'file not found: {err.filename}\n'
+                 '--vars-tool takes the tutorials folder of a clone of github.com/vars-tool/vars-tool.')

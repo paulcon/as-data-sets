@@ -1,7 +1,7 @@
 """Accuracy checks for Shared_Subspace_H2_Ignition_Flame (needs Cantera 3.2.0 and
 konnov2008_h2.yaml from build_mechanism.py). Prints every number of DATA.md "Accuracy".
 
-    python check_accuracy.py            # about 10 min on one core
+    python check_accuracy.py            # about 4 min on one core
     python check_accuracy.py --quick    # nominal values and one row only
 
 1. Ignition delay: re-solve at rtol 1e-13, atol 1e-24 (shipped: 1e-10, 1e-20).

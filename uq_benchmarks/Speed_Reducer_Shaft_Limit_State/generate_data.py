@@ -31,8 +31,8 @@ M = 1000
 H_REL = 1e-6        # central-difference step, relative to each input's mean (check only)
 TOL = 1e-12         # --check: max |difference| / max |shipped value|, per column
 
-PROVENANCE = ('shaft_model.py (limit state of Du and Sudjianto 2004 as defined in uqtestfuns 0.7.0 '
-              'RSSpeedReducerShaft); Monte Carlo, xi = numpy default_rng(%d).standard_normal((%d, 5)), '
+PROVENANCE = ('shaft_model.py (limit state of Du and Sudjianto 2004, Eq. 34 and Table 8, p. 1205); '
+              'Monte Carlo, xi = numpy default_rng(%d).standard_normal((%d, 5)), '
               'x = F^-1(Phi(xi)); written by generate_data.py' % (SEED, M))
 
 

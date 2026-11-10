@@ -183,4 +183,8 @@ def main(argv):
 
 
 if __name__ == '__main__':
-    sys.exit(main(sys.argv[1:]))
+    try:
+        sys.exit(main(sys.argv[1:]))
+    except (FileNotFoundError, NotADirectoryError, IsADirectoryError) as err:
+        sys.exit(f'file not found, or not of the expected kind: {err.filename}\n'
+                 'The source is a folder with covidsim_samples_only_cont.hdf5 and vary.py (github.com/wedeling/deep_active_subspace_data, COVID19/); see DATA.md, "Regenerating".')

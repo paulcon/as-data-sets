@@ -115,14 +115,18 @@ def main(argv):
     if out == here or out.startswith(here + os.sep):
         p.error('--out must be outside the data set directory (subdirectories included); '
                 'the shipped files are not overwritten')
-    os.makedirs(a.out, exist_ok=True)
     got = sha256(a.tarball)
     if got != SHA256:
         raise SystemExit(f'SHA-256 of {a.tarball} is {got}, not the recorded {SHA256}')
     arrays = read_members(a.tarball)
+    os.makedirs(a.out, exist_ok=True)
     write(arrays, a.out)
     return check(arrays, a.out) if a.check else 0
 
 
 if __name__ == '__main__':
-    sys.exit(main(sys.argv))
+    try:
+        sys.exit(main(sys.argv))
+    except (FileNotFoundError, NotADirectoryError, IsADirectoryError) as err:
+        sys.exit(f'file not found, or not of the expected kind: {err.filename}\n'
+                 'The source is the file data/icf-jag-10k.tar.gz of github.com/llnl/macc; see DATA.md, "Regenerating".')

@@ -131,4 +131,8 @@ def main(argv=None):
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except (FileNotFoundError, NotADirectoryError, IsADirectoryError) as err:
+        sys.exit(f'file not found, or not of the expected kind: {err.filename}\n'
+                 'The source is the archive pone.0145180.s004.zip; see DATA.md, "Regenerating".')

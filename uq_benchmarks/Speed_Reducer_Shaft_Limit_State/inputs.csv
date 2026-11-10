@@ -1,4 +1,4 @@
-# 1000 Monte Carlo samples of the physical inputs, D ~ N(39, 0.1) mm, L ~ N(400, 0.1) mm, F ~ Gumbel max (mean 1500, sd 350) N, T ~ N(250, 35) N m, S ~ U[70, 80] MPa. shaft_model.py (limit state of Du and Sudjianto 2004 as defined in uqtestfuns 0.7.0 RSSpeedReducerShaft); Monte Carlo, xi = numpy default_rng(2004).standard_normal((1000, 5)), x = F^-1(Phi(xi)); written by generate_data.py
+# 1000 Monte Carlo samples of the physical inputs, D ~ N(39, 0.1) mm, L ~ N(400, 0.1) mm, F ~ Gumbel max (mean 1500, sd 350) N, T ~ N(250, 35) N m, S ~ U[70, 80] MPa. shaft_model.py (limit state of Du and Sudjianto 2004, Eq. 34 and Table 8, p. 1205); Monte Carlo, xi = numpy default_rng(2004).standard_normal((1000, 5)), x = F^-1(Phi(xi)); written by generate_data.py
 # D (mm),L (mm),F (N),T (N m),S (MPa)
 39.023042403635692,400.07163189397926,1638.2765930063913,263.03509027246736,72.883782542946292
 38.88584422728777,400.15800892031223,1492.9020471551482,259.64758239001458,72.625835801937313

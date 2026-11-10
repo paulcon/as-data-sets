@@ -13,7 +13,8 @@ Checks:
  2. Per-run anisotropy: the ratio E11/E22 over all 10,000 runs and over the 500 replica means
     (median, 1st and 99th percentiles).
  3. Spread of the replicas: the median over the 500 points of the replica coefficient of variation of
-    E11 and of the replica standard deviation of the Poisson ratio.
+    E11 and of the replica standard deviation of the Poisson ratio; the range of the default values
+    in epoxy_defaults.csv by coefficient class, and the defaults of p42, p62, b42 and b12.
  4. (with --source) Each class of sampled defaults (p_k1, p_k2), (b_k1, b_k2), (a_k1, a_k2) and the
     OPLS row (d_k1..d_k4, zeros for the unsampled coefficients) is one coefficient row of the Pair,
     Bond, Angle and Dihedral Coeffs sections of epoxy.data; prints how many classes match and how many
@@ -83,6 +84,16 @@ def main(argv):
     print('3. replica spread: median coefficient of variation of E11 %.3f; median sd of the Poisson ratio %.4f'
           % (np.median(cv), np.median(nu.std(1, ddof=1))))
 
+    grp = {}
+    for n, v in zip(names, x0):
+        grp.setdefault('d' if n[0] == 'd' else n[0] + n[-1], []).append(v)
+    lab = {'p1': 'LJ epsilon', 'p2': 'LJ sigma', 'b1': 'bond K', 'b2': 'bond r0', 'a1': 'angle K',
+           'a2': 'angle theta0', 'd': 'dihedral K1-K4'}
+    print('3b. defaults by class (count; min to max): '
+          + '; '.join(f'{lab[k]} {len(v)}; {min(v):g} to {max(v):g}' for k, v in grp.items())
+          + f'. Negative dihedral defaults: {sum(v < 0 for v in grp["d"])}. '
+          + ', '.join(f'{n} {x0[names.index(n)]:g}' for n in ('p42', 'p62', 'b42', 'b12')))
+
     if '--source' not in argv:
         print('4. skipped: give --source REPO_ROOT (wedeling/MD-active-subspace, tag 1.1) to check the defaults '
               'against epoxy.data')
@@ -104,4 +115,8 @@ def main(argv):
 
 
 if __name__ == '__main__':
-    sys.exit(main(sys.argv))
+    try:
+        sys.exit(main(sys.argv))
+    except (FileNotFoundError, NotADirectoryError) as err:
+        sys.exit(f'file not found: {err.filename}\n'
+                 '--source takes the root of a clone of github.com/wedeling/MD-active-subspace (tag 1.1).')

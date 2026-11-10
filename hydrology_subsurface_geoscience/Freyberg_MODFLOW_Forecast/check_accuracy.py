@@ -1,9 +1,9 @@
 """Recompute the accuracy numbers quoted in DATA.md for Freyberg_MODFLOW_Forecast (needs MODFLOW-2005).
 
-    python check_accuracy.py            # all checks, about 8 min on one core
+    python check_accuracy.py            # all checks, about 6.5 min on one core
     python check_accuracy.py --quick    # check 1 only (the calibrated model)
-    python check_accuracy.py --only 5   # check 5 only (slope kinks), about 2 min
-    python check_accuracy.py --only 6   # check 6 only (prior of the linear analysis), about 30 s
+    python check_accuracy.py --only 5   # check 5 only (slope kinks), about 1.5 min
+    python check_accuracy.py --only 6   # check 6 only (prior of the linear analysis), about 12 s
 
 Prints, beside each value DATA.md quotes:
 

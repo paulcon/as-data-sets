@@ -15,7 +15,7 @@ Checks:
     3-D (M200, t0, tau) design on the unit cube against the mean of 20 seeded uniform random designs
     of the same size; correlations between the 15 inputs of the 500 runs (largest |r|, the pairs
     with |r| > 0.2); for comparison, the largest |r| of the first 500 points of an unscrambled
-    15-D Sobol' sequence (scipy).
+    15-D Sobol' sequence (scipy); how far each input's sample minimum and maximum lie from its bound.
  4. The volumes: the initial value of all runs; the smallest nonzero year-to-year change and how
     close every change is to an integer multiple of it.
  5. The failed runs: their ensemble numbers, the first stored year written as 0, whether any
@@ -93,6 +93,11 @@ def main():
     Cs = np.corrcoef(S.T)
     print(f'3c. first 500 points of an unscrambled 15-D Sobol\' sequence (scipy): largest |r| '
           f'{np.max(np.abs(Cs[iu])):.3f}')
+
+    def gap(Z):
+        return 100 * max(Z.min(0).max(), (1 - Z.max(0)).max())
+    print(f'3d. distance of an input\'s sample minimum or maximum from its bound, largest over the 15 inputs: '
+          f'{gap(X):.2f} % of the range (500 runs), {gap(X[~fail]):.2f} % (491 succeeded runs)')
 
     Vy = V[:, 1:]
     steps = np.diff(Vy[ok], axis=1).ravel()

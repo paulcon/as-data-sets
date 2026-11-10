@@ -79,8 +79,8 @@ def main():
     if os.path.commonpath([here, out]) == here:
         ap.error('--out must be outside this directory (not this directory or a subdirectory of it); '
                  'the shipped files are never overwritten')
-    os.makedirs(args.out, exist_ok=True)
     arrs = convert(args.src)
+    os.makedirs(args.out, exist_ok=True)
     write(args.out, *arrs)
     print(f'wrote {", ".join(FILES)} to {args.out}: {arrs[0].shape[0]} days')
     if args.check:
@@ -98,4 +98,8 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except (FileNotFoundError, NotADirectoryError, IsADirectoryError) as err:
+        sys.exit(f'file not found, or not of the expected kind: {err.filename}\n'
+                 'The source is the folder "tutorials/Oldman Basin" of a clone of github.com/vars-tool/vars-tool; see DATA.md, "Regenerating".')

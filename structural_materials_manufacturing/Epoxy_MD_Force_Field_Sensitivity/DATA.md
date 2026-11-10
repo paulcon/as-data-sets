@@ -57,7 +57,8 @@ defaults are the authors' (`epoxy.params.json`); the paper's Supplementary Table
 role of each name and its unit are **inferred**: the first letter names the term, the last digit the
 coefficient, and each class of defaults equals one coefficient row of the matching section of `epoxy.data`
 (`check_accuracy.py`: 9 of 9 pair, 10 of 10 bond, 15 of 15 angle, 17 of 17 dihedral classes); the units are
-those of LAMMPS `units real` for these styles.
+those of LAMMPS `units real` for these styles. `check_accuracy.py` (check 3b) prints the default ranges of the
+table below.
 
 | names | count | coefficient | units | defaults | source |
 |---|---|---|---|---|---|

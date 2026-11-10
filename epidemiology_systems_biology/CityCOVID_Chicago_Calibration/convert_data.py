@@ -144,8 +144,8 @@ def main(argv):
     if os.path.commonpath([dest, HERE]) == HERE:
         print('--out must be outside this data set\'s directory (the shipped files are never overwritten)')
         return 2
-    os.makedirs(dest, exist_ok=True)
     texts = build(src)
+    os.makedirs(dest, exist_ok=True)
     for name, text in texts.items():
         with open(os.path.join(dest, name), 'w') as fh:
             fh.write(text)
@@ -164,4 +164,8 @@ def main(argv):
 
 
 if __name__ == '__main__':
-    sys.exit(main(sys.argv))
+    try:
+        sys.exit(main(sys.argv))
+    except (FileNotFoundError, NotADirectoryError, IsADirectoryError) as err:
+        sys.exit(f'file not found, or not of the expected kind: {err.filename}\n'
+                 'The source is a clone of github.com/sandialabs/Bayesian-calibration-of-stochastic-agent-based-model-via-random-forest; see DATA.md, "Regenerating".')

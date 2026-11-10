@@ -1,6 +1,6 @@
 """Recompute the accuracy numbers quoted in DATA.md for Parcel_Droplet_Activation (needs pyrcel 2.0.0).
 
-    python check_accuracy.py            # all checks, about 15-30 min on one core
+    python check_accuracy.py            # all checks, about 13 min on one core
     python check_accuracy.py --quick    # checks 1 and 2 on the nominal point and three rows
 
 Prints, beside each value DATA.md quotes:
@@ -23,7 +23,7 @@ Prints, beside each value DATA.md quotes:
    10 m/s; other inputs at the nominal point), and kappa = 0.01, 0.001 for its kappa = 0 point.
    The paper's values are read from the black parcel-model curves.
 
-    python check_accuracy.py --fig3     # check 6 only (a few minutes)
+    python check_accuracy.py --fig3     # check 6 only (about 1 min)
 
 The rows are fixed by these rules and the computation is deterministic. Needs numpy and
 pyrcel 2.0.0; without pyrcel the script stops with an error. Run it from any directory; it reads

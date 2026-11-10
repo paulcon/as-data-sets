@@ -73,7 +73,7 @@ bn EUR/a (capital and marginal costs of all components). Capacities, GW: `onwind
 connected), `wind`, `solar`, `H2` and `battery` (power capacity of the storage units). `transmission`:
 $\sum$ length × capacity of AC lines and DC links / $10^6$, TWkm. `gini`: a Gini coefficient of the spatial
 distribution (dimensionless; not used in the paper or the notebook; its levels differ between the two models,
-0.04–0.36 against 0.61–0.64). The paper's surrogates use the first eight (p. 17). The notebook's main QoI is
+0.04–0.36 against 0.61–0.64 over the least-cost runs, `check_accuracy.py`). The paper's surrogates use the first eight (p. 17). The notebook's main QoI is
 `tsc` of the least-cost runs.
 
 **Gradients.** None are stored. The notebook estimates them from values (local linear fits on 8 nearest

@@ -88,8 +88,8 @@ def main(argv):
     if check and inside(out, HERE):
         print('--check needs --out DIR outside the data-set directory')
         return 2
-    os.makedirs(out, exist_ok=True)
     texts = build(src)
+    os.makedirs(out, exist_ok=True)
     for name, text in texts.items():
         with open(os.path.join(out, name), 'w') as fh:
             fh.write(text)
@@ -108,4 +108,8 @@ def main(argv):
 
 
 if __name__ == '__main__':
-    sys.exit(main(sys.argv))
+    try:
+        sys.exit(main(sys.argv))
+    except (FileNotFoundError, NotADirectoryError, IsADirectoryError) as err:
+        sys.exit(f'file not found, or not of the expected kind: {err.filename}\n'
+                 'The source is the folder that holds Airfoil_Viscous_data.mat (github.com/optimuspram/SHAPMODE); see DATA.md, "Regenerating".')

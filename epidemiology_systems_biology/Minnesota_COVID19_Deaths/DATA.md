@@ -68,7 +68,7 @@ model it was adapted from is not stated (open question 1).
   capacity.
 - **Quantity of interest:** cumulative deaths at t = 365, the sum of the D compartments (D includes the deaths at
   home), as returned by `covid_sim`. The article calls it "the total covid-19 deaths" (p. 24).
-- One run takes about 3 s of CPU in R 4.4.3 (2 min 53 s of CPU for the 58 runs of `check_accuracy.py`); the article's script `covid_est_C.R` states 7 s per run.
+- One run takes about 3 s of CPU in R 4.4.3 (about 3 min of CPU for the 58 runs of `check_accuracy.py`); the article's script `covid_est_C.R` states 7 s per run.
 
 ### Inputs
 
@@ -177,7 +177,7 @@ draw, and the R model is deterministic: `generate_data.py --rows 0:2 --check` (1
 
 ## Accuracy
 
-`check_accuracy.py` prints every number in this list (it needs R and the supplement; in this container it ran 58 model runs in 7 min 11 s of wall time, 2 min 57 s of CPU).
+`check_accuracy.py` prints every number in this list (it needs R and the supplement; in this container it ran 58 model runs in 7 min 11 s of wall time, about 3 min of CPU).
 
 - **The driver against the article's own runs** (`check_accuracy.py`, item 1). At the first 5 design points of the
   first stored sequential run in `code/data/covid60.RData`, mapped to [0.01, 0.99] as in `covid_sim.R`, the driver
