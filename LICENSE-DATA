@@ -177,3 +177,79 @@ licence or objects, that takes precedence.
     Source: Zenodo 10.5281/zenodo.15053542, timghill/GladsGP v1.0.0 (T. Hill,
     D. Bingham, G. Flowers, M. Hoffman), converted losslessly. MIT (GladsGP_LICENSE.txt,
     kept beside the files).
+
+  epidemiology_systems_biology/CityCOVID_Chicago_Calibration/
+    citycovid_inputs.csv, citycovid_hospitalizations.csv, citycovid_deaths.csv,
+    observed_chicago.csv
+    Source: sandialabs/Bayesian-calibration-of-stochastic-agent-based-model-via-random-forest
+    (commit e4c1e0e), data/citycovid_parameters.csv, data/citycovid_results.csv and
+    data/observed_chicago.csv (C. Robertson, C. Safta, N. Collier, J. Ozik, J. Ray),
+    converted losslessly. The repository's MIT licence (CityCOVID_calibration_LICENSE.txt,
+    kept beside the files) does not say whether it covers data; the observed counts are
+    from the Illinois National Electronic Disease Surveillance System, with no licence stated.
+
+  aerospace_cfd/NACA4412_Shape_Lift_OpenFOAM/
+    shape_inputs.csv, lift_series.npz
+    Source: mtezzele/MORtech-2019-Special-Issue (commit ec05216), parameters/parTop.npy,
+    parameters/parBot.npy and outputs/lift_170par_30000t.npy (M. Tezzele, N. Demo,
+    G. Stabile, A. Mola, G. Rozza), converted losslessly. No licence stated.
+
+  climate_atmosphere_ocean/Ice_Sheet_Basal_Melt_Ensemble/
+    basal_melt_design.csv, ice_volume_above_flotation.csv
+    Source: mberdahl-uw/EmulatorPaper (commit dd8643c; Zenodo 10.5281/zenodo.4902149),
+    design_metadata_<basin>.csv and SLR.csv (M. Berdahl, G. Leguy, W. H. Lipscomb,
+    N. M. Urban). No licence stated.
+
+  energy/BISON_Fuel_Performance_Surrogates/
+    bison_fp_inputs.csv, bison_fp_outputs.csv
+    Source: pyMAISE 0.0.2 (PyPI wheel), pyMAISE/data/fp_inp.csv and fp_out.csv
+    (P. Myers, C. Craig, V. Joynt, M. I. Radaideh); BISON runs by M. I. Radaideh and
+    T. Kozlowski. Apache-2.0 (the package licence, pyMAISE_LICENSE.txt, kept beside
+    the files); the package does not say whether it covers data. The same files are
+    in Zenodo record 20140559 ("pyMAISE Benchmark Data"), whose metadata gives CC BY 4.0.
+
+  aerospace_cfd/RAE2822_SHAP_Design_Exploration/
+    rae2822_hh_inputs.csv, rae2822_hh_outputs.csv
+    Source: optimuspram/SHAPMODE (commit 159f915),
+    SHAP_MODE/test_problems_and_data/Airfoil_Viscous_data.mat (P. S. Palar et al.),
+    converted losslessly. No licence stated.
+
+  plasma_fusion/JAG_ICF_Implosion_Scalars/
+    jag_icf_inputs.csv, jag_icf_scalars.csv
+    Source: llnl/macc (commit a0318c2), data/icf-jag-10k.tar.gz (jag10K_params.npy,
+    jag10K_0_scalars.npy; R. Anirudh, J. J. Thiagarajan, P.-T. Bremer, B. K. Spears),
+    converted losslessly. MIT (LICENSE-macc.txt, kept beside the files). The dataset
+    record doi:10.6075/J0RV0M27 (UC San Diego Library) is CC BY 4.0 by its DataCite metadata.
+
+  epidemiology_systems_biology/CovidSim_Cumulative_Deaths/
+    covidsim_inputs.csv, covidsim_input_ranges.csv, covidsim_deaths_day801.csv,
+    covidsim_cumulative_deaths_daily.npz
+    Source: wedeling/deep_active_subspace_data (commit 880745c; Zenodo
+    10.5281/zenodo.7009160), COVID19/covidsim_samples_only_cont.hdf5 and COVID19/vary.py
+    (W. Edeling), converted losslessly. MIT (LICENSE-deep_active_subspace_data.txt,
+    kept beside the files).
+
+  structural_materials_manufacturing/Epoxy_MD_Force_Field_Sensitivity/
+    epoxy_inputs.csv, epoxy_defaults.csv, epoxy_E11_replicas.csv, epoxy_E22_replicas.csv,
+    epoxy_E33_replicas.csv, epoxy_poisson_replicas.csv, epoxy_bulk_replicas.csv,
+    epoxy_shear2_replicas.csv
+    Source: wedeling/MD-active-subspace tag 1.1 (commit 76784ca; Zenodo
+    10.5281/zenodo.10817481; W. Edeling et al.), converted losslessly. MIT
+    (LICENSE-MD-active-subspace.txt, kept beside the files).
+
+  hydrology_subsurface_geoscience/HBV_SASK_Oldman_Streamflow/
+    oldman_daily.csv, oldman_monthly.csv, oldman_basin.csv
+    Source: VARS-TOOL (vars-tool/vars-tool, commit df72ad2a), tutorials/Oldman Basin/
+    (Precipitation_Temperature.inp, streamflow.inp, monthly_data.inp,
+    initial_condition.inp; S. Razavi et al.), converted by convert_forcing.py. The
+    repository is GPL-3.0 and states no separate licence for the data; hosted with
+    credit (decision of 2026-11-10). inputs.csv, outputs.csv, gradients.csv and
+    tt_tangent.csv are CC BY 4.0.
+
+  hydrology_subsurface_geoscience/Freyberg_MODFLOW_Forecast/
+    modflow_files/ (freyberg_revisit_pp.bas, .dis, .wel, .riv, .oc, factors1.dat,
+    points1.dat, targpest.dat,
+    figure5b_from_model_of_table6a_pilot_points_heads_too_highBEST.pst)
+    Source: USGS data release 10.5066/P96A7ZC9 (R. J. Hunt, M. J. Haserodt,
+    M. N. Fienen, J. T. White), model.zip, model/Figure5b_pilot_points_flat_bottom,
+    unchanged. Public domain (U.S. Government work). The CSVs are CC BY 4.0.

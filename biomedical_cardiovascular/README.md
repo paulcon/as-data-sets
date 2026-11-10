@@ -10,5 +10,7 @@ Data sets (descriptions and papers are in the [top-level README](../README.md#da
 - [Four_Chamber_Heart_Electromechanics](Four_Chamber_Heart_Electromechanics/)
 - [Hodgkin_Huxley_Action_Potential](Hodgkin_Huxley_Action_Potential/)
 - [Luo_Rudy_Cardiac_Action_Potential](Luo_Rudy_Cardiac_Action_Potential/)
+- [Pulmonary_Pulse_Wave_Network](Pulmonary_Pulse_Wave_Network/)
 - [Pyloric_Circuit_Energy_Consumption](Pyloric_Circuit_Energy_Consumption/)
 - [Rabbit_Ventricular_Action_Potential](Rabbit_Ventricular_Action_Potential/)
+- [Tumour_Competition_ODE](Tumour_Competition_ODE/)

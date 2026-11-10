@@ -5,9 +5,12 @@ Surface and subsurface hydrology, land-surface models, porous media, glaciers an
 Data sets (descriptions and papers are in the [top-level README](../README.md#data-sets)):
 
 - [Aquifer_Tracer_Advection_Diffusion](Aquifer_Tracer_Advection_Diffusion/)
+- [CMF_Soil_Moisture_SPOTPY](CMF_Soil_Moisture_SPOTPY/)
 - [CO2_Injection_Benchmark_Saturation](CO2_Injection_Benchmark_Saturation/)
 - [Earthquake_Rupture_Seismic_Moment](Earthquake_Rupture_Seismic_Moment/)
+- [Freyberg_MODFLOW_Forecast](Freyberg_MODFLOW_Forecast/)
 - [Geological_CO2_Storage_Leakage](Geological_CO2_Storage_Leakage/)
+- [HBV_SASK_Oldman_Streamflow](HBV_SASK_Oldman_Streamflow/)
 - [HyMod_Leaf_River_Rainfall_Runoff](HyMod_Leaf_River_Rainfall_Runoff/)
 - [Kaesbach_Catchment_Subsurface_Flow](Kaesbach_Catchment_Subsurface_Flow/)
 - [Karst_Aquifer_LuKARS_Calibration](Karst_Aquifer_LuKARS_Calibration/)
