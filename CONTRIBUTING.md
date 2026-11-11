@@ -105,7 +105,7 @@ Code (notebooks, `.py` files) is under the MIT License ([LICENSE](LICENSE)), and
 
 - Add a bullet to the category's section of the [README](README.md#data-sets), in alphabetical order. The bullet gives the directory link, one sentence on the model and the quantity studied, a link to the paper, and the kind in italics, e.g. `_Python model (my_model.py)._` or `_Stored data (SU2)._`.
 - Add a line to the category's `README.md`.
-- Run `python docs/make_notebook_index.py` to add the notebook to [docs/notebook-index.md](docs/notebook-index.md).
+- Add the notebook's number of inputs and active subspace dimension to `SIZES` in `docs/make_notebook_index.py`, then run `python docs/make_notebook_index.py` to add the notebook to [docs/notebook-index.md](docs/notebook-index.md).
 
 ## 8. Open a pull request
 
