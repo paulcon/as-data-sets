@@ -1,0 +1,101 @@
+name: Claim an article
+description: Say which article you are building a data set from, before you start.
+title: "Claim: <short title of the article>"
+labels: ["article-claim"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A claim tells others what you are working on; it does not reserve the article. Read [CONTRIBUTING.md](https://github.com/paulcon/as-data-sets/blob/main/CONTRIBUTING.md) first, and keep one open claim at a time. A claim with no activity for 30 days is closed; you can reopen it.
+  - type: input
+    id: doi
+    attributes:
+      label: DOI or stable link
+      description: The published version if there is one.
+      placeholder: 10.xxxx/xxxxx
+    validations:
+      required: true
+  - type: input
+    id: citation
+    attributes:
+      label: Article
+      description: Authors, title, venue, year.
+    validations:
+      required: true
+  - type: dropdown
+    id: on_list
+    attributes:
+      label: Is the article on the suggested list (docs/candidates.md)?
+      options:
+        - "Yes"
+        - "No"
+    validations:
+      required: true
+  - type: input
+    id: existing
+    attributes:
+      label: Data set already here for this article
+      description: If this repository already has a data set from this article, name its directory and say what yours will do differently (quantity of interest, inputs, model, data). Otherwise write "none".
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why the article fits
+      description: The simulation model, the scalar quantity of interest, the number of inputs, and where the paper gives their ranges or distributions (page or table).
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind of data set (CONTRIBUTING.md, section 4)
+      options:
+        - Stored data (runs made by an outside code)
+        - Python model (numpy/scipy code in the directory)
+        - Both
+        - Not sure yet
+    validations:
+      required: true
+  - type: textarea
+    id: source
+    attributes:
+      label: Source of the data or model
+      description: A link to the data or code and its license, or how you will get them (for example, data the authors have agreed to share with you).
+    validations:
+      required: true
+  - type: dropdown
+    id: compute
+    attributes:
+      label: Compute needed
+      options:
+        - Laptop
+        - Workstation
+        - Cluster or cloud
+        - Not sure yet
+    validations:
+      required: true
+  - type: dropdown
+    id: agent
+    attributes:
+      label: Will you use an AI agent?
+      options:
+        - "Yes"
+        - "No"
+    validations:
+      required: true
+  - type: input
+    id: timeline
+    attributes:
+      label: Expected timeline
+      placeholder: e.g. a pull request within three weeks
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Before you claim
+      options:
+        - label: I have read the article and checked that the inputs, their ranges, and the data or model are there.
+          required: true
+        - label: I have read CONTRIBUTING.md (and, if I use an agent, so will it, along with AGENTS.md).
+          required: true
+        - label: I will not commit article PDFs, publisher supplements, files I may not redistribute, or copied GPL code.
+          required: true

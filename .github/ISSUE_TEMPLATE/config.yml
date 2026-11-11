@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Suggested articles
+    url: https://github.com/paulcon/as-data-sets/blob/main/docs/candidates.md
+    about: Published articles that might support a new data set. To report an error in an entry, open a blank issue.
+  - name: Contributing a data set
+    url: https://github.com/paulcon/as-data-sets/blob/main/CONTRIBUTING.md
+    about: How to choose and claim an article, build and check a data set, and open a pull request.
