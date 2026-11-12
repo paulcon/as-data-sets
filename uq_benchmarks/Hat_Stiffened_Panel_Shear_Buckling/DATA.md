@@ -47,7 +47,7 @@ The page also gives the general form with different face-sheet and hat materials
 
 **Dependence.** f₁ and f₂ are dependent through a normal copula; every other pair is independent. How we read the sources, and our choices:
 
-- **The copula parameter.** The OpenTURNS code sets `correlation_matrix[4, 5] = -0.8` and builds the copula as `ot.NormalCopula(ot.NormalCopula.GetCorrelationFromSpearmanCorrelation(correlation_matrix))` (`stiffened_panel.py`, v1.25.1, lines 148–154; the same on master), so −0.8 is the **Spearman** correlation of f₁ and f₂ and the normal-copula parameter is 2 sin(−0.8π/6) = −0.8135 (`R_COPULA`, computed from `SPEARMAN_F1F2 = -0.8`). We do the same. (An earlier version of this data set used −0.8 as the copula parameter, which gives Spearman −0.7859; this was corrected on 2026-10-31.) For uniform marginals the Spearman correlation is also the Pearson correlation, so the f₁–f₂ correlation in the exact covariance is −0.8. The shipped samples have Spearman −0.7971. The analysis hardly depends on the dependence: scaling without any decorrelation changes w₁ by an inner product of 0.999603 (notebook, check (a)).
+- **The copula parameter.** The OpenTURNS code sets `correlation_matrix[4, 5] = -0.8` and builds the copula as `ot.NormalCopula(ot.NormalCopula.GetCorrelationFromSpearmanCorrelation(correlation_matrix))` (`stiffened_panel.py`, v1.25.1, lines 148–154; the same on master), so −0.8 is the **Spearman** correlation of f₁ and f₂ and the normal-copula parameter is 2 sin(−0.8π/6) = −0.8135 (`R_COPULA`, computed from `SPEARMAN_F1F2 = -0.8`). We do the same. For uniform marginals the Spearman correlation is also the Pearson correlation, so the f₁–f₂ correlation in the exact covariance is −0.8. The shipped samples have Spearman −0.7971. The analysis hardly depends on the dependence: scaling without any decorrelation changes w₁ by an inner product of 0.999603 (notebook, check (a)).
 - **Truncated normal E.** N(110e9, 55e9) is read as mean and standard deviation of the parent normal (OpenTURNS's `TruncatedNormal(mu, sigma, a, b)` convention). The parent standard deviation is five times the half-width of the interval, so the truncated law is nearly uniform (sd 6.3339e9 Pa against 6.3509e9 Pa for U[99e9, 121e9]). It is sampled exactly by the inverse CDF on the truncation interval.
 - **Units of the QoI.** (N_xy)_cr is a force per unit length (shear flow), N/m with the SI inputs (dimensionally E t³/b₀²); the OpenTURNS page labels it N. The memorandum gives loads in lb/in (1 lb/in = 175.127 N/m).
 - **The thickness.** OpenTURNS codes t ~ U(8.02e-5, 8.181e-5) m (`stiffened_panel.py` v1.25.1, line 135), a mean of 8.1005e-5 m = 0.00319 in, a 0.08 mm foil. **This appears to be a factor-10 slip, and the data here use ten times that range**, t ~ U(8.02e-4, 8.181e-4) m (0.0316–0.0322 in). The evidence, computed in the notebook at the midpoint of every range:
@@ -102,6 +102,13 @@ The run takes 0.08 s (under 1 s with Python start-up) and also prints the gradie
 - **Not the paper's computation.** The memorandum is a deterministic buckling analysis; the probabilistic inputs (ranges, the truncated normal and the copula) are OpenTURNS's, not the memorandum's (the thickness range scaled by 10), and we do not know how OpenTURNS chose them. No code or data were published with either source. The samples here are new.
 - **Formula from OpenTURNS, not verified against the memorandum** (see Source). We could not check that the hat correction Q, as OpenTURNS writes it, is the memorandum's, nor which formula gives the memorandum's closed-form local load.
 - **Thickness.** See "The thickness" under Inputs: the OpenTURNS t gives loads about 800 times below the memorandum's value, so the shipped data use ten times that thickness, which gives 1.23 times the memorandum's finite-element load. The level of the load, not the active subspace, depends on it.
+
+## Unknowns
+
+- Whether the formula, as OpenTURNS writes it (including the hat correction Q and k_xy = 5.35 + 4(b/a)²), is the memorandum's: it was not checked against the memorandum (see Source).
+- Which closed form (with or without Q) gives the memorandum's local load, and the memorandum's exact thickness: the evidence settles the factor of ten, not the last 20 % (see "The thickness").
+- How OpenTURNS chose the input ranges, the truncated normal and the copula.
+- The memorandum's values (900 lb/in, "slightly higher", 4296 lb/in and k_xy = 1.89): read from a poor scan and unverified.
 
 ## License and credit
 

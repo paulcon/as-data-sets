@@ -76,7 +76,7 @@ python check_accuracy.py --sipnet /path/to/sipnet/sipnet                        
 
 There is no randomness beyond the saved Latin hypercube seed. The shipped files were written on 2026-10-31 in a Linux container (Python 3.13.18, numpy 2.5.4, scipy 1.18.1) on 2 worker processes in about 4 minutes (about 17 000 SIPNET runs). There, a 20-sample `--check` run took 8.2 s and matched the shipped files to 2.4e-10 of the largest value (the 10 significant digits written). The repo's `.venv` has no SIPNET binary, so the files were not regenerated there; the notebook, which reads only the files, runs in `.venv` in about 4 s, and two runs print the same values. `fd_check_soilWHC.csv` was added later on 2026-10-31 (same binary and versions, 2 workers, 8.8 s, about 500 SIPNET runs); a `--fd-check --check` rerun matched it to 5.0e-11 relative, and a 20-sample `--check` rerun with the edited script matched the three main files to 2.4e-10.
 
-**Header change of 2026-11-02.** The first `#` line of `inputs.csv`, `outputs.csv`, `gradients.csv` and `fd_check_soilWHC.csv` now contains "substitute set-up, not the paper's runs (see DATA.md)", inserted before "SIPNET v2.2.0-11" by a scripted header-only rewrite. Every other line is byte-identical: the SHA-256 of all lines after the first is unchanged in each file, the notebook prints the same values, and `generate_data.py` now writes the same header line.
+**Header line.** The first `#` line of `inputs.csv`, `outputs.csv`, `gradients.csv` and `fd_check_soilWHC.csv` says "substitute set-up, not the paper's runs (see DATA.md)" before "SIPNET v2.2.0-11". `generate_data.py` writes the same header line.
 
 ## Accuracy
 
@@ -93,6 +93,15 @@ There is no randomness beyond the saved Latin hypercube seed. The shipped files 
 - **Not the paper's computation.** Same model family, priors, parameters and initial pools; different site driver (Niwot instead of Bartlett), period (2004–2005 instead of 2005–2006), time step (half-daily instead of half-hourly), non-calibrated parameter values (PEcAn template instead of the Bartlett trait meta-analysis), SIPNET version (2026 instead of the one in the 2018 PEcAn release), soil-respiration structure (no cold-season soil respiration; in the paper's PEcAn set-up `baseSoilRespCold` = 0.25 × `baseSoilResp` and `soilRespQ10Cold` = `soilRespQ10`, see Configuration), and QoIs (forward totals instead of likelihood statistics). The climate puts the model in a net-source regime (902 of 1000 samples).
 - **Ranking differences.** The top parameter agrees with Fig. 2a for NEE (`psnTOpt`) and LE/ET (`soilWHC`). The largest discrepancy, `baseSoilResp` (2nd for NEE in Fig. 2a, about 0.30; 4th here, activity-score fraction 0.081), has candidate causes in the cold, small-soil-pool set-up and in the missing cold-season coupling, which in the paper's set-up would let `baseSoilResp` and `soilRespQ10` also set winter soil respiration.
 - **What would make it the paper's set-up**: the PEcAn workflow files of the paper (Table A7 lists workflow IDs on pecan2.bu.edu, not checked), or the Bartlett met driver in SIPNET format and the PFT trait values. With those, `generate_data.py` needs only a different `.clim` and `.param`. A practical route without the paper's files: download the AmeriFlux US-Bar half-hourly data for 2005–2006 and convert them with PEcAn's `met2model.SIPNET`; the cold-season coupling would still need SIPNET v1.
+
+## Unknowns
+
+- The paper's Bartlett driver and its non-calibrated parameter values (PEcAn's trait meta-analysis in BETYdb) are not available here; the paper's PEcAn workflow files (Table A7) were not checked (Configuration; How these files relate to the paper).
+- The paper does not say whether SIPNET's seasonal soil-respiration switch was on (Configuration).
+- The origin of the driver is labelled "Niwot Ridge(?)" in SIPNET's README; that it is the Niwot Ridge driver of Sacks et al. (2006) rests on a match (Configuration).
+- The unit "Day−1" of the SOM respiration rate in Table A3 is treated as an error in the paper, on the evidence given under Inputs; this is not confirmed by the authors.
+- The runs made when the data were generated did not record the scan sample or the 40 samples of the independent check (Accuracy).
+- The cause of the `baseSoilResp` ranking difference from Fig. 2a is not established; the candidate causes are under "How these files relate to the paper".
 
 ## License and credit
 

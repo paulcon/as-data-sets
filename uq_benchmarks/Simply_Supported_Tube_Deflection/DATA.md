@@ -32,7 +32,7 @@ The CSVs have two `#` lines (a description and the column names) and are read by
 
 **Quantities of interest.** `deflection`, `theta_left`, `theta_right` as above (the OpenTURNS outputs "Deflection", "Left angle", "Right angle", times 2). Each is F/(E I) times a function of a and L: |v(a)| ∝ a²b²/L peaks at a = L/2; |v′(0)| ∝ ab(2L − a)/L peaks at a = L(1 − 1/√3) ≈ 0.634 (outside the sampled range of a); v′(L) ∝ ab(L + a)/L peaks at a = L/√3 ≈ 0.866 (inside it).
 
-**Inputs** (m = 6, independent, all six random). Distributions from the input table on the OpenTURNS page (the spreadsheet's note "not stated (uniform assumed)" is superseded: the page states them). The page's API section, and the class's `inputDistribution`, instead fix L, a, De, di at Dirac values (1.5, 1.0, 0.8, 0.1) with only F and E random; we follow the input table, as the use case's stated study, and use the Dirac point only as a reference point.
+**Inputs** (m = 6, independent, all six random). Distributions from the input table on the OpenTURNS page. The page's API section, and the class's `inputDistribution`, instead fix L, a, De, di at Dirac values (1.5, 1.0, 0.8, 0.1) with only F and E random; we follow the input table, as the use case's stated study, and use the Dirac point only as a reference point.
 
 | name | symbol | description | distribution | mean | sd | source |
 |---|---|---|---|---|---|---|
@@ -72,12 +72,21 @@ The run takes about 0.05 s (0.85 s with Python start-up) and prints the two chec
 - **Formulas.** Checked against the unit-load (virtual-work) method, numerical quadrature of the bending moment with `scipy.integrate.quad` (`tube_model.virtual_work`), which does not use the tabulated formulas: largest relative difference 5.6e−16 at the first 20 samples (`generate_data.py`) and 6.7e−16 at the first 50 (notebook).
 - **Gradients.** Exact. Against central finite differences with relative step 10⁻⁶ per input at all 1000 samples, the largest relative error (row 2-norm) is 5.1e−10 (deflection), 4.9e−10 (left slope), 5.0e−10 (right slope), the size of the differencing error.
 
-## How these files relate to the source
+## How these files relate to the paper
+
+There is no paper: the source is the OpenTURNS use case (see Source).
+
 
 - **New samples of a documented benchmark.** OpenTURNS publishes the model and the distributions, not data. The inputs are new Monte Carlo draws from the page's distributions; the outputs and gradients are computed here.
 - **Outputs are twice the OpenTURNS outputs** because of the I convention above; the factor is exact and has no effect on the active subspace.
 - **Distributions follow the page's input table** (all six inputs random), not the class's Dirac defaults (see Inputs).
 - **Euler–Bernoulli benchmark as posed.** The outputs are the closed-form Euler–Bernoulli values; at L/De ≈ 1.9 they are not an accurate prediction for a real tube (Timoshenko shear adds about 0.7 times the bending deflection; see Range of validity).
+
+## Unknowns
+
+- The units: the benchmark does not state them (any consistent set; see Files).
+- Poisson's ratio: the benchmark gives none; ν = 0.3 is assumed for the Timoshenko validity estimate only (see Range of validity).
+- The textbook formulas were not checked in the textbooks themselves (not opened); they were checked independently by virtual work (Accuracy).
 
 ## License and credit
 

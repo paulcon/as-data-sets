@@ -120,6 +120,13 @@ runs, and the rest stops with the install message.
 - **Options from the paper's code.** The options are PyCO2SYS v1.8.0's defaults, read from its source, and with the paper's round-robin script's two hypothetical acid–base systems they reproduce all seven Table 4 values (above). Every option is therefore identified, `opt_k_bisulfate` and `opt_gas_constant` included; none was fitted.
 - **The notebook's comparison.** Over measurement uncertainty, the Monte Carlo standard deviations of the 1000 samples agree with PyCO2SYS's Eq. 24 within the 95 % sampling interval for pH and pCO₂ (ratios 0.971, 1.002); for Ω the ratios are 1.044 and 1.049, at the edge of the interval, and the same samples through the linearized model give ratios 0.9987–1.0001, so the excess is sampling, not nonlinearity.
 
+## Unknowns
+
+- Whether the Orr et al. (2018) pK₁* and pK₂* uncertainties (0.0075, 0.015) apply to the Sulpis et al. (2020) K₁*, K₂*: they were assessed before that parameterisation existed, and applying them to it is our assumption (a question for the authors).
+- Measurement uncertainties: neither the paper nor the PyCO2SYS documentation gives them, apart from the documentation's example of 2 µmol/kg and 0.05 °C, so the sds are our choice. Orr et al. (2018) was read only through PyCO2SYS's and seacarb's defaults; their recommended measurement uncertainties were not checked.
+- The calibration ranges of the parameterisations are not given in the paper, so the samples outside them are not counted.
+- `generate_data.py` was not rerun for the repository; `check_accuracy.py` recomputes the reference rows and the first 20 samples of each study instead.
+
 ## License and credit
 
 Code (`carbonate_driver.py`, `generate_data.py`, `check_accuracy.py`, the notebook): MIT (`LICENSE`); the scripts import PyCO2SYS (GPLv3), which is not distributed here. Data (the CSVs): CC BY 4.0 (`LICENSE-DATA`); they are outputs of PyCO2SYS runs, not copies of any published data. The paper is CC BY 4.0. Cite:

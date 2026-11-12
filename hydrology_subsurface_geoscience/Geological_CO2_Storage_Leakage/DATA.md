@@ -103,8 +103,8 @@ The shipped files were written on 2026-10-30 in a Linux container (numpy 2.5.4, 
 ## Accuracy
 
 - **Values.** Closed form in double precision; the model reproduces the CSVs to rounding error (at most a relative 1.1e-15, printed in the notebook).
-- **Gradients.** Exact. Checked against central finite differences with step 10⁻⁶ of each input's range, at all 2000 samples per site: largest relative error (row 2-norm) 8.2 × 10⁻¹⁰ (log₁₀ t_total) and 8.0 × 10⁻¹⁰ (log₁₀ V̇_soft) for Ketzin, 1.4 × 10⁻⁹ and 1.0 × 10⁻⁹ for Quest, the size expected from rounding in the differences.
-- **Against the paper.** The sample statistics agree with Tables 5 and 6 within the sampling error of 500 samples (one exception, below), and total Sobol' indices of the raw outputs (Jansen's estimator, 20 000 base samples) agree with the MOP indices of Figs. 7 and 9 within 10 percentage points (largest difference: log K₃ for the Quest V̇_min, 57 % against 67.3 %).
+- **Gradients.** Exact. Checked against central finite differences with step 10⁻⁶ of each input's range, at all 2000 samples per site: largest relative error (row 2-norm) 8.2 × 10⁻¹⁰ (log₁₀ t_total) and 8.0 × 10⁻¹⁰ (log₁₀ V̇_soft) for Ketzin, 1.4 × 10⁻⁹ and 1.0 × 10⁻⁹ for Quest, the size expected from rounding in the differences (`generate_data.py`; the notebook prints the Ketzin values).
+- **Against the paper.** The sample statistics agree with Tables 5 and 6 within the sampling error of 500 samples (one exception, below), and total Sobol' indices of the raw outputs (Jansen's estimator, 20 000 base samples) agree with the MOP indices of Figs. 7 and 9 within 10 percentage points (largest difference: log K₃ for the Quest V̇_min, 57 % against 67.3 %; notebook).
 
 ## How these files relate to the paper
 
@@ -113,6 +113,14 @@ The shipped files were written on 2026-10-30 in a Linux container (numpy 2.5.4, 
 - **Table 5's 95 % quantile of the Ketzin total leakage time (2248.8 years) is inconsistent** with its own 95 % quantile of the layer-3 time (2283.0 years), since t_leak,total ≥ t_leak,3 at every sample. Ours is 2882.6 years; a log-normal law with Table 5's mean and standard deviation gives about 2800 years. We do not copy the table's value.
 - **The minimum is smoothed.** The notebook's second QoI is V̇_soft, not the paper's V̇_min (see above); the exact V̇_min is stored too.
 - **Preprint.** The paper is version 1 of a preprint; inputs, tables or the model may change in a later version.
+
+## Unknowns
+
+- The paper's calculation files are said to be on https://refodat.de, but the record was not located (How these files relate to the paper).
+- The seed of the paper's 500 improved Latin hypercube samples is not given (Model, Sampling design).
+- The source of the inconsistency between Table 5's 95 % quantiles of the Ketzin total and layer-3 leakage times is not known (How these files relate to the paper).
+- The paper leaves the exact form of the triangular and uniform input laws implicit; the readings used here are listed under Model.
+- The paper is version 1 of a preprint; a later version may change inputs, tables or the model.
 
 ## License and credit
 

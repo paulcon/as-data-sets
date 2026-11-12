@@ -16,14 +16,7 @@ Kind: **stored data**. The runs come from Hadigol et al.'s simulations of a Newm
 
 md5 of the originals: `0.25C.txt` 6b79c1937889d1ec6eee09a97f5e6c84, `1C.txt` 7503e2027909253248df565778e76d5b, `4C.txt` 2c9ba7fcbcadd97aaf4d84cac5b8fec5, `V_025C.txt` 9d61d12b2a087a163cdec7cb775ca91c, `V_1C.txt` 92d665207ba6ab473c1639cef0d342e5, `V_4C.txt` c6f9009eb54a28b709c9165003297f20. The npz stores the same list as `source_md5`.
 
-## Provenance
-
-- **Generating code**: a finite-difference solver for Newman's porous-electrode model of a LiC₆/LiCoO₂ cell, set up by M. Hadigol, K. Maute and A. Doostan for their UQ study (J. Power Sources 300:507–524, 2015, doi:10.1016/j.jpowsour.2015.09.060). The code, its version and its settings are not recorded here.
-- **Who ran it**: Hadigol et al., on the University of Colorado Boulder's JANUS supercomputer: about 20 min per run on one core, 3600 CPU-hours for the 10,800 runs (Constantine & Doostan 2017, §4). Dr. Hadigol provided the data set (the paper's Acknowledgments). Ryan Howard added the files to this repository on 2016-07-15 (commit 0604f0d); they have not changed since.
-- **Sampling**: each run draws the 19 inputs independently from the distributions in the paper's Table 1, and the same 3600 input vectors are used at the three discharge rates (0.25C, 1C, 4C). The files store the inputs only after a shift and scale to [−1, 1].
-- The paper (§4) also points to `bitbucket.org/paulcon/time-dependent-gsa-for-batteries` for the data and scripts; that link was not checked.
-
-## Columns of the text files
+**Columns of the text files.**
 
 | columns | header | contents | units |
 |---|---|---|---|
@@ -35,7 +28,7 @@ md5 of the originals: `0.25C.txt` 6b79c1937889d1ec6eee09a97f5e6c84, `1C.txt` 750
 
 Values are written as `%.16e`, which float64 reads back exactly. No value is missing.
 
-## battery_data.npz
+**`battery_data.npz`.**
 
 | key | shape | dtype | contents |
 |---|---|---|---|
@@ -48,9 +41,17 @@ Values are written as `%.16e`, which float64 reads back exactly. No value is mis
 | `dropped_runs_025C`, `dropped_runs_1C`, `dropped_runs_4C` | (k,) | int64 | Run numbers flagged by the overshoot rule below: none, none, [1538, 2969] |
 | `source_md5` | (6, 2) | str | file name and md5 of each original |
 
-`python make_battery_npz.py` (from this directory, about 5 s) rewrites the file and checks that every array equals the text values exactly. The npz bytes differ between runs (zip timestamps); the arrays do not.
-
 The concentration columns are not in the npz: nothing uses them, and their units and spatial locations are not documented.
+
+## Model
+
+- **Generating code**: a finite-difference solver for Newman's porous-electrode model of a LiC₆/LiCoO₂ cell, set up by M. Hadigol, K. Maute and A. Doostan for their UQ study (J. Power Sources 300:507–524, 2015, doi:10.1016/j.jpowsour.2015.09.060). The code, its version and its settings are not recorded here.
+- **Who ran it**: Hadigol et al., on the University of Colorado Boulder's JANUS supercomputer: about 20 min per run on one core, 3600 CPU-hours for the 10,800 runs (Constantine & Doostan 2017, §4). Dr. Hadigol provided the data set (the paper's Acknowledgments). Ryan Howard added the files to this repository on 2016-07-15 (commit 0604f0d); they have not changed since.
+- **Sampling**: each run draws the 19 inputs independently from the distributions in the paper's Table 1, and the same 3600 input vectors are used at the three discharge rates (0.25C, 1C, 4C). The files store the inputs only after a shift and scale to [−1, 1].
+- The paper (§4) also points to `bitbucket.org/paulcon/time-dependent-gsa-for-batteries` for the data and scripts; that link was not checked.
+- **Inputs** (m = 19): the inputs of the paper's Table 1, stored normalized to [−1, 1] (see "Columns of the text files" and "Units, grids and conversions").
+- **Quantities of interest**: the cell voltage on the t* grid and the elapsed discharge time at each voltage of `V_<rate>.txt`, converted in the notebook to capacity (see "Units, grids and conversions"), at the three discharge rates.
+- **Gradients**: none.
 
 ## Units, grids and conversions
 
@@ -67,6 +68,27 @@ The concentration columns are not in the npz: nothing uses them, and their units
 
 Every run stops at the 2.8 V cutoff. Two 4C runs end below it: Run 1538 at 2.746 V (|z| = 59 among the final voltages) and Run 2969 at 2.791 V (|z| = 9.5). The rule "final voltage more than 1 mV below 2.8 V" flags exactly these two, and no 0.25C or 1C run; |z| > 5 flags the same two. The rows stay in the text files and in the npz arrays. The notebook applies the rule and checks it against `dropped_runs_<rate>`, so N = 3598 at 4C. The paper says N = 3600 for every fit. Dropping Run 2969 in addition to Run 1538 changes the 4C weights by at most 1.2e-4.
 
+## Regenerating
+
+The runs cannot be regenerated from this repository: the simulation code is not recorded here. The notebook reads only `battery_data.npz`. `python make_battery_npz.py` (from this directory, about 5 s) rewrites the file and checks that every array equals the text values exactly. The npz bytes differ between runs (zip timestamps); the arrays do not.
+
+## Originals and Zenodo
+
+Full originals of large data sets go to Zenodo with a DOI, and the repository ships the used columns. The deposit of the three text files (with the concentration columns) and the voltage grids, with Hadigol et al. as data authors, has not been made yet. Until it has a DOI, the original text files stay in this directory. The notebook reads only `battery_data.npz`; `make_battery_npz.py` is the only reader of the text files. When the DOI exists, the text files can be removed from HEAD and the DOI added here; their md5s above identify them.
+
+## Accuracy
+
+No accuracy numbers are recorded for the simulations: the code and its settings are not known (Unknowns). The conversion to `battery_data.npz` is exact: `make_battery_npz.py` checks every array against the text values.
+
+## How these files relate to the paper
+
+These are the runs analyzed by Constantine and Doostan (2017); the notebook reproduces the paper's Figures 2–9. The differences from the paper are stated above and in the notebook's "Notes on the published paper":
+
+- The paper says N = 3600 for every fit; the notebook drops 4C runs 1538 and 2969 (N = 3598; "Dropped runs").
+- The notebook analyzes voltage columns 1–48; the paper (§4.1, p. 252) says all 50 ("Units, grids and conversions").
+- The paper's region labels t* = 95, 23 and 5 differ from the t* of the data by up to 0.96 ("Units, grids and conversions").
+- The paper's Table 1 lists r_a and r_c as Normal, but their stored values are uniform (Unknowns).
+
 ## Unknowns
 
 - The simulation code, its version and its settings.
@@ -74,10 +96,7 @@ Every run stops at the 2.8 V cutoff. Two 4C runs end below it: Run 1538 at 2.746
 - That `Cap*` is elapsed time in seconds, and I_1C = 30 A m⁻² (see above).
 - The t* grid of the voltage columns is not recorded; it is inferred from the data (see above).
 - The units and positions of the concentration columns.
-
-## Originals and Zenodo
-
-Full originals of large data sets go to Zenodo with a DOI, and the repository ships the used columns. The deposit of the three text files (with the concentration columns) and the voltage grids, with Hadigol et al. as data authors, has not been made yet. Until it has a DOI, the original text files stay in this directory. The notebook reads only `battery_data.npz`; `make_battery_npz.py` is the only reader of the text files. When the DOI exists, the text files can be removed from HEAD and the DOI added here; their md5s above identify them.
+- Whether the bitbucket repository named in the paper (§4) holds the data and scripts; that link was not checked.
 
 ## License and credit
 

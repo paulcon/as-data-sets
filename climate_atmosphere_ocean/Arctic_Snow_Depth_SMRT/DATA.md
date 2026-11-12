@@ -43,7 +43,7 @@ checked against Crossref). Model: SMRT, G. Picard, M. Sandells and H. Löwe, Geo
 **What the paper does.** SMRT simulations of AMSR2 brightness temperatures for single- and multi-layer, dry
 and wet snow on Arctic sea ice, ranked by EFAST (Saltelli et al. 1999, via SALib) first-order (SSI) and total
 (TSI) indices, then an averaging-kernel "retrievable range" analysis for snow depth. This data set is the
-**single-layer dry snow** case (m = 5), the spreadsheet's target; the paper's multi-layer cases (m = 14 dry,
+**single-layer dry snow** case (m = 5); the paper's multi-layer cases (m = 14 dry,
 m = 8 wet) and the wet single-layer case are not generated.
 
 **Configuration from the paper and its Supplement** (Table S1 checked against the Supplement PDF, p. 2). Sticky hard sphere (SHS) microstructure with the
@@ -250,6 +250,16 @@ The notebook does not rerun SMRT; `generate_data.py --check` is the reproduction
 - **Not covered.** The wet-snow and multi-layer cases (Tables 2–3, Figs. 3b, 4–5), the multiyear-ice runs,
   the Gaussian-input and exponential-microstructure variants of the Supplement, and the averaging-kernel
   retrievability analysis (Sect. 4.2).
+
+## Unknowns
+
+- The paper's DORT stream settings, snow salinity, ice microstructure details, water substrate properties
+  and GR polarization: not stated in the paper or its Supplement; the values used here are this data set's
+  choices ("Configuration chosen here").
+- Whether Supplement Table S1 applies to every sensitivity run; it is taken as the baseline set-up here.
+- The EFAST interference factor M and the sample size the paper used are not reported, and no seed is given.
+- The paper gives no nominal point; the midpoints are used where one is needed.
+- The paper's input/output data: none were deposited.
 
 ## License and credit
 

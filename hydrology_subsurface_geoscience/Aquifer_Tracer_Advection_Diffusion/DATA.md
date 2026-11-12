@@ -92,6 +92,10 @@ python check_accuracy.py [--skip-slow]                         # the numbers of 
 - The number of KLE terms (10), the mesh of the main files (order 21), the prior distribution, the sample size and the seed are ours. The paper's use of the model (ACV with posterior samples) is not reproduced.
 - Overlap with `uq_benchmarks/Elliptic_PDE_Random_Coefficients`: both are unit-square PDEs with a log-normal KLE coefficient, standard normal inputs and an integral QoI. This one is transient, with advection, Robin conditions on all sides, a squared-exponential kernel with 10 modes (vs. an exponential kernel with 100), spectral collocation, and a subdomain QoI.
 
+## Unknowns
+
+- There are no known unknowns.
+
 ## License and credit
 
 Code: MIT (`LICENSE`). Data (the CSVs): CC BY 4.0 (`LICENSE-DATA`). The model is J. D. Jakeman's PyApprox benchmark; PyApprox is MIT-licensed (Copyright 2019 National Technology & Engineering Solutions of Sandia, LLC (NTESS)); no PyApprox code is included here, and `kle_basis.csv` is output of PyApprox 1.0.3. Cite J. D. Jakeman, Environ. Model. Softw. 170:105825, 2023, doi:10.1016/j.envsoft.2023.105825.

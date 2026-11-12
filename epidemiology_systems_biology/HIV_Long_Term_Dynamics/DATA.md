@@ -48,6 +48,12 @@ The notebook's check cell re-solves five samples with `HIV_model.py` and prints 
 
 - **Not the paper's computation.** The paper's results come from MATLAB `ode23s` and forward differences with step 1e-6 in x (pp. 717–718), on its own random samples; those scripts were posted at http://inside.mines.edu/~pankavic/activeHIV (paper p. 710; current availability not checked) and are not in this repository. The data here are an independent Python computation of the same model, inputs and ranges.
 
+## Unknowns
+
+- The paper does not state its initial conditions; the ones used here are this data set's choice (Model).
+- The 1000 input samples were drawn without a seed in 2016 and cannot be redrawn.
+- The current availability of the paper's MATLAB scripts (http://inside.mines.edu/~pankavic/activeHIV) was not checked.
+
 ## License and credit
 
 Code: MIT (`LICENSE`). Data (the CSVs): CC BY 4.0 (`LICENSE-DATA`). Model and analysis: T. Loudon and S. Pankavich; 2016 notebook, model code and data: Ryan Howard. Cite T. Loudon and S. Pankavich, "Mathematical analysis and dynamic active subspaces for a long term model of HIV", Math. Biosci. Eng. 14(3):709–733, 2017, doi:10.3934/mbe.2017040.

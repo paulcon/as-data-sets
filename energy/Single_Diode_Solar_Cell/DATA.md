@@ -10,9 +10,7 @@ Kind: **stored data**. Mark Campanelli's MATLAB implementation of the single-dio
 | `SingleDiodePV-Pmax.txt` | 10,000 samples of the inputs, P_max and its gradient | stored data |
 | `single_diode.py` | `pmax`, `current`, `thermal_voltage`, `to_physical`, `to_normalized`, bounds `XL`, `XU` | Python model, used only to check the stored data |
 
-## `SingleDiodePV-Pmax.txt`
-
-CSV with one header row, 10,000 rows × 12 columns, values written as `%.16e`. Size 2,780,045 bytes, md5 `71b17000d76d7ca0ccb73be3aa1d3bfd`. There are no missing values. Load it without pandas with `np.genfromtxt('SingleDiodePV-Pmax.txt', delimiter=',', names=True)`.
+**`SingleDiodePV-Pmax.txt`.** CSV with one header row, 10,000 rows × 12 columns, values written as `%.16e`. Size 2,780,045 bytes, md5 `71b17000d76d7ca0ccb73be3aa1d3bfd`. There are no missing values. Load it without pandas with `np.genfromtxt('SingleDiodePV-Pmax.txt', delimiter=',', names=True)`.
 
 | column | quantity | units | coordinates |
 |---|---|---|---|
@@ -25,7 +23,11 @@ CSV with one header row, 10,000 rows × 12 columns, values written as `%.16e`. S
 | `Pmax` | maximum power P_max, 0.0143 to 0.2032 | W | |
 | `dISC`, `dIS`, `dn`, `dRS`, `dRP` | ∂P_max/∂x_i | W | **normalized** x, with I_S through log I_S |
 
-**Gradient coordinates.** The gradients are taken with respect to x ∈ [−1, 1]⁵, where x_i = 2(q_i − L_i)/(U_i − L_i) − 1, q = (I_SC, log I_S, n, R_S, R_P), and L, U are the bounds below (the paper's eq. (13)). To get gradients with respect to q, divide by (U − L)/2. active_subspaces expects gradients with respect to the inputs of its space and applies the factor (U − L)/2 itself. So with `ac.Uniform(lower=L, upper=U)` on q, pass `G / ((U - L) / 2)`. Passing the stored `G` unchanged scales it twice, and the first eigenvector then comes out dominated by R_P.
+## Model
+
+**Source.** Campanelli's MATLAB single-diode code (paper §3.1: "Requests for the MATLAB code may be sent to the third author Campanelli"). The paper's MATLAB scripts for its figures were at `bitbucket.org/paulcon/active-subspaces-in-a-single-diode-model` (§4). Paul Constantine committed the file in this repository's initial commit (7c26e3a, 2014-10-23).
+
+**Equations.** The single-diode equation (paper eqs. (9)–(10)) with N_S = 1 and the thermal voltage V_th = k_B T/q at T = 25 °C. P_max = max IV (eq. (11)). The paper gives no value for V_th. V_th = k_B · 298.15 K / q = 0.025693 V reproduces the file.
 
 **Inputs.** The paper's Table 1 gives the ranges (typical 2 cm² crystalline silicon cells). I_S is log-uniform, and the other inputs are uniform:
 
@@ -39,23 +41,33 @@ CSV with one header row, 10,000 rows × 12 columns, values written as `%.16e`. S
 
 The stored inputs fill the box: in normalized coordinates they span [−0.99998, 0.99995] (printed by the notebook). The paper draws its samples uniformly at random in x (§4.2).
 
-**Model.** The single-diode equation (paper eqs. (9)–(10)) with N_S = 1 and the thermal voltage V_th = k_B T/q at T = 25 °C. P_max = max IV (eq. (11)). The paper gives no value for V_th. V_th = k_B · 298.15 K / q = 0.025693 V reproduces the file. **Gradients**: first-order finite differences with a step of 10⁻⁶ in the normalized coordinates (paper §4.2).
+**Quantity of interest.** P_max, the maximum power, in W (0.0143 to 0.2032 in the file).
 
-## Check against `single_diode.py`
+**Gradients.** First-order finite differences with a step of 10⁻⁶ in the normalized coordinates (paper §4.2). They are taken with respect to x ∈ [−1, 1]⁵, where x_i = 2(q_i − L_i)/(U_i − L_i) − 1, q = (I_SC, log I_S, n, R_S, R_P), and L, U are the bounds under **Inputs** (the paper's eq. (13)). To get gradients with respect to q, divide by (U − L)/2. active_subspaces expects gradients with respect to the inputs of its space and applies the factor (U − L)/2 itself. So with `ac.Uniform(lower=L, upper=U)` on q, pass `G / ((U - L) / 2)`. Passing the stored `G` unchanged scales it twice, and the first eigenvector then comes out dominated by R_P.
+
+## Regenerating
+
+The file cannot be regenerated here: Campanelli's MATLAB code is not in this repository, so the file is the only record of those runs. The notebook reads `SingleDiodePV-Pmax.txt` and uses `single_diode.py` only to check it (see "Accuracy").
+
+## Accuracy
 
 `single_diode.py` solves eq. (9) for I explicitly with the Lambert W function, and maximizes VI over [0, V_oc] with a bounded scalar search. The notebook runs the check (seed 2016):
 
 - P_max at all 10,000 rows: relative difference from −1.6e-6 to −9.6e-7.
-- Gradient by central differences (step 10⁻⁶ in x) at 20 random rows: `dIS`, `dn`, `dRS` and `dRP` agree within a relative 6.0e-6. `dISC` is off by a nearly constant relative **4.7e-5** at every row. The cause is unknown. It is consistent with the original code using slightly different I_SC bounds than Table 1. The bias is far smaller than the bootstrap variability, and the notebook uses the stored gradients as they are.
+- Gradient by central differences (step 10⁻⁶ in x) at 20 random rows: `dIS`, `dn`, `dRS` and `dRP` agree within a relative 6.0e-6. `dISC` is off by a nearly constant relative **4.7e-5** at every row. The cause is unknown (Unknowns). It is consistent with the original code using slightly different I_SC bounds than Table 1. The bias is far smaller than the bootstrap variability, and the notebook uses the stored gradients as they are.
 
 These checks confirm the column meanings and the gradient coordinates above.
 
-## Provenance and unknowns
+## How these files relate to the paper
 
-- **Generating code:** Campanelli's MATLAB single-diode code (paper §3.1: "Requests for the MATLAB code may be sent to the third author Campanelli"). The paper's MATLAB scripts for its figures were at `bitbucket.org/paulcon/active-subspaces-in-a-single-diode-model` (§4). Code version: unknown.
-- **Who ran it, sampling seed:** unknown. Paul Constantine committed the file in this repository's initial commit (7c26e3a, 2014-10-23).
-- **Relation to the paper:** the paper's figures use M = 1000 samples, while the file has 10,000. Whether the paper's samples are a subset of these is unknown. The notebook reproduces the paper's settings on a random subset of 1000 rows.
-- **Unknown:** the cause of the `dISC` bias (above).
+The paper's figures use M = 1000 samples, while the file has 10,000. Whether the paper's samples are a subset of these is unknown. The notebook reproduces the paper's settings on a random subset of 1000 rows.
+
+## Unknowns
+
+- The version of the MATLAB generating code.
+- Who ran it, and the sampling seed.
+- Whether the paper's M = 1000 samples are a subset of the 10,000 in the file.
+- The cause of the `dISC` bias (see "Accuracy").
 
 ## License and credit
 

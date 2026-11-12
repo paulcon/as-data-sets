@@ -11,7 +11,7 @@ Kind: **stored data**. SU2 computed the values and gradients in `ONERA-M6.txt`, 
 | `baseline_ffdbox_original.png`, `baseline_ffdbox_deformed.png` | the FFD box around the baseline wing, before and after a deformation (1200 × 1067) | illustrations in the notebook's first cell |
 | `baseline_surface_flow.png` | surface pressure contours on the baseline wing from SU2 (1200 × 1067) | illustration in the notebook's first cell |
 
-## Columns
+### Columns
 
 | columns | meaning | units and coordinates |
 |---|---|---|
@@ -21,22 +21,46 @@ Kind: **stored data**. SU2 computed the values and gradients in `ONERA-M6.txt`, 
 | `dlift01`–`dlift50`, `ddrag01`–`ddrag50` | SU2 adjoint gradients ∂C_L/∂x_i, ∂C_D/∂x_i | with respect to the **physical** inputs |
 
 - **Gradient coordinates.** The gradients are physical: the slope of a least-squares linear fit of each output on the physical inputs is close to the mean gradient (ratio 1.10 for lift, 0.91 for drag; printed by the notebook). Normalized gradients would give a ratio near 20. With normalized inputs z ∈ [−1, 1]⁵⁰, x = 0.05 z, so ∂f/∂z_i = 0.05 ∂f/∂x_i. `ac.active_subspace(space=ac.Uniform(np.full(50, -0.05), np.full(50, 0.05)), grads=G)` applies that factor, so its eigenvalues are 0.05² = 2.5 × 10⁻³ times those computed from the raw gradients. The eigenvectors are the same, because all 50 inputs have the same range.
-- **Design.** The paper samples the inputs with a 300-point Latin hypercube design. The file agrees: in every column, the 297 values fall in 297 distinct strata of the 300 (checked in the notebook), and their standard deviation is 0.02886, against 0.05/√3 = 0.02887 for the uniform distribution.
 
-## Provenance and unknowns
+## Model
 
-- **Source.** These are the runs of T. W. Lukaczyk, F. Palacios, J. J. Alonso and P. G. Constantine, "Active subspaces for shape optimization", AIAA 2014-1171, §IV: the ONERA-M6 wing in inviscid flow (the SU2 Euler solver) at free-stream Mach 0.8395 and angle of attack 3.06°, with lift and drag gradients from the SU2 adjoint solver. The paper's Fig. 1 gives C_L = 0.2864 and C_D = 0.0118 for "a typical direct solution", and its lift constraint is C_L ≥ 0.2864 (eq. 1). The file has no run at the baseline design (all inputs 0).
-- **Code.** SU2, the Stanford Aerospace Design Laboratory's open-source suite (flow, adjoint, and FFD mesh deformation). The design variables are control points of a Bézier box (FFD) enclosing the wing (the paper's §II).
-- **Who ran it.** Trent Lukaczyk (Stanford University), the paper's first author, ran SU2. Paul Constantine committed the file, with a first notebook, in this repository's initial commit on 2014-10-23 (7c26e3a), and the file has not changed since. Ryan Howard rewrote the notebook and added the three PNG files in 2016 (79789d9); where the PNGs were rendered is not recorded.
-- **Unknown**, and not stated in the paper:
-  - which 3 of the 300 Latin hypercube runs are missing, and why. The paper says the bounds were shrunk "until a majority of the flow evaluations would successfully converge", so they may be failed runs; that is a guess;
-  - which FFD control point, and which displacement direction, each of `x01`–`x50` is;
-  - the SU2 version, the mesh, and the solver and adjoint settings.
-- **A different ONERA-M6 data set.** Constantine (2015), *Active Subspaces*, §5.3.2, studies the ONERA-M6 wing with 60 FFD parameters, 248 runs and no gradients. Those data are not in this repository and are not available.
+**Source.** These are the runs of T. W. Lukaczyk, F. Palacios, J. J. Alonso and P. G. Constantine, "Active subspaces for shape optimization", AIAA 2014-1171, §IV: the ONERA-M6 wing in inviscid flow (the SU2 Euler solver) at free-stream Mach 0.8395 and angle of attack 3.06°, with lift and drag gradients from the SU2 adjoint solver.
+
+**Code.** SU2, the Stanford Aerospace Design Laboratory's open-source suite (flow, adjoint, and FFD mesh deformation). The design variables are control points of a Bézier box (FFD) enclosing the wing (the paper's §II).
+
+**Who ran it.** Trent Lukaczyk (Stanford University), the paper's first author, ran SU2. Paul Constantine committed the file, with a first notebook, in this repository's initial commit on 2014-10-23 (7c26e3a), and the file has not changed since. Ryan Howard rewrote the notebook and added the three PNG files in 2016 (79789d9); where the PNGs were rendered is not recorded.
+
+**Inputs** (m = 50): the FFD design variables `x01`–`x50`, in [−0.05, 0.05], with 0 the baseline wing (Columns).
+
+**Quantities of interest.** The lift and drag coefficients C_L and C_D (`Lift`, `Drag`), dimensionless.
+
+**Gradients.** SU2 adjoint gradients of C_L and C_D with respect to the physical inputs (Columns, "Gradient coordinates").
+
+**Sampling design.** The paper samples the inputs with a 300-point Latin hypercube design. The file agrees: in every column, the 297 values fall in 297 distinct strata of the 300 (checked in the notebook), and their standard deviation is 0.02886, against 0.05/√3 = 0.02887 for the uniform distribution.
 
 ## Regenerating
 
 The data cannot be regenerated from this repository. The notebook reads `ONERA-M6.txt` and computes everything from it in about 15–20 s. The only randomness is the bootstrap (500 replicates), and it all comes from one `np.random.default_rng(2014)`. Two runs give identical printed output.
+
+## Accuracy
+
+No solver accuracy numbers are recorded for these runs: the SU2 version, the mesh, and the solver and adjoint settings are not known (Unknowns). The notebook prints two checks of the file: the ratio of the linear-fit slope to the mean gradient (Columns, "Gradient coordinates") and the Latin hypercube strata (Model, "Sampling design").
+
+## How these files relate to the paper
+
+These are the paper's runs (Model, "Source"). The paper's Fig. 1 gives C_L = 0.2864 and C_D = 0.0118 for "a typical direct solution", and its lift constraint is C_L ≥ 0.2864 (eq. 1). The file has no run at the baseline design (all inputs 0).
+
+- **A different ONERA-M6 data set.** Constantine (2015), *Active Subspaces*, §5.3.2, studies the ONERA-M6 wing with 60 FFD parameters, 248 runs and no gradients. Those data are not in this repository and are not available.
+
+## Unknowns
+
+The first three are not stated in the paper.
+
+- Which 3 of the 300 Latin hypercube runs are missing, and why. The paper says the bounds were shrunk "until a majority of the flow evaluations would successfully converge", so they may be failed runs; that is a guess.
+- Which FFD control point, and which displacement direction, each of `x01`–`x50` is.
+- The SU2 version, the mesh, and the solver and adjoint settings.
+- The unit of the control-point displacements (not recorded).
+- Where the three PNG files were rendered (not recorded).
 
 ## License and credit
 

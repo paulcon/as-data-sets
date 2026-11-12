@@ -95,7 +95,17 @@ The `.mat` file is read with `scipy.io.loadmat`. In `.venv` (Python 3.11, 2026-1
 
 ## How these files relate to the paper
 
-The CSVs are the complete data of the supplement, which the paper offers as its data ("This code is written as a MATLAB app and also includes the data", p. 3801). They contain all 10,050 runs, behavioral or not, and nine outputs; the 199 well heads of Fig. 7 are not in the supplement. Open points: the 4,528 vs 4,533 behavioral runs (no subset of the stored runs gives 4,533), the 10,050 vs 10,000 rows, the input map for the 19 inputs not in Fig. 3, the identity of input 27 (riverbed thickness or stream-drain head), the unscaled [0, 1] inputs of Figs. 6 and 8, and the residence-time unit (not stated; Fig. 8 years = stored / 17,520, probably half-hours).
+The CSVs are the complete data of the supplement, which the paper offers as its data ("This code is written as a MATLAB app and also includes the data", p. 3801). They contain all 10,050 runs, behavioral or not, and nine outputs; the 199 well heads of Fig. 7 are not in the supplement. Open points: the 4,528 vs 4,533 behavioral runs (no subset of the stored runs gives 4,533), the 10,050 vs 10,000 rows, the input map for the 19 inputs not in Fig. 3, the identity of input 27 (riverbed thickness or stream-drain head), the unscaled [0, 1] inputs of Figs. 6 and 8, and the residence-time unit (not stated; Fig. 8 years = stored / 17,520, probably half-hours). They are listed under Unknowns.
+
+## Unknowns
+
+- Why the paper reports 4,533 behavioral runs where the stored data give 4,528: no subset of the stored runs gives 4,533, and no clean cause shows in the data (Model, "Behavioral (stage-two) runs").
+- Why the supplement has 10,050 rows where the paper says 10,000 runs.
+- The u → physical map of the inputs not verified against Fig. 3: assumed for 19 inputs, and for the inputs marked "sign checked" only the sign is checked and the linear scale assumed (Model, "Inputs").
+- The identity of input 27: riverbed thickness (Table 1) or stream-drain exit head (Model, "Inputs").
+- The residence-time unit: not stated; Fig. 8 years = stored / 17,520, so probably half-hours, an inference (Files).
+- The HydroGeoSphere and Tecplot 360 versions and the solver settings: not stated in this data set's files.
+- The 199 well heads of Fig. 7: not in the supplement.
 
 ## License and credit
 

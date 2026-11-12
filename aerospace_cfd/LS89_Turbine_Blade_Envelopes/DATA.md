@@ -98,6 +98,17 @@ The script refuses an archive whose SHA-256 differs from the one above. It check
 - **x10 and x20.** They move no stored surface point. Dropping them raises the leave-one-out R² of a quadratic (0.9208 → 0.9251), and their weights in w1 are within bootstrap noise of 0. The data are consistent with Y_p not depending on them. We do not know whether the SU2 meshes moved with them, or why they do not move the stored surfaces: with the Bézier blending of the VKI_CFD box (`gen_ffd_box.cfg`, degree (1, 9)), every control point would be expected to move the blade.
 - **VKI_CFD vs Table 1.** The repository's `run_cfd.cfg` (commit `cfe6e19`, 2019-12-09) sets `FREESTREAM_PRESSURE= 1100000.0`, `FREESTREAM_TEMPERATURE= 592.295` and `REYNOLDS_NUMBER= 6.0E5`, as in Table 1. But its Riemann boundaries are a total pressure of 1.4e5 Pa and total temperature of 420 K at the inlet, and a static pressure of 0.90405e5 Pa at the outlet, a pressure ratio of 1.55. Table 1's p01/p2 = 1.1e6/5.23e5 is 2.10. `FREESTREAM_DENSITY` is 1.2886, while Table 1 gives 1.2866. Which settings produced the archive is a question for the authors.
 
+## Unknowns
+
+- Which 1000 of the 2000 Latin-hypercube points the archive holds, and how they were chosen (Model, "Sampling design"). No seed or training/test split is given.
+- The physical amplitude behind the scaling of the design variables. The paper does not state it, and we have not verified that the published runs used the VKI_CFD default `bound = 0.01`.
+- Whether the SU2 meshes moved with x10 and x20, and why these two variables do not move the stored surfaces.
+- How the paper treated the three `inf` runs in the polynomial fit.
+- Which settings produced the archive: those of Table 1 or those of VKI_CFD's `run_cfd.cfg` (a question for the authors).
+- The SU2 version is not recorded.
+- The cost per run is not reported.
+- What `train_y_coords` and `y_coords_loss` are is our reading ("probably"), not stated by the archive.
+
 ## License and credit
 
 The source repository, equadratures/data-sets, states **no licence**. It has no LICENSE file, and its README does not mention one; checked on 2026-10-30. The repository owner (P. Constantine) decided on 2026-10-30 that data without a licence may be hosted here. The four CSV files are therefore redistributed unchanged in value, with credit to C. Y. Wong, P. Seshadri, A. Scillitoe, A. B. Duncan and G. Parks, and to the equadratures/data-sets repository (https://github.com/equadratures/data-sets, `blade_envelopes/blade_envelopes.npz`, SHA-256 `519dc43c8125a98ee5a2fadf6329eeef2edc4d68382aad2b8994929bae870395`). This repository's CC BY 4.0 data licence does not apply to them, since their authors have not licensed them; `LICENSE-DATA` lists them among its exceptions. If the authors object or attach a licence, follow it. Code here (`convert_data.py`, the notebook): MIT (`LICENSE`). VKI_CFD (the run scripts and configuration files cited above) also has no licence file, so nothing from it is copied here. It was read only to document the setup.

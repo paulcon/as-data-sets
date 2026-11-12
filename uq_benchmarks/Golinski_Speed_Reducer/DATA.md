@@ -18,7 +18,7 @@ The CSVs are comma-separated numbers (17 significant digits) after two `#` lines
 
 ## Model
 
-**Citation.** J. Golinski, "Optimal synthesis problems solved by means of nonlinear programming and random methods", *Journal of Mechanisms* 5(3):287–309, 1970, doi:[10.1016/0022-2569(70)90064-9](https://doi.org/10.1016/0022-2569(70)90064-9). Section 3.1, "Speed reducer", pp. 297–300, Figs. 10–12, Table 1. The PDF read for this build is the publisher's scan (file tagged `_oa`; the printed objective is partly garbled in the text layer and was read from a 300 dpi rendering of p. 299). The constraint functions and the input box come from T. Ray, "Golinski's speed reducer problem revisited", *AIAA Journal* 41(3):556–558, 2003, doi:[10.2514/2.1984](https://doi.org/10.2514/2.1984), as printed in psdr (J. M. Hokanson, `psdr/demos/golinski.py`, github.com/jeffrey-hokanson/PSDR). Ray's paper itself was not read.
+**Citation.** J. Golinski, "Optimal synthesis problems solved by means of nonlinear programming and random methods", *Journal of Mechanisms* 5(3):287–309, 1970, doi:[10.1016/0022-2569(70)90064-9](https://doi.org/10.1016/0022-2569(70)90064-9). Section 3.1, "Speed reducer", pp. 297–300, Figs. 10–12, Table 1. The PDF read is the publisher's scan (the printed objective is partly garbled in the text layer and was read from a 300 dpi rendering of p. 299). The constraint functions and the input box come from T. Ray, "Golinski's speed reducer problem revisited", *AIAA Journal* 41(3):556–558, 2003, doi:[10.2514/2.1984](https://doi.org/10.2514/2.1984), as printed in psdr (J. M. Hokanson, `psdr/demos/golinski.py`, github.com/jeffrey-hokanson/PSDR). Ray's paper itself was not read.
 
 **Fixed assumptions** (p. 297): transmitted power N = 100 (unit printed "km", presumably the Polish KM, metric horsepower), pinion speed n = 1500 min⁻¹, transmission ratio i = 3, allowable stresses k_g = 900, p_d = 5800, k_g1 = 1100, k_g2 = 850 kG cm⁻², tooth form factor q = 2.54. These enter Golinski's constraints, not his objective.
 
@@ -52,7 +52,7 @@ Both are smooth on the box (no max, no kinks) and depend on three inputs. The ot
 | (held) | number of pinion teeth z (x3) | – | 17 | 17 | integer; z ≥ 17 is condition 3, p. 298; fixed at 17 in psdr |
 | (held) | transmission ratio i | – | 3 | 3 | p. 297 |
 
-The spreadsheet note (from arXiv 1203.6586, citing Golinski 1973) gives l2 ∈ [7.8, 8.4] and z ∈ [17, 28]. The notebook reruns the analysis with l2 ∈ [7.8, 8.4]: the first eigenvectors agree to 0.99993 (volume) and 1.00000 (g3, g5). z is held at 17, as in psdr and in Ray's six-variable form, because it is an integer.
+Other ranges are in use, l2 ∈ [7.8, 8.4] and z ∈ [17, 28] (attributed to arXiv 1203.6586, citing Golinski 1973; not checked against either). The notebook reruns the analysis with l2 ∈ [7.8, 8.4]: the first eigenvectors agree to 0.99993 (volume) and 1.00000 (g3, g5). z is held at 17, as in psdr and in Ray's six-variable form, because it is an integer.
 
 **Quantities of interest.** V (cm³; Golinski calls it the weight, as a volume), g3, g5 (dimensionless).
 
@@ -60,7 +60,7 @@ The spreadsheet note (from arXiv 1203.6586, citing Golinski 1973) gives l2 ∈ [
 
 **Sampling design.** N = 1000 independent uniform samples on the box (`numpy.random.default_rng(1970)`, `LOWER + (UPPER − LOWER) * rng.random((1000, 6))`). That is about 167 samples per input (m = 6). The samples are not restricted to the feasible set: g3 ≤ 0 at 94.1 % of them and g5 ≤ 0 at 53.0 %.
 
-**Published results.** Golinski reports no parameter study, sensitivity or dimension reduction. Table 1 (p. 300) gives two optimized designs: crude Monte Carlo, f = 2236.35 cm³ at b = 4.4, m = 0.6, l1 = 7.3, l2 = 8.1, d1 = 3.4, d2 = 5.0, z = 17 (734,631 samples, 36,937 feasible, 5 h); stray process, f = 2247.79 cm³ at b = 3.6, m = 0.7, l1 = 6.6, l2 = 8.2, d1 = 2.8, d2 = 5.2, z = 18 (166,796 samples, 45,998 feasible, 2 h). Hokanson and Constantine (SIAM J. Sci. Comput., doi:10.1137/20M1364850, per the screening spreadsheet) analyse the six-input standard volume with psdr; their numbers were not available for this build.
+**Published results.** Golinski reports no parameter study, sensitivity or dimension reduction. Table 1 (p. 300) gives two optimized designs: crude Monte Carlo, f = 2236.35 cm³ at b = 4.4, m = 0.6, l1 = 7.3, l2 = 8.1, d1 = 3.4, d2 = 5.0, z = 17 (734,631 samples, 36,937 feasible, 5 h); stray process, f = 2247.79 cm³ at b = 3.6, m = 0.7, l1 = 6.6, l2 = 8.2, d1 = 2.8, d2 = 5.2, z = 18 (166,796 samples, 45,998 feasible, 2 h). Hokanson and Constantine (SIAM J. Sci. Comput., doi:10.1137/20M1364850) analyse the six-input standard volume with psdr; their numbers were not available.
 
 ## Regenerating
 
@@ -81,6 +81,13 @@ The shipped files were written on 2026-10-30 in a Linux container (numpy 2.5.4, 
 - **Same objective, different numbers.** The volume is Golinski's formula with the two readings above. It does **not** reproduce his Table 1: at his two designs it gives 2671.92 cm³ (crude Monte Carlo, +19.5 %) and 3049.87 cm³ (stray process, +35.7 %), against 2236.35 and 2247.79. The two printed values differ by 0.5 % and ours by 14 %, so no constant factor explains it. Other readings tried (`check_accuracy.py`, check 2; cm³ for the two designs): hub term as printed, (d_p² − d_k²) 2b, with d_k² l_k shafts: 2974.8 and 3029.8; the same with d_k l_k shafts: 2800.8 and 2863.0; hub (π/4)(d_p² − d_k²) b: 2044.8 and 2303.8; hub (π/4)(d_p² − d_k²)(2d_k − b/3): 2471.5 and 2893.4. Solving for free hub and shaft coefficients (multiples of the hub and shaft terms, rim and web as above) from the two Table 1 values gives a negative coefficient under each hub reading (`check_accuracy.py`, check 3): with the hub length 2 d_k used here, the hub coefficient is −7.7 (d_k² l_k shafts) or −4.9 (d_k l_k shafts); with the printed hub (d_p² − d_k²) 2b, the hub coefficient is positive (+1.3, +1.4) and the shaft coefficient negative (−4.3, −20.9). So Table 1 is inconsistent with the printed formula under every reading we tried; we keep the reading whose expansion is the standard formulation.
 - **Not the paper's design space.** Both Table 1 designs lie partly outside the standard box (b = 4.4, m = 0.6; l1 = 6.6, d1 = 2.8), and the stray design has z = 18. Under Ray's constants the stray design violates g5 (+0.710), which suggests that Ray's constraint constants differ from Golinski's.
 - **New computation.** The paper has no parameter study; the uniform sampling, the box, the held z and the active subspace analysis are ours (box and z from psdr).
+
+## Unknowns
+
+- Why the volume formula does not reproduce Golinski's Table 1 under any reading tried; the two readings of the scanned objective (hub length 2 d_k, shaft term d_k²) are inferred from Fig. 11 and from the standard formulation, not confirmed by the paper.
+- The unit printed "km" for the transmitted power is presumably the Polish KM (metric horsepower); not confirmed.
+- Ray's constraint constants were not checked against the 1970 paper, which does not print the constants its own constraint formulas need, and Ray's paper itself was not read.
+- The numbers of Hokanson and Constantine's analysis of the six-input volume were not available.
 
 ## License and credit
 

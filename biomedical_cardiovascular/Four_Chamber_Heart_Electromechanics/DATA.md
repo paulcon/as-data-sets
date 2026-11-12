@@ -205,6 +205,16 @@ inputs and outputs). `Luo_Rudy_Cardiac_Action_Potential` (LR1991), `Rabbit_Ventr
 (Shannon rabbit model) and `Hodgkin_Huxley_Action_Potential` are single-cell models with their own data.
 This is the only organ-scale (electromechanics plus circulation) data set among them.
 
+## Unknowns
+
+- The units of the "model units" parameters (ToR-ORd, Courtemanche and Land implementations in CARP): not stated (Model, "Units").
+- The CV unit (m/s) is inferred from the values, and the stored $k_{peri}$ unit (kPa/µm) is an inference (Model, "Units").
+- The units of the 20 four-chamber outputs (mL, mmHg, mmHg/s) and of the ToR-ORd outputs (µM, ms) are inferred: Table 4 gives no units.
+- The box of the ToR-ORd ionic study (the default × [0.75, 1.25]) is inferred from the data; the S2 File was not read.
+- How the 2175 ToR-ORd ionic rows were drawn: they are not one Latin hypercube of 2175 points, consistent with failed or filtered runs or a union of designs (Model, "Sampling design"; S2 File not read).
+- Whether the runs used the rounded stored values of $P_{Nab}$ and $P_{Cab}$.
+- The inputs of the failed four-chamber runs (42 during unloading, 51 during the coupled simulation): the failed points are not deposited.
+
 ## License and credit
 
 Data: © Strocchi et al., Zenodo 10.5281/zenodo.7405335, CC BY 4.0 (as stated for the record); article CC BY.

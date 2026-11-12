@@ -17,7 +17,7 @@ The CSVs have two `#` lines (a description and the column names) and are read by
 
 ## Model
 
-**Source.** T. Igusa and A. Der Kiureghian, "Dynamic characterization of two-degree-of-freedom equipment-structure systems", *J. Eng. Mech.* 111(1):1–19, 1985, doi:10.1061/(ASCE)0733-9399(1985)111:1(1) (checked on Crossref). The PDF read is the ASCE journal copy with journal pagination (the file is named `_oa`, but it is not a preprint). The equations were read from page images (the text layer garbles them): Eq. 1 and Eqs. 2a–2d, 3a on p. 3, Eqs. 35–37 on p. 12, Fig. 5 on p. 13.
+**Source.** T. Igusa and A. Der Kiureghian, "Dynamic characterization of two-degree-of-freedom equipment-structure systems", *J. Eng. Mech.* 111(1):1–19, 1985, doi:10.1061/(ASCE)0733-9399(1985)111:1(1) (checked on Crossref). The PDF read is the ASCE journal copy with journal pagination (not a preprint). The equations were read from page images (the text layer garbles them): Eq. 1 and Eqs. 2a–2d, 3a on p. 3, Eqs. 35–37 on p. 12, Fig. 5 on p. 13.
 
 **Equations.** A light secondary oscillator (equipment: m_s, ω_s, ζ_s) on a primary oscillator (structure: m_p, ω_p, ζ_p), base excited by stationary white-noise acceleration with one-sided PSD G_0. With β = (ω_p − ω_s)/ω_a (tuning, Eq. 2a), γ = m_s/m_p (interaction, Eq. 2b), ω_a = (ω_p + ω_s)/2 (Eq. 2d), ζ_a = (ζ_p + ζ_s)/2 (Eq. 3a), the general ("matched") mean-square response of the equipment is (Eq. 37, p. 12)
 
@@ -79,6 +79,14 @@ The run takes 0.3 s (0.4 s with Python start-up; 0.25 s of it is the 1000 Lyapun
 
 - **Not the paper's computation.** The 1985 paper evaluates Eq. 37 deterministically (Fig. 5). The distributions, the capacity F_s and the limit state come from the later benchmark (Der Kiureghian and De Stefano 1991, via OpenTURNS/UQTestFuns); the samples are new.
 - **Fig. 5 reproduced from the model.** The notebook recomputes Fig. 5 and compares it with values read from the page image by pixel position (about ±0.2; the paper prints no numbers). Eq. 37 gives 25.25, 22.75, 16.76 at β = 0, 0.05, 0.1, against 25.2, 22.9, 16.75 read from the "matched" curve. The figure's "exact" curve (from the paper's Ref. 3, Crandall and Mark) is within 0.58 of our exact spring-deformation solution at the six points read and agrees at β = 0 (25.85 vs 25.7), where the ground-relative x_s is 2.05 too high (27.75). Between β = 0.1 and 0.25 the figure's curve lies between our two exact curves. A variant with ω_p² = k_p/(m_p + m_s) is within 0.36 at all six points; that is our guess at how the exact curve was parameterized, not something the paper states.
+
+## Unknowns
+
+- Units are not given by the benchmark; any consistent set applies (Files).
+- The 1991 and 2013 papers were not read: the input distributions, F_s and the limit state are as given by OpenTURNS and UQTestFuns, which attribute them to Der Kiureghian and De Stefano (1991) (Model, Inputs).
+- The method behind OpenTURNS' P_f = 3.78 × 10⁻⁷ is not stated (Model, Published results).
+- How the "exact" curve of Fig. 5 was parameterized is not stated in the paper; the variant with ω_p² = k_p/(m_p + m_s) is a guess (How these files relate to the paper).
+- The OpenTURNS and UQTestFuns pages state no separate licence (License and credit).
 
 ## License and credit
 

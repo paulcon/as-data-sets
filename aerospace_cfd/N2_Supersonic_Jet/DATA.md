@@ -11,7 +11,7 @@ Kind: **stored data**. SU2 computed the values and adjoint gradients in `LM104X.
 
 The file name comes from the first notebook for these data ("Lockheed-Martin 104X"). What "104X" stands for is not recorded; the dissertation calls the aircraft the Lockheed N+2.
 
-## Columns
+**Columns.**
 
 | columns | meaning | units and coordinates |
 |---|---|---|
@@ -21,36 +21,52 @@ The file name comes from the first notebook for these data ("Lockheed-Martin 104
 | `Equiv Area` | equivalent-area functional ΔA_e (dissertation Eq. (2.2), p. 17): the mean squared difference between the near-field equivalent-area distribution and a target distribution | scale not recorded: the stored values run from 5.5 to 1666, while Eq. (2.21) constrains ΔA_e ≤ 10⁻⁴ |
 | `d-lift01`–`d-lift105`, `d-drag01`–`d-drag105`, `d-ea01`–`d-ea105` | SU2 continuous-adjoint gradients ∂f/∂x_i | with respect to the **physical** inputs |
 
-- **Gradient coordinates.** With normalized inputs z ∈ [−1, 1]¹⁰⁵, x = 0.3 z, so ∂f/∂z_i = 0.3 ∂f/∂x_i. `ac.active_subspace(space=ac.Uniform(np.full(105, -0.3), np.full(105, 0.3)), grads=G)` applies that factor, which scales the eigenvalues by 0.09 relative to the raw gradients and leaves the eigenvectors unchanged, because all 105 inputs have the same range. With each output also min–max scaled to [−1, 1], the eigenvalues reproduce dissertation Fig. 4.14 (p. 108): λ₁ = 0.19 (lift), 0.084 (drag), 1.42e-3 (equivalent area). So the dissertation treated the gradients as physical too.
-- **Gradient accuracy** (printed by the notebook's "Gradient quality" cell). The values and the gradients disagree:
-  - Lift is linear in the inputs (least-squares R² = 1.000), so its exact gradient is the regression slope s at every run. The adjoint w₁ is 24.8° from s, each gradient's component along s is 0.62–0.65 of ‖s‖, and the gradients differ from s by a median of 0.47 ‖s‖.
-  - Drag: along w₁, the adjoint derivatives are 0.70 of the slope of a quadratic fit of the values.
-  - Equivalent area: along w₁, the adjoint derivatives follow the slope of a quadratic fit (correlation 0.94) but are 15.1 times smaller. Either the stored values and gradients are on different scales, or the gradients are wrong by a nearly constant factor; the cause is not recorded.
-  - The dissertation measures SU2's continuous-adjoint error only for NACA0012 (Table 3.4, p. 72: 9.9 % lift, 2.0 % drag) and explains the lift error by artificial dissipation calibrated for drag (§3.3.2.1, p. 73). It has no gradient check for the N+2.
-- **Distribution.** The inputs look uniform on the box (standard deviation 0.1729, against 0.3/√3 = 0.1732). How they were drawn (independent uniform, Latin hypercube, …) is not recorded.
+**Rows.** 310 rows, all with distinct inputs. Run 1 is the baseline design (all inputs 0). The notebook uses all 310 rows.
 
-## Rows
+## Model
 
-- 310 rows, all with distinct inputs. Run 1 is the baseline design (all inputs 0).
-- The dissertation (p. 107) reports "315 sampled designs, 305 of which were retained after filtering for results that converged more than 1 × 10⁻⁶". Why the file has 310 rows, and whether it includes runs that failed that filter, is unexplained. The notebook uses all 310 rows. Its eigenvalues match Fig. 4.14 within 14 %, so they cannot tell 305 rows from 310.
+**Code.** SU2, the Stanford Aerospace Design Laboratory's flow solver, with its continuous adjoint for the gradients. Dissertation §2.5.3.2 (pp. 41–42): the "boom mesh" with active engines and a near-field region, simulated as a half-body; freestream Mach 1.7, angle of attack 2.1°, baseline cruise C_L 0.14 (§2.5.3, p. 38). Each run took 120 minutes on 96 cores (p. 107).
 
-## Provenance and unknowns
+**Who ran it.** Trent Lukaczyk (Stanford University, Aerospace Design Laboratory; adviser Juan J. Alonso), for his dissertation. Paul Constantine committed the file and the first notebook to this repository on 2014-10-23 (commit 7c26e3a).
 
-- **Code.** SU2, the Stanford Aerospace Design Laboratory's flow solver, with its continuous adjoint for the gradients. Dissertation §2.5.3.2 (pp. 41–42): the "boom mesh" with active engines and a near-field region, simulated as a half-body; freestream Mach 1.7, angle of attack 2.1°, baseline cruise C_L 0.14 (§2.5.3, p. 38). Each run took 120 minutes on 96 cores (p. 107).
-- **Who ran it.** Trent Lukaczyk (Stanford University, Aerospace Design Laboratory; adviser Juan J. Alonso), for his dissertation. Paul Constantine committed the file and the first notebook to this repository on 2014-10-23 (commit 7c26e3a).
-- **Funding and release.** The work was funded by the NASA N+2 Supersonics Program and the Lockheed Martin Corporation (dissertation p. vii). The repository's author cleared the release of this file. The file holds only FFD displacements, integrated coefficients and their gradients, no geometry.
-- **Unknown:**
-  - which columns of `x01`–`x105` belong to the wing, tail, aft deck and fuselage;
-  - the units of the displacements, and why the data lie in [−0.3, 0.3] while dissertation Eq. (2.21) gives −3.0 ≤ x_i ≤ 3.0;
-  - which 310 runs these are (dissertation: 315 sampled, 305 retained);
-  - the SU2 version, mesh size and adjoint settings;
-  - the scale of the stored `Equiv Area` values relative to Eq. (2.21), and why its gradients are about 15 times smaller than the values imply;
-  - what "104X" in the file name stands for.
-- **Dissertation errata noted.** Fig. 4.15 (p. 109) computes the active variable from the raw ±0.3 inputs (its axis, −0.48 to 0.57, is reproduced exactly that way), contradicting §4.2 (pp. 78–79) and Fig. 4.14, which normalize the inputs. "Passengjer" in the captions of Figs. 2.16 and 2.19.
+**Funding and release.** The work was funded by the NASA N+2 Supersonics Program and the Lockheed Martin Corporation (dissertation p. vii). The repository's author cleared the release of this file. The file holds only FFD displacements, integrated coefficients and their gradients, no geometry.
+
+**Inputs** (m = 105): the FFD z-displacements `x01`–`x105` in [−0.3, 0.3] (see "Columns").
+
+**Quantities of interest.** Lift and drag coefficients and the equivalent-area functional (see "Columns").
+
+**Gradient coordinates.** With normalized inputs z ∈ [−1, 1]¹⁰⁵, x = 0.3 z, so ∂f/∂z_i = 0.3 ∂f/∂x_i. `ac.active_subspace(space=ac.Uniform(np.full(105, -0.3), np.full(105, 0.3)), grads=G)` applies that factor, which scales the eigenvalues by 0.09 relative to the raw gradients and leaves the eigenvectors unchanged, because all 105 inputs have the same range.
+
+**Distribution.** The inputs look uniform on the box (standard deviation 0.1729, against 0.3/√3 = 0.1732). How they were drawn (independent uniform, Latin hypercube, …) is not recorded.
 
 ## Regenerating
 
 The data cannot be regenerated from this repository. The notebook reads `LM104X.txt` and computes everything from it in about 30 seconds (one Python process). The only randomness is the bootstrap (200 replicates per output), and it all comes from one `np.random.default_rng(2015)`. Two runs give identical printed output.
+
+## Accuracy
+
+**Gradient accuracy** (printed by the notebook's "Gradient quality" cell). The values and the gradients disagree:
+
+- Lift is linear in the inputs (least-squares R² = 1.000), so its exact gradient is the regression slope s at every run. The adjoint w₁ is 24.8° from s, each gradient's component along s is 0.62–0.65 of ‖s‖, and the gradients differ from s by a median of 0.47 ‖s‖.
+- Drag: along w₁, the adjoint derivatives are 0.70 of the slope of a quadratic fit of the values.
+- Equivalent area: along w₁, the adjoint derivatives follow the slope of a quadratic fit (correlation 0.94) but are 15.1 times smaller. Either the stored values and gradients are on different scales, or the gradients are wrong by a nearly constant factor; the cause is not recorded.
+- The dissertation measures SU2's continuous-adjoint error only for NACA0012 (Table 3.4, p. 72: 9.9 % lift, 2.0 % drag) and explains the lift error by artificial dissipation calibrated for drag (§3.3.2.1, p. 73). It has no gradient check for the N+2.
+
+## How these files relate to the paper
+
+- **The runs.** These are the dissertation's SU2 runs (see "Model"). The dissertation (p. 107) reports "315 sampled designs, 305 of which were retained after filtering for results that converged more than 1 × 10⁻⁶". Why the file has 310 rows, and whether it includes runs that failed that filter, is unexplained. The notebook uses all 310 rows. Its eigenvalues match Fig. 4.14 within 14 %, so they cannot tell 305 rows from 310.
+- **Eigenvalues.** With each output also min–max scaled to [−1, 1], the eigenvalues reproduce dissertation Fig. 4.14 (p. 108): λ₁ = 0.19 (lift), 0.084 (drag), 1.42e-3 (equivalent area). So the dissertation treated the gradients as physical too.
+- **Dissertation errata noted.** Fig. 4.15 (p. 109) computes the active variable from the raw ±0.3 inputs (its axis, −0.48 to 0.57, is reproduced exactly that way), contradicting §4.2 (pp. 78–79) and Fig. 4.14, which normalize the inputs. "Passengjer" in the captions of Figs. 2.16 and 2.19.
+
+## Unknowns
+
+- Which columns of `x01`–`x105` belong to the wing, tail, aft deck and fuselage.
+- The units of the displacements, and why the data lie in [−0.3, 0.3] while dissertation Eq. (2.21) gives −3.0 ≤ x_i ≤ 3.0.
+- Which 310 runs these are (dissertation: 315 sampled, 305 retained).
+- The SU2 version, mesh size and adjoint settings.
+- The scale of the stored `Equiv Area` values relative to Eq. (2.21), and why its gradients are about 15 times smaller than the values imply.
+- How the inputs were drawn (independent uniform, Latin hypercube, …).
+- What "104X" in the file name stands for.
 
 ## License and credit
 

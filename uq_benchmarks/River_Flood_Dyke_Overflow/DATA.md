@@ -18,7 +18,7 @@ The CSVs have two `#` lines (a description and the column names with units) and 
 
 ## Model
 
-**Source.** M. Lamboni, B. Iooss, A.-L. Popelin, F. Gamboa, "Derivative-based global sensitivity measures: General links with Sobol' indices and numerical tests", *Math. Comput. Simul.* 87:45–54, 2013, doi:10.1016/j.matcom.2013.02.002, Section 4.3. The PDF read is the authors' manuscript (file `_oa`; its text is arXiv:1202.0943v2, 2 July 2012, recompiled), not the journal version; pages and tables below are the manuscript's. The model is the pedagogical flood model of B. Iooss, *J. Soc. Fr. Stat.* 152(1):1–23, 2011 (not read).
+**Source.** M. Lamboni, B. Iooss, A.-L. Popelin, F. Gamboa, "Derivative-based global sensitivity measures: General links with Sobol' indices and numerical tests", *Math. Comput. Simul.* 87:45–54, 2013, doi:10.1016/j.matcom.2013.02.002, Section 4.3. The PDF read is the authors' manuscript (its text is arXiv:1202.0943v2, 2 July 2012, recompiled), not the journal version; pages and tables below are the manuscript's. The model is the pedagogical flood model of B. Iooss, *J. Soc. Fr. Stat.* 152(1):1–23, 2011 (not read).
 
 **Equations** (Eq. (4.20), p. 14). A crude simplification of the 1-D Saint-Venant equations for uniform, constant flow in a wide rectangular channel with the Strickler law:
 
@@ -92,6 +92,15 @@ The shipped files were written on 2026-10-30 in a Linux container (numpy 2.5.4, 
 - **Υ_j.** For Q and H_d, whose constants are unambiguous, Table 5's Υ_j equal C_j ν_j with its ν_j and no division by D (or D = 1; the exact D is 1.1745). Read this way, the implied constants are C_Q = 2.1659 × 10⁶ (the Cheeger constant 1/ρ(m)² of the truncated Gumbel at its median is 2.1656 × 10⁶) and C_Hd = 0.40529 = 4/π²; for the triangular inputs about half of 1/ρ(m)² (0.4996, 0.4827, 0.1252 against 1, 1, 0.25); for K_s 60.3, neither σ² = 64 nor 1/ρ(m)² = 378.6. `flood_model.poincare_constants` returns 1/ρ(m)² for the log-concave inputs and (b − a)²/π² for H_d; with them and exact ν_j and D, Υ = 2.848, 1.264, 1.140, 0.0231, 0.345, 0.213, 2.2e-06, 6.1e-04, which bound ST_j for every input.
 - **Table 6 (cost).** The ν_j of Table 6 are 1391–1475 times the sample values from Eq. (4.21) as printed (for every input, including H_d). We could not reconcile this; the formula may differ from the one used in the computations. The Sobol' indices of Cp were not recomputed.
 - **The OpenTURNS flood use case differs** (not checked here against OpenTURNS): K_s N(30, 7.5) truncated at 0, Z_v U(49, 51), Z_m U(54, 56), Q truncated at 0. These files use Table 4 of the paper.
+
+## Unknowns
+
+- The cause of the common factor (0.8381–0.8392) in Table 5's DGSM; it is not in the paper.
+- Why the ν_j of Table 6 are 1391–1475 times the values from Eq. (4.21) as printed; the formula used in the paper's computations may differ.
+- The paper's finite-difference perturbation for this model is not stated.
+- The readings of Table 4 that the paper leaves implicit (the Gumbel parameterization, N(30, 8) with standard deviation 8, the triangular parameter order, the unit of K_s) are this data set's choices (Model).
+- The constants behind Table 5's Υ_j for the triangular inputs and for K_s, which match no stated constant.
+- The page and table numbers are the authors' manuscript's; the journal version was not read.
 
 ## License and credit
 

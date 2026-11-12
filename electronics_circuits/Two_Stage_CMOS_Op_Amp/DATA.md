@@ -89,6 +89,13 @@ Needs numpy, scipy and the program `ngspice` on `PATH` (or `NGSPICE=/path/to/ngs
 - **Choices that are ours**: continuous inputs, log-uniform sampling, the conditioned set gain ≥ 200 (the bandwidth and phase-margin subspaces hold for that conditioning; see Sampling design), `reltol` and sweep density, the spline-based f_u and PM and the errors raised where they are undefined.
 - **AutoCkt's own sizes** in the netlist (mp1 10, mn1 38, mp3 4, mn3 9, mn4 20, mn5 60, Cc 3 pF) give gain 0.63 V/V, so no f_u; they are a placeholder, not a design.
 
+## Unknowns
+
+- Which 10 gain200 designs the held-setting and sweep-density comparisons of 2026-10-30 used, and the design and span of the 121-point sweeps: not recorded, so `check_accuracy.py` checks 1, 2 and 4 may give somewhat different values (Accuracy).
+- The `check_accuracy.py` values have not been reproduced in `.venv`, which has no ngspice, and the outputs could not be rerun there (Regenerating).
+- How far another ngspice version or platform changes the last digits.
+- The licence terms of the AutoCkt netlist and of the BPTM model card `45nm_bulk.txt`: none stated (License and credit).
+
 ## License and credit
 
 Code (`*.py`, the notebook): MIT (`LICENSE`). Data (the six CSVs): CC BY 4.0 (`LICENSE-DATA`). Circuit, design space and quantities of interest: Settaluri, Haj-Ali, Huang, Hakhamaneshi and Nikolic (DATE 2020; cite the paper above). The AutoCkt repository (github.com/ksettaluri6/AutoCkt) states **no licence**. Material that states no licence is hosted here with its source credited (see the exceptions in `LICENSE-DATA`), so the model card `45nm_bulk.txt` is shipped unaltered (sha256 `42489e9aab3423fe868c6d249326535892ad87de7f8f5b18d790d0afe8401ef4`) with this credit; it identifies itself as "BPTM 45nm", the Berkeley Predictive Technology Model (Cao et al. 2000), and we found no licence statement for it either. `two_stage_opamp.cir.template` is adapted from AutoCkt's netlist `two_stage_opamp.cir`: its element and source lines are AutoCkt's, with braces around parameters; the header, `.param` substitution fields, options and `.control` block are ours. Like the model card, it is hosted as material without a licence, cited with its source (AutoCkt, Settaluri et al.) credited. **Neither `45nm_bulk.txt` nor the circuit lines taken from AutoCkt are covered by this repository's MIT or CC BY 4.0 licences**; they remain under whatever terms their authors set (none stated). `opamp_spice.py` and `generate_data.py` were written for this repository (MIT) from AutoCkt's measurement definitions in `TwoStageClass.py`; no AutoCkt Python code was copied. ngspice is not redistributed here.

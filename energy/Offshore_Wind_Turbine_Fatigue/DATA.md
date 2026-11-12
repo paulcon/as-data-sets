@@ -11,20 +11,7 @@ Kind: **stored data**. FAST simulations run at NREL produced `NRELwind_testing.t
 
 The file has no missing values and no duplicate input rows. Column `Run` runs from 1 to 50,000 in order.
 
-## Provenance
-
-- **Who ran it**: Peter Graf, National Renewable Energy Laboratory (NREL), for P. A. Graf, G. Stewart, M. Lackner, K. Dykes and P. Veers, "High-throughput computation and the applicability of Monte Carlo integration in fatigue load estimation of floating offshore wind turbines", *Wind Energy* 19(5):861–872, 2016, doi:10.1002/we.1870 (NREL/JA-2C00-62929). Page and section numbers below refer to the accepted manuscript.
-- **Generating code**:
-  - FAST version 7 for the turbine response;
-  - TurbSim for the turbulent wind;
-  - HydroDyn, inside FAST 7, for the waves (a JONSWAP spectrum set by Hs and Tp);
-  - rainflow counting routines ported to C from NREL's MLife.
-
-  NREL's WISDEM framework (on openMDAO) generated the samples and ran the cases (§3). No other versions and no run dates are recorded.
-- **Model**: the OC3 Hywind spar-buoy floating turbine under IEC 61400-3 design load case 1.2 (normal operation). Each run is one 10-minute simulation with the IEC class A normal turbulence model and power-law wind shear with exponent 0.14. The wind and wave distributions were fitted to NOAA National Data Buoy Center data for a representative East Coast site (§2).
-- **Sample**: the 50,000 rows are a subset of the 500,000 Monte Carlo samples of the paper's 5-input study (§4.3), as the repository's author confirmed. How the 50,000 were selected is not recorded. The first version of this directory shipped a 500,000-sample MATLAB file, `windData500k.mat` (64.5 MB). It was added in 79a3271 (2016-07-12) and deleted in 554642d (2016-07-22), and it stays in the git history.
-
-## Columns
+### Columns
 
 Inputs (columns 1–5). The file stores encoded values, not physical ones. The repository's author confirmed the encoding:
 
@@ -50,19 +37,7 @@ Outputs (columns 6–12). Each is a short-term damage equivalent load (DEL) of o
 
 The paper names `RootMxc1`, `TwrBsMxt` and `Anch1Ten`; the other meanings follow FAST's channel names. The units are unconfirmed: they are FAST 7's channel units by inference, and neither the paper nor the data state them.
 
-## Gradients
-
-None are stored. The notebook estimates them by local linear fits (60 nearest neighbors, at 2,000 seeded centers) in the normalized coordinates of the smallest box that contains [−1, 1]⁵ and the data. For `Vhub`, `Hs` and `Tp` those coordinates are the stored values. For `WaveDir` (box [−1.1026, 1.0137]) and `PlatformDir` (box [−1, 1.0465]) they are the stored values scaled by 0.945 and 0.977 and shifted.
-
-## Unknowns
-
-- The output units (kN·m and kN are inferred, unconfirmed).
-- The distribution parameters of the 5-input study, and so the physical input values.
-- How the 50,000 rows were selected from the 500,000.
-- Software versions other than FAST 7, and the run dates.
-- The m = 4 long-term DEL, (mean of f⁴)^(1/4), of `rf4_RootMxc1` in these data is 5,327; the paper's Fig. 7 shows about 7,200. The cause is unknown.
-
-## Loading
+### Loading
 
 ```python
 import numpy as np
@@ -74,9 +49,50 @@ X, F = d[:, 1:6], d[:, 6:]
 in_labels, out_labels = names[1:6], names[6:]
 ```
 
+## Model
+
+**Source and who ran it.** Peter Graf, National Renewable Energy Laboratory (NREL), for P. A. Graf, G. Stewart, M. Lackner, K. Dykes and P. Veers, "High-throughput computation and the applicability of Monte Carlo integration in fatigue load estimation of floating offshore wind turbines", *Wind Energy* 19(5):861–872, 2016, doi:10.1002/we.1870 (NREL/JA-2C00-62929). Page and section numbers below refer to the accepted manuscript.
+
+**Generating code.**
+
+- FAST version 7 for the turbine response;
+- TurbSim for the turbulent wind;
+- HydroDyn, inside FAST 7, for the waves (a JONSWAP spectrum set by Hs and Tp);
+- rainflow counting routines ported to C from NREL's MLife.
+
+NREL's WISDEM framework (on openMDAO) generated the samples and ran the cases (§3). No other versions and no run dates are recorded.
+
+**Model.** The OC3 Hywind spar-buoy floating turbine under IEC 61400-3 design load case 1.2 (normal operation). Each run is one 10-minute simulation with the IEC class A normal turbulence model and power-law wind shear with exponent 0.14. The wind and wave distributions were fitted to NOAA National Data Buoy Center data for a representative East Coast site (§2).
+
+**Inputs** (m = 5): `Vhub`, `Hs`, `WaveDir`, `Tp` and `PlatformDir`, stored encoded, not in physical units (Columns).
+
+**Quantities of interest.** Seven short-term damage equivalent loads of blade-root, tower-base and anchor loads (Columns).
+
+**Gradients.** None are stored. The notebook estimates them by local linear fits (60 nearest neighbors, at 2,000 seeded centers) in the normalized coordinates of the smallest box that contains [−1, 1]⁵ and the data. For `Vhub`, `Hs` and `Tp` those coordinates are the stored values. For `WaveDir` (box [−1.1026, 1.0137]) and `PlatformDir` (box [−1, 1.0465]) they are the stored values scaled by 0.945 and 0.977 and shifted.
+
+**Sampling design.** The 50,000 rows are a subset of the 500,000 Monte Carlo samples of the paper's 5-input study (§4.3), as the repository's author confirmed. How the 50,000 were selected is not recorded. The first version of this directory shipped a 500,000-sample MATLAB file, `windData500k.mat` (64.5 MB). It was added in 79a3271 (2016-07-12) and deleted in 554642d (2016-07-22), and it stays in the git history.
+
 ## Regenerating
 
 The data cannot be regenerated here. The notebook computes everything else from the file in about a minute. All draws (gradient centers, bootstrap, plotted subset) come from one `np.random.default_rng(2016)`, and two runs give identical printed output.
+
+## Accuracy
+
+No accuracy numbers are recorded for these runs, and the runs cannot be repeated here.
+
+## How these files relate to the paper
+
+These are runs of the paper's 5-input study (§4.3): 50,000 of its 500,000 Monte Carlo samples (Model, "Sampling design"). The paper gives the distribution parameters of its 4-input study only (p. 3), so the physical inputs cannot be recovered. The blade-root outputs are the m = 4 variants, where the paper uses m = 10 for composite blades (Columns).
+
+The m = 4 long-term DEL, (mean of f⁴)^(1/4), of `rf4_RootMxc1` in these data is 5,327; the paper's Fig. 7 shows about 7,200. The cause is unknown.
+
+## Unknowns
+
+- The output units (kN·m and kN are inferred, unconfirmed).
+- The distribution parameters of the 5-input study, and so the physical input values.
+- How the 50,000 rows were selected from the 500,000.
+- Software versions other than FAST 7, and the run dates.
+- Why the m = 4 long-term DEL of `rf4_RootMxc1` in these data differs from the paper's Fig. 7 (How these files relate to the paper).
 
 ## License and credit
 

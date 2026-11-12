@@ -106,6 +106,24 @@ python check_accuracy.py --cache $C                          # the Accuracy numb
 
 **The runs.** The shipped files were written on 2026-11-01 in a Linux container (Python 3.13, one process, about 24 min for the 4096 rows). On 2026-11-02 they were regenerated with the committed `generate_data.py` and `raven_salmon_driver.py` on an AWS c7a.4xlarge (16 vCPUs; Ubuntu 24.04, g++ 13.3.0, Raven built from `cb745e1` as above; Python 3.12.3, numpy 2.4.6, scipy 1.17.1; forcing and streamflow from xSSA commit `034e718`): 16 processes ran the 4096 rows in 84 s (1317 s of Raven time in all, 0.32 s per run), `--fd` (258 runs) took 66 s, and `inputs.csv`, `weights.csv`, `outputs.csv` and `fd_gradients_meanQ.csv` came out **byte for byte identical** to the shipped files. The design has no randomness beyond its fixed seed, and Raven is deterministic.
 
+### Provenance of the input deck
+
+- **Templates (fetched, not redistributed).** The five Raven input files (`.rvi`, `.rvp`, `.rvc`, `.rvt`, `.rvh`) are
+  filled from the string constants `RVI`, `RVP`, `RVC`, `RVT`, `RVH` of `examples/scripts/raven_templates.py` in
+  github.com/julemai/xSSA at commit `034e7189618b377a8b25ac95fde0ea11656cfa8c` (the master branch on 2026-11-01; last
+  change 2021-07-27), SHA-256 `8109faaeb01ed6ad7e3d835e6a08a1e3a328d8911199f2e0c0bfca500aa060d0`, URL
+  `https://raw.githubusercontent.com/julemai/xSSA/034e7189618b377a8b25ac95fde0ea11656cfa8c/examples/scripts/raven_templates.py`.
+  The file is Copyright 2019–2020 Juliane Mai and licensed under the GNU LGPL, version 3 or later (its header; the
+  repository's `LICENSE` is LGPL-3.0). `raven_salmon_driver.fetch_templates` downloads it once into a local cache, refuses it
+  if the SHA-256 differs, and `load_templates` reads the five strings with Python's `ast` parser without importing or
+  executing the file. No template text is in this repository.
+- **Our code.** `raven_salmon_driver.py` (MIT) supplies only the values for the templates' placeholders (`par`: x01 … x35;
+  `dpar`: the sums x09 + x10, x13 + x14, x24 + x25, the powers 10^x04 and 10^x11 and the half-full initial stores
+  x29 · 500 mm and x30 · 500 mm; `weights`: the Eq. (A1) weights of each process at full precision; `props`: the
+  basin constants), runs Raven and reads its output. It was written for this repository and contains no xSSA code.
+- **Regenerating the shipped files.** The committed code, which fetches the templates, regenerates all four files
+  byte for byte (see "The runs" above).
+
 ## Accuracy
 
 - **Reproducibility.** The full regeneration of 2026-11-02 reproduced all four files byte for byte (see "The runs"). `generate_data.py --rows 0:8 --check` redraws the design (equal to `inputs.csv`), reruns Raven at rows 0–7 and agrees with `outputs.csv` to a relative 3.9e-10 over all 15 outputs, the precision of the 10 significant digits written. Raven is deterministic.
@@ -121,25 +139,12 @@ python check_accuracy.py --cache $C                          # the Accuracy numb
 - **Weights at full precision.** xSSA rounds the first N − 1 weights of each process to 6 decimals before writing the deck; we write them at full precision. The difference in a weight is below 5e-7.
 - **What the paper's figures can and cannot be compared with.** The paper's sensitivities are of daily flow, variance-weighted, so they are dominated by the spring freshet (Fig. 6, black line). Our mean flow over 20 years is a different QoI: it weights every day equally and measures the water balance. The notebook therefore compares directions and rankings, with the monthly flows as the closest analogue of Fig. 6, and does not claim agreement in numbers.
 
-## Provenance of the input deck
+## Unknowns
 
-- **Templates (fetched, not redistributed).** The five Raven input files (`.rvi`, `.rvp`, `.rvc`, `.rvt`, `.rvh`) are
-  filled from the string constants `RVI`, `RVP`, `RVC`, `RVT`, `RVH` of `examples/scripts/raven_templates.py` in
-  github.com/julemai/xSSA at commit `034e7189618b377a8b25ac95fde0ea11656cfa8c` (the master branch on 2026-11-01; last
-  change 2021-07-27), SHA-256 `8109faaeb01ed6ad7e3d835e6a08a1e3a328d8911199f2e0c0bfca500aa060d0`, URL
-  `https://raw.githubusercontent.com/julemai/xSSA/034e7189618b377a8b25ac95fde0ea11656cfa8c/examples/scripts/raven_templates.py`.
-  The file is Copyright 2019–2020 Juliane Mai and licensed under the GNU LGPL, version 3 or later (its header; the
-  repository's `LICENSE` is LGPL-3.0). `raven_salmon_driver.fetch_templates` downloads it once into a local cache, refuses it
-  if the SHA-256 differs, and `load_templates` reads the five strings with Python's `ast` parser without importing or
-  executing the file. No template text is in this repository.
-- **Our code.** `raven_salmon_driver.py` (MIT) supplies only the values for the templates' placeholders (`par`: x01 … x35;
-  `dpar`: the sums x09 + x10, x13 + x14, x24 + x25, the powers 10^x04 and 10^x11 and the half-full initial stores
-  x29 · 500 mm and x30 · 500 mm; `weights`: the Eq. (A1) weights of each process at full precision; `props`: the
-  basin constants), runs Raven and reads its output. It was written for this repository and contains no xSSA code.
-- **How the shipped files were made.** They were first written by an earlier version of `raven_salmon_driver.py` that wrote
-  the same Raven commands from a transcription of these templates; the transcription has been removed (copyleft text
-  is not kept in this MIT repository). The committed code, which fetches the templates, regenerates all four files
-  byte for byte (see "The runs" above).
+- The Raven revision the authors ran. The paper says only "released version 3.0"; it may have been a 2.9.x build. The process sources differ between these revisions only in options this deck does not use, but this has not been verified by running a 2.9.x build (see "Raven build").
+- The paper's 45 000 runs, its Sobol' samples and its time series are not published, so the files cannot be compared run by run. The paper's design follows from K and the xSSA code but was not regenerated.
+- Whether a corrigendum to the paper exists was not checked.
+- The licence of the xSSA forcing and observed-streamflow files: they state none; the streamflow is probably under the Open Government Licence – Canada (not checked).
 
 ## License and credit
 

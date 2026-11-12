@@ -21,7 +21,7 @@ Grid (UQTestFuns parameter set `Chaudhry2021`, commit `82d5c8b`, see Model): r =
 
 ## Model
 
-**Source.** J. R. Booker and C. Savvidou, "Consolidation around a point heat source", *Int. J. Numer. Anal. Methods Geomech.* 9(2):173–184, 1985, doi:10.1002/nag.1610090206. The PDF read is a scan of the published article (file tagged `_oa`; OCR text with partly garbled equations), not a preprint. Closed-form solution for a constant point heat source buried deep in a saturated poro-thermo-elastic soil, found with Fourier and Laplace transforms (pp. 176–179). The temperature, excess pore pressure and displacement are the paper's Eq. (23) (p. 178–179; written with functions f and g plotted in Fig. 1, pp. 179–180). A. A. Chaudhry, J. Buchwald, O. Kolditz and T. Nagel (2019, doi:10.1002/nag.2998) re-derived the solution: by their abstract (read via Crossref) they confirmed the temperature, pressure and displacement expressions and corrected only the normal and shear stresses, which this data set does not use. So the spreadsheet's risk note ("must use the corrected equations") is satisfied: the three fields are the same in both papers. The module uses the notation of Chaudhry et al. (2019, Eqs. 18–25) as reproduced in the UQTestFuns documentation:
+**Source.** J. R. Booker and C. Savvidou, "Consolidation around a point heat source", *Int. J. Numer. Anal. Methods Geomech.* 9(2):173–184, 1985, doi:10.1002/nag.1610090206. The PDF read is a scan of the published article (OCR text with partly garbled equations), not a preprint. Closed-form solution for a constant point heat source buried deep in a saturated poro-thermo-elastic soil, found with Fourier and Laplace transforms (pp. 176–179). The temperature, excess pore pressure and displacement are the paper's Eq. (23) (p. 178–179; written with functions f and g plotted in Fig. 1, pp. 179–180). A. A. Chaudhry, J. Buchwald, O. Kolditz and T. Nagel (2019, doi:10.1002/nag.2998) re-derived the solution: by their abstract (read via Crossref) they confirmed the temperature, pressure and displacement expressions and corrected only the normal and shear stresses, which this data set does not use. So the three fields used here are the same in both papers. The module uses the notation of Chaudhry et al. (2019, Eqs. 18–25) as reproduced in the UQTestFuns documentation:
 
     dT  = Q/(4 pi K r) f(kappa)
     p   = X/(1 - c/kappa) * Q/(4 pi K r) * [f(kappa) - f(c)]
@@ -47,7 +47,7 @@ Grid (UQTestFuns parameter set `Chaudhry2021`, commit `82d5c8b`, see Model): r =
 
 Held: Q = 3000 W (source power), α_w = 4e-4 1/K (water expansion), μ_w = 1e-3 Pa s (water viscosity) (UQTestFuns parameter set `Chaudhry2021`, same commit). `NOMINAL` is the reference point of the UQTestFuns documentation (μ of the normals, mid-range of the uniform, mode of the triangular). Means and standard deviations are exact moments of the marginals (scipy).
 
-**Quantities of interest.** ΔT, p and u_r at r = 6 m, t = 1 y (`outputs.csv`), chosen because the pore pressure at 6 m peaks between 180 d and 1 y at the nominal point (5.66 and 5.63 MPa); and all 300 field values (`fields.csv`). The spreadsheet row lists the fields on the 10 × 10 grid; the grid values are not listed on the UQTestFuns web page but are in its parameter file (above).
+**Quantities of interest.** ΔT, p and u_r at r = 6 m, t = 1 y (`outputs.csv`), chosen because the pore pressure at 6 m peaks between 180 d and 1 y at the nominal point (5.66 and 5.63 MPa); and all 300 field values (`fields.csv`). The 10 × 10 grid values are not listed on the UQTestFuns web page but are in its parameter file (above).
 
 **Gradients.** Exact, by the chain rule: the partial derivatives of each field with respect to (Q/(4πK), κ, c, M, b', X), times the Jacobian of these with respect to the eight inputs. The quotients [f(κ) − f(c)]/(1 − c/κ) and [g(κ) − g(c)]/(1 − c/κ) have a removable singularity at c = κ (72 of the 1000 samples have |1 − c/κ| < 0.1; c/κ ranges from 0.083 to 7.03). They are written as κ (h(κ) − h(c))/(κ − c); where |κ − c|/min(κ, c) · max(1, z²) < 1 the divided difference is the integral of h′(A) over [c, κ] by a 24-point Gauss–Legendre rule (its derivatives use h″), elsewhere the direct quotient is used (for g ahead of both fronts, the linear part τ is divided exactly and the remainder is evaluated with `erfcx`).
 
@@ -79,7 +79,21 @@ The shipped files were written on 2026-10-30 in a Linux container. The draws are
 
 - **Not a computation from the paper.** Booker and Savvidou give the solution but no parameter values, ranges or samples. The inputs, distributions, held parameters and grid come from Chaudhry et al. (2021) through UQTestFuns, and the samples, gradients and analysis are new. Nothing here is a value printed in the 1985 paper except the functions f and g.
 - **The model.** `heat_source_model.py` is an independent numpy/scipy implementation of the equations above; no UQTestFuns code is copied. The input distributions, held parameters and grid are taken from the UQTestFuns parameter file, and its MIT notice is reproduced at the end of the module.
-- **Open questions** (only the authors can settle them): (1) the ranking of α_s for p (3rd in the UQTestFuns transcription of Chaudhry et al. 2021, Fig. 16; 7th here, first-order index 0.019 ± 0.002) and of K and α_s for u_r (1st and 3rd there; here α_s is 1st, 0.642 ± 0.005, and K is not 1st: 0.245 ± 0.003 at N = 50,000, probably 3rd at N = 200,000 but within 0.02 of φ and C) — which estimator and which grid quantity underlie Fig. 16, the held parameters, or the transcription; and whether Fig. 16 supports α_s 3rd for p, given that α_s contributes only about 17 % of X at the nominal point; (2) whether Chaudhry et al. (2021) used α_w = 4e-4 1/K and μ_w = 1e-3 Pa s, as UQTestFuns does; (3) the 1985 paper's illustrative parameters for the cylindrical source are partly illegible in the scan (we read ν = 0.4 and c/κ = 2) and are not used.
+
+## Unknowns
+
+Open questions that only the authors can settle:
+
+- The ranking of α_s for p (3rd in the UQTestFuns transcription of Chaudhry et al. 2021, Fig. 16; 7th here, first-order index 0.019 ± 0.002) and of K and α_s for u_r (1st and 3rd there; here α_s is 1st, 0.642 ± 0.005, and K is not 1st: 0.245 ± 0.003 at N = 50,000, probably 3rd at N = 200,000 but within 0.02 of φ and C) — which estimator and which grid quantity underlie Fig. 16, the held parameters, or the transcription; and whether Fig. 16 supports α_s 3rd for p, given that α_s contributes only about 17 % of X at the nominal point.
+- Whether Chaudhry et al. (2021) used α_w = 4e-4 1/K and μ_w = 1e-3 Pa s, as UQTestFuns does.
+- The 1985 paper's illustrative parameters for the cylindrical source are partly illegible in the scan (we read ν = 0.4 and c/κ = 2) and are not used.
+
+Other unknowns:
+
+- The input distributions have not been checked against Chaudhry et al. (2021), which was not read; they are taken from the UQTestFuns parameter file (Model, "Inputs").
+- Chaudhry et al. (2019) was read only through its abstract (Model, "Source").
+- The order of φ and C among the first-order Sobol' ranks of u_r is not resolved (Model, "Published results").
+- `check_accuracy.py` check 1 has not been repeated in `.venv`, where UQTestFuns is not installed (Accuracy).
 
 ## License and credit
 

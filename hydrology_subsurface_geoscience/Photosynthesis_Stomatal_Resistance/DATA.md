@@ -31,7 +31,11 @@ Row i of every output file is the run with the inputs of row i of `stomata_reali
 
 All files are space-separated text with one header row of quoted names and no index column. All values are positive and finite.
 
-## Inputs (`stomata_realization_inputs.txt`, `param_ranges.txt`)
+## Model
+
+**Source.** The generating code is ParFlow coupled to the Common Land Model (PF-CLM), single-column domain, deciduous tree cover, loam soil (paper §2b). The PF-CLM version, the run date and the machine are **not recorded**. The runs were made for the study of Jefferson, Maxwell and Constantine at the Colorado School of Mines.
+
+**Inputs** (m = 20; `stomata_realization_inputs.txt`, `param_ranges.txt`).
 
 - Columns, as stored: `qe25 ko25 kc25 vcmx25 ako akc avcmx bp mp drb drs ecp hv ocr sv wj1 wj2 rsmax0 ppcd we1`. The paper's Table 1 and the notebook use another order (vcmx25 first); the notebook reorders by name. `param_ranges.txt` has no name column; its rows follow the stored column order.
 - The values are physical, not normalized, and rounded (3 to 235 distinct values per column).
@@ -40,7 +44,7 @@ All files are space-separated text with one header row of quoted names and no in
 - **ppcd** is stored as a mole fraction, mol mol⁻¹ (bounds 3.55e-4 to 4e-4). The paper gives 355–400 ppm.
 - **wj1 and wj2 are discrete.** wj1 ∈ {1, 4, 4.5} and wj2 ∈ {2, 8, 10.5}, the sets of Table 1 of the paper (hard-coded constants in CLM). In rows 1–300 the levels have 93, 98, 109 runs (wj1) and 87, 104, 109 runs (wj2), and all 9 combinations occur (28 to 41 runs each). The other 18 inputs lie inside their bounds; how they were sampled (step 1 of the paper says uniform draws) is not recorded beyond that.
 
-## Outputs (`Tonzi_Stomata_SC.*.txt`)
+**Quantities of interest** (`Tonzi_Stomata_SC.*.txt`).
 
 Forcing: Tonzi Ranch, California, September 2002 to August 2003, the average year of the three Tonzi years in the paper (§3b).
 
@@ -58,15 +62,31 @@ Forcing: Tonzi Ranch, California, September 2002 to August 2003, the average yea
 - **Units are not stated in the files and are not confirmed**. They are inferred from the paper: transpiration × 86400 gives 0.04 to 7.2 mm d⁻¹ (monthly) and 0.03 to 10.4 mm d⁻¹ (hourly), on the scales of Figs. 4f and 9d, and the resistances match the s m⁻¹ axes of Figs. 7 and 9.
 - **Local time is not settled.** The hourly columns are in UTC. Fig. 8 of the paper labels UTC 12 as 6 am, i.e. UTC−6; Pacific daylight time, in effect at Tonzi Ranch in summer, is UTC−7. Which is right is unknown.
 
-## Provenance
+**Gradients.** None: the files hold values only, and the notebook uses the least-squares estimator (`estimator="ols"`).
 
-- Generating code: ParFlow coupled to the Common Land Model (PF-CLM), single-column domain, deciduous tree cover, loam soil (paper §2b). The PF-CLM version, the run date and the machine are **not recorded**. The runs were made for the study of Jefferson, Maxwell and Constantine at the Colorado School of Mines.
-- The paper made 2,100 runs: these 300 realizations with 5 forcing sets plus 2 extra scenarios. Only the Tonzi average-year runs (and the default run) are in this repository.
-- The processing from hourly PF-CLM output to monthly and hourly means is not in the repository.
+**Processing.** The processing from hourly PF-CLM output to monthly and hourly means is not in the repository.
 
 ## Regenerating
 
 The files cannot be regenerated from this repository. The notebook reads them and runs in about 10 s on an idle machine (25 s under load). It uses no random numbers, and two runs give identical printed output.
+
+## Accuracy
+
+No accuracy numbers are recorded for these runs: the PF-CLM version is not recorded (Unknowns).
+
+## How these files relate to the paper
+
+- These are runs of the paper's study. The paper made 2,100 runs: these 300 realizations with 5 forcing sets plus 2 extra scenarios. Only the Tonzi average-year runs (and the default run) are in this repository.
+- Row 0 is the paper's default run, kept apart from "the 300 realizations" (p. 909); the notebook fits rows 1–300 only ("Inputs").
+- The notebook compares its weights with Table 3 of the paper (Tonzi Ranch, average year) in its section "Comparison with [1]".
+
+## Unknowns
+
+- The PF-CLM version, the run date and the machine.
+- How the 18 continuous inputs were sampled, beyond lying inside their bounds (step 1 of the paper says uniform draws).
+- The units of the outputs: not stated in the files, inferred from the paper and not confirmed.
+- The local time of the hourly columns: UTC−6 (the paper's Fig. 8) or Pacific daylight time, UTC−7.
+- The processing from hourly PF-CLM output to monthly and hourly means (not in the repository).
 
 ## License and credit
 

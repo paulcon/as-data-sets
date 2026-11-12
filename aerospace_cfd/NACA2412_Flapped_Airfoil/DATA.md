@@ -21,7 +21,7 @@ found in the shipped data. `davis_training_98.csv` holds the authors' own XFOIL 
 | `davis_training_98.csv` | 98 × 6: Re, alpha, flap, CL, CD, CM | the authors' `training/training_100.csv`, values copied as text |
 | `davis_rerun_outputs.csv` | 98 × 7, as `outputs.csv` | our XFOIL at the 98 inputs of the authors' file |
 | `re_sensitivity.csv` | 35 × 10: alpha, flap, Re, then the 7 output columns | XFOIL at the 7 calibration points for Re = 665,000, 696,500, 700,000, 703,500 and 735,000: a labelled sensitivity check of the paper's printed Re range (p. 3), not a design |
-| `convergence_ladder.csv` | 47 × 8: file, row, status, then the continuation path (side, start angle, smallest step, steps, XFOIL processes) | one row for every point of the XFOIL files that needed the retry ladder (status 3 or 4) or failed every attempt (−1); its first header line names the driver module by its former file name, `xfoil_run.py` (now `xfoil_driver.py`) |
+| `convergence_ladder.csv` | 47 × 8: file, row, status, then the continuation path (side, start angle, smallest step, steps, XFOIL processes) | one row for every point of the XFOIL files that needed the retry ladder (status 3 or 4) or failed every attempt (−1); its first header line names the driver module `xfoil_run.py`; the driver in this directory is `xfoil_driver.py` |
 | `generate_data.py` | writes all of the above; `--check N` reruns the first N rows of each design plus every retry-ladder row, and compares (writes nothing) | regenerates the data (needs XFOIL; exits with status 1 and a build message without it) |
 | `xfoil_driver.py` | `run(alpha, flap, re, ncrit=0.01, xtr_top=1, xtr_bot=1, ...)`: one XFOIL analysis with the convergence protocol below | the XFOIL driver |
 | `check_accuracy.py` | recomputes the numbers below marked with its name, from the shipped files (numpy only; does not run XFOIL; under 1 s); `--davis-src FILE` also compares `davis_training_98.csv` with the authors' file | check |
@@ -276,6 +276,20 @@ under 1 s.
 - The extension design, the negative-α sweep, the retry ladder (status 3 and 4), the
   Re-sensitivity file and the 1000-point designs are ours. The authors' driver uses XFOIL's
   default 20 iterations only.
+
+## Unknowns
+
+- The Re range: the paper prints 665,000–735,000 (p. 3), the authors' code and data use 696,500–703,500.
+  The printed range is probably a factor-10 misprint; that is unconfirmed and remains an open question for
+  the authors (Model, Inputs).
+- The paper does not state N_crit = 0.01; it says only that "the internal XFOIL settings are fixed" (p. 5)
+  (Model).
+- The paper's held-out set of 100 XFOIL validation points is not in the authors' repository, and its
+  100-point Latin hypercube has no seed (Model, Sampling design).
+- How the authors' file got its 13 to 15 significant digits, when XFOIL 6.99's polar file prints 4 or 5
+  decimals, is unknown (How these files relate to the paper).
+- Whether the authors will release `davis_training_98.csv` under CC BY 4.0 is an open question (License
+  and credit).
 
 ## License and credit
 

@@ -20,7 +20,7 @@ Kind: **Python model**. The model is `pde_model.py`, and every value the noteboo
 - **Gradient**: a discrete adjoint, ∂f/∂x_i = −λᵀ(∂A/∂x_i)u with Aᵀλ = c. Inputs are standard normal, so the physical and normalized coordinates coincide.
 - **Check**: `python uq_benchmarks/check_pde_model.py` (residual < 1e-10, adjoint vs finite differences < 1e-6, f(0) = 0.07608, copies identical). About 20 ms per value and gradient.
 
-## KL bases (stored)
+**KL bases (stored).**
 
 - `K` holds orthonormal eigenvectors (KᵀK = I to 1e-14) and `lam` the 100 largest eigenvalues of the discrete covariance matrix exp(−‖s − t‖₁/(2β)), on the 100 × 100 grid of cell centres ((i + ½)/100), with β = 1 (`kl-long`) and β = .01 (`kl-short`). The matrix has unit diagonal, so `lam.sum() / 10000` is the share of field variance the 100 modes carry: 99.2 % (long), 13.3 % (short).
 - The kernel was identified from the data, not from a script. `lam` equals the top 100 eigenvalues of that matrix to a relative 3.4e-14 (long) and 8.7e-15 (short). The papers write the kernel with 1/β: Constantine, Dow & Wang 2014, eq. (5.3), which also lacks the minus sign; the book, eq. (3.80); and the MCMC paper, eq. (5.5) with β = 0.02. The shipped `kl-short` ratios λ_i/λ_1 do not match CDW Table 1, but the `kl-long` ratios do.
@@ -38,6 +38,23 @@ There are no shipped outputs and no `generate_data.py`. The notebook computes ev
 - 500 test points.
 
 All draws come from one `np.random.default_rng(2014)`, and two runs give identical printed output.
+
+## Accuracy
+
+- **Solver** (notebook, at the first sample of each field): the largest finite-volume residual is 3.0e-12 (β = 1) and 4.9e-12 (β = .01); the adjoint gradient agrees with central finite differences on four coordinates to a relative 1.1e-08 and 6.8e-08; f(0) = 0.07608 for both fields.
+- **Model file**: `python uq_benchmarks/check_pde_model.py` checks the residual, the adjoint against finite differences, f(0) and that the two copies of `pde_model.py` are identical (Model, Check).
+
+## How these files relate to the paper
+
+- **Not the papers' computation.** The papers used a MATLAB P1 finite-element code, which is not in the repo; here the values and gradients are computed by the finite-volume solver `pde_model.py`.
+- **KL bases.** The `kl-long` eigenvalue ratios λ_i/λ_1 match CDW Table 1, but the `kl-short` ratios do not, so the paper's short-correlation field may differ from the shipped one (KL bases, above; the notebook prints both).
+- **Coordinates.** Within each equal pair of KL eigenvalues the basis is an arbitrary rotation, so the coordinates of the most sensitive input can differ from the paper's (the paper reports x_1, x_3 for β = 1, the notebook finds x_1, x_2; notebook).
+- **Results.** The notebook prints the paper's Table 1 eigenvalue ratios and Table 2 mean relative errors beside its own.
+
+## Unknowns
+
+- The script that generated the KL files is lost; the kernel was identified from the data, not from a script (KL bases).
+- Whether the paper's short-correlation field is the shipped `kl-short` basis: its eigenvalue ratios do not match CDW Table 1.
 
 ## License and credit
 
