@@ -50,7 +50,7 @@ Notebooks and scripts load files by paths relative to their own directory, so th
 
 ## 4. Choose the data set kind
 
-Every data set is one of two kinds. The kind decides what ships and what "reproducible" means. Mark it at the end of the data set's README entry.
+Every data set is one of two kinds. The kind decides what ships and what "reproducible" means.
 
 ### Stored data
 
@@ -124,7 +124,7 @@ A notebook here should be a faithful account of a published study. In this secti
 
 ## 7. Write DATA.md
 
-Start from [docs/templates/DATA.md](docs/templates/DATA.md). It records what someone needs to trust and reuse the files without the notebook: every file and its columns and units, the model or the generating code (with version), who ran it, the inputs and their distributions, the sampling design, the gradient coordinates, how to regenerate or check the files and how long that takes, the accuracy, how the files relate to the published runs, the license and credit, and **everything that is unknown**. 
+Start from [docs/templates/DATA.md](docs/templates/DATA.md). It records what someone needs to trust and reuse the files without the notebook: every file and its columns and units, the model or the generating code (with version), who ran it, the inputs and their distributions, the sampling design, the gradient coordinates, how to regenerate or check the files and how long that takes, the accuracy, how the files relate to the published runs, the license and credit, and **everything that is unknown**.
 
 ## 8. License the files
 
@@ -149,7 +149,7 @@ Before you open a pull request, check the data set as a reviewer would. Write an
 **Analysis**
 
 - For a Python model, the model's equations and constants match the paper's numbered equations, and `generate_data.py --check` reproduces the shipped files.
-- Gradients agree with your own finite differences at a few random samples. .
+- Gradients agree with your own finite differences at a few random samples.
 - The estimator suits the data. A global quadratic fit needs at least (m+1)(m+2)/2 samples, and a global linear fit finds at most one direction.
 - The subspace dimension is justified by an eigenvalue gap and the subspace errors, and eigenvector signs follow a stated rule.
 - Fit statistics (R²) say whether they are in-sample or cross-validated.
