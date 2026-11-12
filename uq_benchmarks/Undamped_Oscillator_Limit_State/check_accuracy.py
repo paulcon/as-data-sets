@@ -82,8 +82,9 @@ def check_uqtestfuns(X):
     try:
         import uqtestfuns as uqtf
     except ImportError:
-        sys.exit('check 5 needs UQTestFuns: install it with `pip install uqtestfuns==0.7.0` and rerun '
-                 '(or rerun with --skip-uqtestfuns)')
+        print('check 5 needs UQTestFuns: install it with `pip install uqtestfuns==0.7.0` and rerun '
+              '(or rerun with --skip-uqtestfuns)', file=sys.stderr)
+        sys.exit(3)
     fun = uqtf.UndampedOscillator()
     print(f'5. UQTestFuns {uqtf.__version__}: default input model of UndampedOscillator')
     for mg in fun.prob_input.marginals:

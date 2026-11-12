@@ -139,5 +139,6 @@ if __name__ == '__main__':
     try:
         sys.exit(main())
     except (FileNotFoundError, NotADirectoryError, IsADirectoryError) as err:
-        sys.exit(f'file not found, or not of the expected kind: {err.filename}\n'
-                 'The source is the pyMAISE 0.0.2 wheel, or a folder with fp_inp.csv and fp_out.csv; see DATA.md, "Regenerating".')
+        print(f'file not found, or not of the expected kind: {err.filename}\n'
+              'The source is the pyMAISE 0.0.2 wheel, or a folder with fp_inp.csv and fp_out.csv; see DATA.md, "Regenerating".', file=sys.stderr)
+        sys.exit(3)

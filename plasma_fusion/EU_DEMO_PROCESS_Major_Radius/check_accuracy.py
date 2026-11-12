@@ -107,7 +107,8 @@ def main():
     if a.csv_only:
         return
     if importlib.util.find_spec('process') is None:
-        sys.exit(gd.INSTALL.replace('rerun generate_data.py.', 'rerun check_accuracy.py (or use --csv-only).'))
+        print(gd.INSTALL.replace('rerun generate_data.py.', 'rerun check_accuracy.py (or use --csv-only).'), file=sys.stderr)
+        sys.exit(3)
     check_process(data, col, base)
     print(f'run time {time.perf_counter() - t0:.0f} s')
 

@@ -116,11 +116,13 @@ def main():
     try:
         import openaerostruct
     except ImportError:
-        sys.exit("OpenAeroStruct is not installed. Install it (pip install openaerostruct==%s, the version "
-                 "that wrote the shipped files; it pulls OpenMDAO) and rerun this script." % OAS_VERSION)
+        print("OpenAeroStruct is not installed. Install it (pip install openaerostruct==%s, the version "
+              "that wrote the shipped files; it pulls OpenMDAO) and rerun this script." % OAS_VERSION, file=sys.stderr)
+        sys.exit(3)
     if openaerostruct.__version__ != OAS_VERSION and not a.any_oas:
-        sys.exit("openaerostruct %s installed; the shipped files used %s (pip install openaerostruct==%s), "
-                 "or pass --any-oas" % (openaerostruct.__version__, OAS_VERSION, OAS_VERSION))
+        print("openaerostruct %s installed; the shipped files used %s (pip install openaerostruct==%s), "
+              "or pass --any-oas" % (openaerostruct.__version__, OAS_VERSION, OAS_VERSION), file=sys.stderr)
+        sys.exit(3)
     X = draw_inputs()
     rows = np.arange(M)
     if a.rows:

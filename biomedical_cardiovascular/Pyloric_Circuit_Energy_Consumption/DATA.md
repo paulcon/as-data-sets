@@ -5,7 +5,7 @@ Kind: **stored data**. The files were computed on 2026-10-31 with the authors' s
 89dd27d769fa2652d21bca1dbbc098c85e40244a, an outside code that is not part of this repository
 and is not installed in the repository's `.venv` (it needs Cython and a C compiler besides numpy,
 scipy and pandas). `generate_data.py` is the script that wrote them, kept for provenance and for
-reruns where pyloric is installed; without pyloric it exits with status 1 and says what to install.
+reruns where pyloric is installed; without pyloric it exits with status 3 and says what to install.
 The values in the CSVs are the record and are not to be edited; pyloric is rerun only if a problem
 is found in them.
 
@@ -145,7 +145,7 @@ torch and sbi are not needed: pyloric imports them in its package `__init__`, bu
 `create_prior()` uses them; `generate_data.py` never calls it and puts empty stand-ins for `torch`
 and `sbi.utils` in `sys.modules` before importing pyloric. The design and the noise are seeded, so a
 rerun reproduces the files. Without a pyloric clone (or without pandas or Cython), `generate_data.py`
-and `check_accuracy.py` exit with status 1 and a message that names pyloric, its commit and the
+and `check_accuracy.py` exit with status 3 and a message that names pyloric, its commit and the
 packages to install (checked in `.venv` on 2026-11-02).
 
 The shipped files were written on 2026-10-31 in a Linux container (Python 3.13.18, numpy 2.5.4,

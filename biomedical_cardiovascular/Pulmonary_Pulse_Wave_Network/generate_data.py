@@ -144,8 +144,9 @@ def main():
     try:
         exe = D.build(a.work, a.source)
     except D.SolverMissing as e:
-        sys.exit(f"{e}. The solver is the authors' sor06 (C++, cloned from {D.REPO_URL}); "
-                 "install git and g++ and rerun generate_data.py.")
+        print(f"{e}. The solver is the authors' sor06 (C++, cloned from {D.REPO_URL}); "
+              "install git and g++ and rerun generate_data.py.", file=sys.stderr)
+        sys.exit(3)
     os.makedirs(a.out, exist_ok=True)
     rows = slice(0, M)
     if a.rows:

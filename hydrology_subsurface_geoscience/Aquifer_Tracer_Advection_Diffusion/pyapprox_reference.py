@@ -29,9 +29,10 @@ def benchmark(m=10):
     try:
         from pyapprox.benchmarks import setup_benchmark
     except ImportError:
-        sys.exit("PyApprox 1.0.3 is needed and was not found. Install it in a separate Python 3.11 "
-                 "venv as the docstring of this script describes (torch 2.2.2, numpy 1.26.4, "
-                 "scipy 1.11.4, then pyapprox==1.0.3), and rerun this script with that venv's python.")
+        print("PyApprox 1.0.3 is needed and was not found. Install it in a separate Python 3.11 "
+              "venv as the docstring of this script describes (torch 2.2.2, numpy 1.26.4, "
+              "scipy 1.11.4, then pyapprox==1.0.3), and rerun this script with that venv's python.", file=sys.stderr)
+        sys.exit(3)
     b = setup_benchmark("multi_index_advection_diffusion", kle_nvars=m,
                         kle_length_scale=0.5, time_scenario=True)
     return b.model_ensemble.functions[0]      # highest fidelity f0: orders [11, 11], dt = 0.2/64

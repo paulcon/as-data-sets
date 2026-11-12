@@ -22,7 +22,7 @@ a problem is found in the shipped data.
 | `design_diagnostics.csv` | 41 × 3: row of `inputs.csv`, Rw_wc (N), Rf_ittc (N) | G7 reruns of every 12th row, the 7 flagged rows and rows 71, 101, recording two diagnostics `outputs.csv` lacks (their nine outputs equal `outputs.csv` exactly) |
 | `reference_runs.csv` | 8 × 29: hull (0 parent, 1 the paper's optimum), fidelity, 16 inputs, nine outputs, the code's own time report (s; a tenth of the wall time, see Fidelity), wall time (s) | reference points of the paper |
 | `uq_uniform_quadrature.csv` | 18 × 4: Fr, T, weight, R_T | parent hull, 6 × 3 Gauss–Legendre grid in (Fr, T), fidelity 6 |
-| `generate_data.py` | the design, the reference points, the run loop, `assemble` | regenerates the files (needs a build of L2-Sea; exits with status 1 and a build message without one) |
+| `generate_data.py` | the design, the reference points, the run loop, `assemble` | regenerates the files (needs a build of L2-Sea; exits with status 3 and a build message without one) |
 | `l2sea_driver.py` | writes the two L2-Sea input files, runs the program, reads its outputs; `failure_reason`, the per-run failure rule | the interface to L2-Sea (standard library only) |
 | `check_accuracy.py` | recomputes the numbers of Accuracy below that the notebook does not print, from the shipped files (numpy only; does not run L2-Sea; under 1 s) | check |
 
@@ -155,7 +155,7 @@ python generate_data.py assemble   --raw RAW --n 384 --out .
 ```
 
 `--l2sea-home` may be replaced by the environment variable `L2SEA_HOME`. Without a build of L2-Sea every
-step but `assemble` stops with exit status 1 and a message that says what to build and to rerun the script
+step but `assemble` stops with exit status 3 and a message that says what to build and to rerun the script
 (checked in `.venv`). `sweep`, `shape`, `g6` and `diag` with `--check K` rerun K evenly spaced stored runs
 instead and print the largest relative difference from the stored values; they write nothing to this
 directory. `assemble` writes the CSVs into `--out` (default: this directory) and checks that the 41 `diag`

@@ -146,7 +146,8 @@ def main():
     if a.inputs_only:
         return
     if cm.pyco2 is None:
-        sys.exit(cm.INSTALL.replace("and rerun.", "and rerun check_accuracy.py (or use --inputs-only)."))
+        print(cm.INSTALL.replace("and rerun.", "and rerun check_accuracy.py (or use --inputs-only)."), file=sys.stderr)
+        sys.exit(3)
     print(f"PyCO2SYS {cm.pyco2.__version__}")
     warnings.simplefilter("ignore")
     check_override()

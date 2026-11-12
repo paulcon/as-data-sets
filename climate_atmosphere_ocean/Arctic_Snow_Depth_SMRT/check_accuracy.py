@@ -108,8 +108,9 @@ def main():
     ap.add_argument('--skip-streams', action='store_true', help='skip check 6 (64 streams)')
     a = ap.parse_args()
     if not sm.have_smrt():
-        sys.exit(f"SMRT is not installed. Install it (pip install smrt=={sm.CONFIG['smrt_version']}, the version "
-                 f"that wrote the shipped files) and rerun check_accuracy.py.")
+        print(f"SMRT is not installed. Install it (pip install smrt=={sm.CONFIG['smrt_version']}, the version "
+              f"that wrote the shipped files) and rerun check_accuracy.py.", file=sys.stderr)
+        sys.exit(3)
     from importlib.metadata import version
     warnings.filterwarnings('ignore', message='Using IBA with fraction_volume > 0.5')
     warnings.filterwarnings('ignore', category=FutureWarning)

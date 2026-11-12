@@ -157,8 +157,9 @@ def main():
         sys.exit("--out must be outside this data set's directory (not the directory or a folder in it), "
                  "so that the shipped files are not overwritten")
     if M.dss is None:
-        sys.exit(f"OpenDSSDirect.py is not installed. Install it ({M.INSTALL}, the version that "
-                 "wrote the shipped files; scipy is also needed) and rerun generate_data.py.")
+        print(f"OpenDSSDirect.py is not installed. Install it ({M.INSTALL}, the version that "
+              "wrote the shipped files; scipy is also needed) and rerun generate_data.py.", file=sys.stderr)
+        sys.exit(3)
     os.makedirs(a.out, exist_ok=True)
 
     def log(msg):

@@ -184,7 +184,7 @@ python generate_data.py --davis-src /path/to/uqchallenge2/training/training_100.
 python generate_data.py --xfoil /path/to/xfoil --check 25            # 25 rows of each design + ladder rows
 ```
 
-Without an XFOIL executable (`--xfoil PATH` or `XFOIL_EXE`) the script stops with exit status 1 and a
+Without an XFOIL executable (`--xfoil PATH` or `XFOIL_EXE`) the script stops with exit status 3 and a
 message that says what to build and to rerun it (checked in `.venv`); only the `--davis-src` copy runs
 without XFOIL. `--check` writes nothing. XFOIL is not installed in `.venv`, so the script was not run
 there.

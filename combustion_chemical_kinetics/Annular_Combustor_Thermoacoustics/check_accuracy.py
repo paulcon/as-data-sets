@@ -5,7 +5,7 @@
 Run it from any directory inside a git checkout of this repository: checks 2-5 read the 2016
 files Atacamac/atacamac-weak.txt and Atacamac/atacamac-strong.txt from the git history, at the
 commit before 9c1b8a7 (the commit that removed them), with `git show 9c1b8a7^:<path>`. They are
-read as numbers only. Without git or without that commit the script stops with status 1. Each line
+read as numbers only. Without git or without that commit the script stops with status 3. Each line
 prints the recomputed value beside the value DATA.md quotes.
 
 The 2016 files have 78 columns: Runs, n01..n19, tau01..tau19, maxFreq (the growth rate f_Im, 1/s),
@@ -69,12 +69,14 @@ def load_2016(case):
     try:
         res = subprocess.run(['git', '-C', HERE, 'show', f'{COMMIT}:{path}'], capture_output=True, text=True)
     except FileNotFoundError:
-        sys.exit('git is not installed. Checks 2-5 read the 2016 files from the git history of this '
-                 'repository; install git and rerun this script inside a clone of it.')
+        print('git is not installed. Checks 2-5 read the 2016 files from the git history of this '
+              'repository; install git and rerun this script inside a clone of it.', file=sys.stderr)
+        sys.exit(3)
     if res.returncode != 0:
-        sys.exit(f'Could not read {path} at commit {COMMIT}: {res.stderr.strip()}\n'
-                 'Run this script inside a full git clone of the repository (the history must contain '
-                 'commit 9c1b8a7 and its parent).')
+        print(f'Could not read {path} at commit {COMMIT}: {res.stderr.strip()}\n'
+              'Run this script inside a full git clone of the repository (the history must contain '
+              'commit 9c1b8a7 and its parent).', file=sys.stderr)
+        sys.exit(3)
     A = np.loadtxt(io.StringIO(res.stdout), delimiter=',', skiprows=1)
     return A[:, 1:1 + 2 * N], A[:, 1 + 2 * N], A[:, 2 + 2 * N:]
 

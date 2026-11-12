@@ -59,7 +59,7 @@ An outside code (a CFD solver, a hydrology code, MATLAB, a commercial package, â
 - **Ship the values as they are.** Never regenerate, refit or "correct" them. A format conversion (whitespace text to CSV with a `#` header, or to `.npz`) must be lossless and done by a committed script (e.g. `convert_data.py`) that checks the values did not change.
 - **Drop rows in the notebook, not in the file.** Rows that the analysis leaves out (duplicates, failed runs, validation runs) are removed in the notebook by a stated rule or a flag column.
 - **A Python re-implementation may check the data**, but the files stay the record. Report any disagreement; do not fix the data to match.
-- **Data you made yourself with an outside code** (e.g. Cantera, ngspice, SMRT) are stored data too. Add a `generate_data.py` that records how they were made and reruns the code where it is installed. When the code is missing, the script exits with an error that names what to install. Name a module that drives an outside code `*_driver.py`; `*_model.py` is reserved for numpy/scipy models.
+- **Data you made yourself with an outside code** (e.g. Cantera, ngspice, SMRT) are stored data too. Add a `generate_data.py` that records how they were made and reruns the code where it is installed. When the code is missing, the script exits with code 3 and a message that names what to install (`sys.exit` with a string exits with code 1, so use `print(message, file=sys.stderr); sys.exit(3)`). Name a module that drives an outside code `*_driver.py`; `*_model.py` is reserved for numpy/scipy models.
 - **Large originals** (over about 10 MB) belong in an archive such as Zenodo, with the DOI in `DATA.md`. Ship a reduced file here.
 
 ### Python model
@@ -75,7 +75,7 @@ A data set may have one part of each kind (see `plasma_fusion/MHD_Generator/`).
 
 ### Accuracy numbers
 
-Every accuracy number in `DATA.md` (solver tolerances, gradient checks, comparisons with a reference code) must be printed by the notebook, by `generate_data.py`, or by a `check_accuracy.py` in the directory. Like `generate_data.py`, a `check_accuracy.py` that needs an outside code exits with an install message when the code is missing. Label a number that no script here can produce (a commercial code, a run that cannot be repeated) as "external run, not reproducible from the repository".
+Every accuracy number in `DATA.md` (solver tolerances, gradient checks, comparisons with a reference code) must be printed by the notebook, by `generate_data.py`, or by a `check_accuracy.py` in the directory. Like `generate_data.py`, a `check_accuracy.py` that needs an outside code exits with code 3 and an install message when the code is missing. Label a number that no script here can produce (a commercial code, a run that cannot be repeated) as "external run, not reproducible from the repository".
 
 ## 5. Write the notebook
 

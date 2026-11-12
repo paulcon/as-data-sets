@@ -208,11 +208,13 @@ def main():
         sys.exit("--out must be a directory outside this one (not this directory or a subdirectory of it), "
                  "so that the shipped files are not overwritten")
     if D.ct is None:
-        sys.exit("Cantera is not installed. Install it (pip install cantera==3.2.0, the version that wrote "
-                 "the shipped files) and rerun generate_data.py.")
+        print("Cantera is not installed. Install it (pip install cantera==3.2.0, the version that wrote "
+              "the shipped files) and rerun generate_data.py.", file=sys.stderr)
+        sys.exit(3)
     if not os.path.exists(D.MECH):
-        sys.exit("konnov2008_h2.yaml is missing: run build_mechanism.py on the supplementary files of "
-                 "Konnov (2008), doi:10.1016/j.combustflame.2007.10.024, then rerun generate_data.py.")
+        print("konnov2008_h2.yaml is missing: run build_mechanism.py on the supplementary files of "
+              "Konnov (2008), doi:10.1016/j.combustflame.2007.10.024, then rerun generate_data.py.", file=sys.stderr)
+        sys.exit(3)
     os.makedirs(a.out, exist_ok=True)
     t_start = time.time()
     cases = ["grad", "mc", "line"] if a.case == "all" else [a.case]

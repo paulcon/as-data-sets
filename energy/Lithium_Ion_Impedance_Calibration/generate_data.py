@@ -43,20 +43,22 @@ INSTALL = 'pip install "pybop==26.3" "pybamm==26.10.1.1" "pybammsolvers==0.11.1"
 
 
 def require_packages(any_version=False):
-    """Stop with an install message (exit status 1) unless PyBaMM, PyBOP and CasADi of the
+    """Stop with an install message (exit status 3) unless PyBaMM, PyBOP and CasADi of the
     versions that wrote the shipped files are importable."""
     have = {}
     for name in VERSIONS:
         try:
             have[name] = __import__(name).__version__
         except ImportError:
-            sys.exit(f"{name} is not installed. This script needs PyBaMM 26.10.1.1, pybammsolvers 0.11.1, "
-                     f"PyBOP 26.3 and CasADi 3.8.1 (Python 3.13: {INSTALL}; recipe in DATA.md). "
-                     "Install them and rerun this script.")
+            print(f"{name} is not installed. This script needs PyBaMM 26.10.1.1, pybammsolvers 0.11.1, "
+                  f"PyBOP 26.3 and CasADi 3.8.1 (Python 3.13: {INSTALL}; recipe in DATA.md). "
+                  "Install them and rerun this script.", file=sys.stderr)
+            sys.exit(3)
     wrong = {k: v for k, v in have.items() if v != VERSIONS[k]}
     if wrong and not any_version:
-        sys.exit(f"installed {wrong}; the shipped data use {VERSIONS} ({INSTALL}). "
-                 "Install those versions and rerun this script, or pass --any-version.")
+        print(f"installed {wrong}; the shipped data use {VERSIONS} ({INSTALL}). "
+              "Install those versions and rerun this script, or pass --any-version.", file=sys.stderr)
+        sys.exit(3)
 N = 1000
 FMT = "%.17g"
 

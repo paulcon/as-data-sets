@@ -182,7 +182,8 @@ if __name__ == "__main__":
     if os.path.commonpath([a.work, HERE]) == HERE:
         ap.error("--work must be a scratch directory outside the data-set directory")
     if a.cmd != "assemble" and importlib.util.find_spec("process") is None:
-        sys.exit(INSTALL)
+        print(INSTALL, file=sys.stderr)
+        sys.exit(3)
     if a.cmd != "assemble":          # PROCESS writes process.log into the working directory
         os.makedirs(a.work, exist_ok=True)
         os.chdir(a.work)

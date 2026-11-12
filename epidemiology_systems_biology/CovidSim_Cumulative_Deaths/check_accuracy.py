@@ -59,7 +59,8 @@ def published(src):
     try:
         import h5py
     except ImportError:
-        sys.exit('check_accuracy.py --src needs h5py (tested with 3.16.0): pip install h5py, then rerun.')
+        print('check_accuracy.py --src needs h5py (tested with 3.16.0): pip install h5py, then rerun.', file=sys.stderr)
+        sys.exit(3)
     path = os.path.join(src, 'errors_n_neurons10.hdf5')
     with open(path, 'rb') as fh:
         print(f'errors_n_neurons10.hdf5 SHA-256 {hashlib.sha256(fh.read()).hexdigest()}')

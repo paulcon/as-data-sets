@@ -94,7 +94,7 @@ python check_accuracy.py           # the numbers of "Accuracy" below (about a se
 ```
 
 In `.venv` (Python 3.11, 2026-11-02) `--check` takes about 2 s and prints max |difference| 0.0e+00:
-the redraw is exact. Without fdfault, `--rerun` exits with status 1 and a message that names fdfault
+the redraw is exact. Without fdfault, `--rerun` exits with status 3 and a message that names fdfault
 v1.0.1 and says how to install it and rerun the script (checked in `.venv`). fdfault is rerun only if a
 problem is found in the shipped reruns.
 

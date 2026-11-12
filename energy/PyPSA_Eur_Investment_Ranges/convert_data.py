@@ -241,5 +241,6 @@ if __name__ == '__main__':
     try:
         sys.exit(main())
     except (FileNotFoundError, NotADirectoryError, IsADirectoryError) as err:
-        sys.exit(f'file not found, or not of the expected kind: {err.filename}\n'
-                 'The source is a clone of github.com/fneum/broad-ranges (commit b95bbc98); see DATA.md, "Regenerating".')
+        print(f'file not found, or not of the expected kind: {err.filename}\n'
+              'The source is a clone of github.com/fneum/broad-ranges (commit b95bbc98); see DATA.md, "Regenerating".', file=sys.stderr)
+        sys.exit(3)

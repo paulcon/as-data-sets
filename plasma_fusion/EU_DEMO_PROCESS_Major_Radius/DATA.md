@@ -174,7 +174,7 @@ written.
 Environment of the shipped runs: Python 3.12.3, Linux x86_64 (Ubuntu 24.04), process 3.4.2, numpy 2.1.3,
 scipy 1.14.1, numba 0.61.2, cvxpy 1.7.5, PyVMCON 2.4.3, clarabel 0.11.1, CoolProp 8.0.0, pandas 3.1.0.
 Without PROCESS, `generate_data.py run`/`check`/`baseline` and `process_driver.py` stop with an install
-message (exit status 1).
+message (exit status 3).
 
 ```
 python generate_data.py run --n 64 --cpu-budget 960 --work <scratch>   # repeat until "all 64 done"

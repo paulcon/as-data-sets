@@ -141,8 +141,9 @@ def main():
         sys.exit("--out must be a directory outside this one (not this directory or a subdirectory of it), "
                  "so that the shipped files are not overwritten")
     if D.pm is None:
-        sys.exit("pyrcel is not installed. Install it (pip install pyrcel==2.0.0, the version that wrote "
-                 "the shipped files) and rerun generate_data.py.")
+        print("pyrcel is not installed. Install it (pip install pyrcel==2.0.0, the version that wrote "
+              "the shipped files) and rerun generate_data.py.", file=sys.stderr)
+        sys.exit(3)
     os.makedirs(out, exist_ok=True)
     import jax
     jax.config.update("jax_compilation_cache_dir", os.path.join(out, "jax_cache"))

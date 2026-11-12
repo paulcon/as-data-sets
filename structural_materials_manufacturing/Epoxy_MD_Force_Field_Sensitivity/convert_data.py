@@ -164,5 +164,6 @@ if __name__ == '__main__':
     try:
         sys.exit(main(sys.argv))
     except (FileNotFoundError, NotADirectoryError, IsADirectoryError) as err:
-        sys.exit(f'file not found, or not of the expected kind: {err.filename}\n'
-                 'The source is the folder epoxy/ of github.com/wedeling/MD-active-subspace (tag 1.1); see DATA.md, "Regenerating".')
+        print(f'file not found, or not of the expected kind: {err.filename}\n'
+              'The source is the folder epoxy/ of github.com/wedeling/MD-active-subspace (tag 1.1); see DATA.md, "Regenerating".', file=sys.stderr)
+        sys.exit(3)

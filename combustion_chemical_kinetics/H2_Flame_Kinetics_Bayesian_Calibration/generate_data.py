@@ -238,8 +238,9 @@ def main():
     if not qois or any(q not in QOIS for q in qois):
         sys.exit("--qoi takes a comma-separated subset of tau, Su1, Su20")
     if D.ct is None:
-        sys.exit("Cantera is not installed. Install it (pip install cantera==3.2.0, the version that "
-                 "wrote the shipped files) and rerun generate_data.py.")
+        print("Cantera is not installed. Install it (pip install cantera==3.2.0, the version that "
+              "wrote the shipped files) and rerun generate_data.py.", file=sys.stderr)
+        sys.exit(3)
     os.makedirs(out, exist_ok=True)
     if a.nominal:
         write_nominal(out)

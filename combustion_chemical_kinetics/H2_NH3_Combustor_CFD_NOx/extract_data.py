@@ -101,8 +101,9 @@ def load(folder, verify=True):
     for name, digest in SHA256.items():
         path = os.path.join(folder, name)
         if not os.path.isfile(path):
-            sys.exit(f'missing {name} in the given folder: download Zenodo record 19348021 '
-                     '(doi:10.5281/zenodo.19348021) and rerun')
+            print(f'missing {name} in the given folder: download Zenodo record 19348021 '
+                  '(doi:10.5281/zenodo.19348021) and rerun', file=sys.stderr)
+            sys.exit(3)
         if verify and sha256(path) != digest:
             sys.exit(f'{name}: SHA-256 differs from the deposited file')
     P = np.load(os.path.join(folder, 'P.npy'))

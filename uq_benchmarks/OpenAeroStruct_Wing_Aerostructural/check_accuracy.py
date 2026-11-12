@@ -270,8 +270,9 @@ def main():
     try:
         import openaerostruct
     except ImportError:
-        sys.exit(f"OpenAeroStruct is not installed. Install it (pip install openaerostruct=={OAS_VERSION}, the "
-                 "version that wrote the shipped files; it pulls OpenMDAO) and rerun this script.")
+        print(f"OpenAeroStruct is not installed. Install it (pip install openaerostruct=={OAS_VERSION}, the "
+              "version that wrote the shipped files; it pulls OpenMDAO) and rerun this script.", file=sys.stderr)
+        sys.exit(3)
     import openmdao
     print(f"OpenAeroStruct {openaerostruct.__version__}, OpenMDAO {openmdao.__version__}, numpy {np.__version__}, "
           f"Python {sys.version.split()[0]}")

@@ -65,9 +65,10 @@ def need_myokit():
     try:
         import myokit  # noqa: F401
     except ImportError:
-        sys.exit("Myokit is not installed. Install it (pip install myokit; the shipped data used Myokit 1.39.2; "
-                 "the default mode also needs SUNDIALS and a C compiler, see DATA.md), then rerun "
-                 "check_accuracy.py, or rerun it with --scipy, which needs Myokit but not SUNDIALS.")
+        print("Myokit is not installed. Install it (pip install myokit; the shipped data used Myokit 1.39.2; "
+              "the default mode also needs SUNDIALS and a C compiler, see DATA.md), then rerun "
+              "check_accuracy.py, or rerun it with --scipy, which needs Myokit but not SUNDIALS.", file=sys.stderr)
+        sys.exit(3)
     return myokit
 
 
@@ -353,8 +354,9 @@ def main():
         try:
             myokit.Simulation(*load_model())
         except Exception as e:  # noqa: BLE001
-            sys.exit(f"Myokit cannot compile a simulation ({type(e).__name__}: {str(e).splitlines()[0]}). Install SUNDIALS and a C "
-                     "compiler (see DATA.md), then rerun check_accuracy.py, or rerun it with --scipy.")
+            print(f"Myokit cannot compile a simulation ({type(e).__name__}: {str(e).splitlines()[0]}). Install SUNDIALS and a C "
+                  "compiler (see DATA.md), then rerun check_accuracy.py, or rerun it with --scipy.", file=sys.stderr)
+            sys.exit(3)
     make = ScipyRun if a.scipy else CvodesRun
     print(f"Myokit {myokit.__version__}, numpy {np.__version__}; integrator: "
           + ("scipy odeint (LSODA), rtol 1e-6, atol 1e-8" if a.scipy else "CVODES, abs/rel tolerance 1e-6/1e-4"))

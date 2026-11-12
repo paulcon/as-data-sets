@@ -168,7 +168,8 @@ def main():
         assemble(X, args)
         return
     if not args.raven or not os.path.exists(args.raven) or not args.obs or not os.path.isdir(args.obs):
-        sys.exit(INSTALL)
+        print(INSTALL, file=sys.stderr)
+        sys.exit(3)
     templates = rs.load_templates(args.templates or os.path.join(args.cache, "templates"))
     print(f"deck templates: {rs.XSSA_REPO}@{rs.XSSA_COMMIT} {rs.XSSA_TEMPLATE_FILE} (SHA-256 verified)")
     if args.fd:

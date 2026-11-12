@@ -118,5 +118,6 @@ if __name__ == '__main__':
     try:
         sys.exit(main(sys.argv))
     except (FileNotFoundError, NotADirectoryError) as err:
-        sys.exit(f'file not found: {err.filename}\n'
-                 '--source takes the root of a clone of github.com/wedeling/MD-active-subspace (tag 1.1).')
+        print(f'file not found: {err.filename}\n'
+              '--source takes the root of a clone of github.com/wedeling/MD-active-subspace (tag 1.1).', file=sys.stderr)
+        sys.exit(3)

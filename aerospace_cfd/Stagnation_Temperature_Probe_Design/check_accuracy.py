@@ -121,9 +121,10 @@ def main():
             urllib.request.urlretrieve(BASE + f, os.path.join(a.download, f))
     missing = [f for f in FILES if not src or not os.path.isfile(os.path.join(src, f))]
     if missing:
-        sys.exit('checks 2-5 need the authors\' files ' + ', '.join(missing) + ' (not shipped). Download them '
-                 '(' + ', '.join(BASE + f for f in FILES) + '; SHA-256 ' + ', '.join(FILES.values()) +
-                 ') into a directory and rerun check_accuracy.py with --src DIR, or rerun with --download DIR.')
+        print('checks 2-5 need the authors\' files ' + ', '.join(missing) + ' (not shipped). Download them '
+              '(' + ', '.join(BASE + f for f in FILES) + '; SHA-256 ' + ', '.join(FILES.values()) +
+              ') into a directory and rerun check_accuracy.py with --src DIR, or rerun with --download DIR.', file=sys.stderr)
+        sys.exit(3)
     raw, W = {}, {}
     X = np.loadtxt(os.path.join(HERE, 'inputs_normalized.csv'), delimiter=',')
     print('2. the authors\' files:')

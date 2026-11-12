@@ -104,7 +104,8 @@ def build(src):
     try:
         import h5py
     except ImportError:
-        sys.exit('convert_data.py needs h5py (tested with 3.16.0): pip install h5py, then rerun.')
+        print('convert_data.py needs h5py (tested with 3.16.0): pip install h5py, then rerun.', file=sys.stderr)
+        sys.exit(3)
     for name, want in SHA256.items():
         got = sha256(os.path.join(src, name))
         if got != want:
@@ -186,5 +187,6 @@ if __name__ == '__main__':
     try:
         sys.exit(main(sys.argv[1:]))
     except (FileNotFoundError, NotADirectoryError, IsADirectoryError) as err:
-        sys.exit(f'file not found, or not of the expected kind: {err.filename}\n'
-                 'The source is a folder with covidsim_samples_only_cont.hdf5 and vary.py (github.com/wedeling/deep_active_subspace_data, COVID19/); see DATA.md, "Regenerating".')
+        print(f'file not found, or not of the expected kind: {err.filename}\n'
+              'The source is a folder with covidsim_samples_only_cont.hdf5 and vary.py (github.com/wedeling/deep_active_subspace_data, COVID19/); see DATA.md, "Regenerating".', file=sys.stderr)
+        sys.exit(3)

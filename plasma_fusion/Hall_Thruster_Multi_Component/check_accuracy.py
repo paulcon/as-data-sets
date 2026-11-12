@@ -28,7 +28,7 @@ of generate_data.py; JULIA, JULIA_PROJECT and BFIELD as described there). They r
  6. 2 ms simulated, averaged over the last 1 ms (changes of I_D and T);
  7. ion_wall_losses = false (changes of I_D, T and the exit ion velocity);
  8. 200 cells instead of 100 (changes of I_D and T).
-Without Julia the script runs checks 1-4 and then exits with status 1 and says what to install.
+Without Julia the script runs checks 1-4 and then exits with status 3 and says what to install.
 """
 import argparse
 import os
@@ -124,7 +124,7 @@ def rerun(julia, settings, tmp, tag):
 
 
 def julia_checks(col):
-    julia = gd.require_julia()          # exits with status 1 and the install message when Julia is missing
+    julia = gd.require_julia()          # exits with status 3 and the install message when Julia is missing
     idx = np.array(ROWS)
     ship = {q: col[q][idx] for q in ('ID', 'T', 'u_exit')}
     pct = lambda new, old: ', '.join(f'{100 * (n / o - 1):+.1f} %' for n, o in zip(new, old))  # noqa: E731

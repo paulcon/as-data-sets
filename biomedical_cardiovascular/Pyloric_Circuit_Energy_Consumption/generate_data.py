@@ -19,7 +19,7 @@ Usage
   python generate_data.py --pyloric ... --rows 0:5 --out OTHERDIR --check
 
 CHUNKDIR and OTHERDIR must be outside this directory. Without pyloric (or without pandas or
-Cython, which it needs) the script exits with status 1 and says what to install.
+Cython, which it needs) the script exits with status 3 and says what to install.
 """
 import argparse
 import glob
@@ -58,14 +58,16 @@ INSTALL = (f"{os.path.basename(sys.argv[0])} needs the pyloric simulator (github
 
 def import_pyloric(path):
     """Import pyloric from a clone at `path`, with stand-ins for torch and sbi. Exits with
-    status 1 and the install message if pyloric, pandas or Cython cannot be imported."""
+    status 3 and the install message if pyloric, pandas or Cython cannot be imported."""
     if not path or not os.path.isfile(os.path.join(path, "pyloric", "__init__.py")):
-        sys.exit(f"pyloric not found{'' if not path else ' at ' + path}. " + INSTALL)
+        print(f"pyloric not found{'' if not path else ' at ' + path}. " + INSTALL, file=sys.stderr)
+        sys.exit(3)
     try:
         import pandas  # noqa: F401
         import Cython  # noqa: F401
     except ImportError as err:
-        sys.exit(f"{err.name} is not installed. " + INSTALL)
+        print(f"{err.name} is not installed. " + INSTALL, file=sys.stderr)
+        sys.exit(3)
     t = types.ModuleType("torch")
     t.Tensor = type("Tensor", (), {})          # only used in an isinstance() check
     sbi_utils = types.ModuleType("sbi.utils")
@@ -80,7 +82,8 @@ def import_pyloric(path):
         from pyloric.prior import prior_bounds
         from pyloric.utils import select_names
     except ImportError as err:
-        sys.exit(f"pyloric could not be imported ({err}). " + INSTALL)
+        print(f"pyloric could not be imported ({err}). " + INSTALL, file=sys.stderr)
+        sys.exit(3)
     return pyloric, simulate, summary_stats, prior_bounds, select_names
 
 

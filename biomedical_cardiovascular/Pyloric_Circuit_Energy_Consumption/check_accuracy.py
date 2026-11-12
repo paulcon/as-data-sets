@@ -4,7 +4,7 @@
     python check_accuracy.py --pyloric /path/to/pyloric
 
 It needs the outside simulator pyloric (github.com/mackelab/pyloric, commit 89dd27d) with pandas
-and Cython, set up as in DATA.md, "Regenerating"; without it the script exits with status 1 and
+and Cython, set up as in DATA.md, "Regenerating"; without it the script exits with status 3 and
 says what to install. Run it from any directory; it reads the shipped files next to this file
 and runs pyloric through generate_data.run_one. Each line prints the recomputed value. About
 40 pyloric runs (one to a few minutes).
@@ -37,7 +37,7 @@ def main():
                                  epilog='\n'.join(__doc__.split('\n')[1:]))
     ap.add_argument('--pyloric', help='path to a clone of github.com/mackelab/pyloric at commit 89dd27d')
     a = ap.parse_args()
-    _, simulate, summary_stats, prior_bounds, select_names = gd.import_pyloric(a.pyloric)  # exits 1 if missing
+    _, simulate, summary_stats, prior_bounds, select_names = gd.import_pyloric(a.pyloric)  # exits 3 if missing
     t0 = time.perf_counter()
     lo, hi = prior_bounds(gd.pyloric_setups())
     tn, cn = select_names(gd.pyloric_setups())

@@ -188,7 +188,8 @@ def main():
     p.add_argument("--quick", action="store_true")
     a = p.parse_args()
     if M.dss is None:
-        sys.exit(f"OpenDSSDirect.py is not installed. Install it ({M.INSTALL}) and rerun check_accuracy.py.")
+        print(f"OpenDSSDirect.py is not installed. Install it ({M.INSTALL}) and rerun check_accuracy.py.", file=sys.stderr)
+        sys.exit(3)
     m = nominal_checks()
     if a.quick:
         return

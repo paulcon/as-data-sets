@@ -107,7 +107,8 @@ def check_zenodo(src, zen):
 
 def main(argv):
     if len(argv) < 2:
-        sys.exit(__doc__)
+        print(__doc__, file=sys.stderr)   # the downloaded files are needed
+        sys.exit(3)
     new = convert(argv[1])
     if '--check' in argv:
         same = OUT.read_text() == new

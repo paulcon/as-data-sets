@@ -19,7 +19,7 @@ column), so the design does not depend on the scipy version. Inputs are rounded 
 written before the model is run, so the files are consistent with each other.
 
 Work is resumable: each finished row is appended to <out>/<case>_rows.txt, a rerun skips the
-rows already there, and --max-seconds stops a run cleanly between rows (exit status 3 while
+rows already there, and --max-seconds stops a run cleanly between rows (exit status 4 while
 rows remain). The CSV files are written when every requested row is done. A row whose solve fails is
 written as nan (none did in the shipped files).
 
@@ -200,8 +200,9 @@ def main():
     if os.path.commonpath([os.path.realpath(out), here]) == here:
         sys.exit("--out must be a directory outside this one, so that the shipped files are not overwritten")
     if D.ct is None:
-        sys.exit("Cantera is not installed. Install it (pip install cantera==3.2.0, the version that wrote "
-                 "the shipped files) and rerun generate_data.py.")
+        print("Cantera is not installed. Install it (pip install cantera==3.2.0, the version that wrote "
+              "the shipped files) and rerun generate_data.py.", file=sys.stderr)
+        sys.exit(3)
     try:
         D.mech_path(a.mech)
     except FileNotFoundError as e:
@@ -249,7 +250,7 @@ def main():
     print(f"{a.case}: {len(rows) - len(left)} of {len(rows)} rows done; this run {time.time() - t0:.1f} s, "
           f"fresh flame starts {n_fresh + model.n_fresh_starts}", flush=True)
     if left:
-        sys.exit(3)
+        sys.exit(4)
     write_csv(a.case, X, done, rows, out)
     if a.check and not check(a.case, out, rows):
         sys.exit(1)

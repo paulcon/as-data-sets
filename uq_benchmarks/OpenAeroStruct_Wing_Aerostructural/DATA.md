@@ -69,7 +69,7 @@ oasvenv/bin/python generate_data.py --rows 0:10 --out DIR --check            # a
 oasvenv/bin/python check_accuracy.py --psdr PSDR/tests --slow                # the accuracy numbers below
 ```
 
-`generate_data.py` stops if OpenAeroStruct is missing (in `.venv` it exits with status 1 and the install message) or if another version is installed (override with `--any-oas`); `--check` and `--rows` need `--out` outside this directory, so that the shipped files are never overwritten.
+`generate_data.py` stops if OpenAeroStruct is missing (in `.venv` it exits with status 3 and the install message) or if another version is installed (override with `--any-oas`); `--check` and `--rows` need `--out` outside this directory, so that the shipped files are never overwritten.
 
 **Provenance of the shipped files.** Written on 2026-10-31 in a Linux container (2 CPUs shared with other jobs; Python 3.13, OpenAeroStruct 2.12.0, OpenMDAO 3.45.2, numpy 2.5.4, scipy 1.18.1), one process at a time, with `nice -n 10`, in four chunks of 500 rows joined with `generate_data.py --merge c0 c1 c2 c3` (which checks that the chunk inputs are the design rows in order). Run time of that original run: 1573 s wall in all (420.8, 487.8, 362.0 and 302.3 s for the four chunks; about 0.29 s of CPU per sample in the last three). One evaluation costs about 0.05–0.3 s; the 4 extra solves for the E and G differences and the total-derivative solve make up the rest of a sample. There, `--rows 0:10 --check` and `--rows 1995:2000 --check` reproduced outputs and gradients bit for bit at the digits written.
 
