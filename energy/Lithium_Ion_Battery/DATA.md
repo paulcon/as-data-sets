@@ -1,6 +1,6 @@
 # Lithium_Ion_Battery: data
 
-Kind: **stored data**. The runs come from Hadigol et al.'s simulations of a Newman-model battery, and the text files are the only record of them. Their values are never regenerated or corrected. `battery_data.npz` is a lossless, scripted conversion of the columns the notebook uses.
+Kind: **stored data**. The runs come from Hadigol et al.'s simulations of a Newman-model battery, and the text files, archived on Zenodo (doi:[10.5281/zenodo.24174045](https://doi.org/10.5281/zenodo.24174045)), are the only record of them. Their values are never regenerated or corrected. `battery_data.npz` is a lossless, scripted conversion of the columns the notebook uses.
 
 ## Files
 
@@ -10,7 +10,7 @@ Kind: **stored data**. The runs come from Hadigol et al.'s simulations of a Newm
 | `battery_figs.py` | `load`, `overshoot`, `weights` (Algorithm 1 via v1 OLS), `bootstrap_se`, the figure functions and the line-style tables | helper module |
 | `battery_data.npz` | the used columns of the six text files below (8.6 MB) | what the notebook reads |
 | `make_battery_npz.py` | writes `battery_data.npz` and checks it against the text files, value by value | the conversion |
-| `0.25C.txt`, `1C.txt`, `4C.txt` | 3600 runs × 270 columns each, CSV with one header row (22.4 MB each) | originals (see "Originals and Zenodo") |
+| `0.25C.txt`, `1C.txt`, `4C.txt` (on Zenodo, not here) | 3600 runs × 270 columns each, CSV with one header row (22.4 MB each) | originals (see "Originals and Zenodo") |
 | `V_025C.txt`, `V_1C.txt`, `V_4C.txt` | 50 voltages [V], one per line, descending to 2.8 | originals: the voltage grid of the capacity columns |
 | `README` | one-line pointer to the paper | |
 
@@ -70,11 +70,11 @@ Every run stops at the 2.8 V cutoff. Two 4C runs end below it: Run 1538 at 2.746
 
 ## Regenerating
 
-The runs cannot be regenerated from this repository: the simulation code is not recorded here. The notebook reads only `battery_data.npz`. `python make_battery_npz.py` (from this directory, about 5 s) rewrites the file and checks that every array equals the text values exactly. The npz bytes differ between runs (zip timestamps); the arrays do not.
+The runs cannot be regenerated from this repository: the simulation code is not recorded here. The notebook reads only `battery_data.npz`. `python make_battery_npz.py --src DIR`, with the three text files from Zenodo in DIR (about 5 s), rewrites the file and checks that every array equals the text values exactly; `--check` compares with the shipped file instead of writing it, and without the files the script exits with code 3. The npz bytes differ between runs (zip timestamps); the arrays do not.
 
 ## Originals and Zenodo
 
-Full originals of large data sets go to Zenodo with a DOI, and the repository ships the used columns. The deposit of the three text files (with the concentration columns) and the voltage grids, with Hadigol et al. as data authors, has not been made yet. Until it has a DOI, the original text files stay in this directory. The notebook reads only `battery_data.npz`; `make_battery_npz.py` is the only reader of the text files. When the DOI exists, the text files can be removed from HEAD and the DOI added here; their md5s above identify them.
+The three text files (with the concentration columns) and the voltage grids are archived on Zenodo, with Hadigol et al. as data authors: doi:[10.5281/zenodo.24174045](https://doi.org/10.5281/zenodo.24174045). The repository keeps files under 10 MB, so it ships the used columns in `battery_data.npz` and the voltage grids `V_<rate>.txt`. The notebook reads only `battery_data.npz`; `make_battery_npz.py` is the only reader of the text files. Their md5s above identify them.
 
 ## Accuracy
 

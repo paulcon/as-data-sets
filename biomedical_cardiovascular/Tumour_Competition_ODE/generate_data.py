@@ -1,6 +1,6 @@
-"""Write lv_samples.npz for the competitive Lotka-Volterra tumour model (Zou and Lewis 2026).
+"""Write the samples (lv_samples_*.npz) for the competitive Lotka-Volterra tumour model (Zou and Lewis 2026).
 
-    python generate_data.py                                   # writes lv_samples.npz here (22 to 60 min, DATA.md)
+    python generate_data.py                                   # writes lv_samples_*.npz here (22 to 60 min, DATA.md)
     python generate_data.py --out DIR --check --blocks 1      # regenerates the first block of each
                                                               # design in DIR and compares (about 1.5 min)
     python generate_data.py --out DIR --cache CDIR --max-minutes 9   # resumable chunks
@@ -56,7 +56,6 @@ TOL_Q, TOL_G = 1e-8, 1e-6   # --check: q_pri relative, q_sec absolute; gradients
                             # (floor 1e-8 on the norm), after rounding the new gradients to float32
                             # (TOL_G is about 8 float32 units in the last place)
 GRAD_DTYPE = np.float32     # storage precision of *_grad
-FILE = 'lv_samples.npz'
 DESCRIPTION = (
     'Competitive Lotka-Volterra tumour model of Zou and Lewis 2026 (doi:10.3934/mbe.2026079), '
     'Eqs. 3.1-3.2, S(0) = 0.018, R(0) = 0.002 mm^3; q_pri = trapezoidal integral of S + R over '
@@ -138,7 +137,7 @@ def main():
                                  formatter_class=argparse.RawDescriptionHelpFormatter,
                                  epilog='\n'.join(__doc__.split('\n')[1:]))
     ap.add_argument('--out', default=HERE, help='output directory (default: this directory)')
-    ap.add_argument('--check', action='store_true', help=f'compare with {FILE} in this directory')
+    ap.add_argument('--check', action='store_true', help='compare with the lv_samples_*.npz files in this directory')
     ap.add_argument('--blocks', type=int, default=None,
                     help=f'compute only the first BLOCKS blocks of {BLOCK} cells of each design')
     ap.add_argument('--cache', default=None, help='directory for resumable block files')
@@ -174,9 +173,8 @@ def main():
         'qoi_names': np.array(tm.QOI_NAMES), 'qoi_units': np.array(tm.QOI_UNITS),
         'description': np.array(DESCRIPTION),
     })
-    path = os.path.join(out, FILE)
-    np.savez_compressed(path, **data)
-    print(f'wrote {path}: {n_pts} points, {t1 - t0:.0f} s for the model runs '
+    paths = tm.save_samples(data, out)
+    print(f'wrote {", ".join(os.path.basename(p) for p in paths)} in {out}: {n_pts} points, {t1 - t0:.0f} s for the model runs '
           f'({(t1 - t0) / max(n_pts, 1) * 1e3:.1f} ms per point with sensitivities, including cached blocks)')
     X4 = res[4][1]
     print(f'smallest K_S, K_R drawn: {X4[:, 2].min():.3g}, {X4[:, 3].min():.3g} (grid4); '
@@ -188,7 +186,7 @@ def main():
           f'max relative error q_pri {e[:, 0].max():.1e}; q_sec {e[ok, 1].max():.1e} ({ok.sum()} points with '
           f'q_sec (1 - q_sec) > 1e-6)')
     if args.check:
-        ref = np.load(os.path.join(HERE, FILE))
+        ref = tm.load_samples()
         for key in ('grid4', 'sub8'):
             n = len(data[f'{key}_X'])
             same = (np.array_equal(ref[f'{key}_region'][:n], data[f'{key}_region']))
