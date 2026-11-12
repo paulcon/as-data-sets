@@ -57,11 +57,13 @@ def pygem_v01(path):
     try:
         import pandas as pd
     except ImportError:
-        sys.exit('check 1 needs pandas (pip install pandas==3.1.0) and PyGEM v0.1: '
-                 'git clone --branch v0.1 https://github.com/drounce/PyGEM DIR; then rerun with --pygem DIR.')
+        print('check 1 needs pandas (pip install pandas==3.1.0) and PyGEM v0.1: '
+              'git clone --branch v0.1 https://github.com/drounce/PyGEM DIR; then rerun with --pygem DIR.', file=sys.stderr)
+        sys.exit(3)
     if not os.path.exists(os.path.join(path, 'pygemfxns_massbalance.py')):
-        sys.exit(f'no pygemfxns_massbalance.py in {path}: git clone --branch v0.1 https://github.com/drounce/PyGEM DIR '
-                 f'(commit {PYGEM_COMMIT[:8]}) and rerun with --pygem DIR.')
+        print(f'no pygemfxns_massbalance.py in {path}: git clone --branch v0.1 https://github.com/drounce/PyGEM DIR '
+              f'(commit {PYGEM_COMMIT[:8]}) and rerun with --pygem DIR.', file=sys.stderr)
+        sys.exit(3)
     sys.path.insert(0, os.path.abspath(path))
     read_csv = pd.read_csv
     # pygem_input.py reads a High Mountain Asia region table at import; it is not used by runmassbalance
@@ -171,7 +173,8 @@ def prior_check(path):
     try:
         from scipy import stats
     except ImportError:
-        sys.exit('check 7 needs scipy (pip install scipy) and rerun.')
+        print('check 7 needs scipy (pip install scipy) and rerun.', file=sys.stderr)
+        sys.exit(3)
     src = open(os.path.join(path, 'pygem_input.py'), encoding='utf-8-sig').read()   # the file starts with a BOM
     tree = ast.parse(src)
     vals = {}

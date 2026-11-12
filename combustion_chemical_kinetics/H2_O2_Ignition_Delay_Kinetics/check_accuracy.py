@@ -78,8 +78,9 @@ def main():
     ap.add_argument('--quick', action='store_true', help='only checks 1 and 2')
     a = ap.parse_args()
     if hd.ct is None:
-        sys.exit('Cantera is not installed. Install it (pip install cantera==3.2.0, the version that wrote '
-                 'the shipped files) and rerun check_accuracy.py.')
+        print('Cantera is not installed. Install it (pip install cantera==3.2.0, the version that wrote '
+              'the shipped files) and rerun check_accuracy.py.', file=sys.stderr)
+        sys.exit(3)
     t0 = time.perf_counter()
     print(f'Cantera {hd.ct.__version__}, numpy {np.__version__}')
     model = hd.IgnitionModel()                        # rtol 1e-9, atol 1e-18: the settings of the data

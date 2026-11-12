@@ -65,8 +65,9 @@ def main():
     try:
         import uqtestfuns as uq
     except ImportError:
-        sys.exit('checks 3-5 need uqtestfuns 0.7.0: pip install uqtestfuns==0.7.0, then rerun '
-                 'python check_accuracy.py')
+        print('checks 3-5 need uqtestfuns 0.7.0: pip install uqtestfuns==0.7.0, then rerun '
+              'python check_accuracy.py', file=sys.stderr)
+        sys.exit(3)
 
     # 3
     fun = uq.RSSpeedReducerShaft()

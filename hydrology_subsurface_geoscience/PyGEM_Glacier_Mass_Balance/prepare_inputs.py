@@ -152,12 +152,14 @@ def main():
         import netCDF4  # noqa: F401
         import rasterio  # noqa: F401
     except ImportError:
-        sys.exit('prepare_inputs.py needs netCDF4 and rasterio: pip install netCDF4==1.7.5.1.post1 rasterio==1.5.2, '
-                 'then rerun it.')
+        print('prepare_inputs.py needs netCDF4 and rasterio: pip install netCDF4==1.7.5.1.post1 rasterio==1.5.2, '
+              'then rerun it.', file=sys.stderr)
+        sys.exit(3)
     for key, (rel, digest) in SOURCES.items():
         path = os.path.join(args.src, rel)
         if not os.path.exists(path):
-            sys.exit(f'missing {rel}: check out https://github.com/OGGM/oggm-sample-data at {COMMIT} and rerun.')
+            print(f'missing {rel}: check out https://github.com/OGGM/oggm-sample-data at {COMMIT} and rerun.', file=sys.stderr)
+            sys.exit(3)
         if sha256(path) != digest:
             sys.exit(f'sha256 mismatch for {rel}: expected {digest}')
     clim, lat, lon, zgcm = climate(args.src)

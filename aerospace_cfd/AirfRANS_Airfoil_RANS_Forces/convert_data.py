@@ -191,8 +191,9 @@ def main(argv):
     try:
         import airfrans  # noqa: F401
     except ImportError:
-        raise SystemExit('convert_data.py needs the airfrans library (tested with airfrans 0.1.5.1, '
-                         'pyvista 0.49.2, vtk 9.7.2): pip install airfrans==0.1.5.1, then rerun.')
+        print('convert_data.py needs the airfrans library (tested with airfrans 0.1.5.1, '
+              'pyvista 0.49.2, vtk 9.7.2): pip install airfrans==0.1.5.1, then rerun.', file=sys.stderr)
+        sys.exit(3)
     os.makedirs(out, exist_ok=True)
     verify_archive(args.zip, out, args.skip_sha256)
     t0 = time.time()

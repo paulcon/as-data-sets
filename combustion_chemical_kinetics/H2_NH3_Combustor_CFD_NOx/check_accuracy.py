@@ -57,7 +57,8 @@ def rel(a, b):
 
 def main():
     if len(sys.argv) != 2:
-        sys.exit(__doc__)
+        print(__doc__, file=sys.stderr)   # the downloaded files are needed
+        sys.exit(3)
     P, xy, X = ed.load(sys.argv[1], verify=False)
     n = xy.shape[0]
     base = ed.reduce_cases(P, xy, X)

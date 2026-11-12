@@ -389,8 +389,9 @@ def main():
     else:
         todo = {1, 2, 3} if a.quick else set(range(1, 8))
     if D.ct is None:
-        sys.exit("Cantera is not installed. Install it (pip install cantera==3.2.0, the version that "
-                 "wrote the shipped files) and rerun check_accuracy.py.")
+        print("Cantera is not installed. Install it (pip install cantera==3.2.0, the version that "
+              "wrote the shipped files) and rerun check_accuracy.py.", file=sys.stderr)
+        sys.exit(3)
     t0 = time.perf_counter()
     print(f"Cantera {D.ct.__version__}, numpy {np.__version__}")
     X, F_ = load("inputs.csv"), load("outputs.csv")

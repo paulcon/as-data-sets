@@ -56,8 +56,9 @@ def main():
     ap.add_argument("--fig3", action="store_true", help="check 6 (Fig. 3) only")
     a = ap.parse_args()
     if D.pm is None:
-        sys.exit("pyrcel is not installed. Install it (pip install pyrcel==2.0.0, the version that wrote "
-                 "the shipped files) and rerun check_accuracy.py.")
+        print("pyrcel is not installed. Install it (pip install pyrcel==2.0.0, the version that wrote "
+              "the shipped files) and rerun check_accuracy.py.", file=sys.stderr)
+        sys.exit(3)
     X, Y, G = ld("inputs.csv"), ld("outputs.csv"), ld("gradients.csv")
     pk, gok = Y[:, 2] == 1, Y[:, 3] == 1
     rows_pk = list(np.flatnonzero(pk & gok)[:8])

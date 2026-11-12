@@ -2,7 +2,7 @@
 
 design_inputs.csv needs only numpy and scipy. fdfault_reruns.csv needs the outside code fdfault
 v1.0.1 (its Python package and compiled binary, run through mpiexec); without it --rerun exits
-with status 1 and says what to install. The shipped reruns stay the record: fdfault is rerun only
+with status 3 and says what to install. The shipped reruns stay the record: fdfault is rerun only
 if a problem is found in them.
 
 design_inputs.csv: the paper's two Latin hypercube designs at full precision. fabmogp draws
@@ -76,17 +76,20 @@ def write_design(path):
 
 
 def require_fdfault(fdfault_dir):
-    """Exit with status 1 and an install message if fdfault cannot be run."""
+    """Exit with status 3 and an install message if fdfault cannot be run."""
     import shutil
     try:
         import fdfault  # noqa: F401
         import fdfault.analysis  # noqa: F401
     except ImportError:
-        sys.exit(INSTALL.format('no Python package fdfault'))
+        print(INSTALL.format('no Python package fdfault'), file=sys.stderr)
+        sys.exit(3)
     if not fdfault_dir or not os.path.isfile(os.path.join(fdfault_dir, 'fdfault')):
-        sys.exit(INSTALL.format(f'no fdfault binary in --fdfault-dir {fdfault_dir!r}'))
+        print(INSTALL.format(f'no fdfault binary in --fdfault-dir {fdfault_dir!r}'), file=sys.stderr)
+        sys.exit(3)
     if shutil.which('mpiexec') is None:
-        sys.exit(INSTALL.format('no mpiexec on the PATH'))
+        print(INSTALL.format('no mpiexec on the PATH'), file=sys.stderr)
+        sys.exit(3)
 
 
 def rerun(rows, fdfault_dir, out):

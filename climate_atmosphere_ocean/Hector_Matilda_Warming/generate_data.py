@@ -176,9 +176,11 @@ def main():
     try:
         ver = D.tool_versions()
     except RuntimeError as e:
-        sys.exit(f"{e}\nThis script needs {NEED}")
+        print(f"{e}\nThis script needs {NEED}", file=sys.stderr)
+        sys.exit(3)
     if ver[1] != "3.1.1":
-        sys.exit(f"hector {ver[1]} found; the shipped files were written with hector 3.1.1. {NEED}")
+        print(f"hector {ver[1]} found; the shipped files were written with hector 3.1.1. {NEED}", file=sys.stderr)
+        sys.exit(3)
     print("R", ver[0], "hector", ver[1], "matilda (DESCRIPTION version)", ver[2])
     rows = slice(0, M)
     if a.rows:

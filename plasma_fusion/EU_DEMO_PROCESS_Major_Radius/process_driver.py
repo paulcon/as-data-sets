@@ -84,8 +84,9 @@ if __name__ == "__main__":
     #       [warm.json]
     import json
     if importlib.util.find_spec("process") is None:
-        sys.exit("PROCESS is not installed. Install PROCESS v3.4.2 (https://github.com/ukaea/PROCESS, tag v3.4.2; "
-                 "the recipe is in DATA.md, \"Regenerating\") and rerun process_driver.py.")
+        print("PROCESS is not installed. Install PROCESS v3.4.2 (https://github.com/ukaea/PROCESS, tag v3.4.2; "
+              "the recipe is in DATA.md, \"Regenerating\") and rerun process_driver.py.", file=sys.stderr)
+        sys.exit(3)
     tpl_path, out_json = sys.argv[1], sys.argv[2]
     x = [float(v) for v in sys.argv[3:9]]
     warm, r0 = None, 9.0

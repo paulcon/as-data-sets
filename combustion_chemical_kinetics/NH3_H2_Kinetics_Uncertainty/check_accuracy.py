@@ -192,8 +192,9 @@ def main():
     ap.add_argument("--mech", default=None, help="path of NH3_H2.yaml (default: see the driver)")
     a = ap.parse_args()
     if D.ct is None:
-        sys.exit("Cantera is not installed. Install it (pip install cantera==3.2.0, the version that wrote "
-                 "the shipped files) and rerun check_accuracy.py.")
+        print("Cantera is not installed. Install it (pip install cantera==3.2.0, the version that wrote "
+              "the shipped files) and rerun check_accuracy.py.", file=sys.stderr)
+        sys.exit(3)
     try:
         D.mech_path(a.mech)
     except FileNotFoundError as e:

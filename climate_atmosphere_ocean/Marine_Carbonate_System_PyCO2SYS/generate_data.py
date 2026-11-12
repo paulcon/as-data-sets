@@ -161,7 +161,8 @@ if __name__ == "__main__":
     if os.path.abspath(a.out) == HERE and a.check:
         ap.error('--check needs --out DIR outside this directory, so that the shipped files are not overwritten')
     if pyco2 is None:
-        sys.exit(cm.INSTALL.replace("and rerun.", "and rerun generate_data.py."))
+        print(cm.INSTALL.replace("and rerun.", "and rerun generate_data.py."), file=sys.stderr)
+        sys.exit(3)
     print(f"PyCO2SYS {pyco2.__version__}, numpy {np.__version__}, Python {platform.python_version()}")
     t = time.time()
     os.makedirs(a.out, exist_ok=True)

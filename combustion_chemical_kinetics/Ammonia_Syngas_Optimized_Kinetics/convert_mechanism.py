@@ -55,11 +55,13 @@ def main():
         import cantera as ct
         from cantera import ck2yaml
     except ImportError:
-        sys.exit("Cantera is not installed. Install it (pip install cantera==3.2.0, the version used for "
-                 "the shipped data) and rerun convert_mechanism.py.")
+        print("Cantera is not installed. Install it (pip install cantera==3.2.0, the version used for "
+              "the shipped data) and rerun convert_mechanism.py.", file=sys.stderr)
+        sys.exit(3)
     if not os.path.isfile(a.zip):
-        sys.exit(f"{a.zip} not found. Download {ZIP_NAME} from https://doi.org/10.1039/D3RE00160A "
-                 "(link 'Electronic supplementary information') and rerun.")
+        print(f"{a.zip} not found. Download {ZIP_NAME} from https://doi.org/10.1039/D3RE00160A "
+              "(link 'Electronic supplementary information') and rerun.", file=sys.stderr)
+        sys.exit(3)
     digest = sha256(a.zip)
     if digest != ZIP_SHA256 and not a.any_zip:
         sys.exit(f"sha256 of {a.zip} is {digest}, not {ZIP_SHA256} ({ZIP_BYTES} bytes), the file the shipped "

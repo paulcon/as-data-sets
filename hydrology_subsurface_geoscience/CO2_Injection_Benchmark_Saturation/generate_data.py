@@ -93,7 +93,8 @@ def archive(src, out):
 def run(src, work, jobs):
     prog = os.path.join(src, 'prog')
     if platform.system() != 'Linux' or platform.machine() not in ('x86_64', 'AMD64') or not os.path.exists(prog):
-        sys.exit(INSTALL)
+        print(INSTALL, file=sys.stderr)
+        sys.exit(3)
     for path, sha in ((prog, PROG_SHA256), (os.path.join(src, 'InputParameters.txt'), INPUT_SHA256)):
         if _sha256(path) != sha:
             sys.exit(f'{path} does not match the SHA-256 recorded in DATA.md; refusing to run')

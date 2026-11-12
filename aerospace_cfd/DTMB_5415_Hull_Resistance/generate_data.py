@@ -44,7 +44,7 @@ per-run rule of l2sea_driver.failure_reason (DATA.md, Accuracy).
 DIR is a built copy of github.com/MAORG-CNR-INM/NATO-AVT-331-L2-Sea-Benchmark (GPL-3.0) at
 commit 100da62, with bin/L2-Sea compiled by `make` (DATA.md, Regenerating); it is given by
 --l2sea-home or the environment variable L2SEA_HOME. Without it every step but `assemble`
-stops with an error that says what to build (exit status 1). `assemble` needs the RAW files
+stops with an error that says what to build (exit status 3). `assemble` needs the RAW files
 that the other steps write. The shipped files are the record: rerun L2-Sea only if a problem is
 found in them. Imports: numpy, scipy and the standard library, plus l2sea_driver.py beside this
 file.
@@ -415,13 +415,15 @@ INSTALL_MSG = (
 
 
 def require_l2sea(home):
-    """Exit with status 1 and an install message unless HOME holds a built L2-Sea."""
+    """Exit with status 3 and an install message unless HOME holds a built L2-Sea."""
     if not home:
-        sys.exit(INSTALL_MSG % " (no --l2sea-home given and L2SEA_HOME not set)")
+        print(INSTALL_MSG % " (no --l2sea-home given and L2SEA_HOME not set)", file=sys.stderr)
+        sys.exit(3)
     exe = os.path.join(home, "bin", "L2-Sea")
     case = os.path.join(home, "examples", "DTMB-5415")
     if not (os.path.isfile(exe) and os.access(exe, os.X_OK) and os.path.isdir(case)):
-        sys.exit(INSTALL_MSG % (" in %s (no executable bin/L2-Sea or no examples/DTMB-5415)" % home))
+        print(INSTALL_MSG % (" in %s (no executable bin/L2-Sea or no examples/DTMB-5415)" % home), file=sys.stderr)
+        sys.exit(3)
 
 
 def main():

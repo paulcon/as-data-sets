@@ -131,7 +131,8 @@ def check_floris(X):
             import floris
             from floris.tools.floris_interface import FlorisInterface
         except ImportError:
-            sys.exit(INSTALL)
+            print(INSTALL, file=sys.stderr)
+            sys.exit(3)
     import scipy
     version = getattr(floris, '__version__', None)
     if version is None:

@@ -124,8 +124,9 @@ def main():
     if (a.check or a.rows) and os.path.abspath(a.out) == os.path.abspath(HERE):
         sys.exit('--check and --rows need --out DIR outside this directory, so that the shipped files are not overwritten')
     if M.ct is None:
-        sys.exit('Cantera is not installed. Install it (pip install cantera==3.2.0, the version that wrote '
-                 'the shipped files) and rerun generate_data.py.')
+        print('Cantera is not installed. Install it (pip install cantera==3.2.0, the version that wrote '
+              'the shipped files) and rerun generate_data.py.', file=sys.stderr)
+        sys.exit(3)
     os.makedirs(a.out, exist_ok=True)
     cases = ["19", "36", "mc36"] if a.case == "all" else [a.case]
     total = 0.0

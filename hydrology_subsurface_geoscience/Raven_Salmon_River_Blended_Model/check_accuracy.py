@@ -64,7 +64,8 @@ def main():
     if args.skip_raven:
         return
     if not args.raven or not os.path.exists(args.raven) or not args.obs or not os.path.isdir(args.obs):
-        sys.exit(INSTALL)
+        print(INSTALL, file=sys.stderr)
+        sys.exit(3)
 
     cache = args.cache or tempfile.mkdtemp(prefix="raven_check_")
     templates = rs.load_templates(os.path.join(cache, "templates"))

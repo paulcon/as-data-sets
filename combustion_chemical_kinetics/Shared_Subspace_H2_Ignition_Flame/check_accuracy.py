@@ -46,9 +46,11 @@ def main():
     p.add_argument("--data", default=HERE, help="directory with the CSVs (default: this one)")
     a = p.parse_args()
     if D.ct is None:
-        sys.exit("Cantera is not installed: pip install cantera==3.2.0, then rerun check_accuracy.py")
+        print("Cantera is not installed: pip install cantera==3.2.0, then rerun check_accuracy.py", file=sys.stderr)
+        sys.exit(3)
     if not os.path.exists(D.MECH):
-        sys.exit("konnov2008_h2.yaml is missing: run build_mechanism.py first")
+        print("konnov2008_h2.yaml is missing: run build_mechanism.py first", file=sys.stderr)
+        sys.exit(3)
     import cantera as ct
     ct.suppress_thermo_warnings()
     L = np.loadtxt(os.path.join(a.data, "inputs.csv"), delimiter=",", ndmin=2)

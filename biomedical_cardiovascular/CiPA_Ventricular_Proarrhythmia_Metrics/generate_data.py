@@ -46,15 +46,17 @@ def need_myokit():
     try:
         import myokit  # noqa: F401
     except ImportError:
-        sys.exit("Myokit is not installed. Install it (pip install myokit==1.39.2, the version that wrote the "
-                 "shipped file) together with SUNDIALS (e.g. apt install libsundials-dev or brew install sundials) "
-                 "and a C compiler, then rerun generate_data.py.")
+        print("Myokit is not installed. Install it (pip install myokit==1.39.2, the version that wrote the "
+              "shipped file) together with SUNDIALS (e.g. apt install libsundials-dev or brew install sundials) "
+              "and a C compiler, then rerun generate_data.py.", file=sys.stderr)
+        sys.exit(3)
     try:
         cm._sim(ABS_TOL, REL_TOL)
     except Exception as e:  # noqa: BLE001
-        sys.exit(f"Myokit cannot compile the model ({type(e).__name__}: {str(e).splitlines()[0]}). Install SUNDIALS "
-                 "(e.g. apt install libsundials-dev or brew install sundials) and a C compiler, then rerun "
-                 "generate_data.py.")
+        print(f"Myokit cannot compile the model ({type(e).__name__}: {str(e).splitlines()[0]}). Install SUNDIALS "
+              "(e.g. apt install libsundials-dev or brew install sundials) and a C compiler, then rerun "
+              "generate_data.py.", file=sys.stderr)
+        sys.exit(3)
 
 
 def design():

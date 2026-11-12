@@ -221,8 +221,9 @@ def find_sipnet(path=None):
     cand = path or os.environ.get("SIPNET") or shutil.which("sipnet")
     if cand and os.path.isfile(cand) and os.access(cand, os.X_OK):
         return os.path.abspath(cand)
-    sys.exit(f"SIPNET binary not found{' at ' + cand if cand else ''}. Build SIPNET v2.2.0-11 "
-             f"({BUILD_HINT}) and rerun with --sipnet /path/to/sipnet/sipnet.")
+    print(f"SIPNET binary not found{' at ' + cand if cand else ''}. Build SIPNET v2.2.0-11 "
+          f"({BUILD_HINT}) and rerun with --sipnet /path/to/sipnet/sipnet.", file=sys.stderr)
+    sys.exit(3)
 
 
 def sample_inputs(m=M, seed=SEED):

@@ -78,7 +78,8 @@ def make_emissions(ext_file, rcmip_file, out, log):
         import scmdata
         import aneris.convenience
     except ImportError:
-        sys.exit(INSTALL_ANERIS)
+        print(INSTALL_ANERIS, file=sys.stderr)
+        sys.exit(3)
     df = pd.read_csv(ext_file)
     df = df[df["scenario"] == "medium-extension"]          # any scenario: all agree up to 2022
     hist_cols = [f"{y}.5" for y in range(1750, 2023)]
@@ -131,7 +132,8 @@ def make_emissions(ext_file, rcmip_file, out, log):
 # ---------------------------------------------------------------- runs stage
 def run_stage(out, rows, log, work):
     if D.FAIR is None:
-        sys.exit(INSTALL_FAIR)
+        print(INSTALL_FAIR, file=sys.stderr)
+        sys.exit(3)
     ids, X, seeds = D.load_posterior()
     sd_u = D.to_analysis(X).std(axis=0, ddof=1)            # step scale: all 841 members, whatever --rows
     X, ids, seeds = X[rows], ids[rows], seeds[rows]

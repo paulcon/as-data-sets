@@ -43,10 +43,11 @@ CATS = ['Simple_Building_Energy_Rating', 'Weather_File', 'Building_Type', 'Renew
 
 def main(argv):
     if len(argv) < 2 or not os.path.isfile(argv[1]):
-        sys.exit('check_accuracy.py needs the deposited archive "Urban Building Energy Stock Datasets.zip" '
-                 '(Mendeley Data doi:10.17632/m6vv9k9gcd.1, version 1, '
-                 'https://data.mendeley.com/datasets/m6vv9k9gcd/1). Download it and rerun: '
-                 'python check_accuracy.py <path of the zip>')
+        print('check_accuracy.py needs the deposited archive "Urban Building Energy Stock Datasets.zip" '
+              '(Mendeley Data doi:10.17632/m6vv9k9gcd.1, version 1, '
+              'https://data.mendeley.com/datasets/m6vv9k9gcd/1). Download it and rerun: '
+              'python check_accuracy.py <path of the zip>', file=sys.stderr)
+        sys.exit(3)
     h = hashlib.sha256()
     with open(argv[1], 'rb') as fh:
         for block in iter(lambda: fh.read(1 << 20), b''):

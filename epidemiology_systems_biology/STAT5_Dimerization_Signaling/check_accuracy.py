@@ -64,10 +64,11 @@ MEAN = sm.QOI_NAMES.index('pSTAT5A_rel_mean')
 def petab_dir(arg):
     d = arg or os.environ.get('PETAB_BENCHMARK_DIR')
     if not d or not os.path.isfile(os.path.join(d, PETAB_SUB, 'simulations.tsv')):
-        sys.exit(f'error: check 3 needs the PEtab benchmark collection ({"not found at " + d if d else "no path given"}).\n'
-                 f'Fetch {PETAB_URL} at commit {PETAB_COMMIT}, e.g.\n'
-                 f'    git clone {PETAB_URL}.git DIR && git -C DIR checkout {PETAB_COMMIT}\n'
-                 f'then rerun with --petab DIR (or PETAB_BENCHMARK_DIR=DIR), or with --skip-petab for the other checks.')
+        print(f'error: check 3 needs the PEtab benchmark collection ({"not found at " + d if d else "no path given"}).\n'
+              f'Fetch {PETAB_URL} at commit {PETAB_COMMIT}, e.g.\n'
+              f'    git clone {PETAB_URL}.git DIR && git -C DIR checkout {PETAB_COMMIT}\n'
+              f'then rerun with --petab DIR (or PETAB_BENCHMARK_DIR=DIR), or with --skip-petab for the other checks.', file=sys.stderr)
+        sys.exit(3)
     return d
 
 

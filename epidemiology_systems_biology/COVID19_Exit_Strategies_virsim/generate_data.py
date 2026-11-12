@@ -189,7 +189,8 @@ def main():
     env = dict(os.environ, OMP_NUM_THREADS="1", OPENBLAS_NUM_THREADS="1")
     found, rs = virsim_available(env)
     if not found:
-        sys.exit(f"{rs}.\n{INSTALL_MSG}")
+        print(f"{rs}.\n{INSTALL_MSG}", file=sys.stderr)
+        sys.exit(3)
 
     jobs = [(s, i, min(i + CHUNK - 1, last)) for s in a.strategy for i in range(first, last + 1, CHUNK)]
     one, res = run_chunks(rs, env, out, a.jobs)

@@ -118,9 +118,10 @@ GRAD_COLS = [f'd{q}/d{n} [{qu}/{u}]' for q, qu in zip(op.QOI_NAMES, op.QOI_UNITS
 def require_ngspice():
     """Stop with a message if the ngspice program is not found."""
     if shutil.which(op.NGSPICE) is None:
-        sys.exit(f'ngspice not found ({op.NGSPICE!r}). Install ngspice (the shipped files used ngspice-42, '
-                 f'e.g. apt-get install ngspice or brew install ngspice), or set NGSPICE=/path/to/ngspice, '
-                 f'and rerun this script.')
+        print(f'ngspice not found ({op.NGSPICE!r}). Install ngspice (the shipped files used ngspice-42, '
+              f'e.g. apt-get install ngspice or brew install ngspice), or set NGSPICE=/path/to/ngspice, '
+              f'and rerun this script.', file=sys.stderr)
+        sys.exit(3)
 
 
 def main():

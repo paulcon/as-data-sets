@@ -39,13 +39,15 @@ def main():
     try:
         import myokit
     except ImportError:
-        sys.exit("Myokit is not installed. Install it (pip install myokit; the shipped data used Myokit 1.39.2) "
-                 "together with SUNDIALS and a C compiler (see DATA.md), then rerun check_accuracy.py.")
+        print("Myokit is not installed. Install it (pip install myokit; the shipped data used Myokit 1.39.2) "
+              "together with SUNDIALS and a C compiler (see DATA.md), then rerun check_accuracy.py.", file=sys.stderr)
+        sys.exit(3)
     try:
         cm._sim(gd.ABS_TOL, gd.REL_TOL)
     except Exception as e:  # noqa: BLE001
-        sys.exit(f"Myokit cannot compile a simulation ({type(e).__name__}: {str(e).splitlines()[0]}). "
-                 "Install SUNDIALS and a C compiler (see DATA.md), then rerun check_accuracy.py.")
+        print(f"Myokit cannot compile a simulation ({type(e).__name__}: {str(e).splitlines()[0]}). "
+              "Install SUNDIALS and a C compiler (see DATA.md), then rerun check_accuracy.py.", file=sys.stderr)
+        sys.exit(3)
     print(f"Myokit {myokit.__version__}, numpy {np.__version__}; CVODES abs/rel tolerance {gd.ABS_TOL:g}/{gd.REL_TOL:g}")
     D = np.loadtxt(os.path.join(HERE, "cipaord_virtual_drugs.csv"), delimiter=",")
     m, nq = len(cm.NAMES), len(cm.QOI_NAMES)

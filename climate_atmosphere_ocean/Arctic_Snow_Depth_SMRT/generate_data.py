@@ -127,11 +127,13 @@ def main():
     except PackageNotFoundError:
         have = None
     if have is None or not sm.have_smrt():
-        sys.exit(f"SMRT is not installed. Install it (pip install smrt=={sm.CONFIG['smrt_version']}, the version "
-                 f"that wrote the shipped files; a separate venv is fine) and rerun generate_data.py.")
+        print(f"SMRT is not installed. Install it (pip install smrt=={sm.CONFIG['smrt_version']}, the version "
+              f"that wrote the shipped files; a separate venv is fine) and rerun generate_data.py.", file=sys.stderr)
+        sys.exit(3)
     if have != sm.CONFIG['smrt_version'] and not a.any_smrt:
-        sys.exit(f"smrt {have} installed; the shipped data use smrt {sm.CONFIG['smrt_version']} "
-                 f"(pip install smrt=={sm.CONFIG['smrt_version']}) or pass --any-smrt")
+        print(f"smrt {have} installed; the shipped data use smrt {sm.CONFIG['smrt_version']} "
+              f"(pip install smrt=={sm.CONFIG['smrt_version']}) or pass --any-smrt", file=sys.stderr)
+        sys.exit(3)
     X = draw_inputs()
     rows = slice(*[int(s) for s in a.rows.split(':')]) if a.rows else slice(None)
     X = X[rows]

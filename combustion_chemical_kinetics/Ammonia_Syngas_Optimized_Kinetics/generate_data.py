@@ -142,8 +142,9 @@ def main():
         sys.exit("--out must be outside this data set's directory (not the directory or a folder in it), "
                  "so that the shipped files are not overwritten")
     if M.ct is None:
-        sys.exit("Cantera is not installed. Install it (pip install cantera==3.2.0, the version that "
-                 "wrote the shipped files) and rerun generate_data.py.")
+        print("Cantera is not installed. Install it (pip install cantera==3.2.0, the version that "
+              "wrote the shipped files) and rerun generate_data.py.", file=sys.stderr)
+        sys.exit(3)
     if not os.path.exists(M.MECH):
         sys.exit(M.MECH_HELP + " generate_data.py.")
     os.makedirs(out, exist_ok=True)

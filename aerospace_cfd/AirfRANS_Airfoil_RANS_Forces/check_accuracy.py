@@ -249,8 +249,9 @@ def main(argv):
     ap.add_argument('--max-seconds', type=float, default=None)
     args = ap.parse_args(argv)
     if not args.zip or not os.path.exists(args.zip):
-        raise SystemExit('check_accuracy.py needs Dataset.zip of AirfRANS (download and size in DATA.md): '
-                         'give --zip PATH or set AIRFRANS_ZIP, then rerun.')
+        print('check_accuracy.py needs Dataset.zip of AirfRANS (download and size in DATA.md): '
+              'give --zip PATH or set AIRFRANS_ZIP, then rerun.', file=sys.stderr)
+        sys.exit(3)
     out = os.path.abspath(args.out)
     if inside(out, HERE):
         ap.error('--out must be a folder outside this data set\'s directory (not the directory or a folder in it)')

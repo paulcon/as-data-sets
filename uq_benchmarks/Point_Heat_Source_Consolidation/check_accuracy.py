@@ -14,7 +14,7 @@ Checks (in the order of DATA.md, "Accuracy"):
     difference over the nonzero field values, and whether the same values underflow to 0. The test
     function is not in the UQTestFuns 0.7.0 release; it needs the unreleased GitHub source,
         pip install "git+https://github.com/damar-wicaksono/uqtestfuns@82d5c8b1e2cc9e746ba7f22a53e3c7f1ad12d42f"
-    If UQTestFuns is not importable, the other checks run and the script then exits with status 2.
+    If UQTestFuns is not importable, the other checks run and the script then exits with status 3.
  2. Against the 1985 Eq. (23) in its Y, Z form (Booker & Savvidou, p. 177 and pp. 178-179), on
     the samples with |1 - c/kappa| > 0.2.
  3. Field equations: u_r against a radial integration of M div(u) = p + b' dT, and the residuals
@@ -233,7 +233,7 @@ def main():
     if not have_uqtf:
         print('Check 1 was not run: install UQTestFuns with\n    ' + UQTF_PIP + '\nand rerun this script '
               '(or pass --skip-uqtestfuns to run only checks 2-6).')
-        sys.exit(2)
+        sys.exit(3)
 
 
 if __name__ == '__main__':

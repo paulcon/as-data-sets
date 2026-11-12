@@ -21,7 +21,7 @@ Usage (DIR is a working directory outside this one; every file the stages write 
 
 The shipped CSV is the record of the runs: the stages never write into this directory, and
 `assemble` writes a new file in DIR for comparison. The `run` stage needs Julia and HallThruster.jl
-v0.18.7; without them the script exits with status 1 and says what to install (DATA.md has the
+v0.18.7; without them the script exits with status 3 and says what to install (DATA.md has the
 versions of the shipped runs).
 
 Oscillation flag (last CSV column, `oscillating`): 1 if the standard deviation over the averaging
@@ -66,7 +66,7 @@ def paths(out):
 
 
 def require_julia():
-    """Exit with status 1 and an install message unless Julia, HallThruster.jl and the B-field file are there.
+    """Exit with status 3 and an install message unless Julia, HallThruster.jl and the B-field file are there.
     Returns the julia executable."""
     julia = os.environ.get("JULIA") or "julia"
     exe = julia if os.path.isfile(julia) else shutil.which(julia)
@@ -84,7 +84,8 @@ def require_julia():
             print(f"warning: HallThruster.jl {r.stdout.strip()} found; the shipped runs used v{HALLTHRUSTER_VERSION}",
                   file=sys.stderr)
     if problem:
-        sys.exit(f"{problem} {INSTALL}")
+        print(f"{problem} {INSTALL}", file=sys.stderr)
+        sys.exit(3)
     return exe
 
 # Fixed operating condition: Diamant et al. (2014) L3 facility, condition 4 (300 V, 5.665 mg/s total

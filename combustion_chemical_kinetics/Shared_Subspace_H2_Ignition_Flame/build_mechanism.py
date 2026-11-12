@@ -34,17 +34,20 @@ FILES = {
 
 def main():
     if len(sys.argv) != 2:
-        sys.exit(__doc__)
+        print(__doc__, file=sys.stderr)   # the downloaded files are needed
+        sys.exit(3)
     src = sys.argv[1]
     try:
         import cantera  # noqa: F401
     except ImportError:
-        sys.exit("Cantera is not installed: pip install cantera==3.2.0, then rerun build_mechanism.py")
+        print("Cantera is not installed: pip install cantera==3.2.0, then rerun build_mechanism.py", file=sys.stderr)
+        sys.exit(3)
     paths = {}
     for key, (name, sha) in FILES.items():
         p = os.path.join(src, name)
         if not os.path.exists(p):
-            sys.exit(f"missing {name} in {src}")
+            print(f"missing {name} in {src}", file=sys.stderr)
+            sys.exit(3)
         h = hashlib.sha256(open(p, "rb").read()).hexdigest()
         if h != sha:
             sys.exit(f"{name}: sha256 {h} differs from the expected {sha}")

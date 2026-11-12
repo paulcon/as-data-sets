@@ -185,7 +185,8 @@ def main():
     try:
         D.tool_versions()
     except RuntimeError as e:
-        sys.exit(f"{e}\nThis script needs {NEED}")
+        print(f"{e}\nThis script needs {NEED}", file=sys.stderr)
+        sys.exit(3)
     IN, OUT, GR = load("inputs.csv"), load("outputs.csv"), load("gradients.csv")
     Z, X = IN[:, :6], IN[:, 6:]
 

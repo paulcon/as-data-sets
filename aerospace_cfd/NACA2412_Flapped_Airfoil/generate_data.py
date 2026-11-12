@@ -23,7 +23,7 @@ Files written (all CSV with two '#' header lines, read with np.loadtxt(path, del
 A point where XFOIL does not converge is kept, with nan outputs and status -1. The status
 column of every output file says how each point converged (xfoil_driver.STATUS_NOTE).
 
-Without an XFOIL executable the script stops with exit status 1 and a message that says what to
+Without an XFOIL executable the script stops with exit status 3 and a message that says what to
 build (only the --davis-src copy runs without it). --check reruns XFOIL and compares; it writes
 nothing. The shipped files are the record: rerun XFOIL only if a problem is found in them.
 """
@@ -272,10 +272,11 @@ def main():
             print("copied; rerun without --davis-src for the XFOIL files")
             return
     if shutil.which(a.xfoil) is None:
-        sys.exit("XFOIL not found (%r). Build XFOIL 6.99 as DATA.md describes (\"XFOIL build\": Ubuntu's "
-                 "source package 6.99.dfsg+1-3, double precision, without -ffpe-trap; the packaged "
-                 "binary cannot deflect a flap), then rerun generate_data.py with --xfoil PATH "
-                 "(or set XFOIL_EXE)." % a.xfoil)
+        print("XFOIL not found (%r). Build XFOIL 6.99 as DATA.md describes (\"XFOIL build\": Ubuntu's "
+              "source package 6.99.dfsg+1-3, double precision, without -ffpe-trap; the packaged "
+              "binary cannot deflect a flap), then rerun generate_data.py with --xfoil PATH "
+              "(or set XFOIL_EXE)." % a.xfoil, file=sys.stderr)
+        sys.exit(3)
     if a.check:
         ok = check(a.xfoil, a.check)
         print("check %s in %.1f s" % ("passed" if ok else "FAILED", time.time() - t0))

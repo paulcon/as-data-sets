@@ -173,7 +173,7 @@ python generate_data.py assemble --out DIR   # cathode + plume components, write
 
 `DIR` must be a directory other than this one: the shipped CSV is the record of the runs, and a new
 file is compared with it, not copied over it. Without Julia, HallThruster.jl or the B-field file, the
-`run` stage exits with status 1 and says what to install. Per the repository's rule for outside codes,
+`run` stage exits with status 3 and says what to install. Per the repository's rule for outside codes,
 the runs are repeated only if a problem is found in the shipped data.
 
 **Run time of the shipped runs** (external run): the 440 HallThruster.jl runs took 5.0–17.6 s each (median

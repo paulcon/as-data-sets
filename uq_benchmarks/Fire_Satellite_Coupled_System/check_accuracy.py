@@ -22,7 +22,7 @@ Checks (DATA.md, "Accuracy"):
         python3.11 -m venv venv-ot
         venv-ot/bin/pip install openturns==1.25 numpy==2.4.6 scipy==1.17.1
     and rerun with venv-ot/bin/python check_accuracy.py. Without OpenTURNS the script runs checks 1
-    and 3, then stops with status 1 and this message, unless --skip-openturns is given.
+    and 3, then stops with status 3 and this message, unless --skip-openturns is given.
  3. Size of the gravity-gradient torque: tau_g / tau_dist from fire_satellite_model.solve at the
     mean inputs and its largest value over the 2000 shipped samples (DATA.md: 0.265 % and
     2.04 %). It bounds the effect of OpenTURNS's (2 R_E + H)^3 in tau_g, which enters tau_dist
@@ -118,7 +118,7 @@ def main():
               '       venv-ot/bin/pip install openturns==1.25 numpy==2.4.6 scipy==1.17.1\n'
               '   and rerun with venv-ot/bin/python check_accuracy.py (or pass --skip-openturns to run '
               'checks 1 and 3 only).')
-        sys.exit(1)
+        sys.exit(3)
     print(f'done in {time.perf_counter() - t0:.1f} s')
 
 

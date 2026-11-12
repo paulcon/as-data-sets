@@ -27,8 +27,9 @@ SHIPPED_DELTA = 1e-3
 
 def main():
     if D.FAIR is None:
-        sys.exit(f"FaIR is not installed. Install it (pip install fair=={D.FAIR_VERSION}; DATA.md gives the "
-                 "full environment) and rerun check_accuracy.py.")
+        print(f"FaIR is not installed. Install it (pip install fair=={D.FAIR_VERSION}; DATA.md gives the "
+              "full environment) and rerun check_accuracy.py.", file=sys.stderr)
+        sys.exit(3)
     ids, X, seeds = D.load_posterior()
     U = D.to_analysis(X)
     sd_u = U.std(axis=0, ddof=1)

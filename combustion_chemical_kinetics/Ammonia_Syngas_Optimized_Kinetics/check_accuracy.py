@@ -91,8 +91,9 @@ def main():
     ap.add_argument("--quick", action="store_true", help="only checks 1-3")
     a = ap.parse_args()
     if M.ct is None:
-        sys.exit("Cantera is not installed. Install it (pip install cantera==3.2.0, the version that "
-                 "wrote the shipped files) and rerun check_accuracy.py.")
+        print("Cantera is not installed. Install it (pip install cantera==3.2.0, the version that "
+              "wrote the shipped files) and rerun check_accuracy.py.", file=sys.stderr)
+        sys.exit(3)
     if not os.path.exists(M.MECH):
         sys.exit(M.MECH_HELP + " check_accuracy.py.")
     t0 = time.process_time()

@@ -45,15 +45,17 @@ INSTALL = f'pip install "pybamm=={PYBAMM_VERSION}" "casadi==3.6.7"'
 
 
 def require_pybamm(any_version=False):
-    """Stop with an install message (exit status 1) unless PyBaMM 24.9.0 is importable."""
+    """Stop with an install message (exit status 3) unless PyBaMM 24.9.0 is importable."""
     try:
         import pybamm
     except ImportError:
-        sys.exit(f"PyBaMM is not installed. Install PyBaMM {PYBAMM_VERSION} with casadi 3.6.7, the "
-                 f"versions that wrote the shipped files (Python 3.9-3.12: {INSTALL}), then rerun this script.")
+        print(f"PyBaMM is not installed. Install PyBaMM {PYBAMM_VERSION} with casadi 3.6.7, the "
+              f"versions that wrote the shipped files (Python 3.9-3.12: {INSTALL}), then rerun this script.", file=sys.stderr)
+        sys.exit(3)
     if pybamm.__version__ != PYBAMM_VERSION and not any_version:
-        sys.exit(f"PyBaMM {pybamm.__version__} is installed; the shipped data use PyBaMM {PYBAMM_VERSION} "
-                 f"({INSTALL}). Install it and rerun this script, or pass --any-pybamm.")
+        print(f"PyBaMM {pybamm.__version__} is installed; the shipped data use PyBaMM {PYBAMM_VERSION} "
+              f"({INSTALL}). Install it and rerun this script, or pass --any-pybamm.", file=sys.stderr)
+        sys.exit(3)
 
 
 def design(n):

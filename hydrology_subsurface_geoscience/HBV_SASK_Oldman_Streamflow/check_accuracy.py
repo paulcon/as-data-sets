@@ -98,8 +98,9 @@ def original_series(tut):
     try:
         import pandas as pd
     except ImportError:
-        sys.exit('check 4 needs pandas, scipy, matplotlib and IPython (pip install pandas scipy matplotlib ipython); '
-                 'rerun with --vars-tool DIR')
+        print('check 4 needs pandas, scipy, matplotlib and IPython (pip install pandas scipy matplotlib ipython); '
+              'rerun with --vars-tool DIR', file=sys.stderr)
+        sys.exit(3)
     rc = pd.read_csv
 
     def read_csv(*a, **k):
@@ -158,8 +159,9 @@ def main():
     tt_step()
     flow_floor()
     if not args.vars_tool:
-        sys.exit('checks 3 and 4 need VARS-TOOL: git clone https://github.com/vars-tool/vars-tool and rerun with '
-                 '--vars-tool vars-tool/tutorials')
+        print('checks 3 and 4 need VARS-TOOL: git clone https://github.com/vars-tool/vars-tool and rerun with '
+              '--vars-tool vars-tool/tutorials', file=sys.stderr)
+        sys.exit(3)
     stored_9b(args.vars_tool)
     original_series(args.vars_tool)
 
@@ -168,5 +170,6 @@ if __name__ == '__main__':
     try:
         main()
     except (FileNotFoundError, NotADirectoryError) as err:
-        sys.exit(f'file not found: {err.filename}\n'
-                 '--vars-tool takes the tutorials folder of a clone of github.com/vars-tool/vars-tool.')
+        print(f'file not found: {err.filename}\n'
+              '--vars-tool takes the tutorials folder of a clone of github.com/vars-tool/vars-tool.', file=sys.stderr)
+        sys.exit(3)

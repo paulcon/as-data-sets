@@ -157,5 +157,6 @@ if __name__ == '__main__':
     try:
         sys.exit(main(sys.argv))
     except (FileNotFoundError, NotADirectoryError, IsADirectoryError) as err:
-        sys.exit(f'file not found, or not of the expected kind: {err.filename}\n'
-                 'The source is a clone of github.com/mtezzele/MORtech-2019-Special-Issue; see DATA.md, "Regenerating".')
+        print(f'file not found, or not of the expected kind: {err.filename}\n'
+              'The source is a clone of github.com/mtezzele/MORtech-2019-Special-Issue; see DATA.md, "Regenerating".', file=sys.stderr)
+        sys.exit(3)

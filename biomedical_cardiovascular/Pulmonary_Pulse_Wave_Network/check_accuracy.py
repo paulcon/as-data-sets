@@ -35,7 +35,8 @@ def main():
     try:
         exe = D.build(a.work, a.source)
     except D.SolverMissing as e:
-        sys.exit(f"{e}. Install git and g++ and rerun check_accuracy.py.")
+        print(f"{e}. Install git and g++ and rerun check_accuracy.py.", file=sys.stderr)
+        sys.exit(3)
     X = np.loadtxt(os.path.join(HERE, "inputs.csv"), delimiter=",")
     F = np.loadtxt(os.path.join(HERE, "outputs.csv"), delimiter=",")
     G = np.loadtxt(os.path.join(HERE, "gradients.csv"), delimiter=",")
