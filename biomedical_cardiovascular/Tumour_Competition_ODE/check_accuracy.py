@@ -4,7 +4,7 @@ generate_data.py prints.
     python check_accuracy.py               all checks (1-2 min; see DATA.md)
     python check_accuracy.py --skip-slow   without check 3
 
-Run it from any directory; it reads lv_samples.npz next to this file and evaluates tumour_model.py.
+Run it from any directory; it reads lv_samples_*.npz next to this file and evaluates tumour_model.py.
 
 Checks:
  1. Values: the stored q_pri, q_sec of 20 points of each design against (a) tumour_model at
@@ -101,7 +101,7 @@ def main():
     ap.add_argument('--skip-slow', action='store_true', help='skip check 3')
     args = ap.parse_args()
     t0 = time.perf_counter()
-    D = np.load(os.path.join(HERE, 'lv_samples.npz'))   # gradients stored as float32; promoted to float64 below
+    D = tm.load_samples()   # gradients stored as float32; promoted to float64 below
     rows = np.linspace(0, len(D['grid4_X']) - 1, 20).astype(int)
 
     # 1 and 2

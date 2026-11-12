@@ -19,7 +19,7 @@ from concurrent.futures import ProcessPoolExecutor
 import numpy as np
 
 from as_mcmc import ActiveSubspaceMCMC, chain_diagnostics
-from generate_data import AV_CHOL, M, OUT, SEED, _model
+from generate_data import AV_CHOL, M, SEED, _model, load_chains
 
 SCALES = (0.5, 0.85, 1.2, 1.7)
 N_PILOT, BURN = 2500, 300
@@ -27,7 +27,7 @@ N_PILOT, BURN = 2500, 300
 
 def _run(args):
     s, recompute, seed = args
-    z = np.load(OUT)
+    z = load_chains()
     W = z['W']
     model = _model(z['d'], float(z['sig2']))
     y_start = z['vanilla_1_proj'][len(z['vanilla_1_proj']) // 5:, :2].astype(float).mean(axis=0)

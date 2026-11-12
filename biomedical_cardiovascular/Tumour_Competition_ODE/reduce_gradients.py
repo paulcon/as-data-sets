@@ -1,9 +1,9 @@
-"""Round the gradients of a float64 lv_samples.npz to float32 (Tumour_Competition_ODE).
+"""Round the gradients of a float64 samples file to float32 (Tumour_Competition_ODE).
 
     python reduce_gradients.py --in OLD.npz --out DIR
 
-The shipped lv_samples.npz was first written with float64 gradients (30.6 MB). This script
-rewrites such a file with grid4_grad and sub8_grad rounded to float32 (numpy's round-to-nearest)
+The shipped samples were first written as one file, lv_samples.npz, with float64 gradients
+(30.6 MB). This script rewrites such a file with grid4_grad and sub8_grad rounded to float32 (numpy's round-to-nearest)
 and every other array (inputs, values, cell indices, labels) copied unchanged; the description
 string is replaced by the one generate_data.py now writes. The result holds the same arrays that
 generate_data.py writes directly, so a full rerun of generate_data.py is not needed.
@@ -13,7 +13,7 @@ far below rounding; they become float32 subnormals or 0) and the file sizes.
 
 --out must be a directory outside this one (not this directory or a subdirectory of it), so that
 the shipped file is not overwritten.
-Imports numpy and generate_data (for FILE, DESCRIPTION, GRAD_DTYPE). Deterministic.
+Imports numpy, tumour_model (save_samples) and generate_data (DESCRIPTION, GRAD_DTYPE). Deterministic.
 """
 import argparse
 import os
@@ -24,6 +24,7 @@ import numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import generate_data as gd  # noqa: E402
+import tumour_model as tm  # noqa: E402
 
 
 def main():
@@ -57,9 +58,9 @@ def main():
         elif k == 'description':
             a = np.array(gd.DESCRIPTION)
         data[k] = a
-    path = os.path.join(out, gd.FILE)
-    np.savez_compressed(path, **data)
-    print(f'wrote {path}: {os.path.getsize(args.inp) / 1e6:.1f} MB -> {os.path.getsize(path) / 1e6:.1f} MB')
+    paths = tm.save_samples(data, out)
+    print(f'wrote {out}: {os.path.getsize(args.inp) / 1e6:.1f} MB -> '
+          f'{sum(os.path.getsize(p) for p in paths) / 1e6:.1f} MB in {len(paths)} files')
 
 
 if __name__ == '__main__':

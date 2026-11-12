@@ -7,19 +7,20 @@ Kind: **stored data**. ParFlow produced the runoff files, and they are the only 
 | file | contents | role |
 |---|---|---|
 | `Runoff_Permeability_Field.ipynb` | the case study (Python 3, active_subspaces v1) | executed top to bottom; outputs committed; one seeded random split (seed 2016) |
-| `inputs-ShortCorr.GW02.txt` | 10,000 × 100 KL coefficients | stored |
+| `inputs-ShortCorr.GW02.npz` | `X`: 10,000 × 100 KL coefficients, float64, every value of `inputs-ShortCorr.GW02.txt` | stored |
+| `convert_data.py` | writes `inputs-ShortCorr.GW02.npz` from `inputs-ShortCorr.GW02.txt` and checks that the text rebuilt from it equals the original byte for byte | the conversion |
 | `RunOff02_Saturated_10k.txt` | 10,000 Dunnian runoff volumes | stored |
 | `RunOff02_Unsaturated_10k.txt` | 10,000 Hortonian runoff volumes | stored |
 
-Row i of each runoff file is the output of the run whose inputs are row i of `inputs-ShortCorr.GW02.txt`. The two scenarios use the same 10,000 inputs.
+Row i of each runoff file is the output of the run whose inputs are row i of `X`. The two scenarios use the same 10,000 inputs.
 
 | file | bytes | md5 |
 |---|---|---|
-| `inputs-ShortCorr.GW02.txt` | 25500463 | 97713bb987811b4cd81c42b1586c74f5 |
+| `inputs-ShortCorr.GW02.txt` (on Zenodo) | 25500463 | 97713bb987811b4cd81c42b1586c74f5 |
 | `RunOff02_Saturated_10k.txt` | 240000 | 321214425a749f01e43fc744b9171b44 |
 | `RunOff02_Unsaturated_10k.txt` | 239999 | 684567841f06f230a944b28d69afe49b |
 
-`inputs-ShortCorr.GW02.txt` is space-separated text, no header, 10,000 rows × 100 columns, `%.18e`. The file loads in well under a second with `np.loadtxt`. At 25.5 MB it is under GitHub's limits, and it stays as text: a `.npy` copy would add a blob without removing the old one from history.
+The original inputs file, `inputs-ShortCorr.GW02.txt` (space-separated text, no header, 10,000 rows × 100 columns, `%.18e`; SHA-256 ac0c3abdbca4804898423f719718b5a8738ca612666ae0023b148f83147c6d58), is archived on Zenodo with the two runoff files: doi:[10.5281/zenodo.24174085](https://doi.org/10.5281/zenodo.24174085). The repository keeps files under 10 MB, so it ships the inputs as `inputs-ShortCorr.GW02.npz`.
 
 The runoff files (`RunOff02_*_10k.txt`) hold one value per line with a trailing space, 10,000 lines. `RunOff02_Unsaturated_10k.txt` has no final newline (harmless for `np.loadtxt`).
 
@@ -29,7 +30,7 @@ The runoff files (`RunOff02_*_10k.txt`) hold one value per line with a trailing 
 
 **Solver.** ParFlow, on the idealized tilted-v domain of the paper (300 m × 300 m × 16 m, 30 × 30 × 16 cells; §2.6, Table 1). The ParFlow version, the run date and who ran the simulations are **not recorded**. The script that generated the KL coefficients and permeability fields is not in the repository.
 
-**Inputs** (`inputs-ShortCorr.GW02.txt`, m = 100). Column i is the coefficient x_i of the i-th spatial mode in the truncated Karhunen–Loève (KL) series of the log permeability, log κ = μ + B x (eq. (12) of the paper). The coefficients are dimensionless.
+**Inputs** (`inputs-ShortCorr.GW02.npz`, m = 100). Column i is the coefficient x_i of the i-th spatial mode in the truncated Karhunen–Loève (KL) series of the log permeability, log κ = μ + B x (eq. (12) of the paper). The coefficients are dimensionless.
 
 - They are independent standard Gaussian draws, used unnormalized. The notebook prints the checks: column means within ±0.028, standard deviations 0.987–1.016, largest off-diagonal correlation 0.041, pooled Kolmogorov–Smirnov test against N(0, 1) p = 0.45.
 - Low column indices are large-scale modes and high indices small-scale ones. In the paper, B holds the first 100 principal components of 2,000 turning-bands log permeability fields (§2.4, Table 2: geometric mean permeability 0.04465 m h⁻¹, correlation lengths λx = λy = 50 m and λz = 5 m).
@@ -49,7 +50,7 @@ The quantity and units are those of the paper (§2.6, p. 35; the axis of Figs. 6
 
 ## Regenerating
 
-The files cannot be regenerated from this repository. The notebook reads them and runs in about a minute in one Python process; the two quadratic-model fits take most of that time. Its only random numbers are the seeded split (seed 2016) of the held-out test, and two runs give identical printed output apart from run times.
+The files cannot be regenerated from this repository. `python convert_data.py --src DIR` rebuilds `inputs-ShortCorr.GW02.npz` from the Zenodo file in DIR (`--check` compares instead of writing; without the file the script exits with code 3). The notebook reads the shipped files and runs in about a minute in one Python process; the two quadratic-model fits take most of that time. Its only random numbers are the seeded split (seed 2016) of the held-out test, and two runs give identical printed output apart from run times.
 
 ## Accuracy
 

@@ -27,6 +27,8 @@ to its stiff method there.
 
 Only numpy and scipy are imported.
 """
+import os
+
 import numpy as np
 from scipy.integrate import solve_ivp
 from scipy.special import expit
@@ -157,3 +159,36 @@ def equilibrium(x):
     if gR * KR > KS:
         return 1
     return 3
+
+
+# The shipped samples. generate_data.py writes them as four files, each under 10 MB; together they
+# hold the arrays listed in DATA.md. The full set is also archived as one file, lv_samples.npz, on
+# Zenodo (doi:10.5281/zenodo.24174099).
+HERE = os.path.dirname(os.path.abspath(__file__))
+SAMPLE_FILES = {
+    'lv_samples_grid4.npz': ('grid4_region', 'grid4_X', 'grid4_f',
+                             'names', 'units', 'qoi_names', 'qoi_units', 'description'),
+    'lv_samples_grid4_grad.npz': ('grid4_grad',),
+    'lv_samples_sub8.npz': ('sub8_region', 'sub8_X', 'sub8_f'),
+    'lv_samples_sub8_grad.npz': ('sub8_grad',),
+}
+
+
+def load_samples(directory=HERE):
+    """All arrays of the shipped samples, as one dict (load with numpy, no pickle)."""
+    D = {}
+    for name in SAMPLE_FILES:
+        with np.load(os.path.join(directory, name)) as z:
+            D.update({k: z[k] for k in z.files})
+    return D
+
+
+def save_samples(data, directory):
+    """Write the arrays of `data` to the files of SAMPLE_FILES in `directory`; return their paths."""
+    keys = [k for ks in SAMPLE_FILES.values() for k in ks]
+    assert sorted(keys) == sorted(data), 'data must hold exactly the arrays of SAMPLE_FILES'
+    paths = []
+    for name, ks in SAMPLE_FILES.items():
+        paths.append(os.path.join(directory, name))
+        np.savez_compressed(paths[-1], **{k: data[k] for k in ks})
+    return paths

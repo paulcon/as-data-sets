@@ -1,6 +1,6 @@
 # PDE_Inverse_Problem_MCMC: data
 
-Kind: **Python model**. The model is `pde_model.py` (class `PDEMisfit`). `generate_data.py` writes the shipped file `pde_mcmc_chains.npz` from saved seeds, and reproduces it. The KL basis `kl-short.npz` is an input that cannot be regenerated, so it is treated as stored data.
+Kind: **Python model**. The model is `pde_model.py` (class `PDEMisfit`). `generate_data.py` writes the shipped chain files `pde_mcmc_chains_*.npz` from saved seeds, and reproduces them. The KL basis `kl-short.npz` is an input that cannot be regenerated, so it is treated as stored data.
 
 ## Files
 
@@ -9,12 +9,13 @@ Kind: **Python model**. The model is `pde_model.py` (class `PDEMisfit`). `genera
 | `PDE_Inverse_Problem_MCMC.ipynb` | the case study (Python 3, active_subspaces v1) | executed top to bottom with seed 2016; outputs committed; loads the chains, does not rerun them |
 | `pde_model.py` | `PDEMisfit`: `observations`, `set_data`, `misfit`, `misfit_grad` (and `PDESolver` for the Elliptic_PDE QoI) | the model; byte-identical to `../Elliptic_PDE_Random_Coefficients/pde_model.py` |
 | `as_mcmc.py` | `random_walk_metropolis`; `ActiveSubspaceMCMC` (Metropolis–Hastings on the active variables with ĝ recomputed at every step or kept with the state; reconstruction (4.2)); `chain_diagnostics` (τ, ESS, split R̂); `batch_means_se` | the samplers and diagnostics; numpy only |
-| `generate_data.py` | writes `pde_mcmc_chains.npz` | regeneration |
+| `generate_data.py` | writes `pde_mcmc_chains_*.npz`; `load_chains()` reads them back as one dict | regeneration |
 | `tune_proposal.py` | the pilot runs that chose the active-variable proposal | tuning |
-| `pde_mcmc_chains.npz` | inputs, subspace, chains and grid, listed below (24.0 MB) | generated |
+| `pde_mcmc_chains_main.npz` | everything listed below except vanilla chains 5–20 (8.3 MB) | generated |
+| `pde_mcmc_chains_vanilla_5_12.npz`, `pde_mcmc_chains_vanilla_13_20.npz` | vanilla chains 5–12 and 13–20 (7.9 MB each) | generated |
 | `kl-short.npz` | `K` (10000, 100) float64, `lam` (100,) float64 | KL basis (stored); see `../Elliptic_PDE_Random_Coefficients/DATA.md` |
 
-**`pde_mcmc_chains.npz`.** Load with `np.load` (no pickle). Indices are 0-based; `k` is the chain: 1, …, 20 for vanilla, 1, …, 4 for cached and recompute.
+**The chain files.** The arrays below are split over three files so that each is under 10 MB; `generate_data.load_chains()` reads them back as one dict (load with `np.load`, no pickle). The full set is also archived as one file, `pde_mcmc_chains.npz` (24.0 MB, SHA-256 ef98063f412aff2f15fdfa2d8c1b5445aa92314d487ad20b333a6184d25309eb), with `kl-short.npz`, on Zenodo: doi:[10.5281/zenodo.24174117](https://doi.org/10.5281/zenodo.24174117). Its arrays are byte-identical to those of the three files. Indices are 0-based; `k` is the chain: 1, …, 20 for vanilla, 1, …, 4 for cached and recompute.
 
 | key | shape, dtype | contents |
 |---|---|---|
@@ -85,19 +86,19 @@ For comparison, an earlier run (not shipped) of one chain of each sampler with t
 
 ```bash
 cd uq_benchmarks/PDE_Inverse_Problem_MCMC
-OPENBLAS_NUM_THREADS=1 python generate_data.py --workers 16   # writes pde_mcmc_chains.npz (one BLAS thread per worker)
+OPENBLAS_NUM_THREADS=1 python generate_data.py --workers 16   # writes pde_mcmc_chains_*.npz (one BLAS thread per worker)
 python generate_data.py --n-van 2500 --n-cached 120 --n-recompute 60 --grid-draws 20 \
-    --workers 2 --out /tmp/short.npz            # a short check
-python tune_proposal.py --workers 6             # the pilot (needs pde_mcmc_chains.npz)
+    --workers 2 --out DIR                       # a short check, written to DIR
+python tune_proposal.py --workers 6             # the pilot (needs the chain files)
 ```
 
-- **Jobs.** Every chain and every block of grid points is a separate job with its own seed stream. `--workers` sets how many run at once, and the output does not depend on it. `--reuse FILE` copies chains of the same seed, data and length from FILE.
-- **BLAS.** The BLAS, and its number of threads, change the last bits of the matrix products (the gradients, W and every ĝ). The shipped file was written on Linux with one OpenBLAS thread per worker (`OPENBLAS_NUM_THREADS=1`); `versions` in the file lists the platform and the package versions. Elsewhere a rerun agrees to rounding (below). Set one BLAS thread per worker whenever several workers run: with OpenBLAS's default of one thread per CPU in every worker, 16 workers on 16 vCPUs ran about 7 times slower.
+- **Jobs.** Every chain and every block of grid points is a separate job with its own seed stream. `--workers` sets how many run at once, and the output does not depend on it. `--reuse PATH` copies chains of the same seed, data and length from PATH: a directory of chain files, or one `.npz` with all arrays (such as the Zenodo file).
+- **BLAS.** The BLAS, and its number of threads, change the last bits of the matrix products (the gradients, W and every ĝ). The shipped arrays were written on Linux with one OpenBLAS thread per worker (`OPENBLAS_NUM_THREADS=1`); `versions` (in the main file) lists the platform and the package versions. Elsewhere a rerun agrees to rounding (below). Set one BLAS thread per worker whenever several workers run: with OpenBLAS's default of one thread per CPU in every worker, 16 workers on 16 vCPUs ran about 7 times slower.
 - **Runtime.** About 3.4 × 10⁶ PDE solves (2 × 10⁶ vanilla, 6.4 × 10⁵ cached, 4 × 10⁵ recompute, 3.6 × 10⁵ grid). On an AWS c7a.4xlarge (16 vCPUs, AMD EPYC 9R14) with 16 workers, one vanilla chain or recompute chain takes about 29 min and one cached chain about 43 min; the 12 original chains and the grid took 43.8 min, and vanilla chains 5–20 another 30.6 min. On a 4-core Intel Mac with 6 workers, the 12 original chains and the grid took 179 min.
-- **How the shipped file was made** (2026-10-31, on the AWS instance above: Amazon Linux 2023, Python 3.11.18, numpy 2.4.6, scipy 1.17.1). One run computed the 12 original chains and the grid from scratch; a second run added vanilla chains 5–20 with `--reuse` of the first run's output, which copies the first 12 chains and the grid unchanged.
+- **How the shipped arrays were made** (2026-10-31, on the AWS instance above: Amazon Linux 2023, Python 3.11.18, numpy 2.4.6, scipy 1.17.1). One run computed the 12 original chains and the grid from scratch; a second run added vanilla chains 5–20 with `--reuse` of the first run's output, which copies the first 12 chains and the grid unchanged.
 - **Seeds.** Every random draw comes from the streams above, drawn one step at a time in a fixed order, so a shorter run reproduces the first steps of a longer one. The grid draws are one block, so the first K draws of a shorter run equal the first K of a longer one.
 - **Reproduction checks** (2026-10-30 and 2026-10-31):
-  - The 12 original chains and the grid were also run in full on a Mac (macOS 14, Python 3.11.16, the same numpy and scipy, 6 workers). All 87 fields agree with the shipped file to rounding (at most 4 × 10⁻¹³ relative, 1.9 × 10⁻⁸ for the float32 grid), and 54 are bitwise equal, including every accept/reject array: the same seeds give the same chains, so this run is a reproduction, not an independent sample.
+  - The 12 original chains and the grid were also run in full on a Mac (macOS 14, Python 3.11.16, the same numpy and scipy, 6 workers). All 87 fields agree with the shipped arrays to rounding (at most 4 × 10⁻¹³ relative, 1.9 × 10⁻⁸ for the float32 grid), and 54 are bitwise equal, including every accept/reject array: the same seeds give the same chains, so this run is a reproduction, not an independent sample.
   - A short run on the Mac (`--n-van 1000 --n-cached 100 --n-recompute 50 --grid-draws 20`) matches the start of all 28 chains and the grid: 121 of 160 fields bitwise, the rest to at most 5.5 × 10⁻¹³ relative, every accept array bitwise.
   - Short runs with `--workers 1` and `--workers 6` agree bitwise, and a short run of the 20-chain generator reproduces every field of the 12-chain generator bitwise.
   - The notebook reruns the first steps of chain 1 of each sampler and prints the differences, which are at the rounding level (at most 5 × 10⁻¹² in the misfit, 0 in the accept flags).
@@ -106,7 +107,7 @@ python tune_proposal.py --workers 6             # the pilot (needs pde_mcmc_chai
 ## Accuracy
 
 - **Model**: `python uq_benchmarks/check_pde_model.py` checks the solver and its adjoint gradient (Model; `../Elliptic_PDE_Random_Coefficients/DATA.md`).
-- **Reproduction**: the reruns of the chains and the grid on another platform agree with the shipped file to rounding, and the notebook reruns the first steps of chain 1 of each sampler and prints the differences (Regenerating, Reproduction checks).
+- **Reproduction**: the reruns of the chains and the grid on another platform agree with the shipped arrays to rounding, and the notebook reruns the first steps of chain 1 of each sampler and prints the differences (Regenerating, Reproduction checks).
 - **Samplers and grid**: the acceptance test of the cached chains against π_M and the grid convergence checks are printed by the notebook (Results).
 
 ## Results (printed by the notebook)
@@ -147,4 +148,4 @@ The vanilla proposal (standard deviation 0.1), M = 10, P = 10 and the 20% burn-i
 
 ## License and credit
 
-Code: MIT (`LICENSE`). Data (`pde_mcmc_chains.npz`, `kl-short.npz`): CC BY 4.0 (`LICENSE-DATA`). Notebook by Ryan Howard (2016). Cite P. G. Constantine, C. Kent and T. Bui-Thanh, "Accelerating Markov chain Monte Carlo with active subspaces", SIAM J. Sci. Comput. 38(5):A2779–A2805, 2016, doi:10.1137/15M1042127.
+Code: MIT (`LICENSE`). Data (`pde_mcmc_chains_*.npz`, `kl-short.npz`, and `pde_mcmc_chains.npz` on Zenodo): CC BY 4.0 (`LICENSE-DATA`). Notebook by Ryan Howard (2016). Cite P. G. Constantine, C. Kent and T. Bui-Thanh, "Accelerating Markov chain Monte Carlo with active subspaces", SIAM J. Sci. Comput. 38(5):A2779–A2805, 2016, doi:10.1137/15M1042127.

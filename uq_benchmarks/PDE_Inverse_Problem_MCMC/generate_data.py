@@ -1,14 +1,15 @@
-"""Regenerate pde_mcmc_chains.npz, the stored Markov chains of the PDE example.
+"""Regenerate the stored Markov chains of the PDE example (pde_mcmc_chains_*.npz).
 
 Run from anywhere with the repository's Python 3 environment:
 
     python generate_data.py --workers 6          # the shipped file (see DATA.md for the time)
     python generate_data.py --n-van 2000 --n-cached 200 --n-recompute 100 --grid-draws 20 \\
-        --out /tmp/short.npz                      # a short check
-    python generate_data.py --reuse OLD.npz       # copy finished jobs from OLD.npz
+        --out DIR                                 # a short run, written to DIR
+    python generate_data.py --reuse OLD           # copy finished jobs from OLD (a directory
+                                                  # of chain files, or one .npz with all arrays)
 
 Each finished job is saved at once to a checkpoint directory (default: the
-output path with '_parts' in place of '.npz'). Rerunning the same command after
+output directory's pde_mcmc_chains_parts). Rerunning the same command after
 an interruption loads those jobs and runs only the rest; a part whose data,
 subspace or settings differ from the current run's is run again. The parts are
 deleted once the output file is written. wall_total covers the last run only.
@@ -44,6 +45,7 @@ import argparse
 import hashlib
 import os
 import platform
+import re
 import sys
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -56,7 +58,35 @@ from as_mcmc import ActiveSubspaceMCMC, random_walk_metropolis
 from pde_model import PDEMisfit
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT = os.path.join(HERE, 'pde_mcmc_chains.npz')
+OUT = HERE
+# The shipped arrays, split into three files so that each is under 10 MB: vanilla chains 5-12 and
+# 13-20 in their own files, everything else in the first. The full set is also archived as one
+# file, pde_mcmc_chains.npz, on Zenodo (doi:10.5281/zenodo.24174117).
+CHAIN_FILES = ('pde_mcmc_chains_main.npz', 'pde_mcmc_chains_vanilla_5_12.npz',
+               'pde_mcmc_chains_vanilla_13_20.npz')
+
+
+def _chain_file(key):
+    m = re.match(r'vanilla_(\d+)_', key)
+    k = int(m.group(1)) if m else 0
+    return CHAIN_FILES[1] if 5 <= k <= 12 else CHAIN_FILES[2] if k >= 13 else CHAIN_FILES[0]
+
+
+def load_chains(directory=OUT):
+    """All stored arrays, as one dict (load with numpy, no pickle)."""
+    z = {}
+    for name in CHAIN_FILES:
+        with np.load(os.path.join(directory, name)) as f:
+            z.update({k: f[k] for k in f.files})
+    return z
+
+
+def save_chains(arrays, directory):
+    """Write `arrays` to the files of CHAIN_FILES in `directory`; return their paths."""
+    paths = [os.path.join(directory, name) for name in CHAIN_FILES]
+    for name, path in zip(CHAIN_FILES, paths):
+        np.savez_compressed(path, **{k: v for k, v in arrays.items() if _chain_file(k) == name})
+    return paths
 
 SEED = 2779            # the paper's first page, A2779
 N_CHAINS = 4           # independent chains per active-variable sampler
@@ -233,7 +263,7 @@ def main(argv=None):
     p.add_argument('--workers', type=int, default=6)
     p.add_argument('--reuse', metavar='FILE',
                    help='copy chains of the same seed, data and length from FILE instead of running them')
-    p.add_argument('--out', default=OUT)
+    p.add_argument('--out', default=OUT, help='directory for the chain files (default: this one)')
     p.add_argument('--checkpoint', metavar='DIR',
                    help="directory for finished jobs (default: OUT with '_parts' for '.npz')")
     args = p.parse_args(argv)
@@ -252,7 +282,9 @@ def main(argv=None):
 
     n_fine = min(args.grid_draws, GRID_DRAWS_FINE)
     Z = rng['grid'].standard_normal((args.grid_draws, model.m - N_ACTIVE))
-    old = np.load(args.reuse) if args.reuse else None
+    old = None
+    if args.reuse:
+        old = load_chains(args.reuse) if os.path.isdir(args.reuse) else dict(np.load(args.reuse))
     if old is not None:
         assert int(old['seed']) == SEED and np.array_equal(old['d'], d) and np.array_equal(old['W'], W)
 
@@ -262,14 +294,14 @@ def main(argv=None):
     for kind, n in chains.items():
         for k in range(1, n_chains[kind] + 1):
             key = f'{kind}_{k}'
-            if old is not None and f'{key}_accept' in old.files and len(old[f'{key}_accept']) == n:
+            if old is not None and f'{key}_accept' in old and len(old[f'{key}_accept']) == n:
                 results[(kind, k)] = {f: old[f'{key}_{f}'] for f in _fields(kind, k)}
                 print(f'{key}: copied from {args.reuse}', flush=True)
             else:
                 jobs.append((kind, k, n))
     coarse = [(i, j) for i in range(0, GRID_N, 2) for j in range(0, GRID_N, 2)]
     fine = [(i, j) for i in range(GRID_N) for j in range(GRID_N) if (i, j) not in set(coarse)]
-    if old is not None and 'grid_f_coarse' in old.files and old['grid_f_coarse'].shape[2] == args.grid_draws:
+    if old is not None and 'grid_f_coarse' in old and old['grid_f_coarse'].shape[2] == args.grid_draws:
         grid_coarse, grid_fine = old['grid_f_coarse'], old['grid_f_fine']
         print(f'grid: copied from {args.reuse}', flush=True)
     else:
@@ -279,7 +311,8 @@ def main(argv=None):
     cost = {'vanilla': 1, 'cached': M, 'recompute': 2 * M}
     jobs.sort(key=lambda j: -(j[2] * cost[j[0]] if j[0] != 'grid' else j[2] * len(j[1])))
 
-    ckpt = args.checkpoint or os.path.splitext(args.out)[0] + '_parts'
+    os.makedirs(args.out, exist_ok=True)
+    ckpt = args.checkpoint or os.path.join(args.out, 'pde_mcmc_chains_parts')
     os.makedirs(ckpt, exist_ok=True)
     fp = _fingerprint(d, sig2, W)
     walls, grid_out, todo = {}, {}, []
@@ -337,7 +370,7 @@ def main(argv=None):
         for f in _fields(kind, k):
             out[f'{kind}_{k}_{f}'] = r[f]
     out['wall_total'] = np.float64(time.perf_counter() - t0)
-    np.savez_compressed(args.out, **out)
+    paths = save_chains(out, args.out)
     for job in jobs:
         path = os.path.join(ckpt, _part_name(job) + '.npz')
         if os.path.exists(path):
@@ -347,7 +380,7 @@ def main(argv=None):
     for kind in chains:
         acc = np.mean([out[f'{kind}_{k}_accept'].mean() for k in range(1, n_chains[kind] + 1)])
         print(f'{kind}: mean acceptance {acc:.4f}', flush=True)
-    print(f'wrote {args.out} ({os.path.getsize(args.out) / 1e6:.1f} MB) in '
+    print(f'wrote {len(paths)} files in {args.out} ({sum(os.path.getsize(q) for q in paths) / 1e6:.1f} MB) in '
           f'{out["wall_total"]:.0f} s = {out["wall_total"] / 60:.1f} min', flush=True)
 
 
