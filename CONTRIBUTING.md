@@ -141,17 +141,15 @@ Before you open a pull request, check the data set as a reviewer would. Write an
 **Data**
 
 - The number of input columns equals the paper's number of inputs, or the difference is explained.
-- Each input's empirical distribution matches the declared input space: the values lie within the bounds, and the shape fits (a uniform input has kurtosis near 1.8, a Gaussian one near 3).
+- Each input's empirical distribution matches the declared input space: the values lie within the bounds, and the shape fits.
 - Duplicate rows, discrete inputs and nominal points are found (e.g. with `np.unique`) and documented.
-- The direction of the gradients is known: regress `f` on the normalized inputs and compare the slopes with the mean gradient. Physical and normalized gradients are not scaled twice.
 - Logarithms are taken only of positive values.
 - Every file is traced to its source, and conversions of stored data rerun losslessly.
 
 **Analysis**
 
 - For a Python model, the model's equations and constants match the paper's numbered equations, and `generate_data.py --check` reproduces the shipped files.
-- Gradients agree with your own finite differences at three random samples.
-- The eigenvalues and eigenvectors agree with a short independent computation from the shipped files (plain numpy is enough).
+- Gradients agree with your own finite differences at a few random samples. .
 - The estimator suits the data. A global quadratic fit needs at least (m+1)(m+2)/2 samples, and a global linear fit finds at most one direction.
 - The subspace dimension is justified by an eigenvalue gap and the subspace errors, and eigenvector signs follow a stated rule.
 - Fit statistics (R²) say whether they are in-sample or cross-validated.
@@ -184,9 +182,9 @@ The maintainer may close a pull request that skips the checklist or the claim, o
 
 When reviewing a pull request, the maintainer:
 
-- reruns the notebook and the scripts, and spot-checks the self-review in section 10 and the attributions to the paper;
+- reruns the notebook and the scripts, and spot-checks the attributions to the paper;
 - asks for changes, or makes small ones (wording, formatting) on your branch;
-- writes the listing (section 9) and adds you to `CONTRIBUTORS.md` and `CITATION.cff`;
+- writes the listing (section 9) and adds you to `CONTRIBUTORS.md`;
 - adds a note pointing between data sets from the same article, when there are several;
 - merges the pull request and closes the claim.
 
@@ -217,6 +215,7 @@ Agents must not:
 ## Credit
 
 - **The notebook** names the authors of the model or the runs, then a `Notebook:` line naming who built the notebook and data set and the year, e.g. `Notebook: A. Researcher, 2026` or `Notebook: A. Researcher with Claude (Anthropic), 2026`.
-- **[CONTRIBUTORS.md](CONTRIBUTORS.md)** lists everyone with a merged data set, and **[CITATION.cff](CITATION.cff)** says how to cite the repository. The maintainer adds you to both when your first data set is merged.
+- **[CONTRIBUTORS.md](CONTRIBUTORS.md)** lists everyone with a merged data set. The maintainer adds you when your first data set is merged.
+- **[CITATION.cff](CITATION.cff)** says how to cite the repository. It names the maintainer; contributors are credited in `CONTRIBUTORS.md` and in their notebooks.
 - **The sources** of every model, data file and code are credited in the notebook and `DATA.md` (sections 7 and 8).
 - Authorship of any publication about the collection is decided separately and is not implied by a contribution.
