@@ -79,7 +79,21 @@ The shipped files were written on 2026-10-30 in a Linux container. The draws are
 
 - **Not a computation from the paper.** Booker and Savvidou give the solution but no parameter values, ranges or samples. The inputs, distributions, held parameters and grid come from Chaudhry et al. (2021) through UQTestFuns, and the samples, gradients and analysis are new. Nothing here is a value printed in the 1985 paper except the functions f and g.
 - **The model.** `heat_source_model.py` is an independent numpy/scipy implementation of the equations above; no UQTestFuns code is copied. The input distributions, held parameters and grid are taken from the UQTestFuns parameter file, and its MIT notice is reproduced at the end of the module.
-- **Open questions** (only the authors can settle them): (1) the ranking of α_s for p (3rd in the UQTestFuns transcription of Chaudhry et al. 2021, Fig. 16; 7th here, first-order index 0.019 ± 0.002) and of K and α_s for u_r (1st and 3rd there; here α_s is 1st, 0.642 ± 0.005, and K is not 1st: 0.245 ± 0.003 at N = 50,000, probably 3rd at N = 200,000 but within 0.02 of φ and C) — which estimator and which grid quantity underlie Fig. 16, the held parameters, or the transcription; and whether Fig. 16 supports α_s 3rd for p, given that α_s contributes only about 17 % of X at the nominal point; (2) whether Chaudhry et al. (2021) used α_w = 4e-4 1/K and μ_w = 1e-3 Pa s, as UQTestFuns does; (3) the 1985 paper's illustrative parameters for the cylindrical source are partly illegible in the scan (we read ν = 0.4 and c/κ = 2) and are not used.
+
+## Unknowns
+
+Open questions that only the authors can settle:
+
+- The ranking of α_s for p (3rd in the UQTestFuns transcription of Chaudhry et al. 2021, Fig. 16; 7th here, first-order index 0.019 ± 0.002) and of K and α_s for u_r (1st and 3rd there; here α_s is 1st, 0.642 ± 0.005, and K is not 1st: 0.245 ± 0.003 at N = 50,000, probably 3rd at N = 200,000 but within 0.02 of φ and C) — which estimator and which grid quantity underlie Fig. 16, the held parameters, or the transcription; and whether Fig. 16 supports α_s 3rd for p, given that α_s contributes only about 17 % of X at the nominal point.
+- Whether Chaudhry et al. (2021) used α_w = 4e-4 1/K and μ_w = 1e-3 Pa s, as UQTestFuns does.
+- The 1985 paper's illustrative parameters for the cylindrical source are partly illegible in the scan (we read ν = 0.4 and c/κ = 2) and are not used.
+
+Other unknowns:
+
+- The input distributions have not been checked against Chaudhry et al. (2021), which was not read; they are taken from the UQTestFuns parameter file (Model, "Inputs").
+- Chaudhry et al. (2019) was read only through its abstract (Model, "Source").
+- The order of φ and C among the first-order Sobol' ranks of u_r is not resolved (Model, "Published results").
+- `check_accuracy.py` check 1 has not been repeated in `.venv`, where UQTestFuns is not installed (Accuracy).
 
 ## License and credit
 

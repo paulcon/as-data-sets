@@ -93,6 +93,15 @@ The shipped files were written on 2026-10-30 in a Linux container (numpy 2.5.4, 
 - **Table 6 (cost).** The ν_j of Table 6 are 1391–1475 times the sample values from Eq. (4.21) as printed (for every input, including H_d). We could not reconcile this; the formula may differ from the one used in the computations. The Sobol' indices of Cp were not recomputed.
 - **The OpenTURNS flood use case differs** (not checked here against OpenTURNS): K_s N(30, 7.5) truncated at 0, Z_v U(49, 51), Z_m U(54, 56), Q truncated at 0. These files use Table 4 of the paper.
 
+## Unknowns
+
+- The cause of the common factor (0.8381–0.8392) in Table 5's DGSM; it is not in the paper.
+- Why the ν_j of Table 6 are 1391–1475 times the values from Eq. (4.21) as printed; the formula used in the paper's computations may differ.
+- The paper's finite-difference perturbation for this model is not stated.
+- The readings of Table 4 that the paper leaves implicit (the Gumbel parameterization, N(30, 8) with standard deviation 8, the triangular parameter order, the unit of K_s) are this data set's choices (Model).
+- The constants behind Table 5's Υ_j for the triangular inputs and for K_s, which match no stated constant.
+- The page and table numbers are the authors' manuscript's; the journal version was not read.
+
 ## License and credit
 
 Code: MIT (`LICENSE`). Data (the CSVs): CC BY 4.0 (`LICENSE-DATA`). The CSVs were generated here from the published equations and distributions; no data or code were copied. Model and analysis: M. Lamboni, B. Iooss, A.-L. Popelin, F. Gamboa (EDF R&D, Université Paris Descartes, IMT); the model is from B. Iooss (2011). Cite:

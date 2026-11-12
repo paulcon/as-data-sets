@@ -94,6 +94,15 @@ There is no randomness beyond the saved Latin hypercube seed. The shipped files 
 - **Ranking differences.** The top parameter agrees with Fig. 2a for NEE (`psnTOpt`) and LE/ET (`soilWHC`). The largest discrepancy, `baseSoilResp` (2nd for NEE in Fig. 2a, about 0.30; 4th here, activity-score fraction 0.081), has candidate causes in the cold, small-soil-pool set-up and in the missing cold-season coupling, which in the paper's set-up would let `baseSoilResp` and `soilRespQ10` also set winter soil respiration.
 - **What would make it the paper's set-up**: the PEcAn workflow files of the paper (Table A7 lists workflow IDs on pecan2.bu.edu, not checked), or the Bartlett met driver in SIPNET format and the PFT trait values. With those, `generate_data.py` needs only a different `.clim` and `.param`. A practical route without the paper's files: download the AmeriFlux US-Bar half-hourly data for 2005–2006 and convert them with PEcAn's `met2model.SIPNET`; the cold-season coupling would still need SIPNET v1.
 
+## Unknowns
+
+- The paper's Bartlett driver and its non-calibrated parameter values (PEcAn's trait meta-analysis in BETYdb) are not available here; the paper's PEcAn workflow files (Table A7) were not checked (Configuration; How these files relate to the paper).
+- The paper does not say whether SIPNET's seasonal soil-respiration switch was on (Configuration).
+- The origin of the driver is labelled "Niwot Ridge(?)" in SIPNET's README; that it is the Niwot Ridge driver of Sacks et al. (2006) rests on a match (Configuration).
+- The unit "Day−1" of the SOM respiration rate in Table A3 is treated as an error in the paper, on the evidence given under Inputs; this is not confirmed by the authors.
+- The runs made when the data were generated did not record the scan sample or the 40 samples of the independent check (Accuracy).
+- The cause of the `baseSoilResp` ranking difference from Fig. 2a is not established; the candidate causes are under "How these files relate to the paper".
+
 ## License and credit
 
 Code (`*.py`, the notebook): MIT (`LICENSE`). Data (the CSVs): CC BY 4.0 (`LICENSE-DATA`). `niwot_2004_2005.clim` and `sipnet_template.param` come from SIPNET and PEcAn under BSD 3-clause (`LICENSE-SIPNET-PEcAn.txt`); the driver is credited to Niwot Ridge (as labelled, with a question mark, in SIPNET's README); it matches the twice-daily Niwot Ridge driver of Sacks et al. (2006), whose meteorology comes from the Niwot Ridge AmeriFlux site (US-NR1). Model: SIPNET, B. H. Braswell, W. J. Sacks and contributors; PEcAn project. Study design and priors: Fer et al. (2018), cited above, CC BY 4.0. Cite also B. H. Braswell, W. J. Sacks, E. Linder, D. S. Schimel, *Global Change Biology* 11(2):335–355, 2005, doi:10.1111/j.1365-2486.2005.00897.x, and W. J. Sacks, D. S. Schimel, R. K. Monson, B. H. Braswell, *Global Change Biology* 12(2):240–259, 2006, doi:10.1111/j.1365-2486.2005.01059.x.

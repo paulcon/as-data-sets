@@ -14,6 +14,34 @@ Kind: **Python model**. The model is `pde_model.py` (class `PDEMisfit`). `genera
 | `pde_mcmc_chains.npz` | inputs, subspace, chains and grid, listed below (24.0 MB) | generated |
 | `kl-short.npz` | `K` (10000, 100) float64, `lam` (100,) float64 | KL basis (stored); see `../Elliptic_PDE_Random_Coefficients/DATA.md` |
 
+**`pde_mcmc_chains.npz`.** Load with `np.load` (no pickle). Indices are 0-based; `k` is the chain: 1, …, 20 for vanilla, 1, …, 4 for cached and recompute.
+
+| key | shape, dtype | contents |
+|---|---|---|
+| `seed`, `streams` | (), (33,) str | master seed 2779. `np.random.SeedSequence(seed).spawn(33)` gives one generator per stream, in the order of `streams`: `data`, `grad_points`, `bootstrap`, `vanilla_1`, `unused` (no draws; kept so that the other streams keep their seeds), `grid`, `vanilla_2..4`, `cached_1..4`, `recompute_1..4`, `vanilla_5..20`. Child i of `spawn` has the same seed whatever the number of children, so appending `vanilla_5..20` left every earlier stream unchanged |
+| `x_true`, `d`, `sig2` | (100,), (7,), () | synthetic data: x_true ~ N(0, I), d = m(x_true) + e, e ~ N(0, σ² I), σ² = 1e-4 ‖m(x_true)‖² |
+| `indz`, `sensor_s1`, `sensor_s2` | (7,) | sensor rows and coordinates |
+| `kl_md5` | () str | md5 of `kl-short.npz` (079370cfa2411de13b20ab62c7b22879) |
+| `X_grad`, `G` | (1000, 100) float64 | prior samples and the misfit gradients at them |
+| `W`, `eigenvalues` | (100, 100), (100,) | the active subspace of `G` (v1 `active_subspace`, n = 2, `orient` so that the first component of w1 and w2 is positive). The active-variable chains used `W[:, :2]` and `W[:, 2:]` |
+| `n_active`, `M`, `burn_in`, `van_prop_std` | () | 2; 10; 0.2 (the burn-in fraction the notebook discards); 0.1 |
+| `av_chol`, `av_scale_cached`, `av_scale_recompute` | (2, 2), (), () | the active-variable proposal: y' = y + s L e |
+| `thin_proj`, `thin_x`, `trace_index` | () | 10, 50, (9, 89) |
+| `vanilla_k_x0`, `vanilla_k_last` | (100,) | first and last state |
+| `vanilla_k_proj` | (10000, 4) float32 | `(X @ W[:, :4])`, the first four components of Wᵀx, at every 10th step |
+| `vanilla_k_thin` | (2000, 100) float32 | every 50th state |
+| `vanilla_k_misfit` | (10000,) | f at every 10th step |
+| `vanilla_k_accept` | (100000,) bool | whether the proposal of step j was accepted |
+| `vanilla_1_trace` | (100000, 2) | x_10 and x_90 at every step of chain 1 |
+| `cached_k_y0`, `cached_k_y`, `cached_k_ghat`, `cached_k_accept` | (2,), (16000, 2), (16000,), (16000,) bool | start, states, ĝ at the state used in the test, flags |
+| `recompute_k_*` | the same with 5000 steps | ĝ at the current state, recomputed at every step |
+| `grid_y1`, `grid_y2` | (21,) | grid axes: center (0.64, −0.62), half-widths (1.0, 1.7), about 5 cached-chain standard deviations |
+| `grid_f_fine` | (21, 21, 160) float32 | f(W1 y + W2 z) at every grid point for the first 160 common draws z |
+| `grid_f_coarse` | (11, 11, 2560) float32 | the same at every other grid point for all 2560 draws |
+| `wall`, `wall_total`, `versions` | | wall times of the jobs and of the run, package versions |
+
+The full 100-dimensional vanilla chains (80 MB each as float64) are not stored. The notebook needs only the reductions above, and the chains are reproducible.
+
 ## Model
 
 `-∇·(a ∇u) = 1` on [0, 1]², u = 0 on the left, top and bottom sides, zero flux on the right side, `log a = B x` with `B = K * sqrt(lam)` and x ~ N(0, I_100). The KL kernel is exp(−‖s − t‖₁/0.02), which is the paper's eq. (5.5) with β = 0.02. The discretization (five-point vertex-centred finite volumes on 100 × 100 cells, sparse LU, discrete adjoint for the gradient) is described in `../Elliptic_PDE_Random_Coefficients/DATA.md`.
@@ -22,7 +50,7 @@ Kind: **Python model**. The model is `pde_model.py` (class `PDEMisfit`). `genera
 - **Misfit**: f(x) = ‖d − m(x)‖²/(2σ²), with gradient from one adjoint solve.
 - **Check**: `python uq_benchmarks/check_pde_model.py`.
 
-## What was run
+**What was run.**
 
 | sampler | chains × steps | proposal | ĝ | solves |
 |---|---|---|---|---|
@@ -53,36 +81,6 @@ For comparison, an earlier run (not shipped) of one chain of each sampler with t
 - recompute: (87, 217) steps, ESS (91, 37) after burn-in;
 - cached: (57, 126) steps, ESS (141, 63).
 
-## `pde_mcmc_chains.npz`
-
-Load with `np.load` (no pickle). Indices are 0-based; `k` is the chain: 1, …, 20 for vanilla, 1, …, 4 for cached and recompute.
-
-| key | shape, dtype | contents |
-|---|---|---|
-| `seed`, `streams` | (), (33,) str | master seed 2779. `np.random.SeedSequence(seed).spawn(33)` gives one generator per stream, in the order of `streams`: `data`, `grad_points`, `bootstrap`, `vanilla_1`, `unused` (no draws; kept so that the other streams keep their seeds), `grid`, `vanilla_2..4`, `cached_1..4`, `recompute_1..4`, `vanilla_5..20`. Child i of `spawn` has the same seed whatever the number of children, so appending `vanilla_5..20` left every earlier stream unchanged |
-| `x_true`, `d`, `sig2` | (100,), (7,), () | synthetic data: x_true ~ N(0, I), d = m(x_true) + e, e ~ N(0, σ² I), σ² = 1e-4 ‖m(x_true)‖² |
-| `indz`, `sensor_s1`, `sensor_s2` | (7,) | sensor rows and coordinates |
-| `kl_md5` | () str | md5 of `kl-short.npz` (079370cfa2411de13b20ab62c7b22879) |
-| `X_grad`, `G` | (1000, 100) float64 | prior samples and the misfit gradients at them |
-| `W`, `eigenvalues` | (100, 100), (100,) | the active subspace of `G` (v1 `active_subspace`, n = 2, `orient` so that the first component of w1 and w2 is positive). The active-variable chains used `W[:, :2]` and `W[:, 2:]` |
-| `n_active`, `M`, `burn_in`, `van_prop_std` | () | 2; 10; 0.2 (the burn-in fraction the notebook discards); 0.1 |
-| `av_chol`, `av_scale_cached`, `av_scale_recompute` | (2, 2), (), () | the active-variable proposal: y' = y + s L e |
-| `thin_proj`, `thin_x`, `trace_index` | () | 10, 50, (9, 89) |
-| `vanilla_k_x0`, `vanilla_k_last` | (100,) | first and last state |
-| `vanilla_k_proj` | (10000, 4) float32 | `(X @ W[:, :4])`, the first four components of Wᵀx, at every 10th step |
-| `vanilla_k_thin` | (2000, 100) float32 | every 50th state |
-| `vanilla_k_misfit` | (10000,) | f at every 10th step |
-| `vanilla_k_accept` | (100000,) bool | whether the proposal of step j was accepted |
-| `vanilla_1_trace` | (100000, 2) | x_10 and x_90 at every step of chain 1 |
-| `cached_k_y0`, `cached_k_y`, `cached_k_ghat`, `cached_k_accept` | (2,), (16000, 2), (16000,), (16000,) bool | start, states, ĝ at the state used in the test, flags |
-| `recompute_k_*` | the same with 5000 steps | ĝ at the current state, recomputed at every step |
-| `grid_y1`, `grid_y2` | (21,) | grid axes: center (0.64, −0.62), half-widths (1.0, 1.7), about 5 cached-chain standard deviations |
-| `grid_f_fine` | (21, 21, 160) float32 | f(W1 y + W2 z) at every grid point for the first 160 common draws z |
-| `grid_f_coarse` | (11, 11, 2560) float32 | the same at every other grid point for all 2560 draws |
-| `wall`, `wall_total`, `versions` | | wall times of the jobs and of the run, package versions |
-
-The full 100-dimensional vanilla chains (80 MB each as float64) are not stored. The notebook needs only the reductions above, and the chains are reproducible.
-
 ## Regenerating
 
 ```bash
@@ -105,6 +103,12 @@ python tune_proposal.py --workers 6             # the pilot (needs pde_mcmc_chai
   - The notebook reruns the first steps of chain 1 of each sampler and prints the differences, which are at the rounding level (at most 5 × 10⁻¹² in the misfit, 0 in the accept flags).
   - An accept/reject decision flips only if a log acceptance ratio falls within rounding of log t. No decision flipped in the runs above, but very long chains on another machine could eventually part.
 
+## Accuracy
+
+- **Model**: `python uq_benchmarks/check_pde_model.py` checks the solver and its adjoint gradient (Model; `../Elliptic_PDE_Random_Coefficients/DATA.md`).
+- **Reproduction**: the reruns of the chains and the grid on another platform agree with the shipped file to rounding, and the notebook reruns the first steps of chain 1 of each sampler and prints the differences (Regenerating, Reproduction checks).
+- **Samplers and grid**: the acceptance test of the cached chains against π_M and the grid convergence checks are printed by the notebook (Results).
+
 ## Results (printed by the notebook)
 
 Mean ± standard error of (y1, y2) = W1ᵀx; standard errors from the autocorrelation (`chain_diagnostics`), and for the grid densities from a bootstrap over the draws.
@@ -122,7 +126,7 @@ Mean ± standard error of (y1, y2) = W1ᵀx; standard errors from the autocorrel
 - **Moments of x** (the paper's Fig. 5.9): 44% (cached) and 45% (recompute) of the 100 posterior means, and 84% and 82% of the variances, fall inside the vanilla 99% intervals (median half-widths 0.054 and 0.053). Of the squared difference of the means, 65% lies along w3 and 99% along w3, …, w100.
 - **Grid convergence:** halving the spacing and shrinking the extent change the means by less than 10⁻⁴; doubling the draws changes them by 0.003, consistent with the grid's bootstrap standard errors (0.003–0.006).
 
-## Relation to the paper's runs
+## How these files relate to the paper
 
 Constantine, Kent & Bui-Thanh (2016) §5.2–5.6 ran one vanilla chain of 500,000 steps and two active-variable chains of 50,000 steps with the numpad model on the Mio cluster; their data, seeds and chains are not in this repository. Departures from the paper (all listed in the notebook):
 
@@ -134,6 +138,12 @@ Constantine, Kent & Bui-Thanh (2016) §5.2–5.6 ran one vanilla chain of 500,00
 6. reference densities π_ε and π_M on a grid (not in the paper).
 
 The vanilla proposal (standard deviation 0.1), M = 10, P = 10 and the 20% burn-in are as in the paper.
+
+## Unknowns
+
+- The paper's data, seeds and chains are not in this repository (How these files relate to the paper).
+- The pilot runs of the table above used seeds 100–107 from a scratch version of `tune_proposal.py` that is not shipped, so a rerun of the shipped script differs statistically (Model, Pilot).
+- The earlier runs with the paper's isotropic proposal are not shipped (Model, Pilot).
 
 ## License and credit
 

@@ -151,7 +151,7 @@ that made the reruns, so it was not used.
   largest 20.6 m km).
 - The paper's 50-point training designs (p. 13) and its 10 000 query points are not published.
 
-## Inconsistencies in the paper
+### Inconsistencies in the paper
 
 - P. 10: "Values range from 35 m km to around 300 m km", but Table 2 (p. 11, row 13) prints 29.24 m km
   and Table 3 (p. 12, row 4) 31.59 m km.
@@ -159,6 +159,12 @@ that made the reruns, so it was not used.
   Friction above). This is inferred from the code, not shown by the reruns.
 - P. 8: "Strong barriers arrest rupture 2 km from the ends"; in the authors' code the barriers are
   centred 2 km from the ends and reach 4 km in (see Friction above).
+
+## Unknowns
+
+- The density of the paper's runs: Table 1 gives 2.68 × 10³ kg/m³, and 2.67 (fdfault's default) is inferred from the code; the reruns do not discriminate the two (no run at 2.68 was made).
+- The discretization error: no grid refinement was run, and the paper does not report one.
+- The paper's 50-point training designs (p. 13) and its 10 000 query points are not published.
 
 ## License and credit
 

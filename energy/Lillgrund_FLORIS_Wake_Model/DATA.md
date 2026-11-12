@@ -78,7 +78,15 @@ The inputs come from the seed and the outputs from the model, so a rerun reprodu
 
 - **Not the paper's computation.** The paper's runs used FLORIS 2.0.1 with an empirical SCADA power curve, its met-mast TI map and wind rose, and AEP as the output; the Lillgrund farm database is under a non-disclosure agreement (Data Availability Statement, p. 19). The data here use the same model code and parameter ranges, with a public layout, a generic power curve, FLORIS's example settings, and single flow cases. So the numbers are not the paper's, and the sensitivity comparison is qualitative.
 - **Model, not data, from FLORIS.** No FLORIS output is shipped; FLORIS 2.0.1 was run only to check the port.
-- **Unknowns.** The paper does not give its ambient TI and shear for the Fig. 6 case, whether it set the four shared parameters in both FLORIS sub-models, its Crespo-Hernández constants (we assume FLORIS's example values), or the numeric Sobol indices.
+- **Unknowns.** See "Unknowns".
+
+## Unknowns
+
+- The paper does not give its ambient TI and shear for the Fig. 6 case (it uses a TI map from met-mast data that is not given).
+- Whether the paper set the four shared parameters in both FLORIS sub-models.
+- The paper's Crespo-Hernández constants (we assume FLORIS's example values).
+- The numeric Sobol indices: only the statements in the text are given, and the bar heights of Figs. 4–5 are figure readings.
+- The paper's wind rose and empirical power curve are not published (the Lillgrund farm database is under a non-disclosure agreement).
 
 ## License and credit
 

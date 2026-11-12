@@ -122,6 +122,18 @@ python convert_data.py --zips /path/to/ASAP --verify --mat /path/to/ASAP/AUTO/de
 - **Angle of attack.** All posted runs are at 0°. The runs at other angles that the paper mentions are not in these zips.
 - **What is not here.** The design `.mat` files (inputs regenerated instead), the meshes and flow fields, the runs behind Figs. 14–19, and the 2016 shape and sampling scripts.
 
+## Unknowns
+
+- Whether each SU2 run converged: it is not recorded in the forces files, and the paper reports no mesh-convergence study ("Accuracy").
+- The 2016 SU2 configuration: it was not identical to the posted 2019 `AUTO/inv_airfoil.cfg` ("Accuracy").
+- The cost per run is not reported ("Model").
+- The units of the PARSEC inputs: the paper prints none, and those in the table are our reading (degrees for x7 and x8 assumed).
+- The exact rows of the 10 near-tie PARSEC drops, which rest on the corner pattern rather than on the outputs alone ("Inputs: how they were reconstructed and checked").
+- Why the PARSEC 500-design set follows a different input–output map; its parameterization or mesh may have differed ("Inputs: how they were reconstructed and checked").
+- Which PARSEC designs have crossing surfaces: the feasibility check could not be reproduced, and the 2016 PARSEC code is not in the repository.
+- The 2016 nominal values, how the 2016 code set PARSEC x5, and the meaning of CST x2–x5 and x7–x10, so the physical values are only approximate ("Physical values", items 1, 2 and 4).
+- Which surface CST columns 1–5 describe in the 2016 code; the question is open (asked of Z. J. Grey; "Physical values", item 5).
+
 ## License and credit
 
 The source repository, zgrey/ASAP, states **no licence**. It has no LICENSE file, and its README does not mention one; checked on 2026-10-30. The only licence file in it, `AUTO/paretopoints/license.txt`, is a BSD-style notice by Eduard Polityko for the bundled `prtp.m` Pareto routine and does not cover the data. The repository owner (P. Constantine, who is also an author of the paper) decided on 2026-10-30 that data without a licence may be hosted here, cited and with the source credited. The C_l and C_d values are therefore redistributed unchanged, cited (below) and credited to Z. J. Grey and P. G. Constantine and the zgrey/ASAP repository (commit `79ae7ed`, SHA-256 digests above). This repository's CC BY 4.0 data licence (`LICENSE-DATA`) does not apply to those values until their authors license them. The regenerated inputs are produced by `convert_data.py` from the authors' seeds. Code here (`convert_data.py`, the notebook): MIT (`LICENSE`). No ASAP script was copied; the scripts were read only to document the setup.

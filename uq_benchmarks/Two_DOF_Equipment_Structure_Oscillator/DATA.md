@@ -80,6 +80,14 @@ The run takes 0.3 s (0.4 s with Python start-up; 0.25 s of it is the 1000 Lyapun
 - **Not the paper's computation.** The 1985 paper evaluates Eq. 37 deterministically (Fig. 5). The distributions, the capacity F_s and the limit state come from the later benchmark (Der Kiureghian and De Stefano 1991, via OpenTURNS/UQTestFuns); the samples are new.
 - **Fig. 5 reproduced from the model.** The notebook recomputes Fig. 5 and compares it with values read from the page image by pixel position (about ±0.2; the paper prints no numbers). Eq. 37 gives 25.25, 22.75, 16.76 at β = 0, 0.05, 0.1, against 25.2, 22.9, 16.75 read from the "matched" curve. The figure's "exact" curve (from the paper's Ref. 3, Crandall and Mark) is within 0.58 of our exact spring-deformation solution at the six points read and agrees at β = 0 (25.85 vs 25.7), where the ground-relative x_s is 2.05 too high (27.75). Between β = 0.1 and 0.25 the figure's curve lies between our two exact curves. A variant with ω_p² = k_p/(m_p + m_s) is within 0.36 at all six points; that is our guess at how the exact curve was parameterized, not something the paper states.
 
+## Unknowns
+
+- Units are not given by the benchmark; any consistent set applies (Files).
+- The 1991 and 2013 papers were not read: the input distributions, F_s and the limit state are as given by OpenTURNS and UQTestFuns, which attribute them to Der Kiureghian and De Stefano (1991) (Model, Inputs).
+- The method behind OpenTURNS' P_f = 3.78 × 10⁻⁷ is not stated (Model, Published results).
+- How the "exact" curve of Fig. 5 was parameterized is not stated in the paper; the variant with ω_p² = k_p/(m_p + m_s) is a guess (How these files relate to the paper).
+- The OpenTURNS and UQTestFuns pages state no separate licence (License and credit).
+
 ## License and credit
 
 Code: MIT (`LICENSE`). Data (the CSVs): CC BY 4.0 (`LICENSE-DATA`). The CSVs were generated here from the published equation; no data were copied, and no outside code was used. The input distributions are parameter values from the OpenTURNS oscillator use-case page (https://openturns.github.io/openturns/latest/usecases/use_case_oscillator.html, "© Copyright 2005-2026 Airbus-EDF-IMACS-ONERA-Phimeca", no separate licence stated on the page) and the UQTestFuns damped-oscillator page (D. Wicaksono and M. Hecht, *J. Open Source Softw.* 8(90):5671, 2023, doi:10.21105/joss.05671; no licence stated on the page). Cite:

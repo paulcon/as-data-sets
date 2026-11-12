@@ -277,6 +277,20 @@ under 1 s.
   Re-sensitivity file and the 1000-point designs are ours. The authors' driver uses XFOIL's
   default 20 iterations only.
 
+## Unknowns
+
+- The Re range: the paper prints 665,000–735,000 (p. 3), the authors' code and data use 696,500–703,500.
+  The printed range is probably a factor-10 misprint; that is unconfirmed and remains an open question for
+  the authors (Model, Inputs).
+- The paper does not state N_crit = 0.01; it says only that "the internal XFOIL settings are fixed" (p. 5)
+  (Model).
+- The paper's held-out set of 100 XFOIL validation points is not in the authors' repository, and its
+  100-point Latin hypercube has no seed (Model, Sampling design).
+- How the authors' file got its 13 to 15 significant digits, when XFOIL 6.99's polar file prints 4 or 5
+  decimals, is unknown (How these files relate to the paper).
+- Whether the authors will release `davis_training_98.csv` under CC BY 4.0 is an open question (License
+  and credit).
+
 ## License and credit
 
 Code (`generate_data.py`, `xfoil_driver.py`, `check_accuracy.py`, the notebook): MIT (`LICENSE`). Data

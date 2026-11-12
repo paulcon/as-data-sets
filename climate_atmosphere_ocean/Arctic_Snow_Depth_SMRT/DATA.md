@@ -251,6 +251,16 @@ The notebook does not rerun SMRT; `generate_data.py --check` is the reproduction
   the Gaussian-input and exponential-microstructure variants of the Supplement, and the averaging-kernel
   retrievability analysis (Sect. 4.2).
 
+## Unknowns
+
+- The paper's DORT stream settings, snow salinity, ice microstructure details, water substrate properties
+  and GR polarization: not stated in the paper or its Supplement; the values used here are this data set's
+  choices ("Configuration chosen here").
+- Whether Supplement Table S1 applies to every sensitivity run; it is taken as the baseline set-up here.
+- The EFAST interference factor M and the sample size the paper used are not reported, and no seed is given.
+- The paper gives no nominal point; the midpoints are used where one is needed.
+- The paper's input/output data: none were deposited.
+
 ## License and credit
 
 Code (`snow_smrt_driver.py`, `generate_data.py`, `check_accuracy.py`, the notebook): MIT (`LICENSE`). Data (the CSVs): CC BY 4.0

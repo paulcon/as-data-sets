@@ -80,7 +80,15 @@ One process, no multiprocessing. `--check` refuses to write into this directory.
 
 - **Not the paper's computation.** The paper's results come from the authors' MATLAB toolbox (https://gitlab.gbar.dtu.dk/bcsj/covid-19-ctrl-public-code, cited on p. 3; not used for this data set, licence not checked). The data here are an independent Python computation of the paper's Eq. (4.1) with its stated inputs, plus the two choices above (the reading of the input table and the initial state). The paper uses tensor Gauss–Hermite quadrature (27 and 1000 nodes) and MCMC; the 1000 Monte Carlo samples here are new. The notebook repeats the paper's 27- and 1000-node quadrature with `seir_model.gauss_hermite_moments` for the comparison.
 - **Agreement.** I_peak: the mean to within one unit of the last printed digit (0.01 × 10³) for the 27-run mean (115.64 against 115.63); exactly for the 1000-run row (115.64); the sd (12.56) exactly in both rows. t_peak: our mean is 0.095 day above the paper's 27-run value and 0.035 day above its 1000-run value; our sd is 0.026 and 0.035 day below. First-order Sobol indices agree with Fig. 5B within 0.0014 (largest gap 0.00135, τ_inf for t_peak).
-- **Open questions (only the authors can settle).** (1) The initial state of Case 1 and the time window. (2) Whether the table's mean and variance are those of x (our reading) or of ln x. (3) How t_peak is located (event, grid, or interpolation) and which MATLAB solver and tolerances were used, which may explain the 0.1-day difference in the mean of t_peak. The paper's own 27 → 1000-node change in t_peak (+0.06 day in the mean, up to 0.003 in the Sobol indices, against 3 × 10⁻⁵ day and 4 × 10⁻⁵ for our smooth event-located t_peak) suggests numerical error of that size in the authors' t_peak (an inference, not checked against their code).
+- **Open questions.** The initial state, the reading of the input table and the authors' t_peak numerics are open (Unknowns).
+
+## Unknowns
+
+Open questions (only the authors can settle):
+
+- The initial state of Case 1 and the time window. The paper does not state the initial state; (N − 1, 0, 1, 0) is this data set's choice ("Model").
+- Whether the table's mean and variance are those of x (our reading) or of ln x.
+- How t_peak is located (event, grid, or interpolation) and which MATLAB solver and tolerances were used, which may explain the 0.1-day difference in the mean of t_peak. The paper's own 27 → 1000-node change in t_peak (+0.06 day in the mean, up to 0.003 in the Sobol indices, against 3 × 10⁻⁵ day and 4 × 10⁻⁵ for our smooth event-located t_peak) suggests numerical error of that size in the authors' t_peak (an inference, not checked against their code).
 
 ## License and credit
 

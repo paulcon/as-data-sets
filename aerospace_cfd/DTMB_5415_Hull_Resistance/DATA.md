@@ -267,6 +267,18 @@ files in `.venv`, under 1 s) and those marked as the original run.
   Eq. 2 (Beta(11, 11) in the usual parametrization); here all
   inputs are uniform (all normalized the same way, to [−1, 1]).
 
+## Unknowns
+
+- The units of T are not stated in the paper; that T is a full-scale length in metres is inferred from the
+  code and Pellegrini et al., Table 1 (Model).
+- The per-run wall times of the design are in the raw run log, which is not shipped (Model, Fidelity).
+- The error of the 6 × 3 Gauss–Legendre rule and of the paper's 181-point sparse grid for E[R] was not
+  estimated (Accuracy, Reference values).
+- The draft band of silent failures was not mapped for G1–G5 (Accuracy, Failure-detection rule), and the
+  transfer of the active subspace was not checked on G3 or G1 (Accuracy, Grid).
+- The G6 reruns of `fidelity_check.csv` do not store Rw_wc and Rf_ittc; their values in the original run
+  are an external run, not reproducible from the repository (Accuracy).
+
 ## License and credit
 
 Code (`generate_data.py`, `l2sea_driver.py`, `check_accuracy.py`, the notebook): MIT (`LICENSE`). Data (the CSVs): CC BY 4.0

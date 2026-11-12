@@ -13,7 +13,7 @@ Kind: **stored data**. HyShot II scramjet simulations computed the exit pressure
 
 Both csv files are plain text: `#` header lines (source, units, normalization, the meaning of `validation`), a `# columns:` line with the column names and units, then one comma-separated row per run. Numbers are written with Python's shortest round-trip representation, and missing values as `nan`. `np.loadtxt(path, delimiter=",")` reads them.
 
-## Columns
+### Columns
 
 | column | meaning | unit | lower bound | upper bound |
 |---|---|---|---|---|
@@ -31,16 +31,34 @@ Both csv files are plain text: `#` header lines (source, units, normalization, t
 - **Normalization bounds.** The inputs are independent and uniform between the bounds above. The notebooks normalize them to [−1, 1] with z = (x − (u + ℓ)/2) / ((u − ℓ)/2), the map of `ac.Uniform(lower, upper)`. The bounds are those of the original notebook for these data (tag `legacy-master`), where the transition bounds were written as 0.6 and 1.4 times the nominal 0.05 m and 0.145 m. They match JCP 2015 Table 2 and book Table 5.1 except in units, and except for the turbulence length scale.
 - **Units that differ from the published tables.** JCP 2015 Table 2 and book Table 5.1 give the turbulence intensity as a fraction (0.001 to 0.019) and the length scale in m. The data use percent (as the JCP text, §3.2, does) and mm.
 - **Turbulence length scale.** Both tables print 0.1325 to 0.3575 m. The JCP text (§3.2) gives a nominal 245 mm ± 50 %, which is 122.5 to 367.5 mm, and the design runs reach 127.0 mm (book file) and 363.6 mm (JCP file), outside the printed range. The bounds here are 122.5 and 367.5 mm, and the printed range is a typo in both tables.
-- **The two φ labels.** JCP 2015 runs at fuel plenum pressures P₀,H₂ = 4.8 bar and 5.6 bar, which give φ = 0.30 and 0.35 at nominal inflow. The book labels its runs by φ. The 5.6 bar runs of JCP 2015 (Table 3, second column) are not in this repository.
 
-## Rows
+### Rows
 
 - **`HyShotII_phi030.csv`** (JCP 2015, 4.8 bar): runs 1–50 are the design runs used to compute w (JCP Table 3 reproduces to 4 digits); runs 51–52 (`validation = 1`) are the corner runs that estimate the range of the exit pressure.
 - **`HyShotII_phi035.csv`** (book §5.1): runs 1–14 are the design runs, the same input points for both φ (book Table 5.2 reproduces to 4 digits for both); runs 15–16 are the corner runs. Their φ = 0.30 exit pressures are **unavailable** and stored as `nan`. The original text file held `0` placeholders there.
 - **Corners.** Both files' corner runs are the same two input points, within 4e-6 of ±1 in normalized coordinates. They are not exactly ±sign(w) for the shipped w: the cowl-transition component has the opposite sign (w₆ < 0 for both φ). The notebook explains this and uses −sign(w) for the safe-box problem.
-- **Two φ = 0.30 studies.** The book's 14 φ = 0.30 runs are not among the JCP runs, and they lie 0.06 to 0.10 bar above a linear fit to the 50 JCP design runs (printed by the notebook). Why the two φ = 0.30 studies differ is unknown.
 
-## Conversion from the original text files
+## Model
+
+**Source.** The φ = 0.30 (4.8 bar) runs of Constantine et al., JCP 2015, and the φ = 0.30 and φ = 0.35 runs of Constantine, *Active Subspaces*, SIAM 2015, §5.1 (full citations under License and credit).
+
+**Code.** Joe, the finite-volume RANS solver of Stanford's Center for Turbulence Research, with the k–ω SST turbulence model and a flamelet/progress-variable combustion model (JCP 2015 §2.2; the book cites that paper for the simulation). JCP 2015 reports about 9500 CPU-hours per run (a 2D intake simulation and a 3D combustor simulation); the book says each run takes "approximately two hours on available resources".
+
+**Who ran it.** The simulations were done for JCP 2015 at Stanford's Center for Turbulence Research (Michael Emory and Gianluca Iaccarino are the Stanford authors); the paper does not say who ran them. Ryan Howard added the original text files and a notebook to this repository: the design runs on 2016-06-02 (commit 96221f4), the validation runs on 2016-06-03 (cd66a9e).
+
+**Inputs** (m = 7): the seven input columns of the table above, from `angle_of_attack` to `ramp_transition_location`, independent and uniform between the bounds given there, in physical units.
+
+**Quantity of interest.** The exit pressure, in bar: the pressure averaged over the last 10 mm of the combustor, 0.64 ≤ x ≤ 0.65 m (JCP 2015 eq. (15)).
+
+**Gradients.** The files hold no gradients. The notebook estimates w from a linear least-squares fit (`ac.active_subspace(..., estimator="ols")`).
+
+**Sampling design.** Not recorded (Unknowns).
+
+## Regenerating
+
+The data cannot be regenerated from this repository. The notebook reads the two csv files and computes everything from them in under a minute. The only randomness is the bootstrap (10 000 replicates for each φ) and the 100 000 uniform samples for the distribution functions, all from one `np.random.default_rng(2015)`. Two runs give identical printed output.
+
+### Conversion from the original text files
 
 The original text files mixed coordinates: `HyShotII30.txt` had no header and stored all inputs normalized; `HyShotII35.txt` had physical inputs in runs 1–14 and normalized inputs in runs 15–16. `convert_legacy_data.py` maps the normalized inputs to physical units with x = (u + ℓ)/2 + z (u − ℓ)/2 and writes both files. It reads the original files from the tag `legacy-master` (or `--legacy-dir`), checks their SHA-256 hashes, and verifies:
 
@@ -48,21 +66,27 @@ The original text files mixed coordinates: `HyShotII30.txt` had no header and st
 - the converted inputs, read back from the written text and normalized again, equal the original normalized values to within 2e-15 (measured 1.4e-15). This is the float64 resolution of the physical values: one ulp of a stagnation pressure near 1.9e7 Pa is 1.5e-15 in normalized units, so the conversion cannot be bit-exact in both directions. This affects the 54 rows whose inputs the original files stored normalized (52 in `HyShotII30.txt`, 2 in `HyShotII35.txt`). The original files, with the exact normalized values, remain on the tag `legacy-master` (`HyShotII/HyShotII30.txt`, `HyShotII/HyShotII35.txt`);
 - the `nan` entries are exactly runs 15–16 of the φ = 0.30 column, and every converted input lies inside the bounds.
 
-`python convert_legacy_data.py --check` repeats the conversion and compares it with the committed files byte for byte. The notebook's printed w equals the published tables to 4 digits.
+`python convert_legacy_data.py --check` repeats the conversion and compares it with the committed files byte for byte.
 
-## Provenance and unknowns
+## Accuracy
 
-- **Code.** Joe, the finite-volume RANS solver of Stanford's Center for Turbulence Research, with the k–ω SST turbulence model and a flamelet/progress-variable combustion model (JCP 2015 §2.2; the book cites that paper for the simulation). JCP 2015 reports about 9500 CPU-hours per run (a 2D intake simulation and a 3D combustor simulation); the book says each run takes "approximately two hours on available resources".
-- **Who ran it.** The simulations were done for JCP 2015 at Stanford's Center for Turbulence Research (Michael Emory and Gianluca Iaccarino are the Stanford authors); the paper does not say who ran them. Ryan Howard added the original text files and a notebook to this repository: the design runs on 2016-06-02 (commit 96221f4), the validation runs on 2016-06-03 (cd66a9e).
-- **Unknown:**
-  - the Joe version, the meshes, and the convergence criteria;
-  - how the design points were drawn (independent uniform, Latin hypercube, …);
-  - why the book's φ = 0.30 runs differ from the JCP runs, and where the JCP 5.6 bar runs are;
-  - the exit pressures of the book's two φ = 0.30 corner runs (unavailable).
+No solver accuracy numbers are recorded for these runs: the Joe version, the meshes and the convergence criteria are not known (Unknowns). `convert_legacy_data.py` prints the round-trip checks of the conversion listed above, with the largest difference between the recovered and the original normalized inputs. The notebook's printed w equals the published tables to 4 digits.
 
-## Regenerating
+## How these files relate to the paper
 
-The data cannot be regenerated from this repository. The notebook reads the two csv files and computes everything from them in under a minute. The only randomness is the bootstrap (10 000 replicates for each φ) and the 100 000 uniform samples for the distribution functions, all from one `np.random.default_rng(2015)`. Two runs give identical printed output.
+These are the runs of the two publications, not new runs: `HyShotII_phi030.csv` holds the JCP 2015 runs at 4.8 bar, and `HyShotII_phi035.csv` the runs of book §5.1. The notebook reproduces JCP Table 3 and book Table 5.2 to 4 digits (Rows), and compares its other results with both publications.
+
+- **The two φ labels.** JCP 2015 runs at fuel plenum pressures P₀,H₂ = 4.8 bar and 5.6 bar, which give φ = 0.30 and 0.35 at nominal inflow. The book labels its runs by φ. The 5.6 bar runs of JCP 2015 (Table 3, second column) are not in this repository.
+- **Two φ = 0.30 studies.** The book's 14 φ = 0.30 runs are not among the JCP runs, and they lie 0.06 to 0.10 bar above a linear fit to the 50 JCP design runs (printed by the notebook). Why the two φ = 0.30 studies differ is unknown.
+- **Published tables.** The data's units differ from JCP 2015 Table 2 and book Table 5.1, and the turbulence length-scale range printed in both tables is a typo (Columns).
+
+## Unknowns
+
+- Who ran the simulations: the paper does not say (Model).
+- The Joe version, the meshes, and the convergence criteria.
+- How the design points were drawn (independent uniform, Latin hypercube, …).
+- Why the book's φ = 0.30 runs differ from the JCP runs, and where the JCP 5.6 bar runs are.
+- The exit pressures of the book's two φ = 0.30 corner runs (unavailable).
 
 ## License and credit
 

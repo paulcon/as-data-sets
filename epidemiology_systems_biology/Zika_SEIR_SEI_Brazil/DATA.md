@@ -95,6 +95,12 @@ The shipped files were written on 2026-10-30 in a Linux container (Python 3.13.1
 - **Differences from the paper's setup.** S_hi and S_vi are derived rather than free (problem 2 above); the S_vi bound is replaced by the E_vi, I_vi range above (problem 3); the parameter study is new (the paper only calibrates). The fit statistics above agree with the paper's to within about 0.7 percentage points, which we attribute to the rounded values printed in Tables 1–2 (e.g. 1/16.86, 1/10.40, I_hi = 253,360) and the looser ode45 tolerance; this was not verified with the authors' unrounded values, which are not published.
 - The ARBO script `main_SEIR_SEI_TRR_example1.m` (which starts from the Table 2 initial conditions and refits the six rates) bounds δ to [1/8.8, 1/3], whereas the paper's Tables 1–2 and the script `main_SEIR_SEI_TRR_example2.m` use [1/21, 1/11]; this data set follows the paper.
 
+## Unknowns
+
+- Why the weekly case file's total (263,099) is larger than the 215,319 probable cases the paper quotes (p. 249); the paper does not discuss the difference.
+- The authors' unrounded calibrated parameter values are not published, so the cause of the differences in the fit statistics (attributed to rounding and the ode45 tolerance) is not verified.
+- The time convention is not spelled out in the paper; it was taken from the authors' MATLAB code.
+
 ## License and credit
 
 Code: MIT (`LICENSE`). Data (the CSVs written by `generate_data.py`): CC BY 4.0 (`LICENSE-DATA`). `data_cases.csv`: probable Zika cases per EW, Brazil 2016, from the Brazilian Ministry of Health (SINAN), as distributed by E. Dantas, M. Tosin and A. Cunha Jr in github.com/americocunhajr/ARBO under the MIT licence; credit both when reusing it. Model: E. Dantas, M. Tosin and A. Cunha Jr. Cite the paper: Appl. Math. Comput. 338:249–259 (2018), doi:10.1016/j.amc.2018.06.024. Python implementation, data and notebook: Claude (Anthropic) for P. Constantine, 2026.

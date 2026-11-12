@@ -97,7 +97,20 @@ python check_accuracy.py                                  # the Accuracy numbers
   - Settled cycle (run to 20 000 s, cycles after 10 000 s, 20 s grid): 26.33 nM with true minima, **26.06 nM** with the late minima (period 12.99 min). This is 0.06 nM from the paper's 26.12 "true value" (p. 30), which most likely belongs to the settled cycle read the authors' way (not proven).
   - So the 0.90 nM between 26.96 and 26.06 is the transient first cycle (0.53), slower settling (0.10) and the off-by-one (0.27), not the model. `MAPK_model.limit_cycle_features(..., late_minima=True)` reproduces the authors' reading; the data use true minima (the paper's Sec. 1.13 definition) on the authors' GSA window.
 - **Observations on the authors' code** (no effect on these files): the sensitivity script names the paper's high-steady-state initial condition `x0Low` and the low one `x0High` (the run scripts and Fig. 4 caption use the opposite, as here), so Fig. 4C's "low"/"high" panels may be swapped; `MAPK_Jacobian.m` uses x3^n1 where x3^n2 belongs (J21, J22), S1 for S2 (J23) and x3 for x2 (J33), and the parameter order of `MAPK.m` (K1, n1, K2, n2) while the script passes `MAPK_cascade.m`'s order (n1, K1, n2, K2). `ode15s` uses the Jacobian only in its Newton iteration, so this should affect cost, not results. The committed script sets `SobolSensOpts.Sobol.SampleSize = 5`, not the paper's 5,000/15,000.
-- **Open questions (for the authors).** (1) The peak-height threshold: the code tests the full spread of the peak heights, the text (p. 23) one half of it; were the Fig. 4D indices computed with the code as committed? The data follow the code. (2) The range of k1: [0, 0.05] (S2 Table) or [0, 0.1] (`paramBounds`, used here), and the oscillatory nominal k1 = 0.1 outside the S2 range. (3) The units of the rate constants: the S2 Table's nM·s⁻¹ for all six, or the s⁻¹ and nM⁻¹ s⁻¹ that the equations imply (used here). (4) The "9 of 14" free parameters (p. 28), where the stated fixes leave 7.
+
+## Unknowns
+
+Open questions for the authors:
+
+- The peak-height threshold: the code tests the full spread of the peak heights, the text (p. 23) one half of it; were the Fig. 4D indices computed with the code as committed? The data follow the code.
+- The range of k1: [0, 0.05] (S2 Table) or [0, 0.1] (`paramBounds`, used here), and the oscillatory nominal k1 = 0.1 outside the S2 range.
+- The units of the rate constants: the S2 Table's nM·s⁻¹ for all six, or the s⁻¹ and nM⁻¹ s⁻¹ that the equations imply (used here).
+- The "9 of 14" free parameters (p. 28), where the stated fixes leave 7.
+
+Other unknowns:
+
+- Whether the paper's amplitude 26.12 belongs to the settled cycle read the authors' way: most likely, not proven (How these files relate to the paper, "Nominal checks").
+- Whether Fig. 4C's "low"/"high" panels are swapped: the sensitivity script names the two initial conditions the opposite way (How these files relate to the paper, "Observations on the authors' code").
 
 ## License and credit
 

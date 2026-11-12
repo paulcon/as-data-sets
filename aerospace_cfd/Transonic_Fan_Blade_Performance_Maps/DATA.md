@@ -45,17 +45,6 @@ Page, equation and figure numbers refer to the published article: P. Seshadri, S
 - **Cost per run.** Not reported. Each design needs a PADRAM mesh of 1.75 × 10⁶ cells and a Hydra solve on the working line.
 - **Published results** (from figures; no tables). Fig. 7: the "eigenvalues" for efficiency (a) and pressure ratio (b), read by pixel measurement as 0.985, 0.245, 0.158, … 0.0057 and 0.0357, 0.00687, 0.00147, … 6.58e-5. Figs. 8(b) and 13(b): the first two eigenvectors, read to about ±0.01. The notebook holds all four sets of values. Fig. 9(a): the efficiency map, with a high-efficiency corridor along v = (0.4, −1.6) from the research blade at (0, 0). (The paper writes v = (0.4, −1.6) on pp. 5, 6 and 8 but (−0.4, 1.6) in Sec. 4.2, p. 7; the high-efficiency end of the dashed line in Fig. 9(a), Design D, is at about (0.4, −1.6). The notebook uses (0.4, −1.6).) Fig. 16: pressure-ratio maps, (a) piecewise linear, (b) a quadratic. Fig. 17: the efficiency zonotope, about [−2.9, 2.9] × [−3.2, 3.2]. Fig. 20(b): pressure ratio on the efficiency map. The paper uses n = 2 for both quantities.
 
-## Which blade is the paper's
-
-The archive's README says the data are "used in" the 2018 paper and in Seshadri, Yuchi, Parks and Shahpar, "Supporting multi-point fan design with dimension reduction", Aeronaut. J. 124(1279):1371–1398, 2020, doi:10.1017/aer.2020.50. It does not say which blade is the 2018 research blade. The notebook compares all three blades with the paper and finds that **blade A** matches best:
-
-- The shape of the spectrum, as the root-mean-square log₁₀ difference of √(λ_k/λ₁) from Fig. 7, is 0.157 (efficiency) and 0.072 (pressure ratio) for A, against 0.265 and 0.348 for C. Blade B cannot be compared, because it has too few runs for the quadratic.
-- The efficiency eigenvectors give |w₁·w₁ᵖᵃᵖᵉʳ| = 0.992 and |w₂·w₂ᵖᵃᵖᵉʳ| = 0.907 for A, against 0.981 and 0.715 for C.
-- For B, OLS gives 0.959 for efficiency and 0.825 for pressure ratio, and B's efficiency is almost a ridge function of one direction (local linear λ₁/λ₂ = 3623.5). That is unlike the paper's curved efficiency ridge (Fig. 8(a)).
-- The output scales implied by the paper's figures (roughly 3 for efficiency, 4 for pressure ratio; see "Quantities of interest") are similar for Fig. 7, which matches blade A's spectrum, and for the contour maps of Figs. 9(a) and 16(a). (The 3-D plot of Fig. 13(a) cannot be used for a range: its vertical extent mixes all three axes.)
-
-Two observations cut the other way. Blade C's pressure-ratio subspace matches the paper as well as A's does (0.993 and 0.978). And the paper's Fig. 6 (p. 4) appears to mark the research blade (one lighter point at wᵀx = 0, with no legend, and neither the caption nor the text says what it is), while blade A has no x = 0 row (its closest design, row 304, has |x| = 0.904; blade B contains x = 0). Blade A has 548 designs, not 500, and is not a Latin hypercube, so it is at best a superset or a variant of the paper's design. This is an inference from the data, listed as an open question for the authors.
-
 ## Regenerating
 
 ```bash
@@ -77,6 +66,27 @@ The script refuses an archive whose SHA-256 differs from the one above. It check
 - **Eigenvalues.** Fig. 7 matches the square roots of the notebook's eigenvalues in shape, not the eigenvalues. The notebook gets λ₁/λ₂ = 18.6 (efficiency) and 36.1 (pressure ratio), and Fig. 7's ratios are 4.02 and 5.20, whose squares are 16.2 and 27.0. With the correct ⁴⁄₃A² + ccᵀ in place of the printed Eq. 11 (see "Gradients"), the root-mean-square log₁₀ difference of √(λ_k/λ₁) from Fig. 7 is 0.157 (efficiency) and 0.072 (pressure ratio). We do not know what Fig. 7 plots. Singular values of a factor of C would fit, since the paper says the decomposition was computed "using singular value decomposition".
 - **Dimension.** The paper uses n = 2 for both quantities. On the eigenvalues, the gap rule picks n = 1 for both. A second active variable still raises the LOO R² of a quadratic from 0.9470 to 0.9843 (efficiency) and from 0.9807 to 0.9983 (pressure ratio), so the 2-D maps are justified. These LOO values hold the subspace fixed; with it re-estimated in each of 10 folds, the 2-D quadratic scores 0.9769 and 0.9975.
 - **Not reproducible from these data:** flow capacity (Figs. 4, 5, 20(a)), efficiency–sensitivity (Figs. 22–24), the extra CFD runs at inverse-mapped designs (Figs. 17(b), 18), and any magnitude in the paper's units.
+
+### Which blade is the paper's
+
+The archive's README says the data are "used in" the 2018 paper and in Seshadri, Yuchi, Parks and Shahpar, "Supporting multi-point fan design with dimension reduction", Aeronaut. J. 124(1279):1371–1398, 2020, doi:10.1017/aer.2020.50. It does not say which blade is the 2018 research blade. The notebook compares all three blades with the paper and finds that **blade A** matches best:
+
+- The shape of the spectrum, as the root-mean-square log₁₀ difference of √(λ_k/λ₁) from Fig. 7, is 0.157 (efficiency) and 0.072 (pressure ratio) for A, against 0.265 and 0.348 for C. Blade B cannot be compared, because it has too few runs for the quadratic.
+- The efficiency eigenvectors give |w₁·w₁ᵖᵃᵖᵉʳ| = 0.992 and |w₂·w₂ᵖᵃᵖᵉʳ| = 0.907 for A, against 0.981 and 0.715 for C.
+- For B, OLS gives 0.959 for efficiency and 0.825 for pressure ratio, and B's efficiency is almost a ridge function of one direction (local linear λ₁/λ₂ = 3623.5). That is unlike the paper's curved efficiency ridge (Fig. 8(a)).
+- The output scales implied by the paper's figures (roughly 3 for efficiency, 4 for pressure ratio; see "Quantities of interest") are similar for Fig. 7, which matches blade A's spectrum, and for the contour maps of Figs. 9(a) and 16(a). (The 3-D plot of Fig. 13(a) cannot be used for a range: its vertical extent mixes all three axes.)
+
+Two observations cut the other way. Blade C's pressure-ratio subspace matches the paper as well as A's does (0.993 and 0.978). And the paper's Fig. 6 (p. 4) appears to mark the research blade (one lighter point at wᵀx = 0, with no legend, and neither the caption nor the text says what it is), while blade A has no x = 0 row (its closest design, row 304, has |x| = 0.904; blade B contains x = 0). Blade A has 548 designs, not 500, and is not a Latin hypercube, so it is at best a superset or a variant of the paper's design. This is an inference from the data, listed under "Unknowns" as a question for the authors.
+
+## Unknowns
+
+- Which blade is the paper's 2018 research blade. The archive does not say; blade A is inferred from the match ("Which blade is the paper's"). A question for the authors.
+- The design bounds x̂_L, x̂_U: their values are not published, so the inputs exist only in normalized form. The blade geometry is proprietary.
+- The archive does not name its columns; the bar-chart order is inferred from the eigenvector match ("Column order").
+- The scale of the archive's "non-dimensional" `y1` and `y2`. The factors of roughly 3 and 4 are inferences from figure readings, not stated anywhere.
+- The order in which blade A's runs were made (its rows are sorted by the first input).
+- What Fig. 7 plots.
+- The seed of the paper's Latin hypercube, the cost per run, and the CFD convergence tolerance are not reported.
 
 ## License and credit
 

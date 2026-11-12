@@ -19,20 +19,24 @@ Row i of each runoff file is the output of the run whose inputs are row i of `in
 | `RunOff02_Saturated_10k.txt` | 240000 | 321214425a749f01e43fc744b9171b44 |
 | `RunOff02_Unsaturated_10k.txt` | 239999 | 684567841f06f230a944b28d69afe49b |
 
-## Inputs (`inputs-ShortCorr.GW02.txt`)
+`inputs-ShortCorr.GW02.txt` is space-separated text, no header, 10,000 rows × 100 columns, `%.18e`. The file loads in well under a second with `np.loadtxt`. At 25.5 MB it is under GitHub's limits, and it stays as text: a `.npy` copy would add a blob without removing the old one from history.
 
-Space-separated text, no header, 10,000 rows × 100 columns, `%.18e`. Column i is the coefficient x_i of the i-th spatial mode in the truncated Karhunen–Loève (KL) series of the log permeability, log κ = μ + B x (eq. (12) of the paper). The coefficients are dimensionless.
+The runoff files (`RunOff02_*_10k.txt`) hold one value per line with a trailing space, 10,000 lines. `RunOff02_Unsaturated_10k.txt` has no final newline (harmless for `np.loadtxt`).
+
+## Model
+
+**Source.** J. M. Gilbert, J. L. Jefferson, P. G. Constantine and R. M. Maxwell, "Global spatial sensitivity of runoff to subsurface permeability using the active subspace method", Adv. Water Resour. 92:30–42, 2016, doi:10.1016/j.advwatres.2016.03.020.
+
+**Solver.** ParFlow, on the idealized tilted-v domain of the paper (300 m × 300 m × 16 m, 30 × 30 × 16 cells; §2.6, Table 1). The ParFlow version, the run date and who ran the simulations are **not recorded**. The script that generated the KL coefficients and permeability fields is not in the repository.
+
+**Inputs** (`inputs-ShortCorr.GW02.txt`, m = 100). Column i is the coefficient x_i of the i-th spatial mode in the truncated Karhunen–Loève (KL) series of the log permeability, log κ = μ + B x (eq. (12) of the paper). The coefficients are dimensionless.
 
 - They are independent standard Gaussian draws, used unnormalized. The notebook prints the checks: column means within ±0.028, standard deviations 0.987–1.016, largest off-diagonal correlation 0.041, pooled Kolmogorov–Smirnov test against N(0, 1) p = 0.45.
 - Low column indices are large-scale modes and high indices small-scale ones. In the paper, B holds the first 100 principal components of 2,000 turning-bands log permeability fields (§2.4, Table 2: geometric mean permeability 0.04465 m h⁻¹, correlation lengths λx = λy = 50 m and λz = 5 m).
 - "ShortCorr" refers to the short correlation length of the permeability correlation model. What "GW02" means is **unknown**.
 - The basis B, the mean μ and the 30 × 30 × 16 grid are **not available**. So the weights cannot be mapped to the spatial sensitivity fields B ŵ of the paper's Figs. 8 and 9, and the notebook does not plot them.
 
-The file loads in well under a second with `np.loadtxt`. At 25.5 MB it is under GitHub's limits, and it stays as text: a `.npy` copy would add a blob without removing the old one from history.
-
-## Outputs (`RunOff02_*_10k.txt`)
-
-One value per line with a trailing space, 10,000 lines. `RunOff02_Unsaturated_10k.txt` has no final newline (harmless for `np.loadtxt`).
+**Quantities of interest** (`RunOff02_*_10k.txt`).
 
 | file | scenario | quantity | range | notes |
 |---|---|---|---|---|
@@ -41,14 +45,29 @@ One value per line with a trailing space, 10,000 lines. `RunOff02_Unsaturated_10
 
 The quantity and units are those of the paper (§2.6, p. 35; the axis of Figs. 6b and 7b reads "Cumulative Runoff Volume [cubic meters]"). The paper drops the zero Hortonian runs from Fig. 7 (p. 37), and so does the notebook, for every Hortonian fit: the least-squares direction, its summary plot and the quadratic-model extension, which is not in the paper. That extension fits 5,151 coefficients from 6,863 runs (1.33 runs per coefficient), so its Hessian, and its eigenvalues after the first, are noisy. The notebook uses only its first eigenvector, as a second estimate of the paper's direction, and does not read a dimension from the later eigenvalues. A held-out test (one seeded split: subspace and surrogate fitted on 6,000 non-zero runs, tested on the other 863) shows that surrogates on the two one-dimensional directions fit equally well on the test runs (cubic R² 0.7453 for the quadratic-model direction, 0.7456 for the least-squares one). The Dunnian fits use all 10,000 runs.
 
-## Provenance
-
-- Generating code: ParFlow, on the idealized tilted-v domain of the paper (300 m × 300 m × 16 m, 30 × 30 × 16 cells; §2.6, Table 1). The ParFlow version, the run date and who ran the simulations are **not recorded**. The script that generated the KL coefficients and permeability fields is not in the repository.
-- The data appear to be the runs behind the paper's figures. The weights computed from them match Figs. 6a and 7a, and the active-variable ranges match Figs. 6b and 7b, once the inputs are rescaled column by column to [−1, 1] by their sample minimum and maximum (Hortonian w₁ = −0.646 and w₅ = −0.501 against the figure's ≈ −0.65 and −0.50). That rescaling is inferred from these matches; the paper states a standard Gaussian density, and the notebook uses the Gaussian scale. Both scales give nearly the same direction (cosine 0.9992 Hortonian, 0.9999 Dunnian). The notebook prints all of these numbers.
+**Gradients.** None are stored. The notebook estimates the direction by least squares (`estimator="ols"`) and, as an extension, by a global quadratic model.
 
 ## Regenerating
 
 The files cannot be regenerated from this repository. The notebook reads them and runs in about a minute in one Python process; the two quadratic-model fits take most of that time. Its only random numbers are the seeded split (seed 2016) of the held-out test, and two runs give identical printed output apart from run times.
+
+## Accuracy
+
+No accuracy numbers are recorded for these runs: the ParFlow version and solver settings are not known (Unknowns). The notebook prints checks of the input distribution (Model, Inputs).
+
+## How these files relate to the paper
+
+The data appear to be the runs behind the paper's figures. The weights computed from them match Figs. 6a and 7a, and the active-variable ranges match Figs. 6b and 7b, once the inputs are rescaled column by column to [−1, 1] by their sample minimum and maximum (Hortonian w₁ = −0.646 and w₅ = −0.501 against the figure's ≈ −0.65 and −0.50). That rescaling is inferred from these matches; the paper states a standard Gaussian density, and the notebook uses the Gaussian scale. Both scales give nearly the same direction (cosine 0.9992 Hortonian, 0.9999 Dunnian). The notebook prints all of these numbers.
+
+## Unknowns
+
+- The ParFlow version, its solver settings, the run date and who ran the simulations are not recorded.
+- The script that generated the KL coefficients and permeability fields is not in the repository.
+- The basis B, the mean μ and the 30 × 30 × 16 grid are not available.
+- What "GW02" in the input file name means.
+- That the paper's figures use inputs rescaled by their sample minimum and maximum is inferred from the matches above; the paper does not say.
+- That these are the runs behind the paper's figures is inferred from the same matches, not recorded.
+- The original license of the runs is not recorded.
 
 ## License and credit
 

@@ -73,6 +73,12 @@ The shipped files were written on 2026-10-30 in a Linux container (numpy 2.5.4, 
 - **Charlson's Table 1 is not reproduced exactly by its own inputs.** 3 Q Y τ / A with Q = 90 Tg S yr⁻¹, Y = 0.4, τ = 0.02 yr, A = 5 × 10¹⁴ m² gives B = 4.32 × 10⁻³ g m⁻² (4.5 × 10⁻⁵ mol m⁻²), against the table's 4.6 × 10⁻³ (4.8 × 10⁻⁵); carried through, δ = 0.0367 and ΔF_R = −1.218 W m⁻², against the table's rounded 0.04 and −1.3. We could not tell how the table's burden was computed.
 - **Two sets of nominals.** At the benchmark medians, ΔF_R = −0.889 W m⁻²; at Charlson's nominal values with the benchmark constants, −1.186; with Charlson's constants, −1.218.
 
+## Unknowns
+
+- How Charlson's Table 1 burden (4.6 × 10⁻³ g m⁻²) was computed: its own inputs give 4.32 × 10⁻³.
+- The source of the input distributions: UQTestFuns attributes them to Penner et al. (1994), which was not read.
+- The licence of the UQTestFuns page that tabulates the distributions: none is stated on the page.
+
 ## License and credit
 
 Code: MIT (`LICENSE`). Data (the CSVs): CC BY 4.0 (`LICENSE-DATA`). The CSVs were generated here from the published equations; no data were copied. The input distributions are parameter values tabulated by UQTestFuns (D. Wicaksono and M. Hecht, *J. Open Source Softw.* 8(90):5671, 2023, doi:10.21105/joss.05671; page https://uqtestfuns.readthedocs.io/en/latest/test-functions/sulfur.html, no license stated on the page). Cite:

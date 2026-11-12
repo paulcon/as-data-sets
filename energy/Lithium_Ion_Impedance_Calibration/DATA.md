@@ -308,12 +308,23 @@ agreed to the digits quoted unless stated.
   - the SPMe in 18 grouped, identifiable parameters;
   - a calibration misfit as the QoI, analogous to `uq_benchmarks/PDE_Inverse_Problem_MCMC`;
   - exact adjoint gradients.
-- **Open questions for the authors:**
+- **Open questions for the authors:** see Unknowns.
+
+## Unknowns
+
+- Questions for the authors:
   - Was the true R₀ = 10 mΩ added as a contact resistance to Chen2020's own series resistance?
   - Which PyBaMM version gave Table 3's τ_e± values?
   - Can the measured LG M50LT spectra be shared?
   - Were the particle-swarm runs bounded away from C = 0, and was any parameter searched on a log scale
     (τ_ct± span a factor of 50)?
+- The Table 3 values were not checked against the journal version; the PDF read is the arXiv preprint (Model).
+- The paper states neither its PyBOP version nor any parameter transformation, so that its swarm searched
+  uniformly in physical coordinates is unverified (Model, "Uniform, not log-uniform").
+- The cause of the τ_e± differences from Table 3 is not established; it may come from a difference in
+  Chen2020's electrolyte diffusivity between PyBaMM 24.9 and 26.10 (Model).
+- Rows 0–54 have no CPU-time record; the CPU time for all 1000 samples is an estimate (Regenerating).
+- The licence of PyBaMM-EIS was not checked; it is not used directly (License and credit).
 
 ## License and credit
 

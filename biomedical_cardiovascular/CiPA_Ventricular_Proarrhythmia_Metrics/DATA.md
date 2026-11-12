@@ -243,6 +243,16 @@ named recompute them where Myokit is installed.
   model with 15 current scaling factors at 500 ms; this one is the human ORd-based CiPA model with
   drug-block inputs (including dynamic hERG binding) at 2000 ms and the CiPA metric qNet.
 
+## Unknowns
+
+- The paper's unpublished "minor modifications" of the FDA code (p. 4) are not known; the assumptions
+  made here are listed under Model. Whether they changed the CaTD start is not known.
+- The authors' simulation outputs are not public: the Supplementary Material holds no table of the 10,000
+  runs (Model, Sampling design).
+- The cause of the CaTD50 and CaTD90 R² differences from Table 4 is not established; plausible causes are
+  the authors' code modifications or the beat they analysed (How these files relate to the paper).
+- The script of the equivalence check against the FDA C file was not kept (Model).
+
 ## License and credit
 
 Code (the notebook, `cipaord_driver.py`, `generate_data.py`, `check_accuracy.py`): MIT (`LICENSE`).

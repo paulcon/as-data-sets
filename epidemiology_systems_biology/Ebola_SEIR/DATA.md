@@ -17,7 +17,6 @@ R0 = (β1 + β2ρ1γ1/ω + β3ψ/γ2) / (γ1 + ψ), Eq. (4) of Diaz et al. (2018
 - **Input arrays**: `R0` and `R0_grad` take physical parameters with shape (..., 8). `R0_grad` returns the gradient with respect to the physical parameters, with shape (..., 8). The notebook maps it to the normalized coordinates [-1, 1]^8 by multiplying by (upper − lower)/2 (`space.scale`).
 - **Fitted values** (`FITTED`): Table 2 of the paper, for Liberia and Sierra Leone (Guinea is not in the active-subspace analysis). At these values R0 = 1.5634 (Liberia) and 1.4433 (Sierra Leone). The paper's Table 3 gives 1.563 and 1.445. The Sierra Leone difference is rounding in Table 2: with the less-rounded values printed in the paper's Fig. 2c, R0 = 1.4451.
 - **Ranges** (`BOUNDS`): independent uniform distributions from Table 7 of the paper. The fitted Sierra Leone γ2 = 0.0833 (Table 2) lies outside its Table 7 range [0.1236, 0.384]. The paper has the same disagreement, and it is not known which value is wrong. The notebook uses the range as published.
-- **Gradient check**: the notebook compares `R0_grad` with central finite differences at one random point per country (maximum relative error 2.4e-9 and 2.2e-10).
 
 ## Quadrature
 
@@ -45,9 +44,19 @@ There are no shipped outputs and no `generate_data.py`. The notebook computes ev
 
 All draws come from one `np.random.default_rng(2018)`. The seed affects only the gradient-check points and the summary-plot points, not the eigenvalues, eigenvectors or activity scores. Two runs give identical printed output.
 
-## Relation to the paper's runs
+## Accuracy
+
+- **Gradient check**: the notebook compares `R0_grad` with central finite differences at one random point per country (maximum relative error 2.4e-9 and 2.2e-10).
+- **Blocked matrix and convergence of the rule**: see "Quadrature". The notebook prints the 5^8 check and the 8^8 values of λ1; the 6- and 7-point values of λ1 there are from a run of the same code that the notebook does not print.
+
+## How these files relate to the paper
 
 The paper computed the same 8^8 rule with its own code (https://github.com/PaulMDiaz/Ebola, not used here). The notebook's w1 matches the paper's Fig. 8, with the same signs: the first component is made positive with `ac.orient`. The normalized activity scores for ψ (0.522 Liberia, 0.689 Sierra Leone) match Fig. 9. The paper's Fig. 7 eigenvalues are about 4 times the notebook's, with the same spacing. That factor is what normalizing to [0, 1] instead of [-1, 1] would give, but this is not confirmed. Fig. 7 shows λ1/λ2 ≈ 4 (Liberia) and 7 (Sierra Leone), and the notebook prints 3.9 and 7.1. The paper's text on p. 151 ("nearly two orders of magnitude" between λ1 and λ2) disagrees with its own figure, and the notebook does not repeat it.
+
+## Unknowns
+
+- Which value of the Sierra Leone γ2 is wrong: the fitted 0.0833 (Table 2) lies outside its Table 7 range [0.1236, 0.384], in the paper as here.
+- Why the paper's Fig. 7 eigenvalues are about 4 times the notebook's. Normalizing to [0, 1] instead of [-1, 1] would give that factor, but this is not confirmed.
 
 ## License and credit
 

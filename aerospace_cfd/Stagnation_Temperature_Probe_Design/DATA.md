@@ -91,6 +91,15 @@ The script refuses an archive whose SHA-256 differs from the one above. It check
 - **Differences.** The two-variable cubic fits score R² = 0.928 (O_Rr) and 0.936 (R_r(0.8)) against the paper's 0.941 and 0.947, because the notebook uses the active subspace of the global quadratic, while variable projection optimizes the subspace for the cubic. A cubic refitted on the authors' fitted U_R gives in-sample R² = 0.9423 (O_Rr) and 0.9473 (R_r(0.8)), against the paper's 0.941 and 0.947, which confirms this explanation. The second recovery direction differs from the paper's mainly in the Kiel leading-edge component (−0.19 against about −0.02).
 - **Not reproducible from these files:** any value in physical units (the outputs are standardized), the Mach-number curves of Figs. 3(a) and 12, the flow fields (Figs. 8, 13, 16), the new designs of Sec. 5 (Figs. 14–15), and the manufacturing study of Sec. 6 (Fig. 17), which needs the physical tolerances.
 
+## Unknowns
+
+- The constants that standardized the outputs to [−1, 1] are not published, so physical output values cannot be recovered from the archive (the Fig. 3(b) readings in Model are figure readings, not data).
+- The absolute dimensions of the baseline probe are proprietary.
+- The run order of the 128 designs is not documented.
+- The optimality criterion and seed of the Latin hypercube are not reported.
+- The paper gives no iterative convergence tolerances for the CFD.
+- The ANSYS Fluent version is not recorded.
+
 ## License and credit
 
 The source repositories state **no licence**: equadratures/data-sets has no LICENSE file and neither its README nor the `probes` README mentions one (checked at commit `62e0a429`), and ascillitoe/probe-subspaces has no LICENSE file (checked at commit `072a0b0`). The three CSVs are therefore hosted here with the source credited and are listed in the exceptions list of `LICENSE-DATA`: `outputs.csv` and `inputs_normalized.csv` are redistributed unchanged in value, and `inputs.csv` is derived from them, with credit to A. D. Scillitoe, B. Ubald, P. Seshadri and S. Shahpar (The Alan Turing Institute, University of Cambridge, Imperial College London, Rolls-Royce plc) and to the equadratures/data-sets repository (https://github.com/equadratures/data-sets, `probes/probes.npz`, SHA-256 `3b9766c5956d9b29a7f7865c1dfe9ae0d5ea42ed08b103c1bb45855abc6a1fd4`). This repository's CC BY 4.0 data licence (`LICENSE-DATA`) does not apply to them, since their owners have not licensed them. If the authors or Rolls-Royce object or attach a licence, follow it. Code here (`convert_data.py`, `check_accuracy.py`, the notebook): MIT (`LICENSE`).

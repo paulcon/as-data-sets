@@ -103,6 +103,13 @@ The run takes 0.08 s (under 1 s with Python start-up) and also prints the gradie
 - **Formula from OpenTURNS, not verified against the memorandum** (see Source). We could not check that the hat correction Q, as OpenTURNS writes it, is the memorandum's, nor which formula gives the memorandum's closed-form local load.
 - **Thickness.** See "The thickness" under Inputs: the OpenTURNS t gives loads about 800 times below the memorandum's value, so the shipped data use ten times that thickness, which gives 1.23 times the memorandum's finite-element load. The level of the load, not the active subspace, depends on it.
 
+## Unknowns
+
+- Whether the formula, as OpenTURNS writes it (including the hat correction Q and k_xy = 5.35 + 4(b/a)²), is the memorandum's: it was not checked against the memorandum (see Source).
+- Which closed form (with or without Q) gives the memorandum's local load, and the memorandum's exact thickness: the evidence settles the factor of ten, not the last 20 % (see "The thickness").
+- How OpenTURNS chose the input ranges, the truncated normal and the copula.
+- The memorandum's values (900 lb/in, "slightly higher", 4296 lb/in and k_xy = 1.89): read from a poor scan and unverified.
+
 ## License and credit
 
 Code: MIT (`LICENSE`). Data (the CSVs): CC BY 4.0 (`LICENSE-DATA`). The CSVs were generated here from the equations and distributions published in the OpenTURNS documentation and code (thickness range × 10); no OpenTURNS code (LGPL) was copied. Model: W. L. Ko and R. H. Jackson, NASA Dryden Flight Research Center. Probabilistic benchmark: the OpenTURNS developers. Cite:

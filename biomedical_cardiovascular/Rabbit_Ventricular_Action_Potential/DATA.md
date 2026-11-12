@@ -303,6 +303,15 @@ marked "scipy run" come from `check_accuracy.py --scipy` (Myokit 1.39.2 parses t
   flagged rows (Ca overload or Vmax < 5 mV) pNaK still leads or ties for the lead (check (e)). See the
   notebook's checks (a)-(e) and comparison table.
 
+## Unknowns
+
+- Whether the fixed E_Na_SL = −15 mV in the authors' model file was intended (asked of the authors; see "Model").
+- Why the authors' 2000 stored runs have longer APs than the runs here; which pacing train and model file produced the paper's Fig 2 and its Saltelli runs, and which script produced the stored runs (asked of the authors; see "How these files relate to the paper").
+- Which six factors the authors' stored reduced-model arrays used: Table 7 lists pKs, a file name in `fig080` points to pClCa.
+- The Myokit version and solver tolerances of the authors' runs (the paper states none).
+- The 262,144 Saltelli inputs and outputs of the paper are not published, and the authors' 2000 full-model runs are stored without their inputs.
+- Tighter solver tolerances than 1e-4/1e-6 were not tried.
+
 ## License and credit
 
 Code (the notebook, `shannon_driver.py`, `generate_data.py`, `check_accuracy.py`): MIT (`LICENSE`). Data

@@ -75,6 +75,13 @@ The shipped files were written on 2026-10-30 in a Linux container (numpy 2.5.4, 
 - **Agreement.** P_ACS (mean 67.32 W), P_tot (mean 1066 W) and τ_tot (KDE mode 0.0103 N m, mean 0.0117 N m) agree with the peaks of Figs. 11, 12 and 14.
 - **Disagreement in A_sa.** Our A_sa has mean 11.19 m² (sd 0.54); Fig. 13 peaks near 12.2 m², about 9 % higher, with a similar relative spread (the peak density of about 0.64 m⁻² corresponds to an sd of about 0.6 m² for a normal). Since A_sa depends on the inputs only through P_tot (which matches Fig. 12), H and F_s, the published Fig. 13 is not consistent with Eqs. (24)–(26) and Table 1 as printed. We tried the plausible alternative readings (ε_deg as 0.0375 %: 6.3 m²; T_e and T_d swapped in Eq. (24): 14.2 m²; ω_max used as rad/s: 11.86 m² at the mean) and none gives 12.2; Eq. (27) does not enter A_sa. The active subspace of A_sa is unaffected by a constant factor, but would change if the difference is in the eclipse/daylight terms.
 
+## Unknowns
+
+- The standard deviation of q: Table 2 prints 1, probably a typo for 0.1 (OpenTURNS has 0.1); the notebook shows that the choice does not change the first eigenvectors (Model, "Inputs").
+- Why the paper's Fig. 13 peaks near 12.2 m² where these data give a mean A_sa of 11.19 m²: none of the alternative readings tried gives 12.2 (How these files relate to the paper).
+- The code and seed of the paper's Monte Carlo samples.
+- The seed of the 5000-sample OpenTURNS 1.27 run (Accuracy).
+
 ## License and credit
 
 Code: MIT. Data (the CSVs): CC BY 4.0. Model: S. Sankararaman and S. Mahadevan (2012), after J. Wertz and W. Larson (1999) and S. Ferson et al. (2009); the truncation bounds follow the OpenTURNS use case (https://openturns.github.io/openturns/latest/usecases/use_case_fire_satellite.html). The paper acknowledges NASA Langley Research Center (Contract No. NNX08AF56A1) and NASA Jet Propulsion Laboratory (Contract No. RSA 1400821). Cite Sankararaman and Mahadevan, J. Mech. Des. 134(3):031008, 2012, doi:10.1115/1.4005619.

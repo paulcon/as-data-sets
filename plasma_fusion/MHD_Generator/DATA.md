@@ -12,34 +12,7 @@ Kind: **both**. The Hartmann problem is a **Python model**: `hartmann_model.py`,
 | `MHD_Generator_Data_Uavg.txt` | 483 rows × 12 columns, 62 KB | generator runs, u_avg (stored) |
 | `MHD_Generator_Data_Bind.txt` | 483 rows × 12 columns, 67 KB | generator runs, B_ind (stored) |
 
-## Hartmann problem (Python model)
-
-The average velocity u_avg and the induced magnetic field B_ind of laminar flow between two plates a distance 2ℓ apart, in a uniform magnetic field perpendicular to the flow: Eqs. (36) and (37) of Glaws et al. (2017).
-
-- **Inputs**: m = 5 log-inputs, in the order log μ, log ρ, log ∂p0/∂x, log η, log B0 (`NAMES`), uniform on the logs of the Table 2 ranges (`LOWER`, `UPPER`). Neither quantity depends on ρ.
-- **Fixed parameters**: `l` and `mu0` are keyword arguments, both 1 by default. The paper sets ℓ = 1 m (p. 318). It does not state μ0 for the Hartmann problem; μ0 = 1 is the value of the original notebook, confirmed by the repository's author, a coauthor of the paper. μ0 only scales B_ind (its eigenvalues are proportional to μ0², and its eigenvectors do not depend on it).
-- **Gradients**: `uavg_grad` and `Bind_grad` return ∂f/∂log x_i = x_i ∂f/∂x_i, shape (..., 5). `ac.active_subspace` scales them to the normalized inputs. The notebook checks the gradients against central finite differences at 100 random points (maximum error 1.1e-9 for u_avg and 1.2e-9 for B_ind, relative to the largest component).
-- **Quadrature**: C is computed with an 11-point Gauss–Legendre rule per dimension (11⁵ = 161,051 points), as in the paper. The weights are the scipy `roots_legendre(11)` weights halved, so their tensor product sums to 1 and already includes the density 2⁻⁵ on the normalized inputs. Multiplying the integrand by 2⁻⁵ a second time makes every eigenvalue 32 times too small; the paper's Fig. 2A appears to do this (below). The notebook prints both values.
-
-### Regenerating
-
-There are no shipped Hartmann outputs and no `generate_data.py`: the notebook evaluates the model directly. The whole notebook takes about 11–15 s in one Python process (about 30 s wall time with kernel start-up). All draws come from one `np.random.default_rng(2017)`: the gradient-check points, the 5000 quadrature nodes in the summary plots, and the generator bootstrap. The Hartmann eigenvalues and eigenvectors do not depend on the seed. Two runs give identical printed output apart from the runtime line.
-
-### Relation to the paper
-
-- u_avg: λ1 = 36.57, λ2 = 1.2275, λ1/λ2 = 29.8. The eigenvectors match the paper's Fig. 2B, with the same signs. The paper's Fig. 2A shows λ1 ≈ 1.4 and λ2 ≈ 0.05: its scale matches 2⁻⁵ times the notebook's values (1.14, 0.038), so the figure appears to carry an extra factor 2⁻⁵. Its text (p. 319) calls the gap between λ1 and λ2 "three orders of magnitude"; its own figure shows a ratio of about 28. The notebook does not repeat that sentence.
-- B_ind: λ1 = 0.0863, λ1/λ2 = 13.6, w1 = [0.381, 0, −0.663, 0.493, −0.414]. This does **not** match the paper's Fig. 3: Fig. 3B shows w1 ≈ [0.38, 0, −0.56, 0.49, −0.56], and Fig. 3A shows λ1 ≈ 3 and λ1/λ2 ≈ 45. μ0 cannot explain it. A smaller ℓ (about 0.4) reproduces the published w1 but not the eigenvalues. How Fig. 3 was computed is not known; the notebook keeps ℓ = μ0 = 1, states it, and says that Fig. 3 differs.
-
-## MHD generator (stored data)
-
-### Provenance
-
-- **Generating code**: Sandia National Laboratories' Drekar multiphysics code (Pawlowski et al., SAND2012-2697), with its adjoint capability for the gradients (Shadid et al., J. Comput. Phys. 321, 2016). The Drekar version, the mesh and the solver settings are not recorded.
-- **Who ran it**: not recorded. The files were added to this repository by Ryan Howard on 2016-07-19 (commit 2788d24).
-- **Setup** (paper §4.2, pp. 320–321): steady resistive MHD duct flow in a 15 m × 1 m × 1 m duct, inlet velocity [1, 0, 0] m/s, applied vertical field ½B0[tanh((x − x_on)/δ) − tanh((x − x_off)/δ)] with x_on = 4, x_off = 6, δ = 0.1, and μ0 = 1. Each run took 5.3 CPU-hours (10 minutes on 32 cores).
-- **Inputs**: μ, ρ, ∂p0/∂x, η, B0, sampled independently and uniformly on the logs of the paper's Table 3 ranges, [.001, .01], [.1, 10], [.1, .5], [.1, 10], [.1, 1]. All 483 rows of both files lie inside these ranges. The sampling seed is not recorded.
-
-### Format
+### Format of the generator files
 
 Both files are pandas `to_csv` output: a header row `,0,1,2,3,4,5,6,7,8,9,10` and then one row per run. The column names are not in the files. The meaning below comes from the 2016 notebook.
 
@@ -77,16 +50,66 @@ The files are kept exactly as shipped. The notebook prints each fact below and a
 
 **Joint or separate.** Each quantity of interest is analyzed from all its own valid runs (u_avg 481, B_ind 483). The active subspace of one quantity does not need the other file. Use the run IDs (not the raw labels) whenever the two files must be paired, for example to look at u_avg and B_ind at the same inputs: the 481 u_avg runs are all in the B_ind file.
 
-### Results
-
-From all 483 rows of each file, as in the paper: u_avg λ = [28.98, 0.928, 0.202, 0.0306, 7.33e-5] and B_ind λ = [4.156e-3, 4.94e-4, 1.10e-4, 1.58e-5, 4.92e-11]. With the rule above, u_avg (481 rows) λ = [29.08, 0.931, 0.203, 0.0308, 7.32e-5], at most 0.42 % from the 483-row values, and B_ind is unchanged. Restricting B_ind to the 481 runs in both files would change its eigenvalues by at most 0.42 %. λ5 is 0.000242 % (u_avg) and 0.000001 % (B_ind) of the sum, as in the paper (0.00024 % and 0.000001 %, pp. 322–323), which used all 483 rows. The eigenvectors match the paper's Figs. 5B and 6B, with the same signs.
-
 ### Checksums
 
 | file | md5 |
 |---|---|
 | `MHD_Generator_Data_Uavg.txt` | fbd9bd7bd77c9738acb5ab5cd853e96a |
 | `MHD_Generator_Data_Bind.txt` | 47508035ca2bd86c122667e45a744e05 |
+
+## Model
+
+### Hartmann problem (Python model)
+
+The average velocity u_avg and the induced magnetic field B_ind of laminar flow between two plates a distance 2ℓ apart, in a uniform magnetic field perpendicular to the flow: Eqs. (36) and (37) of Glaws et al. (2017).
+
+- **Inputs**: m = 5 log-inputs, in the order log μ, log ρ, log ∂p0/∂x, log η, log B0 (`NAMES`), uniform on the logs of the Table 2 ranges (`LOWER`, `UPPER`). Neither quantity depends on ρ.
+- **Fixed parameters**: `l` and `mu0` are keyword arguments, both 1 by default. The paper sets ℓ = 1 m (p. 318). It does not state μ0 for the Hartmann problem; μ0 = 1 is the value of the original notebook, confirmed by the repository's author, a coauthor of the paper. μ0 only scales B_ind (its eigenvalues are proportional to μ0², and its eigenvectors do not depend on it).
+- **Gradients**: `uavg_grad` and `Bind_grad` return ∂f/∂log x_i = x_i ∂f/∂x_i, shape (..., 5). `ac.active_subspace` scales them to the normalized inputs. The notebook checks the gradients against central finite differences at 100 random points (maximum error 1.1e-9 for u_avg and 1.2e-9 for B_ind, relative to the largest component).
+- **Quadrature**: C is computed with an 11-point Gauss–Legendre rule per dimension (11⁵ = 161,051 points), as in the paper. The weights are the scipy `roots_legendre(11)` weights halved, so their tensor product sums to 1 and already includes the density 2⁻⁵ on the normalized inputs. Multiplying the integrand by 2⁻⁵ a second time makes every eigenvalue 32 times too small; the paper's Fig. 2A appears to do this (below). The notebook prints both values.
+
+### MHD generator (stored data)
+
+- **Generating code**: Sandia National Laboratories' Drekar multiphysics code (Pawlowski et al., SAND2012-2697), with its adjoint capability for the gradients (Shadid et al., J. Comput. Phys. 321, 2016). The Drekar version, the mesh and the solver settings are not recorded.
+- **Who ran it**: not recorded. The files were added to this repository by Ryan Howard on 2016-07-19 (commit 2788d24).
+- **Setup** (paper §4.2, pp. 320–321): steady resistive MHD duct flow in a 15 m × 1 m × 1 m duct, inlet velocity [1, 0, 0] m/s, applied vertical field ½B0[tanh((x − x_on)/δ) − tanh((x − x_off)/δ)] with x_on = 4, x_off = 6, δ = 0.1, and μ0 = 1. Each run took 5.3 CPU-hours (10 minutes on 32 cores).
+- **Inputs**: μ, ρ, ∂p0/∂x, η, B0, sampled independently and uniformly on the logs of the paper's Table 3 ranges, [.001, .01], [.1, 10], [.1, .5], [.1, 10], [.1, 1]. All 483 rows of both files lie inside these ranges. The sampling seed is not recorded.
+
+## Regenerating
+
+**Hartmann problem.** There are no shipped Hartmann outputs and no `generate_data.py`: the notebook evaluates the model directly. The whole notebook takes about 11–15 s in one Python process (about 30 s wall time with kernel start-up). All draws come from one `np.random.default_rng(2017)`: the gradient-check points, the 5000 quadrature nodes in the summary plots, and the generator bootstrap. The Hartmann eigenvalues and eigenvectors do not depend on the seed. Two runs give identical printed output apart from the runtime line.
+
+**MHD generator.** The two files of Drekar runs cannot be regenerated here. The notebook reads them as shipped and applies the run-ID rule above.
+
+## Accuracy
+
+- **Hartmann gradients** (notebook): central finite differences at 100 random points agree with `uavg_grad` and `Bind_grad` to a maximum error of 1.1e-9 for u_avg and 1.2e-9 for B_ind, relative to the largest component.
+- **Generator gradient coordinates** (notebook): the median of (∂p0/∂x)·∂f/∂(∂p0/∂x)/f is 1.0002 for u_avg and 1.0060 for B_ind (Format of the generator files).
+- **The failed run 72** (`check_accuracy.py` check 1): its u_avg value lies 9 times the median residual off a quadratic fit of log u_avg in the log-inputs, against a 95th percentile of 5 (Row issues).
+- **Drekar runs.** No solver accuracy numbers are recorded: the Drekar version, the mesh and the solver settings are not recorded (Unknowns).
+
+## How these files relate to the paper
+
+### Hartmann problem
+
+- u_avg: λ1 = 36.57, λ2 = 1.2275, λ1/λ2 = 29.8. The eigenvectors match the paper's Fig. 2B, with the same signs. The paper's Fig. 2A shows λ1 ≈ 1.4 and λ2 ≈ 0.05: its scale matches 2⁻⁵ times the notebook's values (1.14, 0.038), so the figure appears to carry an extra factor 2⁻⁵. Its text (p. 319) calls the gap between λ1 and λ2 "three orders of magnitude"; its own figure shows a ratio of about 28. The notebook does not repeat that sentence.
+- B_ind: λ1 = 0.0863, λ1/λ2 = 13.6, w1 = [0.381, 0, −0.663, 0.493, −0.414]. This does **not** match the paper's Fig. 3: Fig. 3B shows w1 ≈ [0.38, 0, −0.56, 0.49, −0.56], and Fig. 3A shows λ1 ≈ 3 and λ1/λ2 ≈ 45. μ0 cannot explain it. A smaller ℓ (about 0.4) reproduces the published w1 but not the eigenvalues. How Fig. 3 was computed is not known; the notebook keeps ℓ = μ0 = 1, states it, and says that Fig. 3 differs.
+
+### MHD generator
+
+From all 483 rows of each file, as in the paper: u_avg λ = [28.98, 0.928, 0.202, 0.0306, 7.33e-5] and B_ind λ = [4.156e-3, 4.94e-4, 1.10e-4, 1.58e-5, 4.92e-11]. With the rule above, u_avg (481 rows) λ = [29.08, 0.931, 0.203, 0.0308, 7.32e-5], at most 0.42 % from the 483-row values, and B_ind is unchanged. Restricting B_ind to the 481 runs in both files would change its eigenvalues by at most 0.42 %. λ5 is 0.000242 % (u_avg) and 0.000001 % (B_ind) of the sum, as in the paper (0.00024 % and 0.000001 %, pp. 322–323), which used all 483 rows. The eigenvectors match the paper's Figs. 5B and 6B, with the same signs.
+
+## Unknowns
+
+- How the paper's Fig. 3 (B_ind of the Hartmann problem) was computed (How these files relate to the paper).
+- The paper does not state μ0 for the Hartmann problem; μ0 = 1 is the value of the original notebook, confirmed by the repository's author.
+- The Drekar version, the mesh and the solver settings of the generator runs.
+- Who ran the generator runs.
+- The sampling seed of the generator runs.
+- The units of the generator inputs and outputs, and over what region u_avg and B_ind are averaged.
+- Why the u_avg rows in the label block 50–99 were shifted, and why the block starts with a repeat of run 49.
+- Whether runs 71 and 99 have u_avg outputs anywhere.
+- Whether the 17 index gaps are all failed runs (run 72 is: its u_avg row is a placeholder).
 
 ## License and credit
 

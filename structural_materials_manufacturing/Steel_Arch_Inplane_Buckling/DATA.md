@@ -105,6 +105,14 @@ The shipped files were written on 2026-10-30 in a Linux container (Python 3, num
 - **What does not.** The paper gives D about twice our share (0.66 vs 0.34–0.37) and puts every minor input at 0.0425 or "–", where we find t_f and B (0.09–0.10) almost as influential as E (0.13–0.14). We cannot locate the cause: the paper's tables are internally inconsistent and its section formulas unstated.
 - **Active subspaces** (notebook, gradient estimator, 500 bootstrap replicates): fixed arch λ₁/λ₂ = 401.7 (n = 1, leave-one-out R² of a quadratic in y₁ 0.99837); pin-ended arch λ₁/λ₂ = 30.9, λ₂/λ₃ = 53.1 (a two-dimensional subspace whose second direction follows the slenderness; quadratic in (y₁, y₂) LOO R² 0.99851). Not in the paper.
 
+## Unknowns
+
+- The paper's section formulas for A and I: not given (choice 3 is ours).
+- What the paper did for the fixed arch below λ = 9.87: not stated (choice 4).
+- The units of N_acr: the paper does not state them (kN here).
+- Whether N_P in Pi et al.'s Eq. (78) is a misprint for N_FB: inferred from the equations, not stated by the authors.
+- The cause of the disagreement with the paper's Sobol' indices (D about twice our share): the paper's tables are internally inconsistent, its section formulas unstated, and its MATLAB code and samples are not published.
+
 ## License and credit
 
 Code: MIT (`LICENSE`). Data (the CSVs): CC BY 4.0 (`LICENSE-DATA`); they are computed here, not copied from the paper, which publishes no data. Model and study design: T.-H. Nguyen (2020), after Y.-L. Pi, M. A. Bradford and B. Uy (2002). The paper states it was funded by Vinh University. Cite T.-H. Nguyen, "Global sensitivity analysis of in-plane elastic buckling of steel arches", Eng. Technol. Appl. Sci. Res. 10(5):6476–6480, 2020, doi:10.48084/etasr.3833.

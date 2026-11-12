@@ -83,7 +83,7 @@ oasvenv/bin/python check_accuracy.py --psdr PSDR/tests --slow                # t
 - **Fourth-order central differences** (check 3; step 1e-3 × half-range) at rows 23, 241 and 249 agree with the shipped gradients to a relative 6.7e-10 or better; at row 56, the largest-gradient row (root thickness 5.3 mm, near divergence), to 4.7e-9 with step 1e-4 × half-range (1.2e-7 with step 1e-3 × half-range, whose truncation error is larger at this near-divergent row).
 - **Solver tolerance** (check 4): re-solving rows 0–2 with atol 1e-11 changes the outputs by at most 3.5e-13 relative.
 
-## How these files relate to the paper and to psdr
+## How these files relate to the paper
 
 - **Not the paper's computation.** The paper has no parameter study. These data are a sampling study of psdr's test function, which uses the paper's design variables (Table 1) plus three material constants, run with today's OpenAeroStruct.
 - **Agreement with psdr's own outputs.** On psdr's 10 stored test points (normalized inputs in `tests/oas.input`, mapped to the ranges above; `tests/oas.input` sha256 bd3f4e73…, `tests/oas.output` 584b1f54…, read from the psdr repository and not shipped), the files' model gives (`check_accuracy.py` check 7):
@@ -102,6 +102,11 @@ oasvenv/bin/python check_accuracy.py --psdr PSDR/tests --slow                # t
 
   The shipped data use the **unmodified** OAS 2.12, so the model is the maintained code that anyone can install. Its inputs, ranges and spar mass are psdr's. Its fuel burn, lift and total mass agree with psdr's to within 0.4 % at psdr's 10 test points; against the same model with v1's load transfer (psdr's), they agree to within 0.3 % on the plausible wings the notebook analyses but only to within 13 % across the whole design box. Its failure output is not psdr's failure output.
 - **Which psdr output is "the" QoI** is not stated in psdr's documentation. Fuel burn is the main QoI here because it is the paper's objective and psdr's first column.
+
+## Unknowns
+
+- The exact build of psdr's Docker image: its `Dockerfile` pins no commit in effect. The OAS v1 fork commit `8ee82d3` is very likely (the rebuild with v1's load transfer reproduces psdr's stored outputs); the OpenMDAO 1 commit is inferred, not pinned.
+- Which psdr output is "the" QoI: psdr's documentation does not say.
 
 ## License and credit
 
