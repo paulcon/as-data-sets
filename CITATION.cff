@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: >-
+  If you use these data sets or notebooks, please cite the repository, and cite the
+  publications and data sources named in each notebook and its DATA.md.
+title: "as-data-sets: data sets and notebooks for active subspaces in science and engineering models"
+authors:
+  - family-names: Constantine
+    given-names: Paul G.
+    orcid: "https://orcid.org/0000-0003-3726-6307"
+repository-code: "https://github.com/paulcon/as-data-sets"
+url: "https://github.com/paulcon/as-data-sets"
+license:
+  - MIT
+  - CC-BY-4.0
+keywords:
+  - active subspaces
+  - dimension reduction
+  - uncertainty quantification
+  - sensitivity analysis
+  - computational science

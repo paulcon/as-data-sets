@@ -157,7 +157,7 @@ Each data set's directory contains a Jupyter notebook (`.ipynb`), the data or mo
 
 # Contributing
 
-If you have a data set from a model, feel free to contribute a notebook to our repository. [CONTRIBUTING.md](CONTRIBUTING.md) says what a data set directory contains and how to submit it.
+New data sets are welcome, built by hand or with an AI agent. [CONTRIBUTING.md](CONTRIBUTING.md) explains how to choose and claim an article, what a data set directory contains, how to check it, and how to submit it; agents find the same rules in [AGENTS.md](AGENTS.md). [docs/candidates.md](docs/candidates.md) suggests published articles that might support a data set, found by an AI-assisted literature search; articles not on it are welcome too. Contributors are listed in [CONTRIBUTORS.md](CONTRIBUTORS.md), and [CITATION.cff](CITATION.cff) says how to cite the repository.
 
 # Installation
 

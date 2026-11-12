@@ -1,0 +1,13 @@
+# Changes to the guides, the agent instructions, the licenses, the requirements and the
+# repository's GitHub files need the maintainer's review.
+/AGENTS.md            @paulcon
+/CLAUDE.md            @paulcon
+/CONTRIBUTING.md      @paulcon
+/CONTRIBUTORS.md      @paulcon
+/CITATION.cff         @paulcon
+/LICENSE              @paulcon
+/LICENSE-DATA         @paulcon
+/requirements.txt     @paulcon
+/.gitignore           @paulcon
+/docs/                @paulcon
+/.github/             @paulcon
