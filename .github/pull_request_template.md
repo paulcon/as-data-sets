@@ -6,8 +6,14 @@
 - Claim issue: #<number>
 - Article: <authors, title, venue, year, DOI>
 - Kind: stored data (<outside code>) | Python model (`<name>_model.py`)
-- Already a data set here for this article? none | `<directory>`: how this one differs
+- Other data sets here for this article: none | `<directory>`
 - Run times: notebook <...>; `generate_data.py` <...>; `check_accuracy.py` <...> (machine: <...>)
+
+## For the listing (the maintainer writes it)
+
+- Number of inputs: <m>
+- Active subspace dimension: <n>
+- Summary: <one sentence on the model and the quantity studied>
 
 ## Checklist (CONTRIBUTING.md, sections 6, 10 and 11)
 
@@ -15,11 +21,11 @@
 - [ ] `generate_data.py --check` (where there is one) reproduces the shipped files.
 - [ ] `check_accuracy.py` (where there is one) reproduces the numbers in `DATA.md`.
 - [ ] Every claim about the paper cites a page, table, figure or equation, and my own choices are stated as mine.
-- [ ] Every number in the text is printed by the code; disagreements with the paper are reported with both values.
+- [ ] Every number in the text is either cited to the paper or printed by the code; disagreements with the paper are reported with both values.
 - [ ] The self-review in section 10 is done; anything it could not settle is in `DATA.md`'s unknowns.
 - [ ] `DATA.md` has every section of the template.
 - [ ] The license of every file is clear, `LICENSE-DATA` lists any exception, and no PDF, publisher supplement or copied GPL code is included.
-- [ ] The README, the category README and `docs/notebook-index.md` list the data set, and `CONTRIBUTORS.md` lists me.
+- [ ] I have not edited the READMEs, `docs/` or `CONTRIBUTORS.md`, and "Allow edits by maintainers" is on.
 
 ## AI use
 

@@ -34,10 +34,10 @@ body:
   - type: input
     id: existing
     attributes:
-      label: Data set already here for this article
-      description: If this repository already has a data set from this article, name its directory and say what yours will do differently (quantity of interest, inputs, model, data). Otherwise write "none".
+      label: Other data sets here for this article
+      description: If this repository already has a data set from this article, name its directory.
     validations:
-      required: true
+      required: false
   - type: textarea
     id: why
     attributes:

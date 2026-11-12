@@ -17,7 +17,7 @@ It also noted what makes an article a stronger candidate: an existing active sub
 ## Before you start
 
 - **Check the article yourself.** The screening relied mostly on abstracts, and a person has not checked every entry. An article may lack the data, input ranges or model it seemed to have, and another may be better than the screening suggested.
-- **Articles that already have a data set here are left off.** You may still build another data set from one of them; [Contributing a data set](../CONTRIBUTING.md) says how to describe what your analysis adds.
+- **Articles that already have a data set here are left off.** You may still build another data set from one of them.
 - **Report errors** in an entry (a wrong year, a DOI that does not resolve, a missing author) in an issue.
 
 Written by `docs/make_candidates_md.py` from `docs/candidates.csv`; do not edit by hand.
