@@ -17,7 +17,7 @@ The CSVs have two `#` lines (a description and the column names with units) and 
 
 ## Model
 
-**Source.** R. J. Charlson, S. E. Schwartz, J. M. Hales, R. D. Cess, J. A. Coakley, Jr., J. E. Hansen, D. J. Hofmann, "Climate forcing by anthropogenic aerosols", *Science* 255(5043):423–430, 1992, doi:10.1126/science.255.5043.423. The PDF read is the publisher's scan (file named `_oa`, but it is the science.org PDF with an OCR text layer); Eqs. 1–5 and Table 1 were read from the page image of p. 426.
+**Source.** R. J. Charlson, S. E. Schwartz, J. M. Hales, R. D. Cess, J. A. Coakley, Jr., J. E. Hansen, D. J. Hofmann, "Climate forcing by anthropogenic aerosols", *Science* 255(5043):423–430, 1992, doi:10.1126/science.255.5043.423. The PDF read is the publisher's scan (the science.org PDF with an OCR text layer); Eqs. 1–5 and Table 1 were read from the page image of p. 426.
 
 **Equations** (Charlson Eqs. 1–5, p. 426): ΔF_R = −½ F_T T² (1 − A_c)(1 − R_s)² β̄ δ, δ = α f(RH) B, B = Q Y τ / A. The benchmark version used here (UQTestFuns, "sulfur"; after Penner et al. 1994 and Tatang et al. 1997, Eq. 12, with UQTestFuns' corrections: S₀ not squared, factors 10¹² and 365 added) is
 

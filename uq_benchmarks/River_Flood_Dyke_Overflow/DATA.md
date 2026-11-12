@@ -18,7 +18,7 @@ The CSVs have two `#` lines (a description and the column names with units) and 
 
 ## Model
 
-**Source.** M. Lamboni, B. Iooss, A.-L. Popelin, F. Gamboa, "Derivative-based global sensitivity measures: General links with Sobol' indices and numerical tests", *Math. Comput. Simul.* 87:45–54, 2013, doi:10.1016/j.matcom.2013.02.002, Section 4.3. The PDF read is the authors' manuscript (file `_oa`; its text is arXiv:1202.0943v2, 2 July 2012, recompiled), not the journal version; pages and tables below are the manuscript's. The model is the pedagogical flood model of B. Iooss, *J. Soc. Fr. Stat.* 152(1):1–23, 2011 (not read).
+**Source.** M. Lamboni, B. Iooss, A.-L. Popelin, F. Gamboa, "Derivative-based global sensitivity measures: General links with Sobol' indices and numerical tests", *Math. Comput. Simul.* 87:45–54, 2013, doi:10.1016/j.matcom.2013.02.002, Section 4.3. The PDF read is the authors' manuscript (its text is arXiv:1202.0943v2, 2 July 2012, recompiled), not the journal version; pages and tables below are the manuscript's. The model is the pedagogical flood model of B. Iooss, *J. Soc. Fr. Stat.* 152(1):1–23, 2011 (not read).
 
 **Equations** (Eq. (4.20), p. 14). A crude simplification of the 1-D Saint-Venant equations for uniform, constant flow in a wide rectangular channel with the Strickler law:
 

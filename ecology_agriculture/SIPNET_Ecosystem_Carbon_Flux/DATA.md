@@ -76,7 +76,7 @@ python check_accuracy.py --sipnet /path/to/sipnet/sipnet                        
 
 There is no randomness beyond the saved Latin hypercube seed. The shipped files were written on 2026-10-31 in a Linux container (Python 3.13.18, numpy 2.5.4, scipy 1.18.1) on 2 worker processes in about 4 minutes (about 17 000 SIPNET runs). There, a 20-sample `--check` run took 8.2 s and matched the shipped files to 2.4e-10 of the largest value (the 10 significant digits written). The repo's `.venv` has no SIPNET binary, so the files were not regenerated there; the notebook, which reads only the files, runs in `.venv` in about 4 s, and two runs print the same values. `fd_check_soilWHC.csv` was added later on 2026-10-31 (same binary and versions, 2 workers, 8.8 s, about 500 SIPNET runs); a `--fd-check --check` rerun matched it to 5.0e-11 relative, and a 20-sample `--check` rerun with the edited script matched the three main files to 2.4e-10.
 
-**Header change of 2026-11-02.** The first `#` line of `inputs.csv`, `outputs.csv`, `gradients.csv` and `fd_check_soilWHC.csv` now contains "substitute set-up, not the paper's runs (see DATA.md)", inserted before "SIPNET v2.2.0-11" by a scripted header-only rewrite. Every other line is byte-identical: the SHA-256 of all lines after the first is unchanged in each file, the notebook prints the same values, and `generate_data.py` now writes the same header line.
+**Header line.** The first `#` line of `inputs.csv`, `outputs.csv`, `gradients.csv` and `fd_check_soilWHC.csv` says "substitute set-up, not the paper's runs (see DATA.md)" before "SIPNET v2.2.0-11". `generate_data.py` writes the same header line.
 
 ## Accuracy
 

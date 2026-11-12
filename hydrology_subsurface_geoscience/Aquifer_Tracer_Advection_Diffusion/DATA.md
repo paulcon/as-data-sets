@@ -94,7 +94,7 @@ python check_accuracy.py [--skip-slow]                         # the numbers of 
 
 ## Unknowns
 
-- None known.
+- There are no known unknowns.
 
 ## License and credit
 

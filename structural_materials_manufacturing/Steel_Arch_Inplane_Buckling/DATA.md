@@ -19,7 +19,7 @@ The CSVs are plain comma-separated numbers after two `#` lines (a description an
 
 ## Model
 
-**Citation.** T.-H. Nguyen, "Global sensitivity analysis of in-plane elastic buckling of steel arches", *Engineering, Technology & Applied Science Research* 10(5):6476–6480, 2020, doi:[10.48084/etasr.3833](https://doi.org/10.48084/etasr.3833). Read from the journal's open-access PDF (journal header and page numbers; the file is named `_oa`, but it is the published version). The formulas are those of Y.-L. Pi, M. A. Bradford and B. Uy, "In-plane stability of arches", *Int. J. Solids Struct.* 39(1):105–125, 2002, doi:[10.1016/S0020-7683(01)00209-8](https://doi.org/10.1016/S0020-7683(01)00209-8) (the paper's ref. [14]). We read Pi et al. (2002) and checked the 2020 paper's formulas against it (below).
+**Citation.** T.-H. Nguyen, "Global sensitivity analysis of in-plane elastic buckling of steel arches", *Engineering, Technology & Applied Science Research* 10(5):6476–6480, 2020, doi:[10.48084/etasr.3833](https://doi.org/10.48084/etasr.3833). Read from the journal's open-access PDF (journal header and page numbers: the published version). The formulas are those of Y.-L. Pi, M. A. Bradford and B. Uy, "In-plane stability of arches", *Int. J. Solids Struct.* 39(1):105–125, 2002, doi:[10.1016/S0020-7683(01)00209-8](https://doi.org/10.1016/S0020-7683(01)00209-8) (the paper's ref. [14]). We read Pi et al. (2002) and checked the 2020 paper's formulas against it (below).
 
 **Equations** (paper pp. 6476–6477). In-plane elastic buckling load of a shallow (Φ < 90°) circular steel I-section arch under uniform compression:
 

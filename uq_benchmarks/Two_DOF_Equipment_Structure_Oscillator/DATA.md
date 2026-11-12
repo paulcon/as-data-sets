@@ -17,7 +17,7 @@ The CSVs have two `#` lines (a description and the column names) and are read by
 
 ## Model
 
-**Source.** T. Igusa and A. Der Kiureghian, "Dynamic characterization of two-degree-of-freedom equipment-structure systems", *J. Eng. Mech.* 111(1):1–19, 1985, doi:10.1061/(ASCE)0733-9399(1985)111:1(1) (checked on Crossref). The PDF read is the ASCE journal copy with journal pagination (the file is named `_oa`, but it is not a preprint). The equations were read from page images (the text layer garbles them): Eq. 1 and Eqs. 2a–2d, 3a on p. 3, Eqs. 35–37 on p. 12, Fig. 5 on p. 13.
+**Source.** T. Igusa and A. Der Kiureghian, "Dynamic characterization of two-degree-of-freedom equipment-structure systems", *J. Eng. Mech.* 111(1):1–19, 1985, doi:10.1061/(ASCE)0733-9399(1985)111:1(1) (checked on Crossref). The PDF read is the ASCE journal copy with journal pagination (not a preprint). The equations were read from page images (the text layer garbles them): Eq. 1 and Eqs. 2a–2d, 3a on p. 3, Eqs. 35–37 on p. 12, Fig. 5 on p. 13.
 
 **Equations.** A light secondary oscillator (equipment: m_s, ω_s, ζ_s) on a primary oscillator (structure: m_p, ω_p, ζ_p), base excited by stationary white-noise acceleration with one-sided PSD G_0. With β = (ω_p − ω_s)/ω_a (tuning, Eq. 2a), γ = m_s/m_p (interaction, Eq. 2b), ω_a = (ω_p + ω_s)/2 (Eq. 2d), ζ_a = (ζ_p + ζ_s)/2 (Eq. 3a), the general ("matched") mean-square response of the equipment is (Eq. 37, p. 12)
 

@@ -32,7 +32,7 @@ The CSVs have two `#` lines (a description and the column names) and are read by
 
 **Quantities of interest.** `deflection`, `theta_left`, `theta_right` as above (the OpenTURNS outputs "Deflection", "Left angle", "Right angle", times 2). Each is F/(E I) times a function of a and L: |v(a)| ∝ a²b²/L peaks at a = L/2; |v′(0)| ∝ ab(2L − a)/L peaks at a = L(1 − 1/√3) ≈ 0.634 (outside the sampled range of a); v′(L) ∝ ab(L + a)/L peaks at a = L/√3 ≈ 0.866 (inside it).
 
-**Inputs** (m = 6, independent, all six random). Distributions from the input table on the OpenTURNS page (the spreadsheet's note "not stated (uniform assumed)" is superseded: the page states them). The page's API section, and the class's `inputDistribution`, instead fix L, a, De, di at Dirac values (1.5, 1.0, 0.8, 0.1) with only F and E random; we follow the input table, as the use case's stated study, and use the Dirac point only as a reference point.
+**Inputs** (m = 6, independent, all six random). Distributions from the input table on the OpenTURNS page. The page's API section, and the class's `inputDistribution`, instead fix L, a, De, di at Dirac values (1.5, 1.0, 0.8, 0.1) with only F and E random; we follow the input table, as the use case's stated study, and use the Dirac point only as a reference point.
 
 | name | symbol | description | distribution | mean | sd | source |
 |---|---|---|---|---|---|---|

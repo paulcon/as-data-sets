@@ -121,9 +121,7 @@ python check_accuracy.py --cache $C                          # the Accuracy numb
   `dpar`: the sums x09 + x10, x13 + x14, x24 + x25, the powers 10^x04 and 10^x11 and the half-full initial stores
   x29 · 500 mm and x30 · 500 mm; `weights`: the Eq. (A1) weights of each process at full precision; `props`: the
   basin constants), runs Raven and reads its output. It was written for this repository and contains no xSSA code.
-- **How the shipped files were made.** They were first written by an earlier version of `raven_salmon_driver.py` that wrote
-  the same Raven commands from a transcription of these templates; the transcription has been removed (copyleft text
-  is not kept in this MIT repository). The committed code, which fetches the templates, regenerates all four files
+- **Regenerating the shipped files.** The committed code, which fetches the templates, regenerates all four files
   byte for byte (see "The runs" above).
 
 ## Accuracy
