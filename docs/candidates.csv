@@ -620,10 +620,7 @@ structural_materials_manufacturing,Investigation of dimension reduction for Baye
 structural_materials_manufacturing,Microstructure-aware Bayesian materials design,"Khatamsaz, D.; Attari, V.; Arróyave, R.",2026,10.1016/j.actamat.2025.121587,
 structural_materials_manufacturing,Non-Intrusive Polynomial Chaos Expansion for Uncertainty Quantification in Elmer Heat Transfer Simulations,"BORTHAKUR, G. G.",2026,10.5281/zenodo.21568646,
 structural_materials_manufacturing,Physics-guided prediction of dimensionless parameters for circular sandwich panels under blast loading,"Song, Z.; Ge, P.; Li, Z.; Wang, H.; Lei, J.; Liu, Z.; Wang, Z.; Wang, Z.",2026,10.1016/j.compstruct.2026.120420,
-uq_benchmarks,Optimal synthesis problems solved by means of nonlinear programming and random methods,"Golinski, J.",1970,10.1016/0022-2569(70)90064-9,
-uq_benchmarks,Dynamic Characterization of Two-Degree-of-Freedom Equipment-Structure Systems,"Igusa, T.; Der Kiureghian, A.",1985,10.1061/(ASCE)0733-9399(1985)111:1(1),
 uq_benchmarks,Deterministic uncertainty analysis,"Worley, B. A.",1987,10.2172/5534706,
-uq_benchmarks,A new look at the response surface approach for reliability analysis,"Rajashekhar, M. R.; Ellingwood, B. R.",1993,10.1016/0167-4730(93)90003-j,
 uq_benchmarks,Modern Industrial Statistics: Design and Control of Quality and Reliability,"Kenett, R.; Zacks, S.",1998,,https://www.sfu.ca/~ssurjano/piston.html
 uq_benchmarks,Quasi-regression,"An, J.; Owen, A.",2001,10.1006/jcom.2001.0588,
 uq_benchmarks,Response surface augmented moment method for efficient reliability analysis,"Lee, S. H.; Kwak, B. M.",2006,10.1016/j.strusafe.2005.08.003,

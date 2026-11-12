@@ -1,6 +1,6 @@
 # Suggested articles
 
-These 638 published articles might each support a new data set. They are suggestions, not approved projects: you may build a data set from any suitable article, on this list or not. [Contributing a data set](../CONTRIBUTING.md) explains how. Each entry gives only the article's year, title, authors and DOI; [candidates.csv](candidates.csv) has the same entries with every author.
+These 635 published articles might each support a new data set. They are suggestions, not approved projects: you may build a data set from any suitable article, on this list or not. [Contributing a data set](../CONTRIBUTING.md) explains how. Each entry gives only the article's year, title, authors and DOI; [candidates.csv](candidates.csv) has the same entries with every author.
 
 ## Where the list came from
 
@@ -33,7 +33,7 @@ Written by `docs/make_candidates_md.py` from `docs/candidates.csv`; do not edit 
 - [Combustion and chemical kinetics](#combustion-and-chemical-kinetics) (78)
 - [Structural, materials and additive manufacturing](#structural-materials-and-additive-manufacturing) (76)
 - [Electronics and circuits](#electronics-and-circuits) (37)
-- [UQ benchmark collections](#uq-benchmark-collections) (17)
+- [UQ benchmark collections](#uq-benchmark-collections) (14)
 
 ## Aerospace and CFD
 
@@ -715,10 +715,7 @@ Written by `docs/make_candidates_md.py` from `docs/candidates.csv`; do not edit 
 
 | Year | Title | Authors | DOI or link |
 |---|---|---|---|
-| 1970 | Optimal synthesis problems solved by means of nonlinear programming and random methods | Golinski, J. | [10.1016/0022-2569(70)90064-9](https://doi.org/10.1016/0022-2569(70)90064-9) |
-| 1985 | Dynamic Characterization of Two-Degree-of-Freedom Equipment-Structure Systems | Igusa, T.; Der Kiureghian, A. | [10.1061/(ASCE)0733-9399(1985)111:1(1)](https://doi.org/10.1061/(ASCE)0733-9399(1985)111:1(1)) |
 | 1987 | Deterministic uncertainty analysis | Worley, B. A. | [10.2172/5534706](https://doi.org/10.2172/5534706) |
-| 1993 | A new look at the response surface approach for reliability analysis | Rajashekhar, M. R.; Ellingwood, B. R. | [10.1016/0167-4730(93)90003-j](https://doi.org/10.1016/0167-4730(93)90003-j) |
 | 1998 | Modern Industrial Statistics: Design and Control of Quality and Reliability | Kenett, R.; Zacks, S. | [link](https://www.sfu.ca/~ssurjano/piston.html) |
 | 2001 | Quasi-regression | An, J.; Owen, A. | [10.1006/jcom.2001.0588](https://doi.org/10.1006/jcom.2001.0588) |
 | 2006 | Response surface augmented moment method for efficient reliability analysis | Lee, S. H.; Kwak, B. M. | [10.1016/j.strusafe.2005.08.003](https://doi.org/10.1016/j.strusafe.2005.08.003) |
