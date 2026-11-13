@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        A claim tells others what you are working on; it does not reserve the article. Read [CONTRIBUTING.md](https://github.com/paulcon/as-data-sets/blob/main/CONTRIBUTING.md) first, and keep one open claim at a time. A claim with no activity for 30 days is closed; you can reopen it.
+        A claim tells others what you are working on; it does not reserve the article. Read [CONTRIBUTING.md](https://github.com/paulcon/as-data-sets/blob/main/CONTRIBUTING.md) first, and keep one open claim at a time. A claim with no activity for 30 days is marked stale and closed a week later; you can reopen it.
   - type: input
     id: doi
     attributes:

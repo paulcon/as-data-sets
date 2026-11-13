@@ -14,7 +14,7 @@ You may build a data set by hand or with an AI agent. If you use an agent, read 
 
 Read the article before you claim it, and check that the inputs, their ranges and the data or model are really there.
 
-**Claim it.** Open an issue with the **Claim an article** form before you start building. Give the DOI, whether the article is on the suggested list, the kind of data set you plan (section 4), and the compute it will need. A claim tells others what you are working on; it does not reserve the article. Keep one open claim at a time. A claim with no activity for 30 days is closed, and you can reopen it.
+**Claim it.** Open an issue with the **Claim an article** form before you start building. Give the DOI, whether the article is on the suggested list, the kind of data set you plan (section 4), and the compute it will need. A claim tells others what you are working on; it does not reserve the article. Keep one open claim at a time. A claim with no activity for 30 days is marked stale and closed a week later; you can reopen it.
 
 **Articles that already have a data set in the repo.** You may build another data set from an article that already has one in this repo. Two analyses of the same article can differ in their quantity of interest, inputs, model, data or conclusions. The repo maintainer may add a note to each notebook that points to the other.
 
