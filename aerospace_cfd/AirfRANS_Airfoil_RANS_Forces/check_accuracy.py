@@ -1,6 +1,6 @@
 """Independent check of the AirfRANS force coefficients in airfrans_forces.csv (DATA.md, "Accuracy").
 
-    python check_accuracy.py --zip Dataset.zip --out DIR [--rows N] [--max-seconds S]
+    python check_accuracy.py --zip Dataset.zip [--out DIR] [--rows N] [--max-seconds S]
     (the archive path may also be given by the environment variable AIRFRANS_ZIP)
 
 The shipped coefficients were computed by the airfrans library (pressure of the internal field at the
@@ -31,7 +31,7 @@ The script also checks the inputs: the wall nodes of the internal field lie on t
 prints the range of U_inf against Re in [2e6, 6e6] for both viscosities.
 
 Results are appended to DIR/check_rows.csv (resumable; ``--max-seconds`` stops early, rerun to
-continue); when all requested cases are done the script prints the largest differences from the shipped
+continue; without --out, DIR is a temporary directory that is removed at the end, so nothing resumes); when all requested cases are done the script prints the largest differences from the shipped
 table, which arrays it read (OpenFOAM's cell values or the point-value fallback above) and the SHA-256 of
 this script, so that a log identifies the version and the branch that produced it. ``--rows N`` checks N
 evenly spaced cases (default: all 1000). DIR must lie outside this data set's directory. The script reads
@@ -39,10 +39,13 @@ airfrans_forces.csv and airfrans_case_names.txt from this directory (DATA.md say
 """
 
 import argparse
+import atexit
 import base64
 import hashlib
 import os
+import shutil
 import sys
+import tempfile
 import time
 import xml.etree.ElementTree as ET
 import zipfile
@@ -244,7 +247,8 @@ def read_shipped():
 def main(argv):
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     ap.add_argument('--zip', default=os.environ.get('AIRFRANS_ZIP'))
-    ap.add_argument('--out', required=True)
+    ap.add_argument('--out', default=None,
+                    help='folder for check_rows.csv, outside this directory (default: a temporary directory)')
     ap.add_argument('--rows', type=int, default=None)
     ap.add_argument('--max-seconds', type=float, default=None)
     args = ap.parse_args(argv)
@@ -252,6 +256,9 @@ def main(argv):
         print('check_accuracy.py needs Dataset.zip of AirfRANS (download and size in DATA.md): '
               'give --zip PATH or set AIRFRANS_ZIP, then rerun.', file=sys.stderr)
         sys.exit(3)
+    if args.out is None:
+        args.out = tempfile.mkdtemp(prefix='check_')
+        atexit.register(shutil.rmtree, args.out, ignore_errors=True)
     out = os.path.abspath(args.out)
     if inside(out, HERE):
         ap.error('--out must be a folder outside this data set\'s directory (not the directory or a folder in it)')

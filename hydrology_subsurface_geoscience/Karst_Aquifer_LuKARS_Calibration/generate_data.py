@@ -1,7 +1,9 @@
 """Write the data files of Karst_Aquifer_LuKARS_Calibration from lukars_model.py.
 
     python generate_data.py                 # all data files (about 5 min)
-    python generate_data.py --check         # recompute and compare with the files here
+    python generate_data.py --check         # recompute in memory and compare with the files here
+                                            # (prints the largest differences from the shipped files; fails
+                                            # only on structural mismatches: shapes, NaN pattern, inputs)
     python generate_data.py --forcing DIR   # (once) convert the authors' forcing files
 
 Design (Teixeira Parente et al. 2019, Sec. 4): x ~ U[-1, 1]^21 on the normalized
@@ -50,6 +52,7 @@ BATCH = 250
 H_FD = 1e-4   # central-difference step in x used by the authors' 2020 model.py (HydroShare code)
 H_FD_ROUNDED = 1e-5   # step for the '%f'-rounding emulation (reproduces the paper's Fig. 2 best)
 EMIN3_LB_AUTHORS = 70.0   # e_min,3 lower bound in the authors' settings file (Table 1: 75)
+INPUT_RTOL = 1e-8   # inputs are deterministic draws: a larger difference means a different seed or range
 
 
 def convert_forcing(src, out):
@@ -224,27 +227,59 @@ def read_csv(path):
 
 
 def check():
+    """Recompute everything in memory and compare with the files here; False on a structural mismatch."""
     t0 = time.time()
     X, f, G, Q = compute(N, SEED)
-    _, fv, _, _ = compute(NVAL, SEED + 1, grads=False)
-    P = read_csv(os.path.join(HERE, 'inputs.csv'))
-    rel = lambda a, b: np.max(np.abs(a - b)/np.maximum(np.abs(b), 1e-300))  # noqa: E731
-    print('inputs  max rel diff', rel(lm.to_physical(X), P))
-    print('x round trip max abs', np.max(np.abs(lm.to_calibration(P) - X)))
-    print('outputs max rel diff', rel(f, read_csv(os.path.join(HERE, 'outputs.csv'))[:, 0]))
-    Gs = read_csv(os.path.join(HERE, 'gradients.csv'))
-    print('gradients max rel diff (row norms)',
-          np.max(np.linalg.norm(G - Gs, axis=1)/np.linalg.norm(Gs, axis=1)))
-    Qs = np.load(os.path.join(HERE, 'discharge.npz'))['discharge']
-    print('discharge max rel diff', rel(Q.astype(np.float32), Qs))
-    print('validation max rel diff', rel(fv, read_csv(os.path.join(HERE, 'validation.csv'))[:, -1]))
-    Gf = read_csv(os.path.join(HERE, 'gradients_fd.csv'))
-    print('FD gradients max abs diff / max abs', np.max(np.abs(fd_gradients(X) - Gf))/np.max(np.abs(Gf)))
+    Xv, fv, _, _ = compute(NVAL, SEED + 1, grads=False)
+    new = {'inputs': lm.to_physical(X), 'x': X, 'outputs': f, 'gradients': G, 'discharge': Q,
+           'validation inputs': lm.to_physical(Xv), 'validation': fv, 'gradients_fd.csv': fd_gradients(X)}
     for fn, lb in (('gradients_fd_rounded.csv', None), ('gradients_fd_rounded_lb70.csv', EMIN3_LB_AUTHORS)):
-        Gf = read_csv(os.path.join(HERE, fn))
-        Gc = fd_gradients(X, H_FD_ROUNDED, rounded=True, emin3_lb=lb)
-        print(fn, 'max abs diff / max abs', np.max(np.abs(Gc - Gf))/np.max(np.abs(Gf)))
+        new[fn] = fd_gradients(X, H_FD_ROUNDED, rounded=True, emin3_lb=lb)
     print(f'{time.time() - t0:.1f} s')
+    return compare(new)
+
+
+def compare(new, ship=HERE):
+    """Compare the recomputed arrays in new with the files in ship; False on a structural mismatch."""
+    P = read_csv(os.path.join(ship, 'inputs.csv'))
+    V = read_csv(os.path.join(ship, 'validation.csv'))
+    old = {'inputs': P, 'outputs': read_csv(os.path.join(ship, 'outputs.csv'))[:, 0],
+           'gradients': read_csv(os.path.join(ship, 'gradients.csv')),
+           'discharge': np.load(os.path.join(ship, 'discharge.npz'))['discharge'],
+           'validation inputs': V[:, :-1], 'validation': V[:, -1]}
+    for fn in ('gradients_fd.csv', 'gradients_fd_rounded.csv', 'gradients_fd_rounded_lb70.csv'):
+        old[fn] = read_csv(os.path.join(ship, fn))
+    bad = [k for k in old if new[k].shape != old[k].shape or not np.array_equal(np.isnan(new[k]), np.isnan(old[k]))]
+    if bad or len(P) != N or len(V) != NVAL:
+        print('FAIL: row counts, shapes or NaN pattern differ from the shipped files: ' + ', '.join(bad))
+        return False
+    rel = lambda a, b: float(np.nanmax(np.abs(a - b)/np.maximum(np.abs(b), 1e-300)))  # noqa: E731
+    G, Gs = new['gradients'], old['gradients']
+    d = {'inputs.csv': rel(new['inputs'], P),
+         'validation.csv inputs': rel(new['validation inputs'], V[:, :-1]),
+         'outputs.csv': rel(new['outputs'], old['outputs']),
+         'gradients.csv': float(np.nanmax(np.linalg.norm(G - Gs, axis=1)/np.linalg.norm(Gs, axis=1))),
+         'discharge.npz': rel(new['discharge'].astype(np.float32), old['discharge']),
+         'validation.csv': rel(new['validation'], old['validation'])}
+    for fn in ('gradients_fd.csv', 'gradients_fd_rounded.csv', 'gradients_fd_rounded_lb70.csv'):
+        d[fn] = float(np.nanmax(np.abs(new[fn] - old[fn]))/np.nanmax(np.abs(old[fn])))
+    dx = float(np.max(np.abs(lm.to_calibration(P) - new['x'])))
+    print('largest differences from the shipped files (elementwise relative; gradients.csv: relative row '
+          '2-norm; finite-difference sets: relative to the largest entry; discharge as float32):')
+    for k, v in d.items():
+        print(f'  {k}: {v:.1e}')
+    print(f'  x round trip (to_calibration of the shipped inputs), largest absolute difference: {dx:.1e}')
+    ok = True
+    for k in ('inputs.csv', 'validation.csv inputs'):
+        if d[k] > INPUT_RTOL:
+            print(f'FAIL: {k}: the inputs differ from the shipped ones by more than {INPUT_RTOL:g} (relative)')
+            ok = False
+    if dx > INPUT_RTOL:
+        print(f'FAIL: the x round trip differs by more than {INPUT_RTOL:g}')
+        ok = False
+    k = max(d, key=d.get)
+    print(f'largest difference from the shipped files: {d[k]:.1e} (relative, {k})')
+    return ok
 
 
 if __name__ == '__main__':
@@ -256,6 +291,7 @@ if __name__ == '__main__':
     if a.forcing:
         convert_forcing(a.forcing, a.out)
     elif a.check:
-        check()
+        if not check():
+            sys.exit(1)
     else:
         write(a.out)

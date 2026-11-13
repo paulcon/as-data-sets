@@ -5,8 +5,9 @@ regeneration script included**. The data were generated with PyBaMM (its frequen
 formerly PyBaMM-EIS) and PyBOP (the paper's grouped-parameter SPMe). The shipped files are the record of
 those runs and are never altered. `spme_eis_driver.py` and `generate_data.py` regenerate them. **Regenerating
 the data, or rerunning the model part of the accuracy checks (`check_accuracy.py`), needs PyBaMM 26.10.1.1,
-pybammsolvers 0.11.1, PyBOP 26.3 and CasADi 3.8.1** (recipe under "Regenerating"); both scripts stop with an
-error that says what to install when they are missing. The repo's `.venv` has none of them. The notebook needs
+pybammsolvers 0.11.1, PyBOP 26.3 and CasADi 3.8.1** (recipe under "Regenerating"); both scripts exit with
+code 3 and a message that says what to install when they are missing (`check_accuracy.py` first runs the checks
+that need only numpy). The repo's `.venv` has none of them. The notebook needs
 only numpy, scipy, matplotlib and active_subspaces; it imports `spme_eis_driver.py` for its constants, which
 load without PyBaMM. In `.venv` (Python 3.11) it runs in about 9 s (`jupyter nbconvert --execute`, 2026-11-02; the notebook's own timer prints 4 s).
 
@@ -193,11 +194,14 @@ these (override with `--any-version`). `spme_eis_driver.py` uses PyBaMM internal
 eis-venv/bin/python generate_data.py --reference --jacobian                    # reference_impedance.csv, true_parameters.csv, impedance_jacobian.csv
 eis-venv/bin/python generate_data.py --rows 0:1000 --partial /tmp/eis_partial  # resumable: rerun until all rows exist
 eis-venv/bin/python generate_data.py --assemble --partial /tmp/eis_partial     # writes inputs/outputs/gradients CSVs
-eis-venv/bin/python generate_data.py --check 0,517,999                         # recompute rows and compare; writes nothing
+eis-venv/bin/python generate_data.py --check                                   # recompute rows 0, 517, 999 and compare; writes nothing
 eis-venv/bin/python generate_data.py --checkpoints                             # check_parameters.csv, check_spectra.csv
 ```
 
-`--rows` and `--assemble` need `--partial`, a directory outside the data-set directory.
+`--rows` and `--assemble` need `--partial`, a directory outside the data-set directory. `--check` prints the
+largest differences from the shipped files (reference spectra elementwise; each row relative to its largest value)
+and does not judge them; other platforms differ by up to 6.9e-14 (see Accuracy). It exits with status 1 only for a
+structural mismatch: a different shape or NaN pattern.
 
 **Provenance and run time of the shipped files** (original run, Linux x86-64 container, 2026-11-01; Python
 3.13.18, PyBaMM 26.10.1.1, pybammsolvers 0.11.1, PyBOP 26.3, CasADi 3.8.1, numpy 2.3.5, scipy 1.18.1):
@@ -207,7 +211,7 @@ eis-venv/bin/python generate_data.py --checkpoints                             #
   was stopped by hand and resumed), one process, with `nice -n 10`, on a 2-CPU container shared with other jobs.
 - CPU time: the 945 runs with a CPU record took 1219 s, a median of 1.29 s per sample; rows 0–54 have no CPU
   record, and about 1290 s for all 1000 is the estimate.
-- `--reference --jacobian` took 6.5 min of wall time (1.5 min CPU); `--check 0,517,999` 35 s;
+- `--reference --jacobian` took 6.5 min of wall time (1.5 min CPU); `--check` (rows 0, 517, 999) 35 s;
   `--checkpoints` (six spectra sets, no gradients) 33 s.
 - The paper's Table 1 timing is not comparable: it quotes 415 ms per SPMe spectrum (one SOC, 60 frequencies,
   averaged over ten runs); here one spectrum took about 0.1–0.2 s (9 spectra in about 1 s), on a different

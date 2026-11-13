@@ -182,8 +182,8 @@ its summary prints; the scale numbers are printed by the notebook.
   used.
 - **Which arrays the check read.** `check_accuracy.py` uses the cell values OpenFOAM wrote (face pressure of
   `aerofoil.vtp`, wall-cell velocity of `internal.vtu`) and falls back to point-value means where a file has
-  none; it prints which it used (line "arrays used") and its own SHA-256. A rerun of the shipped script
-  (SHA-256 876ad351…2fad, external run, macOS, 2026-11-08) used the cell values in 50 of 50 cases for both
+  none; it prints which it used (line "arrays used") and its own SHA-256. A rerun of the
+  script (external run, macOS, 2026-11-08; its comparisons are unchanged since) used the cell values in 50 of 50 cases for both
   arrays and printed the same numbers as above to every digit shown.
 - **Viscosity.** The inlet velocities were set with ν = 1.56×10⁻⁵ m²/s: with that value the Reynolds numbers
   span 2.005×10⁶ to 5.999×10⁶ and the `reynolds_train` flags match the paper's definition in all 1000 cases;

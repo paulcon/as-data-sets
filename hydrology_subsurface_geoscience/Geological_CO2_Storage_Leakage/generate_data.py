@@ -1,6 +1,7 @@
 """Write the input, output and gradient CSVs of the 1-D CO2 leakage model for the Ketzin and Quest sites.
 
     python generate_data.py                       # writes the six CSVs here
+    python generate_data.py --check               # writes to a temporary directory, compares with the files here
     python generate_data.py --out /tmp/c --check  # writes elsewhere, compares with the files here
 
 For each site, draws M = 2000 independent samples of the inputs of `co2_leakage_model`
@@ -13,11 +14,17 @@ gradients of log10 t_total and log10 V_soft with respect to the physical inputs.
 It also checks the exact gradients against central finite differences (step 1e-6 times each
 input's range) at every sample and prints the largest relative error (row 2-norm).
 
+--check prints the largest differences from the shipped files and fails (exit status 1) only on structural
+mismatches (shapes, NaN pattern, inputs differing by more than INPUT_RTOL).
+
 Only numpy and the standard library are imported.
 """
 import argparse
+import atexit
 import os
+import shutil
 import sys
+import tempfile
 import time
 
 import numpy as np
@@ -30,6 +37,7 @@ SEEDS = {'ketzin': 2139, 'quest': 2140}
 M = 2000
 H_FD = 1e-6  # central-difference step in units of each input's range (check only)
 FILES = [f'{s}_{k}.csv' for s in SEEDS for k in ('inputs', 'outputs', 'gradients')]
+INPUT_RTOL = 1e-8  # inputs are deterministic draws: a larger difference means a different seed or range
 
 
 def provenance(site):
@@ -89,9 +97,16 @@ def write(out, site, X, F, G):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
-    ap.add_argument('--out', default=HERE, help='output directory (default: this directory)')
+    ap.add_argument('--out', default=None,
+                    help='output directory (default: this directory; with --check, a temporary directory)')
     ap.add_argument('--check', action='store_true', help='compare with the CSVs in this directory')
     args = ap.parse_args()
+    if args.out is None:
+        if args.check:
+            args.out = tempfile.mkdtemp(prefix='check_')
+            atexit.register(shutil.rmtree, args.out, ignore_errors=True)
+        else:
+            args.out = HERE
     if os.path.abspath(args.out) == HERE and args.check:
         ap.error('--check needs --out DIR outside this directory, so that the shipped files are not overwritten')
     os.makedirs(args.out, exist_ok=True)
@@ -109,10 +124,29 @@ def main():
         print(f'  exact gradients vs central differences (step 1e-6 range): max relative error '
               f'log10 t_total {eT:.1e}, log10 V_soft {eV:.1e}')
     if args.check:
+        ok, diffs = True, []
         for n in FILES:
             a, b = read_csv(os.path.join(args.out, n)), read_csv(os.path.join(HERE, n))
-            rel = np.max(np.abs(a - b) / np.maximum(np.abs(b), 1e-300))
-            print(f'{n}: max relative difference from the shipped file {rel:.1e}')
+            if a.shape != b.shape:
+                print(f'FAIL: {n}: shape {a.shape} differs from the shipped {b.shape}')
+                ok = False
+                continue
+            if not np.array_equal(np.isfinite(a), np.isfinite(b)):
+                print(f'FAIL: {n}: the NaN/inf pattern differs from the shipped file')
+                ok = False
+                continue
+            fin = np.isfinite(b)
+            rel = float(np.max(np.abs(a - b)[fin] / np.maximum(np.abs(b[fin]), 1e-300), initial=0.0))
+            print(f'{n}: largest elementwise relative difference from the shipped file {rel:.1e}')
+            if n.endswith('_inputs.csv') and rel > INPUT_RTOL:
+                print(f'FAIL: {n}: the inputs differ from the shipped ones by more than {INPUT_RTOL:g} (relative)')
+                ok = False
+            diffs.append((rel, n))
+        if diffs:
+            rel, n = max(diffs, key=lambda t: t[0])
+            print(f'largest difference from the shipped files: {rel:.1e} (relative, {n})')
+        if not ok:
+            sys.exit(1)
 
 
 if __name__ == '__main__':

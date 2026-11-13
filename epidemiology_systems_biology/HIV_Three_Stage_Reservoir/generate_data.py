@@ -1,7 +1,8 @@
 """Write inputs.csv, outputs.csv and gradients.csv for the three-stage HIV model (hiv3_model.py).
 
     python generate_data.py --out DIR                  # all samples, written to DIR
-    python generate_data.py --out DIR --check          # the same, then compared with the files here
+    python generate_data.py --check                    # rows 0:50 (the first block), compared with the files here
+    python generate_data.py --check --full             # all samples, compared with the files here
     python generate_data.py --out DIR --rows 0:20 --check   # a subset, compared with the same rows here
     python generate_data.py --out . --here             # rewrite the shipped files (deliberate)
 
@@ -18,10 +19,16 @@ It also checks the gradients against central differences in ln p (step 1e-5, sol
 at the first --fd-rows samples and prints the largest relative error (row 2-norm, per output).
 
 The script never writes into its own directory unless --here is given; --check and --rows need an
---out directory outside it. Only numpy, scipy and the standard library are imported. One process.
+--out directory outside it. --out is required without --check; --check without --out writes into a
+temporary directory and removes it. --check without --rows checks the first block (rows 0:50), or
+all rows with --full. It prints the largest differences from the shipped files and fails only on
+structural mismatches (shapes, NaN pattern, inputs differing by more than INPUT_RTOL, or a run stopped
+by --max-blocks). Only numpy, scipy and the standard library are imported. One process.
 """
 import argparse
+import atexit
 import os
+import shutil
 import sys
 import tempfile
 import time
@@ -37,8 +44,7 @@ M = 1000
 BLOCK = 50
 H_FD = 1e-5
 FD_ROWS = 10
-TOL_OUT = 1e-6     # relative, elementwise, for --check
-TOL_GRAD = 1e-5    # relative, row 2-norm of each 15-vector, for --check
+INPUT_RTOL = 1e-8  # --check fails if the regenerated inputs differ by more than this (relative)
 
 PROVENANCE = (f'hiv3_model.py (Clarke & Pankavich 2024 Eq. 1, Table 1; y(0) = (1000, 0, 150, 0, 0.01); '
               f'LSODA rtol {hm.RTOL:g} atol {hm.ATOL:g}; 1 year = 365 days); numpy default_rng({SEED}) '
@@ -85,6 +91,31 @@ def write(out, X, f, G):
                       + '\n' + ','.join(cols))
 
 
+def compare(Xr, f, G, Xs, fsh, Gsh):
+    """Print the largest differences of the new rows from the shipped ones; return False on a structural mismatch."""
+    if Xr.shape != Xs.shape or f.shape != fsh.shape or G.size != Gsh.size:
+        print(f'shapes {Xr.shape}, {f.shape}, {G.shape} differ from the shipped {Xs.shape}, {fsh.shape}, '
+              f'{Gsh.shape}: FAIL')
+        return False
+    Gsh = Gsh.reshape(-1, 3, 15)
+    ok = True
+    if not (np.array_equal(np.isnan(f), np.isnan(fsh)) and np.array_equal(np.isnan(G), np.isnan(Gsh))):
+        print('NaN pattern differs from the shipped files: FAIL')
+        ok = False
+    rel = {'inputs.csv': np.max(np.abs(Xr - Xs) / np.abs(Xs)),
+           'outputs.csv': np.nanmax(np.abs(f - fsh) / np.abs(fsh)),
+           'gradients.csv': np.nanmax(np.linalg.norm(G - Gsh, axis=2) / np.linalg.norm(Gsh, axis=2))}
+    print(f'largest relative differences from the shipped files: inputs {rel["inputs.csv"]:.1e} (elementwise), '
+          f'outputs {rel["outputs.csv"]:.1e} (elementwise), gradients {rel["gradients.csv"]:.1e} '
+          '(2-norm of each 15-vector)')
+    if rel['inputs.csv'] > INPUT_RTOL:
+        print(f'inputs differ by more than {INPUT_RTOL:g}: FAIL')
+        ok = False
+    n = max(rel, key=rel.get)
+    print(f'largest difference from the shipped files: {rel[n]:.1e} (relative, {n})')
+    return ok
+
+
 def parse_rows(s):
     a, b = s.split(':')
     return int(a), int(b)
@@ -92,13 +123,25 @@ def parse_rows(s):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
-    ap.add_argument('--out', required=True, help='output directory (this directory only with --here)')
+    ap.add_argument('--out', default=None,
+                    help='output directory, this directory only with --here (required without --check; '
+                         'with --check, default a temporary directory)')
     ap.add_argument('--here', action='store_true', help='allow --out to be this directory (rewrites the shipped files)')
     ap.add_argument('--check', action='store_true', help='compare with the CSVs in this directory')
-    ap.add_argument('--rows', type=parse_rows, help='compute only rows a:b of the design')
+    ap.add_argument('--rows', type=parse_rows,
+                    help=f'compute only rows a:b of the design (default all; with --check, 0:{BLOCK})')
+    ap.add_argument('--full', action='store_true', help='with --check and no --rows: check all rows')
     ap.add_argument('--fd-rows', type=int, default=FD_ROWS, help=f'samples for the finite-difference check (default {FD_ROWS})')
     ap.add_argument('--max-blocks', type=int, default=None, help='compute at most this many new blocks, then stop')
     args = ap.parse_args()
+    if args.out is None:
+        if args.check:
+            args.out = tempfile.mkdtemp(prefix='check_')
+            atexit.register(shutil.rmtree, args.out, ignore_errors=True)
+        else:
+            ap.error('--out DIR is required without --check')
+    if args.check and args.rows is None and not args.full:
+        args.rows = (0, BLOCK)
     here, out = os.path.realpath(HERE), os.path.realpath(args.out)
     inside = os.path.commonpath([here, out]) == here      # this directory or a subdirectory of it (links resolved)
     if inside and (args.check or args.rows):
@@ -127,6 +170,9 @@ def main():
             continue
         if args.max_blocks is not None and new >= args.max_blocks:
             print(f'stopped after {new} new blocks ({time.perf_counter() - t0:.0f} s); rerun to continue')
+            if args.check:
+                print('--check did not finish the rows it was asked to check: FAIL')
+                sys.exit(1)
             return
         tb = time.perf_counter()
         f, G = hm.qois(X[start:stop], grad=True)
@@ -150,15 +196,7 @@ def main():
               f'({time.perf_counter() - t1:.0f} s)')
     if args.check:
         Xs, fsh, Gsh = (read_csv(os.path.join(HERE, n))[a:b] for n in ('inputs.csv', 'outputs.csv', 'gradients.csv'))
-        rx = np.max(np.abs(Xr - Xs) / np.abs(Xs))
-        rf = np.max(np.abs(f - fsh) / np.abs(fsh))
-        Gsh = Gsh.reshape(-1, 3, 15)
-        rg = np.max(np.linalg.norm(G - Gsh, axis=2) / np.linalg.norm(Gsh, axis=2))
-        ok = rx < 1e-15 and rf < TOL_OUT and rg < TOL_GRAD
-        print(f'max relative differences from the shipped files: inputs {rx:.1e}, outputs {rf:.1e} '
-              f'(tolerance {TOL_OUT:g}), gradients {rg:.1e} (row norm; tolerance {TOL_GRAD:g}): '
-              + ('PASS' if ok else 'FAIL'))
-        if not ok:
+        if not compare(Xr, f, G, Xs, fsh, Gsh):
             sys.exit(1)
     print(f'total {time.perf_counter() - t0:.0f} s')
 

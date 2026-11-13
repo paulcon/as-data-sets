@@ -4,6 +4,8 @@
     python check_accuracy.py --paper    # also part 4 (same needs), about 27 min more (measured; 2000 Hector runs)
     python check_accuracy.py --weights  # part 5 only: numpy only, reads the shipped files, a few seconds
 
+Without R, hector or matilda, the default run does part 5 only and exits with code 3.
+
 Prints
   1. Matilda path: warming from matilda::iterate_model (run to Hector's end year 2300) and
      the 1850-1900 normalisation, against outputs.csv, at the first 5 samples.
@@ -185,7 +187,8 @@ def main():
     try:
         D.tool_versions()
     except RuntimeError as e:
-        print(f"{e}\nThis script needs {NEED}", file=sys.stderr)
+        print(f"{e}\nThis script needs {NEED}\nRunning part 5 only (numpy).", file=sys.stderr)
+        weights_misalignment()
         sys.exit(3)
     IN, OUT, GR = load("inputs.csv"), load("outputs.csv"), load("gradients.csv")
     Z, X = IN[:, :6], IN[:, 6:]

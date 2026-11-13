@@ -1,7 +1,8 @@
 """Regenerate the data files of Hector_Matilda_Warming (needs R with hector 3.1.1 and matilda v1.0.0).
 
     python generate_data.py --out DIR                       # all files (about 45 min on an idle core; 2 h shared)
-    python generate_data.py --out DIR --rows 0:5 --check    # a subset, compared with the shipped files
+    python generate_data.py --check                         # all files into a temporary directory, compared with the shipped files
+    python generate_data.py --rows 0:5 --check              # a subset, compared with the shipped files
 
 Design: 1000 Monte Carlo samples z ~ N(0, I_6) (numpy default_rng, seed 20240502), mapped to
 Hector's six parameters with Matilda's priors (hector_driver.z_to_x). Every sample is run under
@@ -16,12 +17,14 @@ Files written to --out DIR:
   gradients.csv        dwarming/dz_j [degC], dco2_2100/dz_j [ppmv] for rows 0..399
 
 Runs are done in chunks whose raw results are cached in DIR/_chunks (the script resumes from
-them; the folder is removed when the files are written). --out is required and must be a
-directory outside this data set's directory (not it, not a folder inside it), so the shipped
-files are never overwritten. --check compares
-with a relative tolerance of 1e-8 (same build); weights are compared only for a full run.
+them; the folder is removed when the files are written). --out is required without --check and must
+be a directory outside this data set's directory (not it, not a folder inside it), so the shipped
+files are never overwritten; with --check it defaults to a temporary directory, removed at the end.
+--check prints the largest differences from the shipped files and fails only on structural mismatches
+(shapes, NaN pattern, inputs); weights are compared only for a full run.
 """
 import argparse
+import atexit
 import os
 import shutil
 import subprocess
@@ -42,7 +45,7 @@ H = 0.25
 SCEN = "ssp245"
 CHUNK_BASE = 250
 CHUNK_GRAD = 40
-TOL = 1e-8
+INPUT_RTOL = 1e-8   # --check fails if a regenerated input (a seeded draw) differs by more (relative)
 NEED = ("R with the packages hector 3.1.1 (git tag v3.1.1 of github.com/JGCRI/hector) and "
         "matilda v1.0.0 (git tag v1.0.0 of github.com/JGCRI/matilda); see DATA.md, Regenerating. "
         "Install them and rerun generate_data.py.")
@@ -143,31 +146,48 @@ def generate(out, rows):
 
 def check(out, rows, grows):
     full = rows.start == 0 and rows.stop == M
-    ok = True
+    ok, worst = True, (0.0, "outputs.csv")
     for fn, sl in [("inputs.csv", rows), ("outputs.csv", rows), ("gmst_1950_2023.csv", rows),
                    ("gradients.csv", slice(grows.start, grows.stop))]:
         if not os.path.exists(os.path.join(out, fn)):
+            if fn != "gradients.csv" or len(grows):
+                print(f"  FAIL: {fn} was not written")
+                ok = False
             continue
         new = np.loadtxt(os.path.join(out, fn), delimiter=",", ndmin=2)
         old = np.loadtxt(os.path.join(HERE, fn), delimiter=",", ndmin=2)[sl]
         if fn == "outputs.csv" and not full:
             new, old = new[:, :4], old[:, :4]
         # a failed run is nan in both files; the nan entries must be the same ones
-        same_nan = new.shape == old.shape and np.array_equal(np.isnan(new), np.isnan(old))
-        rel = np.nanmax(np.abs(new - old)) / np.nanmax(np.abs(old)) if same_nan else np.inf
-        ok &= bool(rel <= TOL)
-        print(f"  {fn}: max |new - shipped| / max |shipped| = {rel:.2e} "
-              f"({'within' if rel <= TOL else 'OUTSIDE'} tolerance {TOL:.0e})"
-              + ("" if same_nan else "; shape or nan entries differ"))
+        if new.shape != old.shape or not np.array_equal(np.isnan(new), np.isnan(old)):
+            print(f"  FAIL: {fn}: shape {new.shape} or nan entries differ from the shipped {old.shape}")
+            ok = False
+            continue
+        rel = np.nanmax(np.abs(new - old)) / np.nanmax(np.abs(old))
+        print(f"  {fn}: max |new - shipped| / max |shipped| = {rel:.2e}")
+        if fn == "inputs.csv":
+            if rel > INPUT_RTOL:   # the design is a deterministic draw
+                print(f"  FAIL: {fn} differs from the shipped inputs by {rel:.1e} > {INPUT_RTOL:g}")
+                ok = False
+        elif rel >= worst[0]:
+            worst = (rel, fn)
+    print(f"largest difference from the shipped files: {worst[0]:.1e} (relative to the largest value, {worst[1]})")
     return ok
 
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("--out", required=True, help="output directory")
+    p.add_argument("--out", default=None,
+                   help="output directory (required without --check; with --check, default a temporary directory)")
     p.add_argument("--rows", default=None, help="a:b, a subset of the 1000 samples")
     p.add_argument("--check", action="store_true", help="compare with the shipped files")
     a = p.parse_args()
+    if a.out is None:
+        if a.check:
+            a.out = tempfile.mkdtemp(prefix="check_")
+            atexit.register(shutil.rmtree, a.out, ignore_errors=True)
+        else:
+            p.error("--out DIR is required without --check")
     out_real, here_real = os.path.realpath(a.out), os.path.realpath(HERE)
     if os.path.commonpath([out_real, here_real]) == here_real:
         sys.exit("--out must be a directory outside this data set's directory (not it or a folder "

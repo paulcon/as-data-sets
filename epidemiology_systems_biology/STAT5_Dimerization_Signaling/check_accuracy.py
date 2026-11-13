@@ -7,7 +7,8 @@
 
 Check 3 needs the PEtab benchmark collection, github.com/Benchmarking-Initiative/Benchmark-Models-PEtab,
 at commit c44d5ede9bf9 (only problems/Boehm_JProteomeRes2014/v1/ is read). Without it, and without
---skip-petab, the script stops with an error saying what to fetch. Nothing else is needed: the
+--skip-petab, the script prints an error saying what to fetch, runs the other checks, and exits
+with status 3. Nothing else is needed: the
 PEtab tables are read with the standard library.
 
 1. The full PEtab box [-5, 5]^6 (log10): all 64 corners and 200 random points solved with
@@ -68,7 +69,7 @@ def petab_dir(arg):
               f'Fetch {PETAB_URL} at commit {PETAB_COMMIT}, e.g.\n'
               f'    git clone {PETAB_URL}.git DIR && git -C DIR checkout {PETAB_COMMIT}\n'
               f'then rerun with --petab DIR (or PETAB_BENCHMARK_DIR=DIR), or with --skip-petab for the other checks.', file=sys.stderr)
-        sys.exit(3)
+        return None
     return d
 
 
@@ -146,7 +147,8 @@ def main():
     ap.add_argument('--skip-petab', action='store_true', help='leave out check 3')
     ap.add_argument('--skip-slow', action='store_true', help='leave out check 2')
     a = ap.parse_args()
-    d = None if a.skip_petab else petab_dir(a.petab)     # exits here if the benchmark is missing
+    d = None if a.skip_petab else petab_dir(a.petab)     # None (with an error message) if the benchmark is missing
+    missing = d is None and not a.skip_petab
     t_start = time.perf_counter()
 
     P = np.vstack([corners(sm.PETAB_LOWER, sm.PETAB_UPPER),
@@ -171,7 +173,7 @@ def main():
               f'(corners {np.min(F[:64, MEAN]):.2f} to {np.max(F[:64, MEAN]):.2f} %) (DATA.md: all solved, 0.5-1.2 s; 0.93 to 99.06 %)')
 
     if d is None:
-        print('\n3. skipped (--skip-petab)')
+        print('\n3. skipped (' + ('PEtab benchmark collection not found)' if missing else '--skip-petab)'))
     else:
         check_petab(d)
 
@@ -199,6 +201,8 @@ def main():
           + ', '.join(f'h = {h:g}: {v:.1e}' for h, v in zip(steps, errs))
           + ' (DATA.md: 1.5e-4, 1.3e-5, 1.5e-6, 1.3e-7)')
     print(f'\nrun time {time.perf_counter() - t_start:.0f} s')
+    if missing:
+        sys.exit(3)
 
 
 if __name__ == '__main__':

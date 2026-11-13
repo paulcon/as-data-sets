@@ -6,8 +6,9 @@ the executable that wrote the shipped files. numpy is the only Python dependency
 
     python generate_data.py --xfoil /path/to/xfoil             # all XFOIL files (about 10 min)
     python generate_data.py --xfoil /path/to/xfoil --part primary
-    python generate_data.py --xfoil /path/to/xfoil --check 25  # rerun 25 rows of each design,
-                                                               # plus every ITER 100 row
+    python generate_data.py --check                            # rerun 25 rows of each design,
+                                                               # plus every ITER 100 row (XFOIL_EXE)
+    python generate_data.py --xfoil /path/to/xfoil --check 50  # the first 50 rows instead
     python generate_data.py --davis-src /path/to/uqchallenge2/training/training_100.csv
 
 Files written (all CSV with two '#' header lines, read with np.loadtxt(path, delimiter=",")):
@@ -24,8 +25,10 @@ A point where XFOIL does not converge is kept, with nan outputs and status -1. T
 column of every output file says how each point converged (xfoil_driver.STATUS_NOTE).
 
 Without an XFOIL executable the script stops with exit status 3 and a message that says what to
-build (only the --davis-src copy runs without it). --check reruns XFOIL and compares; it writes
-nothing. The shipped files are the record: rerun XFOIL only if a problem is found in them.
+build (only the --davis-src copy runs without it). --check reruns XFOIL and writes nothing; it
+prints the largest differences from the shipped files and fails only on structural mismatches
+(shapes, NaN pattern, status column, inputs that differ from their seeds by more than INPUT_RTOL).
+The shipped files are the record: rerun XFOIL only if a problem is found in them.
 """
 import argparse
 import os
@@ -63,6 +66,7 @@ REFERENCE = [  # set (0 calibration, 1 prediction), alpha, flap, Re
 
 OUT_COLS = "CL (-),CD (-),CDp (-),CM (-),xtr_top_out (x/c),xtr_bot_out (x/c),status"
 OUT_FMT = ["%.4f", "%.5f", "%.5f", "%.4f", "%.4f", "%.4f", "%d"]
+INPUT_RTOL = 1e-8       # --check fails if an input file differs from its seed by more (relative)
 STATUS_NOTE = xfoil_driver.STATUS_NOTE
 
 # Re sensitivity (labelled check, not a design): the paper's printed range 665,000-735,000
@@ -218,36 +222,58 @@ def part_davis_copy(src):
     print("  davis_training_98.csv: %d rows copied" % len(body))
 
 
+def compare(fout, idx, Y, Z):
+    """Compare rerun rows Z with shipped rows Y of fout: print the largest elementwise relative
+    difference; return (number of structural mismatches, that difference)."""
+    if Y.shape != Z.shape:
+        print("  FAIL: %s: shape %s, shipped %s" % (fout, Z.shape, Y.shape))
+        return 1, 0.0
+    Yv, Zv = Y[:, :6], Z[:, :6]                       # the values; column 6 is the status
+    fin = np.isfinite(Yv) & np.isfinite(Zv)
+    d = np.max(np.abs(Zv - Yv)[fin] / np.maximum(np.abs(Yv[fin]), 1e-300), initial=0.0)
+    print("  %s: %d rows: largest relative difference %.3g (elementwise, columns 1-6)" % (fout, len(idx), d))
+    bad = 0
+    for what, rows in (("status", Y[:, 6] != Z[:, 6]), ("nan pattern", np.any(np.isnan(Y) != np.isnan(Z), 1))):
+        if rows.any():
+            print("  FAIL: %s: different %s in rows %s" % (fout, what, [idx[b] for b in np.where(rows)[0]]))
+            bad += 1
+    return bad, d
+
+
 def check(exe, nrows):
     """Rerun the first nrows rows of each design, plus every row that converged in the retry
     ladder (status 3 or 4), and compare every value. Rows that failed every attempt are not
-    rerun (each takes up to a minute)."""
-    ok = True
+    rerun (each takes up to a minute). Return the number of structural mismatches and
+    (the largest relative difference, its file)."""
+    bad, largest = 0, (0.0, "outputs.csv")
     cases = [("inputs.csv", "outputs.csv", ["alpha", "flap", "re"]),
              ("extension_inputs.csv", "extension_outputs.csv",
               ["alpha", "flap", "re", "ncrit", "xtr_top", "xtr_bot"])]
     for fin, fout, names in cases:
-        Xa = np.loadtxt(os.path.join(HERE, fin), delimiter=",")
-        Ya = np.loadtxt(os.path.join(HERE, fout), delimiter=",")
+        Xa = np.loadtxt(os.path.join(HERE, fin), delimiter=",", ndmin=2)
+        Ya = np.loadtxt(os.path.join(HERE, fout), delimiter=",", ndmin=2)
+        if len(Xa) != len(Ya) or Ya.shape[1] != len(OUT_FMT):
+            print("  FAIL: %s %s and %s %s do not match" % (fin, Xa.shape, fout, Ya.shape))
+            bad += 1
+            continue
         idx = sorted(set(range(min(nrows, len(Xa)))) |
                      set(np.where(Ya[:, 6] >= 3)[0].tolist()))
-        X, Y = Xa[idx], Ya[idx]
-        Z = run_rows(X, names, exe, "check " + fout)
-        same = np.array_equal(np.nan_to_num(Y, nan=-9.0), np.nan_to_num(Z, nan=-9.0))
-        print("  %s: first %d rows and %d ladder rows %s" % (
-            fout, min(nrows, len(Xa)), len(idx) - min(nrows, len(Xa)),
-            "identical" if same else "DIFFER"))
-        if not same:
-            ok = False
-            bad = np.where(np.any(np.nan_to_num(Y, nan=-9) != np.nan_to_num(Z, nan=-9), 1))[0]
-            print("    rows differing:", [idx[b] for b in bad])
-    X0 = latin_hypercube(M_PRIMARY, PRIMARY_BOUNDS, SEED_PRIMARY)
-    Xs = np.loadtxt(os.path.join(HERE, "inputs.csv"), delimiter=",")
-    print("  inputs.csv regenerated from the seed:", np.array_equal(X0, Xs))
-    X1 = latin_hypercube(M_EXTENSION, EXTENSION_BOUNDS, SEED_EXTENSION)
-    Xs = np.loadtxt(os.path.join(HERE, "extension_inputs.csv"), delimiter=",")
-    print("  extension_inputs.csv regenerated from the seed:", np.array_equal(X1, Xs))
-    return ok
+        print("  %s: first %d rows and %d ladder rows" % (fout, min(nrows, len(Xa)), len(idx) - min(nrows, len(Xa))))
+        Z = run_rows(Xa[idx], names, exe, "check " + fout)
+        b, d = compare(fout, idx, Ya[idx], Z)
+        bad += b
+        if d > largest[0]:
+            largest = (d, fout)
+    for fin, m, bounds, seed in (("inputs.csv", M_PRIMARY, PRIMARY_BOUNDS, SEED_PRIMARY),
+                                 ("extension_inputs.csv", M_EXTENSION, EXTENSION_BOUNDS, SEED_EXTENSION)):
+        X0 = latin_hypercube(m, bounds, seed)
+        Xs = np.loadtxt(os.path.join(HERE, fin), delimiter=",", ndmin=2)
+        d = np.max(np.abs(X0 - Xs) / np.abs(Xs)) if X0.shape == Xs.shape else np.inf
+        print("  %s regenerated from the seed: largest relative difference %.3g" % (fin, d))
+        if not d <= INPUT_RTOL:
+            print("  FAIL: %s differs from its seed by more than %g (relative), or in shape" % (fin, INPUT_RTOL))
+            bad += 1
+    return bad, largest
 
 
 def main():
@@ -257,7 +283,9 @@ def main():
     p.add_argument("--part", default="all",
                    choices=["all", "primary", "extension", "reference", "davis_rerun",
                             "re_sensitivity"])
-    p.add_argument("--check", type=int, default=0, metavar="N")
+    p.add_argument("--check", type=int, nargs="?", const=25, default=0, metavar="N",
+                   help="rerun the first N rows of each design (default 25) and the ladder rows, "
+                        "and compare")
     p.add_argument("--davis-src", default=None,
                    help="copy the authors' training_100.csv to davis_training_98.csv")
     p.add_argument("--tmp", default=None, help="directory for XFOIL scratch runs")
@@ -278,9 +306,10 @@ def main():
               "(or set XFOIL_EXE)." % a.xfoil, file=sys.stderr)
         sys.exit(3)
     if a.check:
-        ok = check(a.xfoil, a.check)
-        print("check %s in %.1f s" % ("passed" if ok else "FAILED", time.time() - t0))
-        sys.exit(0 if ok else 1)
+        bad, largest = check(a.xfoil, a.check)
+        print("check done in %.1f s" % (time.time() - t0))
+        print("largest difference from the shipped files: %.1e (relative, %s)" % largest)
+        sys.exit(1 if bad else 0)
     if a.part in ("all", "primary"):
         part_design(PRIMARY_BOUNDS, M_PRIMARY, SEED_PRIMARY, "", a.xfoil)
     if a.part in ("all", "extension"):

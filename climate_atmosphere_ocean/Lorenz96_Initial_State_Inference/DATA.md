@@ -107,12 +107,17 @@ F with its mode near 1, from about −6 to about 8, prior-like and centred far f
 
 ```bash
 python generate_data.py                                       # all files, written here
-python generate_data.py --out <scratch dir> --check           # all files, compared with the files here
-python generate_data.py --rows 0:20 --out <scratch dir> --check   # 20 samples only
+python generate_data.py --check                               # all files, compared with the files here
+python generate_data.py --rows 0:20 --check                   # 20 samples only
+python check_accuracy.py                                      # the Accuracy numbers
 ```
 
-`--check` and `--rows` refuse to run without `--out` pointing to another directory, so the shipped files are
-never overwritten. Two seeds (`SEED_DATA = 293` for truth and noise, `SEED_SAMPLES = 1712` for the prior
+`--check` writes into a temporary directory (removed at the end) unless `--out` gives another directory, and
+`--rows` refuses to run without `--out` pointing to another directory, so the shipped files are never
+overwritten. `--check` prints each file's largest difference relative to its largest value (round-off grows along the
+chaotic trajectory, so another platform can give larger differences in `observations.csv`, `outputs.csv` and
+`gradients.csv`). It exits 1 only on a structural mismatch: a different shape or NaN pattern, or `truth.csv`
+or `inputs.csv` (the seeded draws) differing by more than a relative 1e-8. Two seeds (`SEED_DATA = 293` for truth and noise, `SEED_SAMPLES = 1712` for the prior
 draws) fix everything. The shipped files were written in a Linux container (2026-10-31). In `.venv`
 (Python 3.11, numpy 2.4.6, macOS, 2026-11-02) a full `generate_data.py --out <scratch dir> --check` took 259 s
 on one process and reproduced all five files byte for byte: the largest difference printed is 0.0e+00 for

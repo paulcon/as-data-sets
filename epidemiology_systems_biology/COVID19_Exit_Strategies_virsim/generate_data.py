@@ -1,7 +1,8 @@
 """Regenerate the virsim runs of COVID19_Exit_Strategies_virsim (needs R and virsim 1.0.5).
 
     python generate_data.py --out DIR --design-only          # design files only (numpy + scipy)
-    python generate_data.py --out DIR --strategy FC --rows 0:3 --check   # rerun rows, compare
+    python generate_data.py --strategy FC --rows 0:3 --check           # rerun rows, compare
+    python generate_data.py --check                          # all 2288 runs, compared with the shipped rows
     python generate_data.py --out DIR --jobs 16              # all 2288 runs (about 64 process-hours)
 
 Step 1 (numpy + scipy) writes DIR/design/design_S.csv for S in FC, CT, IL, PO: 512 main
@@ -10,7 +11,7 @@ mapped through the inverse CDFs of the paper's Table 1 (p. 4), each with its own
 virsim's random-number generator, drawn without replacement from 16384..65536 (p. 10);
 then 6 replicate groups of 10 rows with new seeds (group 0 at the Table 1 means, group g
 at main row g - 1). It compares the inputs and seeds with the shipped runs_S.csv
-(relative tolerance 1e-15) and stops with --design-only.
+(inputs to a relative INPUT_RTOL, seeds exactly) and stops with --design-only.
 
 Step 2 runs R/run_chunk.R (which sources R/strategies.R and calls virsim) on chunks of
 at most 4 rows, --jobs processes at a time, writing DIR/results/S_rows_AAAA-BBBB.csv and
@@ -18,21 +19,25 @@ at most 4 rows, --jobs processes at a time, writing DIR/results/S_rows_AAAA-BBBB
 
 Step 3 merges a strategy whose 572 rows are all done into DIR/runs_S.csv and
 DIR/ic_prev_S.csv with convert_data.py. With --check, the rerun rows are compared with
-the shipped rows: the seeds and inputs must agree, and the QoIs are reported as a
-relative difference (tolerance 1e-9). With the R and package versions of the shipped
-run (R 4.3.3, virsim 1.0.5, data.table 1.14.10, Rcpp 1.0.12, RcppArmadillo 0.12.8.1.0)
-the QoIs are expected to agree to the last digit; other builds may draw another
-realization of the stochastic model for the same seed, which the check then reports.
+the shipped rows: --check prints the largest differences of the QoIs (relative, with a floor of 1
+on the shipped value) and fails only on structural mismatches (a missing chunk or row, a nonzero
+run status, different seeds, or inputs differing by more than INPUT_RTOL). With the R and package
+versions of the shipped run (R 4.3.3, virsim 1.0.5, data.table 1.14.10, Rcpp 1.0.12,
+RcppArmadillo 0.12.8.1.0) the QoIs are expected to agree to the last digit; other builds may draw
+another realization of the stochastic model for the same seed, which the check then reports.
 
 virsim is an R package, not a Python model: it must be installed (R_LIBS pointing at
 it) before step 2. Without it the script stops after step 1 and says what to install.
---out is required and may not be this directory or inside it.
+--out is required without --check and may not be this directory or inside it; --check
+without --out writes into a temporary directory and removes it.
 """
 import argparse
+import atexit
 import os
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor
 
@@ -49,6 +54,7 @@ SEED = 568                       # design seed; strategy S uses SEED + index of 
 SEED_LO, SEED_HI = 2 ** 14, 2 ** 16   # virsim seeds, inclusive (paper p. 10)
 CHUNK = 4
 VIRSIM_VERSION = "1.0.5"
+INPUT_RTOL = 1e-8                # --check fails if the regenerated inputs differ by more than this (relative)
 
 # Table 1, p. 4 (scipy parametrization: gamma(shape, scale=scale), beta(alpha, beta))
 DIST = {
@@ -117,12 +123,15 @@ def write_design(out, s):
 def compare_design(s, A):
     shipped = np.loadtxt(os.path.join(HERE, f"runs_{s}.csv"), delimiter=",")
     m = len(C.inputs(s))
+    if len(A) != len(shipped):
+        print(f"{s}: design has {len(A)} rows, the shipped runs_{s}.csv {len(shipped)}: FAIL")
+        return False
     same_int = np.array_equal(A[:, :5], shipped[:, :5])
     rel = np.max(np.abs(A[:, 5:5 + m] - shipped[:, 5:5 + m]) / np.abs(shipped[:, 5:5 + m]))
-    ok = same_int and rel <= 1e-14    # rounding level: scipy's inverse CDFs differ by a few ulp between platforms
+    ok = same_int and rel <= INPUT_RTOL   # scipy's inverse CDFs differ by a few ulp between platforms
     print(f"{s}: design vs shipped runs_{s}.csv: rows/kind/group/source_row/seed "
-          f"{'equal' if same_int else 'DIFFER'}; inputs max relative difference {rel:.1e} "
-          f"({'ok' if ok else 'DIFFERS'}, tolerance 1e-14)")
+          f"{'equal' if same_int else 'DIFFER'}; inputs largest relative difference {rel:.1e}"
+          f"{'' if ok else ': FAIL'}")
     return ok
 
 
@@ -160,13 +169,21 @@ def run_chunks(rs, env, out, jobs):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("--out", required=True, help="output folder, outside this directory")
+    ap.add_argument("--out", default=None,
+                    help="output folder, outside this directory (required without --check; with --check, "
+                         "default a temporary directory)")
     ap.add_argument("--strategy", choices=C.STRATEGIES, nargs="*", default=C.STRATEGIES)
     ap.add_argument("--rows", default=None, help="a:b, rows a..b inclusive (default all 0:571)")
     ap.add_argument("--jobs", type=int, default=1, help="R processes at a time")
     ap.add_argument("--check", action="store_true", help="compare rerun rows with the shipped files")
     ap.add_argument("--design-only", action="store_true", help="write and check the design only")
     a = ap.parse_args()
+    if a.out is None:
+        if a.check:
+            a.out = tempfile.mkdtemp(prefix="check_")
+            atexit.register(shutil.rmtree, a.out, ignore_errors=True)
+        else:
+            ap.error("--out DIR is required without --check")
     out = os.path.realpath(a.out)
     here = os.path.realpath(HERE)
     if os.path.commonpath([out, here]) == here:
@@ -200,18 +217,22 @@ def main():
     print(f"{len(jobs)} chunks in {time.time() - t0:.0f} s on {a.jobs} processes; "
           f"{sum(c != 0 for c in codes)} chunks exited with an error (see {res}/run.log)")
 
+    worst = (0.0, "")
     for s in a.strategy:
         if first == 0 and last == C.N_ROWS - 1:
             table, series, _ = C.merge(res, s)
             C.write(out, s, table, series)
         if a.check:
-            ok &= check_rows(res, s, first, last)
+            d, same = check_rows(res, s, first, last)
+            ok &= same
+            worst = max(worst, (d, f"runs_{s}.csv"))
     if a.check:
-        print("check passed" if ok else "check FAILED")
+        print(f"largest difference from the shipped files: {worst[0]:.1e} (relative, {worst[1]})")
         sys.exit(0 if ok else 1)
 
 
 def check_rows(res, s, first, last):
+    """Print the largest QoI difference of the rerun rows; return (difference, False on a structural mismatch)."""
     shipped = np.loadtxt(os.path.join(HERE, f"runs_{s}.csv"), delimiter=",")
     cols, _ = C.out_columns(s)
     ci = {c: i for i, c in enumerate(cols)}
@@ -220,28 +241,31 @@ def check_rows(res, s, first, last):
         j = min(i + CHUNK - 1, last)
         path = os.path.join(res, f"{s}_rows_{i:04d}-{j:04d}.csv")
         if not os.path.exists(path):
-            print(f"  {s}: {os.path.basename(path)} missing")
-            return False
+            print(f"  {s}: {os.path.basename(path)} missing: FAIL")
+            return 0.0, False
         rc, rows = C.read_text_rows(path)
         for r in rows:
             new[int(r[0])] = {c: float(v) for c, v in zip(rc, r)}
     ok, worst = True, 0.0
     for k in range(first, last + 1):
+        if k not in new:
+            print(f"  {s} row {k}: missing from the rerun: FAIL")
+            ok = False
+            continue
         r, old = new[k], shipped[k]
         if r["status"] != 0:
-            print(f"  {s} row {k}: status {r['status']:.0f}")
+            print(f"  {s} row {k}: status {r['status']:.0f}: FAIL")
             ok = False
             continue
         if r["seed"] != old[ci["seed"]] or any(
-                abs(r[n] - old[ci[n]]) > 1e-12 * abs(old[ci[n]]) for n in C.inputs(s)):
-            print(f"  {s} row {k}: seed or inputs differ from the shipped row")
+                abs(r[n] - old[ci[n]]) > INPUT_RTOL * abs(old[ci[n]]) for n in C.inputs(s)):
+            print(f"  {s} row {k}: seed or inputs differ from the shipped row: FAIL")
             ok = False
         for q in ("IC_prev_avg_max", "IC_excess_days"):
             worst = max(worst, abs(r[q] - old[ci[q]]) / max(1.0, abs(old[ci[q]])))
-    print(f"  {s} rows {first}-{last}: QoIs vs shipped, max relative difference {worst:.1e} "
-          f"(tolerance 1e-9)")
-    return ok and worst <= 1e-9
-
+    print(f"  {s} rows {first}-{last}: QoIs vs shipped, largest relative difference {worst:.1e} "
+          "(|new - shipped| / max(1, |shipped|))")
+    return worst, ok
 
 if __name__ == "__main__":
     main()

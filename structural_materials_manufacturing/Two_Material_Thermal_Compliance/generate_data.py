@@ -2,7 +2,8 @@
 energy E and its exact gradient dE/dtheta, from thermal_model.py.
 
     python generate_data.py                         # all 1500 samples, writes here (10-20 s)
-    python generate_data.py --rows 0:50 --check     # recompute 50 rows, compare with the file here
+    python generate_data.py --check                 # recompute all rows, compare with the file here
+    python generate_data.py --rows 0:50 --check     # the same for 50 rows
     python generate_data.py --fd-check              # exact gradients vs central differences
     python generate_data.py --casm /path/to/CASM    # reproduce the author's stored files
 
@@ -19,7 +20,8 @@ and fData.npy (E - E_max). It prints the comparison and writes no file. To
 rebuild the 124-node variant at this data set's inputs (not shipped):
 compute(design(), model=tm.ThermalCompliance(boundary='casm')).
 
-Only numpy, scipy and the standard library are imported; one process.
+`--check` writes nothing; it prints the largest differences from the shipped file and fails only
+on structural mismatches (shapes, NaN pattern, inputs). Only numpy, scipy and the standard library are imported; one process.
 """
 import argparse
 import os
@@ -35,6 +37,7 @@ import thermal_model as tm  # noqa: E402
 SEED = 20250129   #: seed of the input design
 M = 1500          #: number of samples
 FILE = 'thermal_compliance.npz'
+INPUT_RTOL = 1e-8  # --check: theta (deterministic draws) may differ from the shipped design by round-off only
 
 
 def design(M=M, seed=SEED):
@@ -133,9 +136,25 @@ def main():
     print(f'{len(E)} samples in {time.time() - t0:.1f} s')
     if a.check:
         ref = np.load(os.path.join(HERE, FILE))
+        bad, worst = [], (-1.0, '')
         for k, v in (('theta', theta[rows]), ('E', E), ('dE_dtheta', G)):
+            if k not in ref or ref[k].shape != ((M,) if k == 'E' else theta.shape):
+                bad.append(f'FAIL: {k}: missing, or shape {None if k not in ref else ref[k].shape} in the shipped file')
+                continue
             r = ref[k][rows]
-            print(f'  {k}: largest relative difference {np.max(np.abs(v - r))/np.max(np.abs(r)):.1e}')
+            if not np.array_equal(np.isnan(v), np.isnan(r)):
+                bad.append(f'FAIL: {k}: the NaN pattern differs from the shipped file')
+                continue
+            d = np.nanmax(np.abs(v - r))/np.nanmax(np.abs(r))
+            print(f'  {k}: largest difference relative to the largest shipped value {d:.1e}')
+            if k == 'theta' and d > INPUT_RTOL:
+                bad.append(f'FAIL: theta differs from the shipped design by {d:.1e} > {INPUT_RTOL:g}')
+            worst = max(worst, (d, k))
+        print(f'largest difference from the shipped files: {worst[0]:.1e} (relative, {FILE} {worst[1]})')
+        for line in bad:
+            print(line)
+        if bad:
+            sys.exit(1)
         return
     if a.rows is not None:
         raise SystemExit('--rows writes nothing without --check')

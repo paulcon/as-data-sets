@@ -42,10 +42,11 @@ How the files are read (e.g. `np.loadtxt(path, delimiter=',')`), the number of h
 
 ```bash
 python generate_data.py           # writes the data files here
-python generate_data.py --check   # reruns and compares with the shipped files; writes nothing here
+python generate_data.py --check   # reruns into a temporary directory and compares with the shipped files
+python check_accuracy.py          # (where there is one) prints the accuracy numbers below
 ```
 
-The run time, the platform, and the largest differences that `--check` reports. For stored data: what cannot be regenerated, or the outside code (and version) that `generate_data.py` needs, and the message it gives when that code is missing.
+The run time, the platform and any outside-code versions, and the largest differences `--check` reports there. If `--check` checks a subset, say which, and give the time of `--check --full`. For stored data: what cannot be regenerated, or the outside code (and version) that `generate_data.py` needs, and the message it gives when that code is missing.
 
 ## Accuracy
 

@@ -172,7 +172,8 @@ regression runs), plus 10^4 cross-validation samples. The paper reports no seeds
 # Cantera environment (Python 3.13 was used)
 python3 -m venv cantvenv && cantvenv/bin/pip install cantera==3.2.0 numpy scipy
 cantvenv/bin/python generate_data.py                                        # all files
-cantvenv/bin/python generate_data.py --case 36 --rows 0:20 --out /tmp/h2 --check   # subset vs shipped files
+cantvenv/bin/python generate_data.py --check                                # all files, in a temporary directory, vs shipped files
+cantvenv/bin/python generate_data.py --case 36 --rows 0:20 --check          # subset vs shipped files
 cantvenv/bin/python check_accuracy.py                                         # the Accuracy numbers (about 20 s)
 ```
 
@@ -187,7 +188,9 @@ eight files bit for bit (maximum difference 0 for every file and case). The othe
 platform (macOS x86-64, Python 3.11, Cantera 3.2.0 from PyPI, 2026-11-02), `--case 19 --rows 780:782` and
 `--case 36 --rows 0:2` with `--check` reproduce τ to about 1e-9 relative (the solver tolerance) and the gradients to
 3e-6 (19 inputs) and 3e-4 (36 inputs) of the largest stored value: CVODES's rounding differs between platforms, and the
-difference step (1e-3 of a half-range) amplifies it.
+difference step (1e-3 of a half-range) amplifies it. `--check` prints each file's largest difference relative to its
+largest value, and exits 1 only on a structural mismatch: a different shape or NaN pattern, or inputs that differ
+by more than a relative 1e-8.
 
 ## Accuracy
 

@@ -143,7 +143,9 @@ printf 'CXX11STD = -std=gnu++14\n' > Makevars.user && export R_MAKEVARS_USER=$PW
 mkdir rlib && R CMD INSTALL -l rlib hector && R CMD INSTALL -l rlib matilda
 export R_LIBS=$PWD/rlib          # or HECTOR_RSCRIPT=/path/to/Rscript
 python generate_data.py --out DIR                       # all files
-python generate_data.py --out DIR --rows 0:5 --check    # a subset vs the shipped files
+python generate_data.py --check                         # all files, in a temporary directory, vs the shipped files
+python generate_data.py --rows 0:5 --check              # a subset vs the shipped files
+python check_accuracy.py                                # the Accuracy numbers
 ```
 
 Matilda v1.0.0's DESCRIPTION reports version 0.1.0; the git tag is what identifies it. The run cost
@@ -151,7 +153,11 @@ Matilda v1.0.0's DESCRIPTION reports version 0.1.0; the git tag is what identifi
 the run was interrupted once by a container restart and resumed from its chunk cache; the wall time, with up to six
 other jobs sharing two CPUs, was about 2 h (base runs about 350 s per 250 samples, gradients 345–712 s per 40
 samples, from the generator's log). On an idle core we estimate about 45 min (5800 × 0.4 s plus start-up). The paper reports ~100 minutes for 4000 runs
-to 2300, serially (p. 17). `--check` compares with relative tolerance 1e-8 (same build); `generate_data.py --out DIR --rows 0:3 --check` reproduced all four files at those rows (maximum relative difference printed as 0.00e+00; 41 s). Results on
+to 2300, serially (p. 17). `--check` prints max |new − shipped| / max |shipped| per file. On the Linux container above (R, hector 3.1.1,
+matilda v1.0.0), `generate_data.py --out DIR --rows 0:3 --check` reproduced all four files at those rows (maximum
+relative difference printed as 0.00e+00; 41 s); Hector is not installed on the macOS machine, so nothing was
+measured there. `--check` exits 1 only on a structural mismatch: a missing file, a different shape or set of
+nan entries, or inputs that differ by more than a relative 1e-8. Results on
 another platform or compiler may differ at the level of Hector's jumps (up to about 1e-2 °C and several ppmv; Gradients).
 
 ## Accuracy

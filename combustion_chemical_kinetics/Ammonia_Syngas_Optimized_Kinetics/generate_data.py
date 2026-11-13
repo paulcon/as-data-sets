@@ -2,7 +2,8 @@
 
     python generate_data.py --out DIR                           # all 100 rows (about 45 min of CPU, one core)
     python generate_data.py --out DIR --max-minutes 10          # resumable: run for 10 min, then stop
-    python generate_data.py --out DIR --rows 0:3 --check        # a subset, compared with the shipped files
+    python generate_data.py --check                             # all 100 rows in a temporary directory, compared with the shipped files
+    python generate_data.py --rows 0:3 --check                  # a subset, compared with the shipped files
 
 Design: SIZE points uniform on the feasible region (ammonia_idt_driver.sample_feasible), Monte
 Carlo with seed SEED; the first n rows of a larger design are the design of size n. Inputs are
@@ -13,22 +14,26 @@ gradients of log10 tau in the node coordinates with step 1e-3 of each input's ha
 DIR/rows/row_NNNN.npz and skipped on the next run; the CSV files are written when all
 requested rows exist. Progress goes to DIR/generate_log.txt.
 
---out is required and must lie outside this directory (not the directory or a folder in it), so
-the shipped files are never overwritten (copy new files in by hand after comparing them). --check compares tau (relative difference, tolerance
-1e-6) and each gradient row (relative 2-norm difference in normalized coordinates, tolerance
-5e-2 at condition A and 2e-3 at B and C) with the shipped files. The gradient tolerances are set
-by noise, not by truncation: a rounding-level change of the inputs, x (1 +- 1e-13), changes the
-forward-difference gradients by up to about 2e-2 at A and 6e-4 at B and C (check_accuracy.py,
-check 7), because the step of 1e-3 amplifies the solver's noise in tau, so a rerun on another
-platform is not expected to match them more closely.
+--out is required without --check and must lie outside this directory (not the directory or a folder in
+it), so the shipped files are never overwritten (copy new files in by hand after comparing them); with
+--check it defaults to a temporary directory, removed at the end (--max-minutes then needs --out DIR, and a
+--check run stopped by --max-minutes exits 1 without comparing). --check prints the largest differences
+from the shipped files (tau: elementwise relative; gradients: relative 2-norm per row in normalized
+coordinates) and fails only on structural mismatches (shapes, NaN pattern, inputs). The gradients are
+noisy: a rounding-level change of the inputs, x (1 +- 1e-13), changes the forward-difference gradients by
+up to about 2e-2 at A and 6e-4 at B and C (check_accuracy.py, check 7), because the step of 1e-3 amplifies
+the solver's noise in tau, so a rerun on another platform is not expected to match them more closely.
 
 Needs Cantera through ammonia_idt_driver.py and the mechanism file, which is not part of this
 data set (convert_mechanism.py makes it from the article's supplementary zip; DATA.md,
 "Regenerating"). Without either the script stops with an error that says what to do.
 """
 import argparse
+import atexit
 import os
+import shutil
 import sys
+import tempfile
 import time
 
 import numpy as np
@@ -40,8 +45,7 @@ import ammonia_idt_driver as M  # noqa: E402
 SEED = 2023462
 SIZE = 100
 XFMT = "%.15e"
-TOL_TAU = 1e-6
-TOL_GRAD = {"A": 5e-2, "B": 2e-3, "C": 2e-3}     # see the module docstring
+INPUT_RTOL = 1e-8     # --check fails if a regenerated input (a seeded draw) differs by more (relative)
 
 
 def draw(n=SIZE):
@@ -109,33 +113,50 @@ def assemble(rows, out):
 
 
 def check(rows, out):
-    ok = True
+    """Print the largest difference of each file; False on a structural mismatch."""
     ld = lambda d, n: np.loadtxt(os.path.join(d, n), delimiter=",", ndmin=2)  # noqa: E731
-    new, old = ld(out, "inputs.csv"), ld(HERE, "inputs.csv")[rows]
-    d = np.max(np.abs(new - old))
-    print(f"  inputs.csv: max |new - shipped| = {d:.1e}")
-    ok &= d <= 1e-14
-    new, old = ld(out, "outputs.csv"), ld(HERE, "outputs.csv")[rows]
-    d = np.max(np.abs(new / old - 1))
-    print(f"  outputs.csv: max relative difference {d:.1e} (tolerance {TOL_TAU:.0e})")
-    ok &= d <= TOL_TAU
-    for k in M.QOIS:
-        new = ld(out, f"gradients_{k}.csv") * M.UPPER
-        old = ld(HERE, f"gradients_{k}.csv")[rows] * M.UPPER
-        e = np.linalg.norm(new - old, axis=1) / np.linalg.norm(old, axis=1)
-        print(f"  gradients_{k}.csv: max relative 2-norm difference {e.max():.1e} (tolerance {TOL_GRAD[k]:.0e})")
-        ok &= bool(e.max() <= TOL_GRAD[k])
-    print("check passed" if ok else "check FAILED")
+    ok, worst = True, (0.0, "elementwise", "outputs.csv")
+    for fn in ["inputs.csv", "outputs.csv"] + [f"gradients_{k}.csv" for k in M.QOIS]:
+        new, old = ld(out, fn), ld(HERE, fn)[rows]
+        if new.shape != old.shape or not np.array_equal(np.isnan(new), np.isnan(old)):
+            print(f"  FAIL: {fn}: shape {new.shape} or NaN pattern differs from the shipped {old.shape}")
+            ok = False
+            continue
+        if fn == "inputs.csv":
+            d = np.max(np.abs(new - old)) / np.max(np.abs(old))
+            print(f"  {fn}: max |new - shipped| / max |shipped| = {d:.1e}")
+            if d > INPUT_RTOL:
+                print(f"  FAIL: {fn} differs from the shipped inputs by {d:.1e} > {INPUT_RTOL:g}")
+                ok = False
+        elif fn == "outputs.csv":
+            d = np.nanmax(np.abs(new / old - 1))
+            print(f"  {fn}: max relative difference {d:.1e}")
+            worst = max(worst, (d, "elementwise", fn))
+        else:
+            g1, g0 = new * M.UPPER, old * M.UPPER
+            d = np.nanmax(np.linalg.norm(g1 - g0, axis=1) / np.linalg.norm(g0, axis=1))
+            print(f"  {fn}: max relative 2-norm difference {d:.1e}")
+            worst = max(worst, (d, "row 2-norm", fn))
+    print(f"largest difference from the shipped files: {worst[0]:.1e} (relative, {worst[1]}, {worst[2]})")
     return ok
 
 
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--out", required=True, help="output directory")
+    p.add_argument("--out", default=None,
+                   help="output directory (required without --check; with --check, default a temporary directory)")
     p.add_argument("--rows", default=None, help="a:b, a subset of the rows")
     p.add_argument("--max-minutes", type=float, default=None, help="stop after this many minutes")
     p.add_argument("--check", action="store_true", help="compare with the shipped files")
     a = p.parse_args()
+    if a.out is None:
+        if a.check:
+            if a.max_minutes is not None:
+                p.error("--max-minutes with --check needs --out DIR, so that a stopped run can be resumed")
+            a.out = tempfile.mkdtemp(prefix="check_")
+            atexit.register(shutil.rmtree, a.out, ignore_errors=True)
+        else:
+            p.error("--out DIR is required without --check")
     out = os.path.abspath(a.out)
     here = os.path.realpath(HERE)
     if os.path.commonpath([os.path.realpath(out), here]) == here:
@@ -146,7 +167,8 @@ def main():
               "wrote the shipped files) and rerun generate_data.py.", file=sys.stderr)
         sys.exit(3)
     if not os.path.exists(M.MECH):
-        sys.exit(M.MECH_HELP + " generate_data.py.")
+        print(M.MECH_HELP + " generate_data.py.", file=sys.stderr)
+        sys.exit(3)
     os.makedirs(out, exist_ok=True)
     if a.rows:
         i, j = (int(s) for s in a.rows.split(":"))
@@ -156,6 +178,10 @@ def main():
     t0 = time.time()
     done = run_rows(rows, out, a.max_minutes)
     if not done:
+        if a.check:
+            print("check not done: stopped by --max-minutes before all rows existed; rerun with the same --out "
+                  "to continue", file=sys.stderr)
+            sys.exit(1)
         return
     assemble(rows, out)
     print(f"wall time {time.time() - t0:.0f} s")

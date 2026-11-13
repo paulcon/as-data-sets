@@ -18,6 +18,15 @@ Usage (DIR is a working directory outside this one; every file the stages write 
   python generate_data.py check                # no Julia: redraw the design and recompute the cathode and
                                                # plume columns and the oscillation flag from the stored
                                                # discharge outputs; compare with the shipped CSV (read only)
+  python generate_data.py --check              # `check`, then design, run and assemble in a temporary
+                                               # directory (all 440 rows; needs Julia) and compare the new
+                                               # CSV with the shipped one
+
+Both checks print the largest differences from the shipped CSV (inputs relative to each column's largest
+magnitude, the other columns elementwise relative) and fail (exit status 1) only on structural
+mismatches (shape, NaN pattern, status column, oscillation flag, inputs differing by more than
+INPUT_RTOL). --check exits with status 3 after the `check` stage when Julia is missing. --check takes no stages; with --out DIR
+it keeps the files in DIR.
 
 The shipped CSV is the record of the runs: the stages never write into this directory, and
 `assemble` writes a new file in DIR for comparison. The `run` stage needs Julia and HallThruster.jl
@@ -33,10 +42,12 @@ JULIA_PROJECT (a Julia environment with HallThruster v0.18.7) and BFIELD (path t
 magnetic-field file bfield_spt100.csv from HallThrusterPEM, see DATA.md).
 """
 import argparse
+import atexit
 import os
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 
 import numpy as np
@@ -47,6 +58,7 @@ from spt100_components import cathode_coupling_voltage, plume
 SEED = 662
 M = 440
 OSC_THRESHOLD = 0.01   # std/mean of I_D(t) over the averaging window above which a run is "oscillating"
+INPUT_RTOL = 1e-8   # inputs are deterministic draws: a larger difference means a different seed or range
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CSV = "hall_thruster_spt100.csv"               # the shipped file (in HERE); `assemble` writes one in --out
@@ -195,13 +207,23 @@ def assemble(P):
           f"{int(np.nansum(data[:, -1]))}")
 
 
-def check():
-    data = np.loadtxt(os.path.join(HERE, CSV), delimiter=",")
+def summary(diffs):
+    """Print the one summary line: the largest of the (difference, quantity) pairs."""
+    d, name = max(diffs, key=lambda t: t[0])
+    print(f"largest difference from the shipped files: {d:.1e} (relative, {name})")
+
+
+def check(ship=HERE):
+    """Redraw the inputs and recompute the numpy columns; (False on a structural mismatch, differences)."""
+    data = np.loadtxt(os.path.join(ship, CSV), delimiter=",")
     m = len(PARAMS)
+    if data.shape != (M, m + 17):
+        print(f"FAIL: {CSV}: shape {data.shape}, expected {(M, m + 17)}")
+        return False, []
     U = qmc.LatinHypercube(d=m, seed=SEED).random(M)
     X = unit_to_physical(U)
     p = dict(zip(NAMES, X.T))
-    dx = np.max(np.abs(X - data[:, :m]) / np.abs(X).clip(1e-300))
+    dx = np.max(np.abs(X - data[:, :m]) / np.abs(data[:, :m]).max(axis=0).clip(1e-300))   # relative to column max
     Vcc, _ = cathode_coupling_voltage(OPERATING["PB_Torr"], p["Tec"], p["Vvac"], p["PT"], p["Pstar"],
                                       OPERATING["Vd"])
     ok = data[:, m] == 0
@@ -211,17 +233,85 @@ def check():
     rel = lambda a, b: np.max(np.abs(a - b) / np.abs(b))
     flag = oscillation_flag(data[:, m].astype(int), data[:, m + 2], data[:, m + 9])
     same = np.array_equal(flag, data[:, -1], equal_nan=True)
-    print(f"check: inputs max rel diff {dx:.1e}; Vcc {rel(Vcc, data[:, m + 1]):.1e}; "
-          f"Tc {rel(pl['Tc'], data[ok, m + 5]):.1e}; j_peak {rel(pl['j_peak'], data[ok, m + 7]):.1e}; "
-          f"phi_d {rel(pl['phi_d'], data[ok, m + 8]):.1e}; oscillating flag reproduced: {same} "
+    d = [rel(Vcc, data[:, m + 1]), rel(pl['Tc'], data[ok, m + 5]), rel(pl['j_peak'], data[ok, m + 7]),
+         rel(pl['phi_d'], data[ok, m + 8])]
+    print(f"check: largest relative difference: inputs (to the column maximum) {dx:.1e}; elementwise: "
+          f"Vcc {d[0]:.1e}; Tc {d[1]:.1e}; "
+          f"j_peak {d[2]:.1e}; phi_d {d[3]:.1e}; oscillating flag reproduced: {same} "
           f"({int(np.nansum(data[:, -1]))} runs)")
+    if not same:
+        print("FAIL: check: the oscillation flag differs from the shipped column")
+    if dx > INPUT_RTOL:
+        print(f"FAIL: check: the redrawn inputs differ from the shipped ones by more than {INPUT_RTOL:g} (relative)")
+    diffs = [(dx, f"{CSV} inputs")] + [(v, f"{CSV} {c}") for v, c in zip(d, ("Vcc", "Tc", "j_peak", "phi_d"))]
+    return bool(same and dx <= INPUT_RTOL), diffs
+
+
+def compare_rerun(P, ship=HERE):
+    """Compare the CSV that `assemble` wrote in --out with the shipped one, column by column.
+
+    Returns (False on a structural mismatch, list of (difference, quantity))."""
+    new = np.loadtxt(P["csv"], delimiter=",")
+    old = np.loadtxt(os.path.join(ship, CSV), delimiter=",")
+    if new.shape != old.shape:
+        print(f"FAIL: rerun: shape {new.shape} differs from the shipped {old.shape}")
+        return False, []
+    m, n = len(PARAMS), old.shape[1]
+    same_nan = np.array_equal(np.isnan(new), np.isnan(old))
+    exact = [m, n - 1]                                                   # status and the oscillation flag
+    same_flags = np.array_equal(new[:, exact], old[:, exact], equal_nan=True)
+
+    def rel(cols):
+        a, b = new[:, cols], old[:, cols]
+        fin = ~np.isnan(b) & ~np.isnan(a)
+        return float(np.max(np.abs(a[fin] - b[fin]) / np.maximum(np.abs(b[fin]), 1e-300))) if fin.any() else 0.0
+    dx = float(np.max(np.abs(new[:, :m] - old[:, :m]) / np.abs(old[:, :m]).max(axis=0).clip(1e-300)))  # column max
+    d = rel([j for j in range(m, n) if j not in exact and j != n - 2])  # all other columns but wall_s
+    print(f"rerun: largest relative difference from the shipped CSV: inputs (to the column maximum) {dx:.1e}, "
+          f"other columns but wall_s (elementwise) {d:.1e}; NaN pattern equal: {same_nan}; status and oscillation flag equal: {same_flags}")
+    if not (same_nan and same_flags):
+        print("FAIL: rerun: the NaN pattern, the status column or the oscillation flag differs from the shipped CSV")
+    if dx > INPUT_RTOL:
+        print(f"FAIL: rerun: the inputs differ from the shipped ones by more than {INPUT_RTOL:g} (relative)")
+    passed = bool(same_nan and same_flags and dx <= INPUT_RTOL)
+    return passed, [(dx, f"rerun {CSV} inputs"), (d, f"rerun {CSV} other columns but wall_s")]
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("stages", nargs="*", help="design, run, assemble or check (default: design run assemble)")
-    ap.add_argument("--out", help="working directory for design, run and assemble (not this directory)")
+    ap.add_argument("--out", help="working directory for design, run and assemble (not this directory; "
+                                  "with --check, default: a temporary directory)")
+    ap.add_argument("--check", action="store_true",
+                    help="the check stage, then design, run and assemble in --out, compared with the shipped CSV")
     args = ap.parse_args()
+    if args.check:
+        if args.stages:
+            ap.error("--check takes no stages")
+        if not args.out:
+            args.out = tempfile.mkdtemp(prefix="check_")
+            atexit.register(shutil.rmtree, args.out, ignore_errors=True)
+        if os.path.abspath(args.out) == HERE:
+            ap.error("--out must not be this directory: the shipped CSV is the record of the runs")
+        ok, diffs = check()
+        if not ok:
+            if diffs:
+                summary(diffs)
+            sys.exit(1)
+        os.makedirs(args.out, exist_ok=True)
+        P = paths(args.out)
+        try:
+            require_julia()
+        except SystemExit:
+            summary(diffs)              # the `check` stage ran; the rerun needs Julia (exit status 3)
+            raise
+        for s in ("design", "run", "assemble"):
+            {"design": design, "run": run, "assemble": assemble}[s](P)
+        ok, more = compare_rerun(P)
+        summary(diffs + more)
+        if not ok:
+            sys.exit(1)
+        return
     stages = args.stages or ["design", "run", "assemble"]
     bad = [s for s in stages if s not in ("design", "run", "assemble", "check")]
     if bad:
@@ -237,7 +327,11 @@ def main():
     P = paths(args.out) if args.out else None
     for s in stages:
         if s == "check":
-            check()
+            ok, diffs = check()
+            if diffs:
+                summary(diffs)
+            if not ok:
+                sys.exit(1)
         else:
             {"design": design, "run": run, "assemble": assemble}[s](P)
 

@@ -9,6 +9,7 @@
     python generate_data.py g6     --l2sea-home DIR --raw RAW [--max-minutes 17] [--check K]
     python generate_data.py diag   --l2sea-home DIR --raw RAW [--max-minutes 17] [--check K]
     python generate_data.py assemble --raw RAW --n 384 [--out .]
+    python generate_data.py --check [--l2sea-home DIR]      # rerun SHIPPED_CHECK_ROWS, compare with outputs.csv
 
 `design` runs points of the design at fidelity 7 and appends one JSON line per run to
 RAW/design_f7.jsonl. Points already in that file are skipped, so the step can be run in
@@ -34,6 +35,12 @@ RAW/shape_f7.jsonl), `g6` reruns rows G6_ROWS of the design on G6 (RAW/check.jso
 reruns DIAG_ROWS on G7 to record the wave-cut and ITTC diagnostics (RAW/design_diag_f7.jsonl).
 With `--check K` each of them instead reruns K evenly spaced stored runs and prints the largest
 relative difference from the stored outputs (0 when reproduced exactly).
+
+`--check` (without a step) reruns rows SHIPPED_CHECK_ROWS of inputs.csv at fidelity 7 and compares the
+nine outputs, rounded to the 9 significant digits that outputs.csv holds, with outputs.csv. It prints
+the largest differences from the shipped files and fails only on structural mismatches (shapes, NaN
+pattern: a run that fails where the shipped row has numbers or the reverse, inputs.csv differing from
+the Sobol' design by more than INPUT_RTOL). It writes nothing.
 
 `assemble` writes inputs.csv, outputs.csv, fidelity_check.csv, reference_runs.csv and
 uq_uniform_quadrature.csv from the JSON lines, and, when their raw files exist, draft_sweep.csv,
@@ -72,6 +79,8 @@ SOBOL_SEED = 5415
 N_SOBOL = 512          # generated; the shipped data use the first N of them
 FIDELITY = 7           # UM-Bridge default (models/l2-sea/umbridge-server.py)
 CHECK_ROWS = list(range(6))
+SHIPPED_CHECK_ROWS = [0, 100, 383]   # rows of outputs.csv rerun by a plain --check
+INPUT_RTOL = 1e-8      # a plain --check fails if inputs.csv differs from the design by more (relative)
 CHECK_FIDELITIES = [3]
 #: Extra (row, fidelity) reruns. Row 63 has an anomalous frictional resistance at fidelity 7
 #: (R_f = 354 N, about 14 times the flat-plate value); it is rerun on G7 (determinism), G6 and G5.
@@ -231,6 +240,42 @@ def cmd_design(a):
         with open(path, "a") as fh:
             fh.write(json.dumps(rec) + "\n")
         print(i, rec["out"]["R_T"] if rec["out"] else rec["error"], rec["wall_s"], flush=True)
+
+
+def check_shipped(home):
+    """Rerun SHIPPED_CHECK_ROWS of the design at FIDELITY; compare with outputs.csv at its 9 digits.
+    Return the number of structural mismatches."""
+    old = np.loadtxt(os.path.join(HERE, "outputs.csv"), delimiter=",", ndmin=2)
+    Xs = np.loadtxt(os.path.join(HERE, "inputs.csv"), delimiter=",", ndmin=2)
+    X = design_points()[:len(Xs)]
+    if old.shape != (len(Xs), len(OUT_NAMES)) or X.shape != Xs.shape:
+        print("FAIL: inputs.csv %s and outputs.csv %s do not match the design %s and the %d outputs"
+              % (Xs.shape, old.shape, X.shape, len(OUT_NAMES)))
+        return 1
+    dx = np.max(np.abs(X - Xs) / np.abs(Xs))
+    print("inputs.csv against the Sobol' design: largest relative difference %.3g" % dx)
+    bad = int(dx > INPUT_RTOL)
+    if bad:
+        print("FAIL: inputs.csv differs from the design by more than %g (relative)" % INPUT_RTOL)
+    t0 = time.time()
+    largest = 0.0
+    for i in SHIPPED_CHECK_ROWS:
+        try:
+            out = l2sea_driver.run(X[i], home, fidelity=FIDELITY)
+            new = np.array([float("%.9g" % out[n]) for n in OUT_NAMES])
+        except Exception as e:  # a failed run is shipped as a row of NaN
+            print("row %d: run raised %s: %s" % (i, type(e).__name__, e))
+            new = np.full(len(OUT_NAMES), np.nan)
+        ok = np.isfinite(new) & np.isfinite(old[i])
+        d = np.max(np.abs(new[ok] - old[i][ok]) / np.maximum(np.abs(old[i][ok]), 1e-12), initial=0.0)
+        largest = max(largest, d)
+        print("row %d: largest relative difference from outputs.csv %.3g (elementwise)" % (i, d), flush=True)
+        if not np.array_equal(np.isnan(new), np.isnan(old[i])):
+            print("FAIL: row %d: the failed outputs (NaN pattern) differ from outputs.csv" % i)
+            bad += 1
+    print("check of %d rows of outputs.csv in %.0f s" % (len(SHIPPED_CHECK_ROWS), time.time() - t0))
+    print("largest difference from the shipped files: %.1e (relative, outputs.csv)" % largest)
+    return bad
 
 
 def cmd_check(a):
@@ -428,6 +473,11 @@ def require_l2sea(home):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    p.add_argument("--check", dest="check_shipped", action="store_true",
+                   help="without a step: rerun rows %s at fidelity %d and compare with outputs.csv"
+                        % (SHIPPED_CHECK_ROWS, FIDELITY))
+    p.add_argument("--l2sea-home", dest="check_home", metavar="DIR", default=os.environ.get("L2SEA_HOME"),
+                   help="with --check: the L2-Sea build (default: $L2SEA_HOME)")
     sub = p.add_subparsers(dest="cmd")
     for name in ("design", "check", "reference", "quadrature", "g6", "sweep", "shape", "diag"):
         q = sub.add_parser(name)
@@ -452,6 +502,11 @@ def main():
     q.add_argument("--n", type=int, default=384)
     q.add_argument("--out", default=HERE)
     a = p.parse_args()
+    if a.check_shipped:
+        if a.cmd is not None:
+            p.error("--check before a step is the check of outputs.csv; use the step's own --check K")
+        require_l2sea(a.check_home)
+        sys.exit(1 if check_shipped(a.check_home) else 0)
     if a.cmd is None:
         require_l2sea(os.environ.get("L2SEA_HOME"))
         p.print_help()

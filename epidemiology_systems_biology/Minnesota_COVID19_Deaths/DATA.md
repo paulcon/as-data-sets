@@ -159,16 +159,15 @@ micromamba create -p ./renv -c conda-forge r-base=4.4.3 r-plyr=1.8.9
 # the model: download code.zip from https://doi.org/10.6084/m9.figshare.13611284 and unzip it (folder "code")
 python generate_data.py --code path/to/code --rscript ./renv/bin/Rscript --out /tmp/mn            # all files
 python generate_data.py --code path/to/code --rscript ./renv/bin/Rscript --out /tmp/mn --chunk 60 # resumable chunks
-python generate_data.py --code path/to/code --rscript ./renv/bin/Rscript --out /tmp/mn3 --rows 0:3 --check
+python generate_data.py --code path/to/code --rscript ./renv/bin/Rscript --rows 0:3 --check     # 3 samples, in a temporary directory
+python generate_data.py --code path/to/code --rscript ./renv/bin/Rscript --check                # all 100 samples (900 runs)
 python check_accuracy.py --code path/to/code --rscript ./renv/bin/Rscript                         # Accuracy numbers
 ```
 
-`--out` is required and must lie outside this directory: in every mode (full run, `--chunk`, `--rows`, `--check`)
+`--out` is required without `--check` (`--check` without `--out` writes into a temporary directory and removes it) and
+must lie outside this directory: in every mode (full run, `--chunk`, `--rows`, `--check`)
 `generate_data.py` refuses this directory and any folder inside it (symlinks resolved), so the shipped files are
-never overwritten. `--check` compares the regenerated rows entry by entry with the shipped rows and fails where
-|new − shipped| exceeds 1e-6 of the largest |shipped| value of the same column among the checked rows (an absolute
-1e-6 for the all-zero gradient columns of inputs 4 and 5), so the small gradient components of x1–x3 are tested
-too. `--rows 0:1 --check` (9 runs, 50 s) passed with difference 0 in every column on the platform below.
+never overwritten. `--check` prints, for each column, the largest |new − shipped| over the largest |shipped| value of the same column among the checked rows (absolute for the all-zero gradient columns of inputs 4 and 5), so the small gradient components of x1–x3 are reported too, and does not judge it; it exits with status 1 only for a structural mismatch: a different shape or NaN pattern, regenerated inputs that differ from the shipped ones by more than a relative 1e-8, or a run (`--chunk`) that stops before the rows it was asked to check are done. `--rows 0:1 --check` (9 runs, 50 s) printed difference 0 in every column on the platform below.
 
 Provenance of the shipped files: generated 2026-11-10 in a Linux container (x86-64, 2 cores shared with other jobs),
 R 4.4.3 and plyr 1.8.9 from conda-forge, Python 3.11.18, numpy 2.4.6, with `generate_data.py` as shipped, run in

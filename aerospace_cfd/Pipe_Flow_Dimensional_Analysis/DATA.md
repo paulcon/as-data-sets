@@ -50,11 +50,12 @@ Over the boxes Re ranges over [125, 3360] (laminar), [1.0e4, 5.6e5] (turbulent) 
 
 ```bash
 python generate_data.py --out DIR               # writes the three CSVs to DIR (never to this directory)
-python generate_data.py --out DIR --check       # also compares them with the shipped files (exit status 1 on failure)
+python generate_data.py --check                 # writes to a temporary directory and prints the differences from the shipped files
+python generate_data.py --out DIR --check       # the same, keeping the files in DIR
 python check_accuracy.py                        # the numbers marked below
 ```
 
-One process. `generate_data.py` refuses an `--out` inside this directory (symbolic links resolved); to replace the shipped files, write to a scratch directory and copy. The shipped files were written on 2026-11-09 in a Linux container (Python 3.11.18, numpy 2.4.6). In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, macOS; 2026-11-10), `python generate_data.py --out DIR --check` took about 0.2 s with start-up (0.07 s printed for the model runs, the finite-difference checks and the files) and passed: its files matched the shipped ones to rounding level (maximum relative differences of order 10⁻¹⁶). The stated tolerance of `--check` is 10⁻¹² (relative, elementwise): the model is closed form apart from a Newton solve converged to a relative step of 10⁻¹⁵, so a rerun on another platform differs only by rounding, amplified by the Newton solve and the gradient formulas. The notebook runs in about 7 s in `.venv` (6.7 s printed by its last cell).
+One process. `generate_data.py` refuses an `--out` inside this directory (symbolic links resolved); to replace the shipped files, write to a scratch directory and copy. The shipped files were written on 2026-11-09 in a Linux container (Python 3.11.18, numpy 2.4.6). In the repo's `.venv` (macOS, Python 3.11.16, numpy 2.4.6; 2026-11-12), `python generate_data.py --check` took about 0.2 s with start-up (0.07 s printed for the model runs, the finite-difference checks and the files) and printed largest relative differences (elementwise) from the shipped files of 0 in the inputs and 4.9e-16 (laminar), 3.9e-16 (turbulent) and 4.7e-16 (high_re) in the outputs and gradients: rounding level, as expected of a closed-form model with a Newton solve converged to a relative step of 10⁻¹⁵. `--check` prints these differences and exits with status 1 only on a structural mismatch: a file of a different shape, a different NaN pattern, or inputs (the seeded draws) that differ by more than 10⁻⁸ (relative). The notebook runs in about 7 s in `.venv` (6.7 s printed by its last cell).
 
 ## Accuracy
 

@@ -30,10 +30,12 @@ The seven ODEs of Loudon and Pankavich (2017), Eq. (1), with the 27 parameters o
 
 ```bash
 python generate_data.py                                  # all 1000 samples, 3 processes
-python generate_data.py --rows 0:20 --out /tmp/hiv --check   # a subset, compared with the files here
+python generate_data.py --check                          # samples 0-49, compared with the files here
+python generate_data.py --check --full                   # all 1000 samples, compared with the files here
+python generate_data.py --rows 0:20 --check              # another subset
 ```
 
-There is no randomness, so a run reproduces the files. Samples are independent; `--workers` changes only the run time. The run that wrote the shipped files (2026-10-30, scipy 1.17.1, numpy 2.4.6, Python 3.11) took 2000 s (33 min) on three processes of an 8-core Mac that other jobs were also using; that is about 4 s of CPU per sample (55 trajectories of 0.04–0.08 s), so about 70 min on one core. A 30-sample subset run took 54 s on three processes. Tolerance: a rerun reproduces the files to the digits written; `--rows 0:6 --check` prints outputs 1.8e-13 and gradients 2.8e-11, with the same zero rows.
+There is no randomness, so a run reproduces the files. Samples are independent; `--workers` changes only the run time. The run that wrote the shipped files (2026-10-30, scipy 1.17.1, numpy 2.4.6, Python 3.11) took 2000 s (33 min) on three processes of an 8-core Mac that other jobs were also using; that is about 4 s of CPU per sample (55 trajectories of 0.04–0.08 s), so about 70 min on one core. A 30-sample subset run took 54 s on three processes. A rerun reproduces the files to the digits written; `--rows 0:6 --check` prints outputs 1.8e-13 and gradients 2.8e-11, with the same zero rows. On 2026-11-12 (`--workers 2`), `python generate_data.py --check` (samples 0–49) took 105 s and `--check --full` 1458 s, with largest relative differences of 4.1e-13 (outputs, elementwise) and 3.6e-11 (gradients, 2-norm of each row) over all 1000 samples, on macOS (Python 3.11, numpy 2.4.6, scipy 1.17.1). `--check` prints these differences and does not judge them; it exits with status 1 only for a structural mismatch: a different shape or NaN pattern, or a different set of zero-gradient rows.
 
 ## Accuracy
 

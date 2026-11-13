@@ -1,6 +1,7 @@
 """Write inputs.csv, outputs.csv and gradients.csv for the SEIR epidemic-peak model.
 
     python generate_data.py                        # writes the three CSVs here
+    python generate_data.py --check                 # writes to a temporary directory, compares with the files here
     python generate_data.py --out DIR --check       # writes to DIR, compares with the files here
 
 Draws M = 1000 independent samples of the three lognormal inputs of `seir_model`
@@ -13,11 +14,17 @@ It also checks the gradients against central finite differences in z = ln x (ste
 solves without sensitivities) at the first FD_ROWS samples and prints the largest relative
 error (row 2-norm).
 
+--check prints the largest differences from the shipped files (relative, elementwise) and fails only on
+structural mismatches (shapes, NaN pattern, inputs differing by more than INPUT_RTOL).
+
 Only numpy, scipy and the standard library are imported. One process.
 """
 import argparse
+import atexit
 import os
+import shutil
 import sys
+import tempfile
 import time
 
 import numpy as np
@@ -28,6 +35,8 @@ import seir_model as sm  # noqa: E402
 
 SEED = 2022
 M = 1000
+INPUT_RTOL = 1e-8  # --check fails if the regenerated inputs differ by more than this (relative)
+FILES = ('inputs.csv', 'outputs.csv', 'gradients.csv')
 H_FD = 1e-5     # central-difference step in z = ln x, for the check only
 FD_ROWS = 100
 
@@ -79,11 +88,18 @@ def write(out, X, f, G):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
-    ap.add_argument('--out', default=HERE, help='output directory (default: this directory)')
+    ap.add_argument('--out', default=None,
+                    help='output directory (default: this directory; with --check, a temporary directory)')
     ap.add_argument('--check', action='store_true', help='compare with the CSVs in this directory')
     ap.add_argument('--fd-rows', type=int, default=FD_ROWS,
                     help=f'samples for the finite-difference check (default {FD_ROWS})')
     args = ap.parse_args()
+    if args.out is None:
+        if args.check:
+            args.out = tempfile.mkdtemp(prefix='check_')
+            atexit.register(shutil.rmtree, args.out, ignore_errors=True)
+        else:
+            args.out = HERE
     if os.path.abspath(args.out) == HERE and args.check:
         ap.error('--check needs --out DIR outside this directory, so that the shipped files are not overwritten')
     os.makedirs(args.out, exist_ok=True)
@@ -103,12 +119,26 @@ def main():
         print(f'gradient check vs central differences in ln x (h = {H_FD:g}), first {args.fd_rows} samples: '
               f'max relative error t_peak {e[0]:.1e}, I_peak {e[1]:.1e} ({time.perf_counter() - t1:.0f} s)')
     if args.check:
-        rel = [np.max(np.abs(read_csv(os.path.join(args.out, n)) - read_csv(os.path.join(HERE, n)))
-                      / np.abs(read_csv(os.path.join(HERE, n))))
-               for n in ('inputs.csv', 'outputs.csv', 'gradients.csv')]
-        print('max relative differences from the shipped files (inputs, outputs, gradients):',
-              [f'{r:.1e}' for r in rel])
+        bad, worst = False, (0.0, FILES[0])
+        for n in FILES:
+            a, b = read_csv(os.path.join(args.out, n)), read_csv(os.path.join(HERE, n))
+            if a.shape != b.shape:
+                print(f'{n}: shape {a.shape} differs from the shipped {b.shape}: FAIL')
+                bad = True
+                continue
+            if not np.array_equal(np.isnan(a), np.isnan(b)):
+                print(f'{n}: NaN pattern differs from the shipped file: FAIL')
+                bad = True
+            r = float(np.nanmax(np.abs(a - b) / np.abs(b), initial=0.0))
+            print(f'{n}: largest relative difference (elementwise) from the shipped file {r:.1e}')
+            if n == 'inputs.csv' and r > INPUT_RTOL:
+                print(f'{n}: inputs differ by more than {INPUT_RTOL:g}: FAIL')
+                bad = True
+            worst = max(worst, (r, n))
+        print(f'largest difference from the shipped files: {worst[0]:.1e} (relative, {worst[1]})')
     print(f'total {time.perf_counter() - t0:.0f} s')
+    if args.check and bad:
+        sys.exit(1)
 
 
 if __name__ == '__main__':

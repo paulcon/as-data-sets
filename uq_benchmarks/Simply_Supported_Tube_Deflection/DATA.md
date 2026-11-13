@@ -61,10 +61,10 @@ Standard deviations are exact: uniform half-width/√3, symmetric triangular hal
 
 ```bash
 python generate_data.py                            # writes the three CSVs here
-python generate_data.py --out /tmp/tube --check    # writes elsewhere and compares
+python generate_data.py --check                    # writes to a temporary directory and compares
 ```
 
-The run takes about 0.05 s (0.85 s with Python start-up) and prints the two checks. The shipped files were written on 2026-10-31 in a Linux container. In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31), `--check` reports maximum relative differences of 0 (inputs), 4.9e-16 (outputs) and 7.4e-16 (gradients) from the shipped files: rounding error, not a change in the model. The notebook runs in about 4 s by its own timer, and two runs print the same values apart from timings.
+The run takes about 0.05 s (0.85 s with Python start-up) and prints the two checks. The shipped files were written on 2026-10-31 in a Linux container. In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31), `--check` reports maximum relative differences of 0 (inputs), 4.9e-16 (outputs) and 7.4e-16 (gradients) from the shipped files: rounding error, not a change in the model. `--check` prints these differences and the largest of them, 7.4e-16 (relative, `gradients.csv`, in `.venv` on macOS, Python 3.11, 2026-11-12; 1.1 s with start-up); it exits with code 1 only on a structural mismatch: a missing file, a different shape or NaN pattern, or inputs that differ from the shipped ones by more than 10⁻⁸ (relative). The notebook runs in about 4 s by its own timer, and two runs print the same values apart from timings.
 
 ## Accuracy
 

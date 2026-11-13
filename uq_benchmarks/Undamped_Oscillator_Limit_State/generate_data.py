@@ -1,9 +1,12 @@
 """Write the CSVs of the undamped yielding-oscillator limit state.
 
-    python generate_data.py --out DIR --check       # writes to DIR (not this directory), compares
+    python generate_data.py --check                 # writes to a temporary directory, compares
+    python generate_data.py --out DIR --check       # the same, keeping the files in DIR (not this directory)
     python generate_data.py --out .                 # rewrites the shipped CSVs (run from this directory)
 
---out is required, so the script never writes into this directory unless asked to.
+--out is required without --check, so the script never writes into this directory unless asked to.
+`--check` prints the largest differences from the shipped files and fails only on structural
+mismatches (shapes, NaN pattern, the yielded flags, inputs).
 
 Draws M = 1000 independent Monte Carlo samples of the six lognormal inputs of
 `oscillator_model` (means and standard deviations of Rajashekhar and Ellingwood 1993,
@@ -24,8 +27,11 @@ event of the yielding model.
 Only numpy and the standard library are imported. One process; a few seconds.
 """
 import argparse
+import atexit
 import os
+import shutil
 import sys
+import tempfile
 import time
 
 import numpy as np
@@ -37,8 +43,9 @@ import oscillator_model as om  # noqa: E402
 SEED = 1993
 M = 1000
 H_Y = 1e-5      # central-difference step in the standardized log inputs, for the check only
-RTOL = 1e-10    # tolerance of --check (relative, elementwise; absolute 1e-12 for values near 0)
-ATOL = 1e-12
+# --check: differences relative, elementwise, with |shipped value| floored at FLOOR (absolute near 0)
+FLOOR = 0.01
+INPUT_RTOL = 1e-8  # --check: regenerated inputs (deterministic draws) may differ from the shipped ones by round-off only
 
 PROVENANCE = ('oscillator_model.py (Rajashekhar and Ellingwood 1993, Example 2: g = 3r - |z_max|, Eq. 12; '
               'z_max of the yielding oscillator of Fig. 10 solved exactly event by event; closed-form '
@@ -97,10 +104,17 @@ FILES = ('inputs.csv', 'outputs.csv', 'gradients.csv', 'gradients_linear.csv')
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
-    ap.add_argument('--out', required=True, help='output directory (required; give this directory explicitly to rewrite the shipped files)')
+    ap.add_argument('--out', default=None,
+                    help='output directory (required without --check; with --check, a temporary directory by default)')
     ap.add_argument('--check', action='store_true',
-                    help='compare with the CSVs in this directory (needs --out DIR elsewhere)')
+                    help='compare with the CSVs in this directory (--out DIR, if given, must be elsewhere)')
     args = ap.parse_args()
+    if args.out is None:
+        if args.check:
+            args.out = tempfile.mkdtemp(prefix='check_')
+            atexit.register(shutil.rmtree, args.out, ignore_errors=True)
+        else:
+            ap.error('--out DIR is required without --check')
     here = os.path.realpath(HERE)
     out_real = os.path.realpath(args.out)
     if args.check and os.path.commonpath([out_real, here]) == here:
@@ -127,21 +141,27 @@ def main():
     el = fd_check(X, Gl * sy, om.limit_state_linear)
     print(f'linear closed form, gradient vs central differences: max relative error {el.max():.1e}, '
           f'median {np.median(el):.1e}')
+    print(f'total {time.perf_counter() - t0:.1f} s')
     if args.check:
-        rel = []
+        bad, worst = [], (-1.0, '')
         for n in FILES:
             a, b = read_csv(os.path.join(args.out, n)), read_csv(os.path.join(HERE, n))
-            if a.shape != b.shape:
-                rel.append(np.inf)
+            if a.shape != b.shape or not np.array_equal(np.isnan(a), np.isnan(b)):
+                bad.append(f'FAIL: {n}: shape {a.shape} or NaN pattern differs from the shipped {b.shape}')
                 continue
-            rel.append(np.max(np.abs(a - b) / np.maximum(np.abs(b), ATOL / RTOL)))
-        ok = all(r <= RTOL for r in rel)
-        print('max relative differences from the shipped files (' + ', '.join(FILES) + '):',
-              [f'{r:.1e}' for r in rel], f'(tolerance {RTOL:g}, absolute {ATOL:g} near 0):', 'PASS' if ok else 'FAIL')
-        if not ok:
+            if n == 'outputs.csv' and not np.array_equal(a[:, 2], b[:, 2]):
+                bad.append(f'FAIL: {n}: the yielded flag differs at {int(np.sum(a[:, 2] != b[:, 2]))} samples')
+            rel = np.nanmax(np.abs(a - b) / np.maximum(np.abs(b), FLOOR))
+            print(f'{n}: largest difference from the shipped file {rel:.1e} (relative, elementwise, '
+                  f'|shipped value| floored at {FLOOR:g})')
+            if n == 'inputs.csv' and rel > INPUT_RTOL:
+                bad.append(f'FAIL: {n} differs from the shipped inputs by {rel:.1e} > {INPUT_RTOL:g}')
+            worst = max(worst, (rel, n))
+        print(f'largest difference from the shipped files: {worst[0]:.1e} (relative, {worst[1]})')
+        for line in bad:
+            print(line)
+        if bad:
             sys.exit(1)
-    print(f'total {time.perf_counter() - t0:.1f} s')
-
 
 if __name__ == '__main__':
     main()

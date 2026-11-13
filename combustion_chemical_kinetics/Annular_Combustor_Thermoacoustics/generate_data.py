@@ -2,7 +2,7 @@
 
     python generate_data.py              # both cases, writes the CSVs next to this script
     python generate_data.py --out /tmp/acx --mc 2000    # smaller Monte Carlo, elsewhere
-    python generate_data.py --out /tmp/acx --check      # full rerun elsewhere, compared with the files here
+    python generate_data.py --check                     # full rerun in a temporary directory, compared with the files here
 
 For each case (weak, strong coupling; Bauerheim et al. 2016, Table 2) this writes
 
@@ -17,12 +17,18 @@ For each case (weak, strong coupling; Bauerheim et al. 2016, Table 2) this write
                          `mc_inputs(case)` redraws them from the seed)
 
 and prints the checks quoted in DATA.md: the nominal roots, the Magri et al. Table 2
-eigenvalues, the branch check, and the gradients against central differences.
+eigenvalues, the branch check, and the gradients against central differences. --check writes to
+a temporary directory (or --out DIR outside this one), prints the largest differences from the shipped
+files (relative to each column's largest value), and fails only on structural mismatches (shapes, NaN
+pattern, inputs).
 Only numpy and the standard library are imported.
 """
 import argparse
+import atexit
 import os
+import shutil
 import sys
+import tempfile
 import time
 
 import numpy as np
@@ -101,26 +107,48 @@ def write(path, A, fmt, header):
     np.savetxt(path, A, fmt=fmt, delimiter=',', header=header)
 
 
+INPUT_RTOL = 1e-8   # --check fails if a regenerated input (a seeded draw) differs by more (relative)
+
+
 def compare(out, names):
-    """Largest difference of each rerun file from the shipped one, relative to the largest
-    absolute value in each column (so that values near zero do not dominate)."""
+    """Print the largest difference of each rerun file from the shipped one, relative to the largest
+    absolute value in each column (so that values near zero do not dominate). False on a structural
+    mismatch: a different shape or NaN pattern, or inputs (seeded draws) beyond INPUT_RTOL."""
+    ok, worst = True, (0.0, names[0])
     for name in names:
         new = np.loadtxt(os.path.join(out, name), delimiter=',', ndmin=2)
         old = np.loadtxt(os.path.join(HERE, name), delimiter=',', ndmin=2)
-        if new.shape != old.shape:
-            print(f'{name}: shape {new.shape} differs from the shipped {old.shape}')
+        if new.shape != old.shape or not np.array_equal(np.isnan(new), np.isnan(old)):
+            print(f'FAIL: {name}: shape {new.shape} or NaN pattern differs from the shipped {old.shape}')
+            ok = False
             continue
-        scale = np.maximum(np.abs(old).max(axis=0), np.finfo(float).tiny)
-        print(f'{name}: max difference / column max {(np.abs(new - old) / scale).max():.1e}')
+        scale = np.maximum(np.nanmax(np.abs(old), axis=0), np.finfo(float).tiny)
+        d = np.nanmax(np.abs(new - old) / scale)
+        print(f'{name}: max difference / column max {d:.1e}')
+        if name.startswith('inputs'):
+            if d > INPUT_RTOL:
+                print(f'FAIL: {name} differs from the shipped inputs by {d:.1e} > {INPUT_RTOL:g}')
+                ok = False
+        elif d >= worst[0]:
+            worst = (d, name)
+    print(f'largest difference from the shipped files: {worst[0]:.1e} (relative to the column max, {worst[1]})')
+    return ok
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
-    ap.add_argument('--out', default=HERE)
+    ap.add_argument('--out', default=None,
+                    help='output directory (default: this directory; with --check, a temporary directory)')
     ap.add_argument('--mc', type=int, default=M_MC, help='Monte Carlo sample size (default 10000)')
     ap.add_argument('--nfd', type=int, default=10, help='samples per case in the finite-difference check')
     ap.add_argument('--check', action='store_true', help='compare the rerun files with the shipped ones')
     args = ap.parse_args()
+    if args.out is None:
+        if args.check:
+            args.out = tempfile.mkdtemp(prefix='check_')
+            atexit.register(shutil.rmtree, args.out, ignore_errors=True)
+        else:
+            args.out = HERE
     if args.check and os.path.abspath(args.out) == HERE:
         ap.error('--check needs --out DIR outside this directory, so that the shipped files are not overwritten')
     if os.path.abspath(args.out) == HERE and args.mc != M_MC:
@@ -175,7 +203,8 @@ def main():
         names = [f'{kind}_{case}.csv' for case in acm.CASES for kind in ('inputs', 'outputs', 'gradients')]
         if args.mc == M_MC:
             names += [f'montecarlo_{case}.csv' for case in acm.CASES]
-        compare(args.out, names)
+        if not compare(args.out, names):
+            sys.exit(1)
 
 
 if __name__ == '__main__':

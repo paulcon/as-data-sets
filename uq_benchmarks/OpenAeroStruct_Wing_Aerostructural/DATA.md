@@ -65,11 +65,12 @@ The CSVs are plain comma-separated numbers after two `#` lines (a description, a
 ```bash
 python3 -m venv oasvenv && oasvenv/bin/pip install openaerostruct==2.12.0    # pulls openmdao (3.45.2 when the files were made)
 oasvenv/bin/python generate_data.py                                          # all 2000 samples, one process, writes here
-oasvenv/bin/python generate_data.py --rows 0:10 --out DIR --check            # a subset, compared with the shipped files
+oasvenv/bin/python generate_data.py --check                                  # all 2000 samples in a temporary directory, compared with the shipped files
+oasvenv/bin/python generate_data.py --rows 0:10 --check                      # a subset, compared with the shipped files
 oasvenv/bin/python check_accuracy.py --psdr PSDR/tests --slow                # the accuracy numbers below
 ```
 
-`generate_data.py` stops if OpenAeroStruct is missing (in `.venv` it exits with status 3 and the install message) or if another version is installed (override with `--any-oas`); `--check` and `--rows` need `--out` outside this directory, so that the shipped files are never overwritten.
+`generate_data.py` stops if OpenAeroStruct is missing (in `.venv` it exits with status 3 and the install message) or if another version is installed (override with `--any-oas`); `--check` writes to a temporary directory unless `--out` is given, `--check` and `--rows` need `--out` outside this directory, so that the shipped files are never overwritten. `--check` prints, for the inputs, outputs and gradients, the largest difference relative to a column's largest entry, and the largest of these; it exits with code 1 only on a structural mismatch: a missing file, a different shape or NaN pattern, or inputs that differ from the shipped design rows by more than 10⁻⁸ (relative). The only observed differences are those of the original platform below (bit for bit at the digits written); `--check` has not been run on macOS, where OpenAeroStruct is not installed in `.venv`.
 
 **Provenance of the shipped files.** Written on 2026-10-31 in a Linux container (2 CPUs shared with other jobs; Python 3.13, OpenAeroStruct 2.12.0, OpenMDAO 3.45.2, numpy 2.5.4, scipy 1.18.1), one process at a time, with `nice -n 10`, in four chunks of 500 rows joined with `generate_data.py --merge c0 c1 c2 c3` (which checks that the chunk inputs are the design rows in order). Run time of that original run: 1573 s wall in all (420.8, 487.8, 362.0 and 302.3 s for the four chunks; about 0.29 s of CPU per sample in the last three). One evaluation costs about 0.05–0.3 s; the 4 extra solves for the E and G differences and the total-derivative solve make up the rest of a sample. There, `--rows 0:10 --check` and `--rows 1995:2000 --check` reproduced outputs and gradients bit for bit at the digits written.
 

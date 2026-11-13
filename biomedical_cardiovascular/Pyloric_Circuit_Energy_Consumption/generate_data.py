@@ -16,15 +16,24 @@ Usage
   python generate_data.py --pyloric /path/to/pyloric --rows 0:100 --out CHUNKDIR
   ...                                                  (one call per block of rows)
   python generate_data.py --merge CHUNKDIR            # writes inputs.csv, outputs.csv here
+  python generate_data.py --pyloric ... --check      # all rows, in a temporary directory, compared
   python generate_data.py --pyloric ... --rows 0:5 --out OTHERDIR --check
 
-CHUNKDIR and OTHERDIR must be outside this directory. Without pyloric (or without pandas or
+CHUNKDIR and OTHERDIR must be outside this directory (with --check, --out defaults to a temporary
+directory that is removed at the end). Without pyloric (or without pandas or
 Cython, which it needs) the script exits with status 3 and says what to install.
+
+--check prints the largest differences of the computed rows from the shipped CSVs and fails only on
+structural mismatches (shapes, NaN pattern, spike counts and flags, inputs that differ by more than
+INPUT_RTOL).
 """
 import argparse
+import atexit
 import glob
 import os
+import shutil
 import sys
+import tempfile
 import time
 import types
 
@@ -36,6 +45,8 @@ M = 1100              # number of samples
 DT = 0.025            # ms (paper Methods; pyloric default)
 T_MAX = 11000         # ms; the first T_BURN ms are discarded, leaving 10 s (pyloric defaults)
 T_BURN = 1000
+INPUT_RTOL = 1e-8     # --check fails if the regenerated inputs differ by more (relative)
+N_E = 4               # columns of outputs.csv that are energies; the others are counts and 0/1 flags
 NOISE_STD = 0.001     # pyloric's noise_std (default): SD of a Gaussian current added at every step,
                       # in the units of the ionic currents (see DATA.md); the paper writes 0.001 mV ms^-0.5
 
@@ -157,15 +168,44 @@ def merge(chunkdir, outdir):
     print(f"merged {len(files)} chunks, {M} rows; total simulation CPU {cpu:.0f} s")
 
 
+def compare(X, Y, rows):
+    """Compare inputs X and outputs Y of `rows` with the shipped CSVs; print the largest differences;
+    return True on a structural mismatch."""
+    X_all = np.loadtxt(os.path.join(HERE, "inputs.csv"), delimiter=",", ndmin=2)
+    Y_all = np.loadtxt(os.path.join(HERE, "outputs.csv"), delimiter=",", ndmin=2)
+    X_ship, Y_ship = X_all[rows], Y_all[rows]
+    if len(X_all) != M or len(Y_all) != M or X.shape != X_ship.shape or Y.shape != Y_ship.shape:
+        print(f"FAIL: shipped rows inputs {len(X_all)}, outputs {len(Y_all)} (of {M}); shapes of the {len(rows)} "
+              f"rows checked: inputs {X.shape} vs {X_ship.shape}, outputs {Y.shape} vs {Y_ship.shape}")
+        return True
+    dx = np.max(np.abs(X - X_ship) / np.abs(X_ship).clip(1e-300))
+    de = np.nanmax(np.abs(Y[:, :N_E] - Y_ship[:, :N_E]) / np.abs(Y_ship[:, :N_E]).clip(1e-300), initial=0.0)
+    print(f"check: largest relative difference (elementwise) inputs {dx:.1e}, energies {de:.1e}")
+    fail = False
+    for what, bad in (("inputs differ by more than %g (relative)" % INPUT_RTOL, dx > INPUT_RTOL),
+                      ("NaN pattern differs", not np.array_equal(np.isnan(Y), np.isnan(Y_ship))),
+                      ("spike counts or flags differ", not np.array_equal(Y[:, N_E:], Y_ship[:, N_E:], equal_nan=True))):
+        if bad:
+            print(f"FAIL: {what}")
+            fail = True
+    print(f"largest difference from the shipped files: {de:.1e} (relative, energies in outputs.csv)")
+    return fail
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--pyloric", help="path to a clone of github.com/mackelab/pyloric")
     ap.add_argument("--rows", default=f"0:{M}")
-    ap.add_argument("--out", help="directory for the chunk files (outside this directory)")
+    ap.add_argument("--out", default=None,
+                    help="directory for the chunk files, outside this directory (required without --check; "
+                         "with --check, default a temporary directory)")
     ap.add_argument("--merge", metavar="CHUNKDIR")
     ap.add_argument("--check", action="store_true",
                     help="compare the rows computed with the shipped CSVs")
     a = ap.parse_args()
+    if a.out is None and a.check and not a.merge:
+        a.out = tempfile.mkdtemp(prefix="check_")
+        atexit.register(shutil.rmtree, a.out, ignore_errors=True)
     if a.merge:
         merge(a.merge, HERE)
         return
@@ -188,12 +228,8 @@ def main():
     np.savez(os.path.join(a.out, f"chunk_{r0:05d}_{r1:05d}.npz"), rows=rows, Y=Y, cpu_s=cpu,
              wall_s=wall)
     print(f"rows {r0}:{r1}: CPU {cpu:.1f} s, wall {wall:.1f} s")
-    if a.check:
-        X_ship = np.loadtxt(os.path.join(HERE, "inputs.csv"), delimiter=",")
-        Y_ship = np.loadtxt(os.path.join(HERE, "outputs.csv"), delimiter=",")
-        dx = np.max(np.abs(to_physical(theta)[rows] - X_ship[rows]) / np.abs(X_ship[rows]).clip(1e-300))
-        dy = np.nanmax(np.abs(Y - Y_ship[rows]) / np.abs(Y_ship[rows]).clip(1e-300))
-        print(f"check: max relative difference inputs {dx:.1e}, outputs {dy:.1e}")
+    if a.check and compare(to_physical(theta)[rows], Y, rows):
+        sys.exit(1)
 
 
 if __name__ == "__main__":

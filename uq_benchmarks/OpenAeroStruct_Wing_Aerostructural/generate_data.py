@@ -1,7 +1,9 @@
 """Write inputs.csv, outputs.csv and gradients.csv with OpenAeroStruct 2.x.
 
     python generate_data.py                                   # all 2000 samples, writes here
-    python generate_data.py --rows 0:10 --out DIR --check     # subset, compared with the shipped files
+    python generate_data.py --check                           # all 2000 samples in a temporary directory,
+                                                              # compared with the shipped files
+    python generate_data.py --rows 0:10 --check               # subset, compared with the shipped files
 
     # the shipped files were made in chunks (one process at a time), then merged:
     python generate_data.py --rows 0:500    --out chunks/c0
@@ -24,13 +26,17 @@ geometric/flight inputs, central differences for E and G, exact for mrho), colum
 12 * i + j = d QOI_i / d NAMES_j.
 
 One process; no multiprocessing. `--check` compares the rows written with the same
-rows of the shipped files and prints the largest relative differences. `--merge`
+rows of the shipped files and prints the largest differences relative to each column's
+largest entry; it fails only on structural mismatches (shapes, NaN pattern, inputs). `--merge`
 concatenates chunk directories (in the order given), checks that their inputs are the
 design rows, and writes the three files to --out.
 """
 import argparse
+import atexit
 import os
+import shutil
 import sys
+import tempfile
 import time
 
 import numpy as np
@@ -42,6 +48,8 @@ import oas_wing_driver as ow  # noqa: E402
 SEED = 2018
 M = 2000
 OAS_VERSION = "2.12.0"   #: the version that wrote the shipped files
+# --check reports |new - shipped| / column max (E, G columns are central differences)
+INPUT_RTOL = 1e-8  #: --check: the inputs (deterministic draws) may differ from the shipped ones by round-off only
 UNITS = {"twist_1": "deg", "twist_2": "deg", "twist_3": "deg", "thickness_1": "m",
          "thickness_2": "m", "thickness_3": "m", "root_chord": "-", "taper_ratio": "-",
          "alpha": "deg", "E": "Pa", "G": "Pa", "mrho": "kg/m^3"}
@@ -100,14 +108,46 @@ def merge(dirs, out):
     write_all(out, X[:n], np.vstack(parts["outputs"]), np.vstack(parts["gradients"]), prov, str(n))
 
 
+def compare(out, rows):
+    """Print |new - shipped| / column max for the rows written to out; return the structural failures."""
+    bad, worst = [], (-1.0, "")
+    for name in ("inputs.csv", "outputs.csv", "gradients.csv"):
+        ref = np.loadtxt(os.path.join(HERE, name), delimiter=",", ndmin=2)
+        new = np.loadtxt(os.path.join(out, name), delimiter=",", ndmin=2)
+        if len(ref) != M or ref.shape[1:] != new.shape[1:] or len(new) != len(rows):
+            bad.append("FAIL: %s: shape %s, shipped %s" % (name, new.shape, ref.shape))
+            continue
+        ref = ref[rows]
+        if not np.array_equal(np.isnan(new), np.isnan(ref)):
+            bad.append("FAIL: %s: the NaN pattern differs from the shipped file" % name)
+            continue
+        scale = np.maximum(np.nanmax(np.abs(ref), axis=0), 1e-300)
+        d = np.nanmax(np.abs(new - ref) / scale)
+        print("%s: max |new - shipped| / column max = %.2e" % (name, d))
+        if name == "inputs.csv" and d > INPUT_RTOL:
+            bad.append("FAIL: %s differs from the shipped inputs by %.1e > %g" % (name, d, INPUT_RTOL))
+        worst = max(worst, (d, name))
+    print("largest difference from the shipped files: %.1e (relative to the column max, %s)" % worst)
+    for line in bad:
+        print(line)
+    return bad
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--rows", default=None, help="slice a:b of the design to run")
-    ap.add_argument("--out", default=HERE)
-    ap.add_argument("--check", action="store_true")
+    ap.add_argument("--out", default=None,
+                    help="output directory (default: this directory; with --check, a temporary directory)")
+    ap.add_argument("--check", action="store_true", help="compare the rows written with the shipped files")
     ap.add_argument("--merge", nargs="+", default=None, help="chunk directories to concatenate")
     ap.add_argument("--any-oas", action="store_true", help="run with an OpenAeroStruct version other than %s" % OAS_VERSION)
     a = ap.parse_args()
+    if a.out is None:
+        if a.check:
+            a.out = tempfile.mkdtemp(prefix="check_")
+            atexit.register(shutil.rmtree, a.out, ignore_errors=True)
+        else:
+            a.out = HERE
     if os.path.abspath(a.out) == HERE and (a.check or a.rows):
         ap.error('--check and --rows need --out DIR outside this directory, so that the shipped files are not overwritten')
     if a.merge:
@@ -146,13 +186,8 @@ def main():
     write_all(a.out, X[rows], F, D, provenance(), what)
     print("%d samples in %.1f s wall, %.1f s CPU (%.2f s CPU per sample)" %
           (len(rows), elapsed, cpu, cpu / len(rows)))
-    if a.check:
-        for name in ("outputs.csv", "gradients.csv"):
-            ref = np.loadtxt(os.path.join(HERE, name), delimiter=",")[rows]
-            new = np.loadtxt(os.path.join(a.out, name), delimiter=",", ndmin=2)
-            scale = np.maximum(np.abs(ref).max(axis=0), 1e-300)
-            print("%s: max |new - shipped| / column max = %.2e" % (name, np.max(np.abs(new - ref) / scale)))
-
+    if a.check and compare(a.out, rows):
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

@@ -1,7 +1,8 @@
 """Regenerate the data files of Parcel_Droplet_Activation (needs pyrcel 2.0.0).
 
     python generate_data.py --out DIR                       # all 300 rows (about 1.4 CPU-hours)
-    python generate_data.py --out DIR --rows 0:10 --check   # a subset, compared with the shipped files
+    python generate_data.py --check                         # all 300 rows in a temporary directory, compared with the shipped files
+    python generate_data.py --rows 0:10 --check             # a subset, compared with the shipped files
 
 Design: a Latin hypercube of M = 300 points in the Table 1 box of Rothenberg and Wang (2016,
 p. 1259), in the paper's coordinates (log10 N, log10 mu_g, sigma_g, kappa, log10 V, T, P,
@@ -20,18 +21,22 @@ without gradients have nan in the gradient columns and grad_ok = 0. Rows are app
 DIR/rows.jsonl as they finish, so an interrupted run resumes where it stopped; the CSV files
 are written when every requested row is done.
 
-The script never writes into its own directory: --out is required and must be outside it
-(not a subdirectory either; copy the finished CSVs in by hand). --check compares with the shipped files
-with tolerance 1e-6 (absolute on log10 S_max and the activated fraction, relative 2-norm per
-row on the gradients scaled to [-1, 1]); the shipped files are the record.
+The script never writes into its own directory: --out is required without --check and must be outside
+it (not a subdirectory either; copy the finished CSVs in by hand); with --check it defaults to a temporary
+directory, removed at the end. --check prints the largest differences from the shipped files (absolute on
+log10 S_max and the activated fraction, relative 2-norm per row on the gradients scaled to [-1, 1]) and fails
+only on structural mismatches (shapes, nan entries, flags, inputs); the shipped files are the record.
 
 Needs pyrcel 2.0.0 (pip install pyrcel==2.0.0, Python >= 3.11); without it the script stops
 with an error naming what to install.
 """
 import argparse
+import atexit
 import json
 import os
+import shutil
 import sys
+import tempfile
 import time
 
 import numpy as np
@@ -113,29 +118,69 @@ def write(out, X, rows, res):
             [f"{what}/d{n} [per {u}]" for n, u in zip(D.NAMES, D.UNITS)]))
 
 
+INPUT_RTOL = 1e-8   # --check fails if a regenerated input (a seeded draw) differs by more (relative)
+
+
 def check(out, rows):
+    """Print the largest difference of each file; False on a structural mismatch."""
     ld = lambda d, n: np.loadtxt(os.path.join(d, n), delimiter=",", ndmin=2)  # noqa: E731
     hr = (D.UPPER - D.LOWER) / 2
-    for fn in ("inputs.csv", "outputs.csv"):
+    passed, worst = True, (0.0, "absolute", "outputs.csv")
+    for fn in ("inputs.csv", "outputs.csv", "gradients.csv", "act_frac_gradients.csv"):
         new, old = ld(out, fn), ld(HERE, fn)[rows]
-        cols = slice(None) if fn == "inputs.csv" else slice(0, 2)
-        print(f"  {fn}: max |new - shipped| = {np.max(np.abs(new[:, cols] - old[:, cols])):.2e}"
-              + ("" if fn == "inputs.csv" else
-                 f"; flags equal: {bool(np.all(new[:, 2:5] == old[:, 2:5]))}"))
-    for fn in ("gradients.csv", "act_frac_gradients.csv"):
-        new, old = ld(out, fn) * hr, ld(HERE, fn)[rows] * hr
-        ok = np.all(np.isfinite(old), axis=1) & np.all(np.isfinite(new), axis=1)
+        if new.shape != old.shape:
+            print(f"  FAIL: {fn}: shape {new.shape} differs from the shipped {old.shape}")
+            passed = False
+            continue
+        if fn == "inputs.csv":       # the design is a seeded draw
+            d = np.max(np.abs(new - old) / np.abs(old).max(axis=0))
+            print(f"  {fn}: max |new - shipped| / max |shipped| per column = {d:.2e}")
+            if d > INPUT_RTOL:
+                print(f"  FAIL: {fn} differs from the shipped inputs by {d:.2e} > {INPUT_RTOL:g}")
+                passed = False
+            continue
+        if fn == "outputs.csv":
+            if not np.array_equal(np.isnan(new[:, :2]), np.isnan(old[:, :2])):
+                print(f"  FAIL: {fn}: nan entries of log10 S_max or act_frac differ from the shipped file")
+                passed = False
+                continue
+            d = np.nanmax(np.abs(new[:, :2] - old[:, :2]))
+            flags = bool(np.all(new[:, 2:5] == old[:, 2:5]))
+            print(f"  {fn}: max |new - shipped| = {d:.2e}; flags equal: {flags}")
+            if not flags:
+                print(f"  FAIL: {fn}: the flags peaked, grad_ok or grad_method differ from the shipped file")
+                passed = False
+            if d >= worst[0]:
+                worst = (d, "absolute", fn)
+            continue
+        new, old = new * hr, old * hr
+        if not np.array_equal(np.isfinite(new), np.isfinite(old)):
+            print(f"  FAIL: {fn}: nan entries differ from the shipped file")
+            passed = False
+            continue
+        ok = np.all(np.isfinite(old), axis=1)
         e = np.linalg.norm(new[ok] - old[ok], axis=1) / np.maximum(np.linalg.norm(old[ok], axis=1), 1e-300)
-        print(f"  {fn}: max relative 2-norm difference per row = {e.max() if ok.any() else np.nan:.2e} "
-              f"({ok.sum()} rows with gradients)")
+        emax = e.max() if ok.any() else 0.0
+        print(f"  {fn}: max relative 2-norm difference per row = {emax:.2e} ({ok.sum()} rows with gradients)")
+        if emax >= worst[0]:
+            worst = (emax, "relative, row 2-norm", fn)
+    print(f"largest difference from the shipped files: {worst[0]:.1e} ({worst[1]}, {worst[2]})")
+    return passed
 
 
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--out", required=True, help="output directory")
+    p.add_argument("--out", default=None,
+                   help="output directory (required without --check; with --check, default a temporary directory)")
     p.add_argument("--rows", default=None, help="a:b, a subset of the rows")
     p.add_argument("--check", action="store_true", help="compare with the shipped files")
     a = p.parse_args()
+    if a.out is None:
+        if a.check:
+            a.out = tempfile.mkdtemp(prefix="check_")
+            atexit.register(shutil.rmtree, a.out, ignore_errors=True)
+        else:
+            p.error("--out DIR is required without --check")
     out = os.path.abspath(a.out)
     if os.path.commonpath([os.path.realpath(out), os.path.realpath(HERE)]) == os.path.realpath(HERE):
         sys.exit("--out must be a directory outside this one (not this directory or a subdirectory of it), "
@@ -175,8 +220,8 @@ def main():
     write(out, X, rows, res)
     print(f"{len(res)} rows; CPU time of these rows {sum(r['cpu_s'] for r in res):.0f} s "
           f"(this call {time.process_time() - t0:.0f} s)")
-    if a.check:
-        check(out, rows)
+    if a.check and not check(out, rows):
+        sys.exit(1)
 
 
 if __name__ == "__main__":

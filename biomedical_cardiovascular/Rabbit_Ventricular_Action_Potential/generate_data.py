@@ -9,7 +9,11 @@ One process; about 10 s of CPU per point (1000 beats), about 55 min of CPU in al
     nice -n 10 python generate_data.py            # all 4 chunks (finished ones skipped), then merge
     python generate_data.py --chunk 2             # one chunk of 80 points -> parts/chunk_2.npz
     python generate_data.py --merge               # parts -> rabbit_ap_samples.csv
-    python generate_data.py --check 3             # rerun the first 3 points, compare with the CSV
+    python generate_data.py --check               # rerun the first 3 points, compare with the CSV
+    python generate_data.py --check 10            # the same with the first 10 points
+
+--check prints the largest differences from the shipped file and fails only on structural mismatches
+(shape, NaN pattern, response class, inputs that differ from the Sobol' design by more than INPUT_RTOL).
 
 A chunk saves its progress every 5 points (parts/chunk_<k>.partial.npz), so an interrupted
 run resumes where it stopped. Runs whose response is not a normal 1:1 AP train are kept and
@@ -30,6 +34,7 @@ N = 320              # first N points of a scrambled Sobol' sequence of 2^9 = 51
 N_CHUNKS = 4
 N_BEATS = 1000       # paper p. 10: trains of 1000 APs at BCL 500 ms, biomarkers of the last AP
 CHECK_BEAT = 500     # biomarkers also recorded at beat 500 (convergence check)
+INPUT_RTOL = 1e-8     # --check fails if the CSV's inputs differ from the design by more (relative)
 HERE = os.path.dirname(os.path.abspath(__file__))
 PARTS = os.path.join(HERE, "parts")
 OUT = os.path.join(HERE, "rabbit_ap_samples.csv")
@@ -124,25 +129,59 @@ def merge():
 
 
 def check(n):
-    D = np.loadtxt(OUT, delimiter=",")
+    t0 = time.time()
+    D = np.loadtxt(OUT, delimiter=",", ndmin=2)
+    bad = check_file(D)
+    if bad:
+        return bad
     X = design()
-    assert np.allclose(D[:, :15], X, rtol=1e-11, atol=0), "CSV inputs differ from the design"
     worst = 0.0
     for i in range(n):
         row, cls = evaluate(X[i])
-        new = np.array(row[:-1])                 # all but cpu_s
-        old = D[i, 15:-1]
-        rel = np.max(np.abs(new - old) / np.maximum(np.abs(old), 1e-300))
+        k, rel = compare_row(i, cls, row, D)
+        bad += k
         worst = max(worst, rel)
-        print(f"point {i}: {cls}; max relative difference from the CSV {rel:.2e}", flush=True)
-    print(f"check: worst relative difference over {n} points {worst:.2e}")
+    print(f"check of {n} points: {time.time() - t0:.0f} s wall")
+    print(f"largest difference from the shipped files: {worst:.1e} (relative, {os.path.basename(OUT)})")
+    return bad
+
+
+def check_file(D):
+    """Structural check of the CSV: its shape, and its inputs against the design. Return 0 or 1."""
+    if D.shape != (N, len(COLS)):
+        print(f"FAIL: {os.path.basename(OUT)} has shape {D.shape}, not {(N, len(COLS))}")
+        return 1
+    dx = np.max(np.abs(D[:, :15] - design()) / np.abs(design()))
+    print(f"inputs against the Sobol' design: largest relative difference {dx:.1e} (the CSV holds 12 digits)")
+    if dx > INPUT_RTOL:
+        print(f"FAIL: the inputs differ from the design by more than {INPUT_RTOL:g} (relative)")
+        return 1
+    return 0
+
+
+def compare_row(i, cls, row, D):
+    """Compare the rerun row (biomarkers, response, cpu_s) of point i with the CSV; print the largest
+    relative difference of the biomarkers; return (0 or 1, that difference)."""
+    new = np.array(row[:-2])                 # the biomarkers (not response, cpu_s)
+    old = D[i, 15:-2]
+    rel = np.nanmax(np.abs(new - old) / np.maximum(np.abs(old), 1e-300), initial=0.0)
+    print(f"point {i}: {cls}; largest relative difference from the CSV {rel:.2e} (elementwise)", flush=True)
+    bad = 0
+    if row[-2] != D[i, -2]:
+        print(f"FAIL: point {i}: response class {row[-2]:g}, CSV {D[i, -2]:g}")
+        bad = 1
+    if not np.array_equal(np.isnan(new), np.isnan(old)):
+        print(f"FAIL: point {i}: the NaN pattern of the biomarkers differs from the CSV")
+        bad = 1
+    return bad, rel
 
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--chunk", type=int)
     ap.add_argument("--merge", action="store_true")
-    ap.add_argument("--check", type=int, metavar="N_POINTS")
+    ap.add_argument("--check", type=int, nargs="?", const=3, metavar="N_POINTS",
+                    help="rerun the first N_POINTS points (default 3) and compare with the CSV")
     a = ap.parse_args()
     t0 = time.time()
     if not a.merge:
@@ -150,7 +189,7 @@ if __name__ == "__main__":
     if a.merge:
         merge()
     elif a.check:
-        check(a.check)
+        sys.exit(1 if check(a.check) else 0)
     elif a.chunk is not None:
         run_chunk(a.chunk)
     else:

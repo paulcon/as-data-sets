@@ -58,11 +58,12 @@ Two-Stream (Table I, p. 9): k = 0.5, mu = 0, s = σ² = 1. Percentage studies: l
 
 ```bash
 python generate_data.py                                    # all five files, 2 processes, writes here
+python generate_data.py --check                            # all five files in a temporary directory; prints the largest differences
 python generate_data.py --rows 40 --out /tmp/vp --check    # first 40 rows of each study, compared with the files here
 python generate_data.py --studies global --out /tmp/vp --check
 ```
 
-The shipped files were written on 2026-10-30 in a Linux container (numpy 2.5.4, scipy 1.18.1, Python 3.13.18). In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31) a full rerun with `--check` took 240 s on two processes, with other jobs running (343 s of CPU, about 27 ms a sample), and printed maximum relative differences from 6.6e-14 (Two-Stream) to 7.1e-10 (Bump-on-Tail σ² = 0.25); the largest are in small entries (gradient components near 1e-4). A rerun on 2026-11-02 took 105 s on two processes and printed the same differences. The samples are independent; `--workers` changes only the run time.
+The shipped files were written on 2026-10-30 in a Linux container (numpy 2.5.4, scipy 1.18.1, Python 3.13.18). In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31) a full rerun with `--check` took 240 s on two processes, with other jobs running (343 s of CPU, about 27 ms a sample), and printed maximum relative differences from 6.6e-14 (Two-Stream) to 7.1e-10 (Bump-on-Tail σ² = 0.25); the largest are in small entries (gradient components near 1e-4). A rerun on 2026-11-02 took 105 s on two processes and printed the same differences. The samples are independent; `--workers` changes only the run time. `--check` prints these differences and does not judge them; it exits with status 1 only on a structural mismatch: a different shape or NaN pattern, or input columns (pct and the inputs) that differ by more than a relative 1e-8 (they are deterministic draws from the seed).
 
 ## Accuracy
 

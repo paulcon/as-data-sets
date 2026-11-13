@@ -133,9 +133,12 @@ notebook.
 ## Regenerating
 
 ```
-python generate_data.py --work /tmp/pulmwk --out /tmp/pulmwk/out            # all rows
-python generate_data.py --work /tmp/pulmwk --rows 0:5 --out /tmp/pulmwk/chk --check
-python check_accuracy.py --work /tmp/pulmwk --rows 0:5
+python generate_data.py --work WORK --out DIR                  # all rows
+python generate_data.py --check                                # rows 0:3, in temporary directories, compared
+python generate_data.py --check --full                         # all rows, compared
+python generate_data.py --work WORK --rows 0:5 --out DIR --check   # a chosen subset, kept in WORK and DIR
+python check_accuracy.py                                       # rows 0:5 (solver built in a temporary directory)
+python check_accuracy.py --work WORK --rows 0:10
 ```
 
 This is an external run: it needs git and g++ (the shipped files were written with g++ 13.3.0, Ubuntu 24.04,
@@ -147,18 +150,18 @@ https://github.com/mjcolebank/Colebank_Identifiability_PDE.git` into the work di
 repository's Makefile names a Windows compiler path, so the driver compiles directly); (3) run the rows,
 each `sor06 k1 k2 k3 Rp1 Rp2 Rd1 Rd2 CT1 CT2 ID` in its own temporary directory, which writes
 `output_ID.2d` (512 times × 9 locations: proximal, midpoint, distal of MPA, LPA, RPA; columns t, x, p, q, A,
-wave speed). Without g++ or git the script stops with a message that names them. `--out` is required;
+wave speed). Without g++ or git the script stops with a message that names them. `--work` and `--out` are required
+without `--check` (with it, they default to temporary directories, and the rows to 0:3 unless `--full`);
 `--check` and `--rows` refuse an `--out` that is this directory or inside it, and `--work` must be outside
 it (symbolic links are resolved). Finished rows are cached in `<work>/rows.jsonl`, so an interrupted run
 resumes.
 
 Run time: the full design (160 rows, 1600 solver runs) took 4057 s of solver CPU (2.5 CPU-s per run,
 25 CPU-s per row on average, 95 CPU-s for the slowest row) and 8267 s of wall time on a shared 2-CPU
-container, as printed by `generate_data.py`. Tolerance of `--check`: inputs and outputs 1e-9 relative
-(max |new − shipped| / max |shipped|), gradients 1e-6 relative per QoI block, and the same failed rows.
+container, as printed by `generate_data.py`. `--check` prints the largest difference of each file (max |new − shipped| / max |shipped|, gradients per QoI block).
 `generate_data.py --rows 0:3 --check` on the generating machine printed differences of 0.00e+00 for all three
-files (below the written digits; 90 CPU-s, 112 s wall). Another compiler or platform can change the last
-digits of each run, which the differences amplify.
+files (below the written digits; 90 CPU-s, 112 s wall). In the repo's `.venv` (macOS, Python 3.11.16, Apple clang 16.0.0 as `g++`, 2026-11-12), `python generate_data.py --check` (rows 0:3) took 83 s wall and printed differences of 0 for inputs and outputs and 9.9e-11 for gradients, and `python check_accuracy.py` took 368 s. Another compiler or platform can change the last
+digits of each run, which the differences amplify. `--check` exits with status 1 only on a structural mismatch: different shapes or row counts, a different status column or set of failed rows (NaN pattern), or inputs that differ by more than 1e-8 (relative).
 
 ## Accuracy
 

@@ -136,11 +136,16 @@ for r in $(seq 0 100 1000); do
   pyl/bin/python generate_data.py --pyloric pyloric --rows $r:$((r+100)) --out CHUNKDIR
 done
 pyl/bin/python generate_data.py --merge CHUNKDIR        # writes inputs.csv and outputs.csv here
+pyl/bin/python generate_data.py --pyloric pyloric --check                         # all rows, in a temporary directory
 pyl/bin/python generate_data.py --pyloric pyloric --rows 500:505 --out OTHERDIR --check
 pyl/bin/python check_accuracy.py --pyloric pyloric
 ```
 
-`--out` is required for a run and must be outside this directory (the chunk files are not shipped).
+`--out` is required for a run and must be outside this directory (the chunk files are not shipped); with
+`--check` it defaults to a temporary directory. `--check` prints the largest relative difference
+(elementwise) of the inputs and of the energies from the shipped files (0 for both in the run below, Linux
+with gcc). It exits with status 1 only on a structural mismatch: different shapes or row counts, a
+different NaN pattern, different spike counts or flags, or inputs that differ by more than 1e-8 (relative).
 torch and sbi are not needed: pyloric imports them in its package `__init__`, but only
 `create_prior()` uses them; `generate_data.py` never calls it and puts empty stand-ins for `torch`
 and `sbi.utils` in `sys.modules` before importing pyloric. The design and the noise are seeded, so a

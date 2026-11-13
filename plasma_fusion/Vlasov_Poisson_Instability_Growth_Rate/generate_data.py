@@ -1,6 +1,7 @@
 """Regenerate the data files of Vlasov_Poisson_Instability_Growth_Rate from plasma_dispersion_model.py.
 
     python generate_data.py                      # all studies, 2 processes, writes here
+    python generate_data.py --check              # all studies, in a temporary directory, compared with the files here
     python generate_data.py --out /tmp/vp --check --studies global
     python generate_data.py --rows 50 --out /tmp/vp --check     # first 50 rows of each study
 
@@ -25,12 +26,19 @@ Random numbers: numpy default_rng([SEED, study index, pct]); SEED = 2024. Sample
 independent, so --workers only changes the run time. A sample whose root cannot be
 certified raises RootError and stops the run (none did in the shipped run).
 
+--check without --out writes to a temporary directory and removes it. It prints the largest
+differences from the shipped files and fails (exit status 1) only on structural mismatches (shapes,
+NaN pattern, input columns (pct and the inputs) differing by more than INPUT_RTOL).
+
 Only numpy, scipy and the standard library are imported.
 """
 import argparse
+import atexit
 import multiprocessing as mp
 import os
+import shutil
 import sys
+import tempfile
 import time
 
 import numpy as np
@@ -42,6 +50,7 @@ import plasma_dispersion_model as pm  # noqa: E402
 SEED = 2024
 N_PCT = 512
 N_GLOBAL = 1000
+INPUT_RTOL = 1e-8  # inputs are deterministic draws: a larger difference means a different seed or range
 
 NOMINAL_BOT_S025 = np.array([0.5, 0.0, 4.0, 0.25, 0.25, 0.8])
 
@@ -118,16 +127,24 @@ def write(path, study, A):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--out', default=HERE)
+    ap.add_argument('--out', default=None,
+                    help='output directory (default: this directory; with --check, a temporary directory)')
     ap.add_argument('--studies', nargs='*', default=list(STUDIES))
     ap.add_argument('--rows', type=int, default=None, help='first rows of each box only')
     ap.add_argument('--workers', type=int, default=2)
     ap.add_argument('--check', action='store_true', help='compare with the files next to this script')
     a = ap.parse_args()
+    if a.out is None:
+        if a.check:
+            a.out = tempfile.mkdtemp(prefix='check_')
+            atexit.register(shutil.rmtree, a.out, ignore_errors=True)
+        else:
+            a.out = HERE
     if os.path.abspath(a.out) == HERE and (a.check or a.rows is not None):
         ap.error('--check and --rows need --out DIR outside this directory, so that the shipped files are not overwritten')
     os.makedirs(a.out, exist_ok=True)
     t0 = time.perf_counter()
+    ok, diffs = True, []
     with mp.Pool(a.workers) as pool:
         for s in a.studies:
             t = time.perf_counter()
@@ -137,11 +154,37 @@ def main():
             print(f'{s}: {A.shape[0]} samples, {nref} needed the fine rescan, 0 failed; '
                   f'{time.perf_counter() - t:.1f} s -> {path}')
             if a.check:
-                ref = np.loadtxt(os.path.join(HERE, STUDIES[s][0]), delimiter=',')
-                B = ref if a.rows is None else _first_rows(ref, s, a.rows)
-                d = np.max(np.abs(A - B)/(1e-12 + np.abs(B)))
-                print(f'  max relative difference from the shipped file: {d:.1e}')
+                same, d = compare(A, s, a.rows)
+                ok = same and ok
+                if d is not None:
+                    diffs.append((d, STUDIES[s][0]))
     print(f'total {time.perf_counter() - t0:.1f} s')
+    if a.check:
+        if diffs:
+            d, n = max(diffs, key=lambda t: t[0])
+            print(f'largest difference from the shipped files: {d:.1e} (relative, {n})')
+        if not ok:
+            sys.exit(1)
+
+
+def compare(A, study, rows=None, ship=HERE):
+    """Compare the regenerated rows A of study with the file in ship.
+
+    Returns (False if there is a structural mismatch, the largest elementwise relative difference or None).
+    """
+    name = STUDIES[study][0]
+    ref = np.loadtxt(os.path.join(ship, name), delimiter=',', ndmin=2)
+    B = ref if rows is None else _first_rows(ref, study, rows)
+    if A.shape != B.shape or not np.array_equal(np.isnan(A), np.isnan(B)):
+        print(f'  FAIL: {name}: shape {A.shape} or NaN pattern differs from the shipped file {B.shape}')
+        return False, None
+    d = np.abs(A - B)/(1e-12 + np.abs(B))
+    nin = (study != 'global') + len(pm.NAMES[STUDIES[study][1]])      # pct and the inputs
+    din, dout = float(np.nanmax(d[:, :nin])), float(np.nanmax(d[:, nin:]))
+    print(f'  largest elementwise relative difference from the shipped file: inputs {din:.1e}, outputs {dout:.1e}')
+    if din > INPUT_RTOL:
+        print(f'  FAIL: {name}: the input columns differ from the shipped ones by more than {INPUT_RTOL:g} (relative)')
+    return din <= INPUT_RTOL, max(din, dout)
 
 
 def _first_rows(ref, study, rows):

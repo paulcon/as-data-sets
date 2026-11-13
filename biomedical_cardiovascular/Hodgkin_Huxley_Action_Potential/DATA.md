@@ -109,10 +109,11 @@ In the notebook:
 
 ```bash
 python generate_data.py                                    # 1000 samples, 2 processes
-python generate_data.py --n 20 --out /tmp/hh --check       # the first 20 rows, compared with the files here
+python generate_data.py --check                            # all 1000 rows in a temporary directory, compared with the files here
+python generate_data.py --n 20 --check                     # the first 20 rows only (about 3 s)
 ```
 
-The seed is fixed and the samples are the first N rows of one stream, so a run reproduces the files. `--workers` changes only the run time. The run that wrote the shipped files (2026-10-30; Python 3.13.18, numpy 2.5.4, scipy 1.18.1; Linux x86_64, 2 cores) took 120 s on two processes, about 0.2 s of CPU per sample. `--n 20 --check` printed: inputs identical; maximum relative difference, outputs 4.3e-13 and gradients 3.4e-11 (the digits written). The notebook runs in about 15 s.
+The seed is fixed and the samples are the first N rows of one stream, so a run reproduces the files. `--workers` changes only the run time. The run that wrote the shipped files (2026-10-30; Python 3.13.18, numpy 2.5.4, scipy 1.18.1; Linux x86_64, 2 cores) took 120 s on two processes, about 0.2 s of CPU per sample. `--n 20 --check` printed: inputs identical; maximum relative difference, outputs 4.3e-13 and gradients 3.4e-11 (the digits written). In the repo's `.venv` (macOS, 2026-11-12) `python generate_data.py --check` took about 260 s on two processes and printed: inputs identical; maximum relative difference, outputs 1.1e-10 and gradients 2.4e-9 over all 1000 rows. These are relative differences, elementwise for the outputs and of the 2-norm of each gradient vector for the gradients; the `.venv` run was on macOS with Python 3.11.16, numpy 2.4.6 and scipy 1.17.1, and `--n 20 --check` there printed outputs 1.1e-10 and gradients 2.0e-9. `--check` prints these differences and exits with status 1 only on a structural mismatch: different shapes or row counts, a different NaN pattern, or inputs that differ by more than 1e-8 (relative). The notebook runs in about 15 s.
 
 ## Accuracy
 

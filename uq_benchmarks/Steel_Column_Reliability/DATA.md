@@ -61,12 +61,13 @@ The paper does not give the Gumbel and Weibull parameterizations. Chosen: larges
 ## Regenerating
 
 ```bash
-python generate_data.py --out DIR --check     # writes to DIR (not this directory) and compares
+python generate_data.py --check               # writes to a temporary directory and compares
+python generate_data.py --out DIR --check     # the same, keeping the files in DIR (not this directory)
 python generate_data.py --out .               # rewrites the shipped files (from this directory)
 python check_accuracy.py                      # the numbers marked below
 ```
 
-`--out` is required; `--check` refuses this directory and any directory inside it. One process. The shipped files were written on 2026-11-09 in a Linux container (x86_64; Python 3.11.18, numpy 2.4.6, scipy 1.17.1). In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-11-10) `python generate_data.py --out DIR --check` takes under 1 s for both configurations plus the finite-difference check (the script reports 0.1 s) and passes: the largest relative differences from the shipped files are at the rounding level, of order 1e-16 to 1e-15 for five of the six files and of order 1e-14 for `paper_outputs.csv`. The stated tolerance is 1e-12 (relative, elementwise), which allows for platform differences in exp, log and the special functions of the inverse CDFs.
+`--out` is required without `--check` (with `--check` it defaults to a temporary directory, removed afterwards); `--check` refuses this directory and any directory inside it, and exits with code 1 only on a structural mismatch: a missing file, a different shape or NaN pattern, or inputs that differ from the shipped ones by more than 1e-8 (relative). One process. The shipped files were written on 2026-11-09 in a Linux container (x86_64; Python 3.11.18, numpy 2.4.6, scipy 1.17.1). In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-11-10) `python generate_data.py --check` takes under 1 s for both configurations plus the finite-difference check (the script reports 0.1 s) and prints the largest relative differences (elementwise) from the shipped files: at the rounding level, of order 1e-16 to 1e-15 for five of the six files and of order 1e-14 for `paper_outputs.csv` (2.5e-14, the largest, in `.venv` on macOS, Python 3.11, 2026-11-12). Another platform can differ in the last bits of exp, log and the special functions of the inverse CDFs.
 
 ## Accuracy
 

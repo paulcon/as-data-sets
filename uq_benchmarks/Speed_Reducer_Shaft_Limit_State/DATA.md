@@ -61,12 +61,13 @@ Li et al., *Structural Safety* 73:42–53, 2018 (doi:10.1016/j.strusafe.2018.02.
 ## Regenerating
 
 ```bash
-python generate_data.py --out DIR --check       # writes to DIR (not this directory) and compares
+python generate_data.py --check                 # writes to a temporary directory and compares
+python generate_data.py --out DIR --check       # the same, keeping the files in DIR (not this directory)
 python generate_data.py --out .                 # from this directory: rewrites the shipped files
 python check_accuracy.py                        # the numbers marked below
 ```
 
-`--out` is required, and `--check` refuses this directory and any directory inside it. One process. The shipped files were written on 2026-11-09 in a Linux container (Python 3.11.18, numpy 2.4.6, scipy 1.17.1). In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-11-10) `python generate_data.py --out DIR --check` takes under 1 s (the script reports 0.04 s for the draws, the model, the writing and the comparison) and passes: the maximum |difference| / max |shipped value| per column is at the rounding level, of order 1e-16, for all three files. The stated tolerance is 1e-12 for that measure: the inputs pass through `scipy.special` (`ndtr`, `log_ndtr`), whose last bits can differ between platforms and library versions.
+`--out` is required without `--check` (with `--check` it defaults to a temporary directory, removed afterwards), and `--check` refuses this directory and any directory inside it; it exits with code 1 only on a structural mismatch: a missing file, a different shape or NaN pattern, or inputs that differ from the shipped ones by more than 1e-8 (relative to the largest value per column). One process. The shipped files were written on 2026-11-09 in a Linux container (Python 3.11.18, numpy 2.4.6, scipy 1.17.1). In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-11-10) `python generate_data.py --check` takes under 1 s (the script reports 0.04 s for the draws, the model, the writing and the comparison) and prints, per file, the maximum |difference| / max |shipped value| per column: at the rounding level, of order 1e-16, for all three files (largest 3.7e-16, `gradients.csv`, in `.venv` on macOS, Python 3.11, 2026-11-12). The inputs pass through `scipy.special` (`ndtr`, `log_ndtr`), whose last bits can differ between platforms and library versions.
 
 ## Accuracy
 

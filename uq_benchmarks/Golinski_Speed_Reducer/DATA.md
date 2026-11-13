@@ -66,10 +66,11 @@ Other ranges are in use, l2 ∈ [7.8, 8.4] and z ∈ [17, 28] (attributed to arX
 
 ```bash
 python generate_data.py                                   # writes the three CSVs here
-python generate_data.py --out /tmp/gs --check             # writes elsewhere and compares
+python generate_data.py --check                           # writes to a temporary directory and compares
+python check_accuracy.py                                  # the checks of the Accuracy section
 ```
 
-The shipped files were written on 2026-10-30 in a Linux container (numpy 2.5.4, Python 3.13.18). In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31) a rerun takes 0.04 s for the 1000 samples (0.19 s including start-up), and `--check` prints maximum absolute differences of 0.0e+00 (inputs), 9.1e-13 (outputs; that is V in cm³, a relative 3.0e-16) and 4.4e-16 (gradients): rounding error, not a change in the model.
+The shipped files were written on 2026-10-30 in a Linux container (numpy 2.5.4, Python 3.13.18). In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31) a rerun takes 0.04 s for the 1000 samples (0.19 s including start-up), and `--check` prints maximum absolute differences of 0.0e+00 (inputs), 9.1e-13 (outputs; that is V in cm³, a relative 3.0e-16) and 4.4e-16 (gradients): rounding error, not a change in the model. `--check` also prints, per file, the largest difference relative to the largest shipped value of each column, and the largest of these, 4.1e-16 (`outputs.csv`, in `.venv` on macOS, Python 3.11, 2026-11-12; 0.2 s with start-up); it exits with code 1 only on a structural mismatch: a missing file, a different shape or NaN pattern, or inputs that differ from the shipped ones by more than 10⁻⁸ (relative to the largest value of each column).
 
 ## Accuracy
 

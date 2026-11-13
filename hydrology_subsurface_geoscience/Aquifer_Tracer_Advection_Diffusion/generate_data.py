@@ -1,11 +1,14 @@
 """Regenerate the inputs, outputs and gradients of Aquifer_Tracer_Advection_Diffusion.
 
     python generate_data.py --fd                                 # writes all files here
+    python generate_data.py --check                              # all files, in a temporary directory, compared with the files here
     python generate_data.py --out DIR --check --fd               # writes to DIR, compares with the files here
     python generate_data.py --out DIR --nmain 20 --nconv 5 --check   # a subset
 
 --check, --nmain and --nconv need --out DIR outside this directory, so that the shipped files are
-never overwritten. Run times are in DATA.md.
+never overwritten; --check without --out uses a temporary directory and removes it. --check prints
+the largest differences from the shipped files and fails (exit status 1) only on structural mismatches
+(shapes, NaN pattern, inputs differing by more than INPUT_RTOL). Run times are in DATA.md.
 
 Inputs: M = 500 Monte Carlo draws of the 10 KLE coefficients z ~ N(0, I),
 numpy default_rng(SEED).standard_normal((500, 10)).
@@ -27,8 +30,11 @@ check of the gradients at five rows on orders 21 and 11. Only numpy, scipy and
 the standard library are imported.
 """
 import argparse
+import atexit
 import os
+import shutil
 import sys
+import tempfile
 import time
 
 import numpy as np
@@ -40,6 +46,7 @@ import tracer_model as tm  # noqa: E402
 SEED = 20231825   # inputs
 M = 500
 NCONV = 50
+INPUT_RTOL = 1e-8  # inputs are deterministic draws: a larger difference means a different seed or range
 NAMES = [f"z_{d + 1}" for d in range(tm.M_KLE)]
 # suffix: (order, description)
 SETS = {
@@ -101,12 +108,19 @@ def fd_check(model, X, rows, h=1e-3):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("--out", default=HERE)
+    ap.add_argument("--out", default=None,
+                    help="output directory (default: this directory; with --check, a temporary directory)")
     ap.add_argument("--nmain", type=int, default=M, help="rows for order 21 and f0")
     ap.add_argument("--nconv", type=int, default=NCONV, help="rows for order 27")
     ap.add_argument("--check", action="store_true")
     ap.add_argument("--fd", action="store_true")
     args = ap.parse_args()
+    if args.out is None:
+        if args.check:
+            args.out = tempfile.mkdtemp(prefix="check_")
+            atexit.register(shutil.rmtree, args.out, ignore_errors=True)
+        else:
+            args.out = HERE
     here = os.path.abspath(args.out) == HERE
     if here and (args.check or args.nmain < M or args.nconv < NCONV):
         ap.error("--check, --nmain and --nconv need --out DIR outside this directory, "
@@ -130,16 +144,38 @@ def main():
             print(f"  order {SETS[s][0]}:", np.array2string(fd_check(models[s], X, rows),
                                                           precision=2), flush=True)
 
-    if args.check:
-        X0 = read_csv(os.path.join(HERE, "inputs.csv"))
-        print("inputs identical:", np.array_equal(X0[:nmain], X[:nmain]))
-        for s, (fa, Ga) in results.items():
-            f0 = read_csv(os.path.join(HERE, f"outputs{s}.csv"))[:len(fa), 0]
-            G0 = read_csv(os.path.join(HERE, f"gradients{s}.csv"))[:len(fa)]
-            print(f"outputs{s}: max rel diff {np.max(np.abs(fa - f0) / np.abs(f0)):.1e}; "
-                  f"gradients{s}: max rel row diff "
-                  f"{np.max(np.linalg.norm(Ga - G0, axis=1) / np.linalg.norm(G0, axis=1)):.1e}"
-                  f" ({len(fa)} rows)")
+    if args.check and not compare(X[:nmain], results):
+        sys.exit(1)
+
+
+def compare(X, results, ship=HERE):
+    """Compare the regenerated inputs and results with the files in ship; False on a structural mismatch."""
+    X0 = read_csv(os.path.join(ship, "inputs.csv"))[:len(X)]
+    if X0.shape != X.shape:
+        print(f"FAIL: inputs.csv: shape {X0.shape} differs from the regenerated {X.shape}")
+        return False
+    dx = np.max(np.abs(X - X0)) / np.max(np.abs(X0))
+    print(f"inputs: largest difference / largest entry {dx:.1e}")
+    ok = bool(dx <= INPUT_RTOL)
+    if not ok:
+        print(f"FAIL: inputs.csv: the inputs differ from the shipped ones by more than {INPUT_RTOL:g} (relative)")
+    diffs = [(dx, "inputs.csv")]
+    for s, (fa, Ga) in results.items():
+        f0 = read_csv(os.path.join(ship, f"outputs{s}.csv"))[:len(fa)]
+        G0 = read_csv(os.path.join(ship, f"gradients{s}.csv"))[:len(fa)]
+        if (f0.shape != (len(fa), 1) or G0.shape != Ga.shape
+                or not np.array_equal(np.isnan(f0[:, 0]), np.isnan(fa)) or not np.array_equal(np.isnan(G0), np.isnan(Ga))):
+            print(f"FAIL: outputs{s}/gradients{s}: shapes or NaN pattern differ from the shipped files")
+            ok = False
+            continue
+        df = np.nanmax(np.abs(fa - f0[:, 0]) / np.abs(f0[:, 0]))
+        dg = np.nanmax(np.linalg.norm(Ga - G0, axis=1) / np.linalg.norm(G0, axis=1))
+        print(f"outputs{s}: largest elementwise relative difference {df:.1e}; gradients{s}: largest "
+              f"relative row 2-norm difference {dg:.1e} ({len(fa)} rows)")
+        diffs += [(df, f"outputs{s}.csv"), (dg, f"gradients{s}.csv")]
+    d, n = max(diffs, key=lambda t: t[0])
+    print(f"largest difference from the shipped files: {d:.1e} (relative, {n})")
+    return ok
 
 
 if __name__ == "__main__":

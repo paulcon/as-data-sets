@@ -5,8 +5,8 @@
 Run it from any directory inside a git checkout of this repository: checks 2-5 read the 2016
 files Atacamac/atacamac-weak.txt and Atacamac/atacamac-strong.txt from the git history, at the
 commit before 9c1b8a7 (the commit that removed them), with `git show 9c1b8a7^:<path>`. They are
-read as numbers only. Without git or without that commit the script stops with status 3. Each line
-prints the recomputed value beside the value DATA.md quotes.
+read as numbers only. Without git or without that commit the script stops with status 3 after
+check 1. Each line prints the recomputed value beside the value DATA.md quotes.
 
 The 2016 files have 78 columns: Runs, n01..n19, tau01..tau19, maxFreq (the growth rate f_Im, 1/s),
 dn01..dtau19 (its gradient with respect to the standardized inputs).
@@ -169,8 +169,8 @@ def main():
                             formatter_class=argparse.RawDescriptionHelpFormatter,
                             epilog='\n'.join(__doc__.split('\n')[1:])).parse_args()
     t0 = time.perf_counter()
-    data = {case: load_2016(case) for case in acm.CASES}
     check_case_a()
+    data = {case: load_2016(case) for case in acm.CASES}
     check_distribution(data)
     check_weak(*data['weak'])
     check_strong(*data['strong'])

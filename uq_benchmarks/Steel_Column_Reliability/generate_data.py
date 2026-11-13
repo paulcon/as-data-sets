@@ -1,11 +1,14 @@
 """Write the six CSVs of the steel-column data set (two configurations x inputs, outputs, gradients).
 
     python generate_data.py --out DIR            # writes the six CSVs to DIR
-    python generate_data.py --out DIR --check    # ... and compares them with the shipped files
+    python generate_data.py --check              # writes them to a temporary directory and compares
+                                                 # them with the shipped files
+    python generate_data.py --out DIR --check    # the same, keeping the files in DIR
 
-DIR must be given. `--check` refuses this directory and any directory inside it, so the shipped
-files are never overwritten by a check; to rewrite the shipped files, pass `--out .` from this
-directory without `--check`.
+DIR must be given without `--check`. `--check` refuses this directory and any directory inside it,
+so the shipped files are never overwritten by a check; it prints the largest differences from the
+shipped files and fails only on structural mismatches (shapes, NaN pattern, inputs). To rewrite the
+shipped files, pass `--out .` from this directory without `--check`.
 
 For each configuration of steel_column_model.CONFIGS ('benchmark', 'paper') it draws M = 2000
 independent Monte Carlo samples u ~ N(0, I_9) with numpy's default generator (seed SEEDS[config]),
@@ -17,8 +20,11 @@ largest relative error (row 2-norm).
 Only numpy, scipy and the standard library are imported. One process, about a second.
 """
 import argparse
+import atexit
 import os
+import shutil
 import sys
+import tempfile
 import time
 
 import numpy as np
@@ -31,7 +37,7 @@ M = 2000
 SEEDS = {'benchmark': 736, 'paper': 1997}
 H_FD = 1e-6
 FD_ROWS = 100
-RTOL = 1e-12   # --check tolerance (relative, elementwise)
+INPUT_RTOL = 1e-8  # --check: regenerated inputs (deterministic draws) may differ from the shipped ones by round-off only
 
 
 def build(config):
@@ -74,15 +80,23 @@ def read_csv(path):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
-    ap.add_argument('--out', required=True, help='output directory (required)')
+    ap.add_argument('--out', default=None,
+                    help='output directory (required without --check; with --check, a temporary directory by default)')
     ap.add_argument('--check', action='store_true', help='compare with the CSVs in this directory')
     args = ap.parse_args()
+    if args.out is None:
+        if args.check:
+            args.out = tempfile.mkdtemp(prefix='check_')
+            atexit.register(shutil.rmtree, args.out, ignore_errors=True)
+        else:
+            ap.error('--out DIR is required without --check')
     here = os.path.realpath(HERE)
     out_real = os.path.realpath(args.out)
     if args.check and os.path.commonpath([out_real, here]) == here:
         ap.error('--check needs --out DIR outside this directory, so that the shipped files are not overwritten')
     os.makedirs(args.out, exist_ok=True)
     t0 = time.perf_counter()
+    bad, worst = [], (-1.0, '')
     for config in sm.CONFIGS:
         mg, U, X, G, dG = build(config)
         write(args.out, config, X, G, dG)
@@ -93,15 +107,24 @@ def main():
         print(f'  gradient check vs central differences in u (h = {H_FD:g}), first {FD_ROWS} samples: '
               f'max relative error {e:.1e}')
         if args.check:
-            rel = [np.max(np.abs(read_csv(os.path.join(args.out, f'{config}_{n}.csv'))
-                                 - read_csv(os.path.join(HERE, f'{config}_{n}.csv')))
-                          / np.abs(read_csv(os.path.join(HERE, f'{config}_{n}.csv'))))
-                   for n in ('inputs', 'outputs', 'gradients')]
-            ok = all(r <= RTOL for r in rel)
-            print(f'  max relative differences from the shipped files (inputs, outputs, gradients): '
-                  f"{[f'{r:.1e}' for r in rel]} -> {'PASS' if ok else 'FAIL'} (tolerance {RTOL:g})")
+            for n in ('inputs', 'outputs', 'gradients'):
+                f = f'{config}_{n}.csv'
+                a, b = read_csv(os.path.join(args.out, f)), read_csv(os.path.join(HERE, f))
+                if a.shape != b.shape or not np.array_equal(np.isnan(a), np.isnan(b)):
+                    bad.append(f'FAIL: {f}: shape {a.shape} or NaN pattern differs from the shipped {b.shape}')
+                    continue
+                r = np.nanmax(np.abs(a - b) / np.abs(b))
+                print(f'  {f}: largest relative difference (elementwise) from the shipped file {r:.1e}')
+                if n == 'inputs' and r > INPUT_RTOL:
+                    bad.append(f'FAIL: {f} differs from the shipped inputs by {r:.1e} > {INPUT_RTOL:g}')
+                worst = max(worst, (r, f))
     print(f'total {time.perf_counter() - t0:.1f} s')
-
+    if args.check:
+        print(f'largest difference from the shipped files: {worst[0]:.1e} (relative, {worst[1]})')
+        for line in bad:
+            print(line)
+        if bad:
+            sys.exit(1)
 
 if __name__ == '__main__':
     main()

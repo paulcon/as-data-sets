@@ -1,7 +1,7 @@
 """Draw the samples and write inputs.csv, outputs.csv and gradients.csv.
 
     python generate_data.py                              # writes the three CSVs here
-    python generate_data.py --out /tmp/tube --check      # writes elsewhere, compares with these
+    python generate_data.py --check                      # writes to a temporary directory, compares with these
 
 M = 1000 independent Monte Carlo draws (not Latin hypercube) of the six inputs of `tube_model`
 from the distributions of the OpenTURNS use case "Vertical deflection of a tube"
@@ -9,13 +9,18 @@ from the distributions of the OpenTURNS use case "Vertical deflection of a tube"
 writes the deflection at the load and the two end slopes (I = pi (De^4 - di^4)/64), and their exact
 gradients with respect to the physical inputs. It prints two checks: the gradients against central
 finite differences (relative step 1e-6 per input), and the closed forms against the unit-load
-method (numerical quadrature) at the first 20 samples.
+method (numerical quadrature) at the first 20 samples. `--check` prints the largest
+differences from the shipped files and fails only on structural mismatches (shapes, NaN pattern,
+inputs).
 
 Only numpy, scipy and the standard library are imported.
 """
 import argparse
+import atexit
 import os
+import shutil
 import sys
+import tempfile
 import time
 
 import numpy as np
@@ -27,6 +32,7 @@ import tube_model as tm  # noqa: E402
 SEED = 2011
 M = 1000
 FMT = '%.17g'
+INPUT_RTOL = 1e-8  # --check: regenerated inputs (deterministic draws) may differ from the shipped ones by round-off only
 FILES = ('inputs.csv', 'outputs.csv', 'gradients.csv')
 
 
@@ -73,22 +79,42 @@ def write(out, X, F, D):
 
 
 def compare(out, here, files):
-    """Max relative difference (per element, NaNs must match) between the files in out and here."""
+    """Print the largest relative difference (per element) between the files in out and here.
+
+    Returns False on a structural mismatch: a different shape or NaN/inf pattern, or inputs.csv
+    beyond INPUT_RTOL."""
+    bad, worst = [], (-1.0, '')
     for f in files:
         a = np.loadtxt(os.path.join(out, f), delimiter=',', comments='#', ndmin=2)
         b = np.loadtxt(os.path.join(here, f), delimiter=',', comments='#', ndmin=2)
+        if a.shape != b.shape or not (np.array_equal(np.isnan(a), np.isnan(b))
+                                      and np.array_equal(np.isinf(a), np.isinf(b))):
+            bad.append(f'FAIL: {f}: shape {a.shape} or NaN/inf pattern differs from the shipped {b.shape}')
+            continue
         ok = np.isfinite(b)
-        same_nan = np.array_equal(np.isnan(a), np.isnan(b))
         rel = np.max(np.abs(a[ok] - b[ok]) / np.maximum(np.abs(b[ok]), 1e-300)) if ok.any() else 0.0
-        print(f'{f}: max relative difference from the shipped file {rel:.1e}'
-              + ('' if same_nan else ' (NaN pattern differs)'))
+        print(f'{f}: largest relative difference (elementwise) from the shipped file {rel:.1e}')
+        if f == 'inputs.csv' and rel > INPUT_RTOL:
+            bad.append(f'FAIL: {f} differs from the shipped inputs by {rel:.1e} > {INPUT_RTOL:g}')
+        worst = max(worst, (rel, f))
+    print(f'largest difference from the shipped files: {worst[0]:.1e} (relative, {worst[1]})')
+    for line in bad:
+        print(line)
+    return not bad
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
-    ap.add_argument('--out', default=HERE, help='output directory (default: this directory)')
+    ap.add_argument('--out', default=None,
+                    help='output directory (default: this directory; with --check, a temporary directory)')
     ap.add_argument('--check', action='store_true', help='compare with the CSVs in this directory')
     args = ap.parse_args()
+    if args.out is None:
+        if args.check:
+            args.out = tempfile.mkdtemp(prefix='check_')
+            atexit.register(shutil.rmtree, args.out, ignore_errors=True)
+        else:
+            args.out = HERE
     if args.check and os.path.abspath(args.out) == HERE:
         ap.error('--check needs --out DIR outside this directory, so that the shipped files are not overwritten')
     t0 = time.perf_counter()
@@ -104,8 +130,8 @@ def main():
           'deflection / theta_left / theta_right:', np.array2string(fd_check(X, D), precision=2))
     print('closed forms vs unit-load quadrature, first 20 samples, max relative difference:',
           np.array2string(quad_check(X, F), precision=2))
-    if args.check:
-        compare(args.out, HERE, FILES)
+    if args.check and not compare(args.out, HERE, FILES):
+        sys.exit(1)
 
 
 if __name__ == '__main__':

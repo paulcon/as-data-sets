@@ -9,8 +9,8 @@ uses the scale with the smallest autocorrelation time for each sampler.
     python tune_proposal.py --workers 6        # about 30 minutes on 6 processes
 
 Seeded (SeedSequence([SEED, 1]), one child per run). The table in DATA.md was
-made with the unrounded Cholesky factor of the first file version's vanilla
-chain, so a rerun gives statistically equivalent, not identical, numbers.
+made with the Cholesky factor before rounding (AV_CHOL is rounded to 4 decimals),
+so a rerun gives statistically equivalent, not identical, numbers.
 """
 import argparse
 import os

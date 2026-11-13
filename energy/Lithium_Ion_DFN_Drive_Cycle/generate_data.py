@@ -2,7 +2,8 @@
 
     python generate_data.py --n 650 --budget 1200            # writes inputs.csv, outputs.csv, voltage.csv
     python generate_data.py --n 650 --budget 1200 --resume   # continue from the rows already in --out
-    python generate_data.py --rows 0,300,649 --out /tmp/dfn --check   # rerun some rows and compare
+    python generate_data.py --check                            # rerun rows 0, 1, 2 and compare
+    python generate_data.py --check --rows 0,300,649           # rerun some rows and compare
     python generate_data.py --oat                              # one-at-a-time effects quoted in DATA.md
 
 Needs PyBaMM 24.9.0 (casadi 3.6.7), numpy and the driver module dfn_us06_driver.py next to
@@ -17,9 +18,11 @@ in chunks. The shipped files were written in such chunks (see DATA.md).
 
 `inputs.csv` is the source of truth for the inputs. `10.0 ** z` can differ in the last bit
 between numpy builds (the files were written with numpy 1.26.4; under numpy 2.4.6, 1231 of the
-15,600 entries differ, by at most 2.2e-16 relative), so `--resume` and `--check` compare the
-design with the stored inputs to a relative tolerance of 1e-15 and then use the stored values.
-`--check` writes nothing.
+15,600 entries differ, by at most 2.2e-16 relative), so `--resume` compares the design with the
+stored inputs to a relative tolerance of 1e-15 (`--check` to INPUT_RTOL) and then uses the stored values.
+`--check` writes nothing. It prints the largest absolute voltage difference (V) of each rerun row
+from voltage.csv and fails only on structural mismatches (a row's length or failure status, or
+stored inputs differing from the design by more than INPUT_RTOL).
 
 Every row is kept. A run that fails (solver error, or no solution up to t = 600 s) gets
 status 0 and NaN outputs; nothing is dropped here.
@@ -40,6 +43,7 @@ import dfn_us06_driver as dfn  # noqa: E402
 SEED = 20261031
 N_MAX = 2000
 RTOL_INPUTS = 1e-15  # design vs. stored inputs: allows the last-bit differences of 10.0 ** z
+INPUT_RTOL = 1e-8   # --check fails if the stored inputs differ from the design by more than this (relative)
 PYBAMM_VERSION = "24.9.0"
 INSTALL = f'pip install "pybamm=={PYBAMM_VERSION}" "casadi==3.6.7"'
 
@@ -142,26 +146,46 @@ def main():
     print(f"done: {len(status)} runs, {len(status) - sum(status)} failed, {time.time() - t_start:.0f} s")
 
 
+def compare_row(r, x, x_old, v, v_old):
+    """Print the largest |dV| (V) of a rerun row from the stored one; return (|dV|, False on a structural mismatch)."""
+    ok = True
+    rx = np.max(np.abs(x - x_old) / np.abs(x_old))
+    if rx > INPUT_RTOL:
+        print(f"row {r}: stored inputs differ from the design by {rx:.1e} (relative), more than {INPUT_RTOL:g}: FAIL")
+        ok = False
+    if v.shape != v_old.shape:
+        print(f"row {r}: voltage shape {v.shape} differs from the stored {v_old.shape}: FAIL")
+        return 0.0, False
+    same_fail = np.isfinite(v).all() == np.isfinite(v_old).all()
+    if not same_fail:
+        print(f"row {r}: failure status differs from the stored row: FAIL")
+        ok = False
+    d = float(np.nanmax(np.abs(v - v_old))) if np.isfinite(v).all() and np.isfinite(v_old).all() else 0.0
+    print(f"row {r}: largest |dV| = {d:.3e} V (absolute)", flush=True)
+    return d, ok
+
+
 def check(a):
     """Rerun the rows in --rows and compare with inputs.csv and voltage.csv next to this script."""
     rows = [int(r) for r in a.rows.split(",")]
     X = design(max(rows) + 1)
     X_old = np.loadtxt(os.path.join(HERE, "inputs.csv"), delimiter=",")
     V_old = np.loadtxt(os.path.join(HERE, "voltage.csv"), delimiter=",")
-    worst = 0.0
+    worst, ok = 0.0, True
     for r in rows:
-        assert np.allclose(X[r], X_old[r], rtol=RTOL_INPUTS, atol=0.0), f"row {r}: inputs differ from the design"
         t0 = time.time()
         try:
             v = dfn.voltage(X_old[r])  # the stored inputs are the source of truth
         except Exception as e:
             v = np.full(dfn.T_EVAL.shape, np.nan)
-            print(f"row {r}: FAILED ({type(e).__name__})")
-        same_fail = np.isfinite(v).all() == np.isfinite(V_old[r]).all()
-        d = np.nanmax(np.abs(v - V_old[r])) if np.isfinite(v).all() and np.isfinite(V_old[r]).all() else 0.0
-        worst = max(worst, d)
-        print(f"row {r}: max |dV| = {d:.3e} V, same failure status: {same_fail} ({time.time() - t0:.1f} s)", flush=True)
-    print(f"check: {len(rows)} rows, largest |dV| = {worst:.3e} V")
+            print(f"row {r}: solver FAILED ({type(e).__name__})")
+        d, same = compare_row(r, X[r], X_old[r], v, V_old[r])
+        worst, ok = max(worst, d), ok and same
+        print(f"row {r}: {time.time() - t0:.1f} s", flush=True)
+    print(f"check: {len(rows)} rows")
+    print(f"largest difference from the shipped files: {worst:.1e} (absolute in volts, voltage.csv)")
+    if not ok:
+        sys.exit(1)
 
 
 OAT_INPUTS = ["sigma_pos", "Ds_pos", "L_pos", "R_pos"]

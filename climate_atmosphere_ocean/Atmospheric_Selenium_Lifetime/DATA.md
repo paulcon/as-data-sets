@@ -125,7 +125,7 @@ python convert_data.py <folder with the deposited files> --check --out <dir>    
 `--check` writes the CSVs to `<dir>` and compares every number with the shipped files, relative tolerance
 1e-12; in the build environment (Python 3.13.18, numpy 2.5.4, scipy 1.18.1, active_subspaces 1.0.0.dev0; 2026-11-03) it reports a largest
 relative difference of 0.0e+00 for all four files and identical text for the two input files, in about 4 s
-(again on 2026-11-08, after the emiss_vol header was changed).
+(the same on 2026-11-08).
 It also prints the largest difference between the file's latitudes and the Gauss–Legendre latitudes
 (7.1e-15 degrees). The notebook takes about 1 min (46 s printed in the committed `.venv` run), most of it the 400
 leave-one-out refits (of tau, 1/tau and log tau) and 300 bootstrap refits of the penalized quadratic.

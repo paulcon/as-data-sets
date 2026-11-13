@@ -11,17 +11,22 @@ around each design, with steps x_j * exp(+-H) (H in ln x_j).
   rejection sampling, and the number of draws it took is printed and written in the header.
 
     python generate_data.py                       # both sets, 2 worker processes
-    python generate_data.py --set box --rows 0:10 --out /tmp/oa --check   # a subset, compared
+    python generate_data.py --check               # both sets in a temporary directory, compared with the files here
+    python generate_data.py --set box --rows 0:10 --check   # a subset, compared
     python generate_data.py --fd-check 0:5        # gradient step study (H vs 10H and H/10)
 
 Needs numpy, scipy and the ngspice program on PATH (or NGSPICE=/path/to/ngspice); the shipped
 files were written with ngspice-42. Without ngspice the script stops with an error that says what
-to install. --check and --rows write only to --out DIR outside this directory.
+to install. --check and --rows write only to --out DIR outside this directory (with --check, a
+temporary directory by default); --check prints the largest differences from the shipped files
+(elementwise relative) and fails only on structural mismatches (shapes, NaN pattern, inputs).
 """
 import argparse
+import atexit
 import os
 import shutil
 import sys
+import tempfile
 import time
 from multiprocessing import Pool
 
@@ -100,6 +105,9 @@ def _work(args):
     return i, f, G, note
 
 
+INPUT_RTOL = 1e-8   # --check fails if a regenerated input (a seeded draw) differs by more (relative)
+
+
 def read_csv(path):
     return np.loadtxt(path, delimiter=',', ndmin=2)
 
@@ -128,11 +136,18 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--set', choices=('box', 'gain200', 'all'), default='all')
     ap.add_argument('--rows', default=None, help='a:b subset of the samples')
-    ap.add_argument('--out', default=HERE)
+    ap.add_argument('--out', default=None,
+                    help='output directory (default: this directory; with --check, a temporary directory)')
     ap.add_argument('--workers', type=int, default=2)
     ap.add_argument('--check', action='store_true', help='compare with the shipped files')
     ap.add_argument('--fd-check', default=None, help='a:b rows: compare steps H, 10H, H/10')
     a = ap.parse_args()
+    if a.out is None:
+        if a.check:
+            a.out = tempfile.mkdtemp(prefix='check_')
+            atexit.register(shutil.rmtree, a.out, ignore_errors=True)
+        else:
+            a.out = HERE
     if (a.check or a.rows) and os.path.abspath(a.out) == HERE:
         ap.error('--check and --rows need --out elsewhere, so that the shipped files are not overwritten')
     require_ngspice()
@@ -150,9 +165,15 @@ def main():
                       ', '.join(f'{q} {e:.1e}' for q, e in zip(op.QOI_NAMES, err)))
         return
     t0 = time.perf_counter()
+    ok, worst = True, (0.0, '')
     for name in (('box', 'gain200') if a.set == 'all' else (a.set,)):
-        run_set(name, a)
+        good, w = run_set(name, a)
+        ok, worst = good and ok, max(worst, w)
     print(f'total {time.perf_counter() - t0:.0f} s')
+    if a.check:
+        print(f'largest difference from the shipped files: {worst[0]:.1e} (relative, elementwise, {worst[1]})')
+        if not ok:
+            sys.exit(1)
 
 
 def run_set(name, a):
@@ -195,14 +216,33 @@ def run_set(name, a):
               desc + f'; central differences, step {H:g} in ln x; column 7k+j = dq_k/dx_j', GRAD_COLS)
 
     if a.check:
-        F0 = read_csv(os.path.join(HERE, prefix + 'outputs.csv'))[rows]
-        G0 = read_csv(os.path.join(HERE, prefix + 'gradients.csv'))[rows]
-        same_nan = np.array_equal(np.isnan(F0), np.isnan(F)) and np.array_equal(np.isnan(G0), np.isnan(G))
-        rf = np.nanmax(np.abs(F - F0) / np.abs(F0))
-        rg = np.nanmax(np.abs(G - G0) / np.maximum(np.abs(G0), 1e-300))
-        print(f'check against the shipped files: same NaN pattern {same_nan}; '
-              f'max relative difference outputs {rf:.1e}, gradients {rg:.1e}')
+        return compare(prefix, X[rows], F, G, rows)
+    return True, (0.0, '')
 
+
+def compare(prefix, X, F, G, rows):
+    """Print the largest elementwise relative differences of one set from the shipped files; return
+    (False on a structural mismatch, (largest output or gradient difference, file))."""
+    X0 = read_csv(os.path.join(HERE, prefix + 'inputs.csv'))[rows]
+    F0 = read_csv(os.path.join(HERE, prefix + 'outputs.csv'))[rows]
+    G0 = read_csv(os.path.join(HERE, prefix + 'gradients.csv'))[rows]
+    if X0.shape != X.shape or F0.shape != F.shape or G0.shape != G.shape:
+        print(f'FAIL: {prefix}*.csv: shapes {X.shape}, {F.shape}, {G.shape} differ from the shipped '
+              f'{X0.shape}, {F0.shape}, {G0.shape}')
+        return False, (0.0, prefix + 'outputs.csv')
+    ok = True
+    if not (np.array_equal(np.isnan(F0), np.isnan(F)) and np.array_equal(np.isnan(G0), np.isnan(G))):
+        print(f'FAIL: {prefix}outputs.csv or {prefix}gradients.csv: NaN pattern differs from the shipped files')
+        ok = False
+    rx = np.max(np.abs(X - X0) / np.abs(X0))
+    rf = np.nanmax(np.abs(F - F0) / np.abs(F0), initial=0.0)
+    rg = np.nanmax(np.abs(G - G0) / np.maximum(np.abs(G0), 1e-300), initial=0.0)
+    print(f'check against the shipped files: max relative difference inputs {rx:.1e}, outputs {rf:.1e}, '
+          f'gradients {rg:.1e}')
+    if rx > INPUT_RTOL:
+        print(f'FAIL: {prefix}inputs.csv differs from the shipped inputs by {rx:.1e} > {INPUT_RTOL:g}')
+        ok = False
+    return ok, max((rf, prefix + 'outputs.csv'), (rg, prefix + 'gradients.csv'))
 
 if __name__ == '__main__':
     main()

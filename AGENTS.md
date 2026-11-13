@@ -48,6 +48,9 @@ pip install -r requirements.txt
 cd epidemiology_systems_biology/HIV_Long_Term_Dynamics && jupyter nbconvert --to notebook --execute --inplace HIV_Long_Term_Dynamics.ipynb
 python docs/make_notebook_index.py --check    # the notebook index is generated; the maintainer updates it
 python docs/make_candidates_md.py --check     # the suggested-articles page is generated; do not edit it by hand
+# From inside a data set's directory; exit code 0 ran, 1 a structural mismatch or other failure, 3 an outside code, package or download is missing:
+python generate_data.py --check    # regenerate into a temporary directory and print the differences (under ~10 min; --check --full where it checks a subset)
+python check_accuracy.py           # rerun the accuracy numbers in DATA.md
 ```
 
 Jupyter renders each markdown cell on its own, so a reference-style link resolves only in the cell that defines it. Write links in a notebook inline, `[[1]](https://doi.org/...)`.
@@ -61,7 +64,7 @@ The default branch is `main`. It is protected: every change lands through a pull
 Every data set is **stored data** or a **Python model** (`plasma_fusion/MHD_Generator/` has one part of each). CONTRIBUTING.md, "Decide which kind of data set it is", has the rules. In short:
 
 - **Stored data**: an outside code (SU2, ParFlow-CLM, FAST, MATLAB, …) produced the files, and they are the record. Never regenerate or "correct" their values. Format conversions are lossless and scripted. Rows are dropped in the notebook by a stated rule or a flag, never deleted from the file. Data made for this repository with an outside code (Cantera, ngspice, SIPNET, …) are stored data with a `generate_data.py` that exits with code 3 and an install message when the code is missing (`check_accuracy.py` likewise). Modules that drive an outside code are `*_driver.py`. Accuracy numbers that no notebook or generating script prints come from `check_accuracy.py`.
-- **Python model**: the model is a numpy/scipy `*_model.py` module in the directory that loads its files relative to `__file__`; a closed-form model may stay in a notebook cell. Shipped outputs are written by `generate_data.py` with fixed seeds, and `generate_data.py --check` reproduces them.
+- **Python model**: the model is a numpy/scipy `*_model.py` module in the directory that loads its files relative to `__file__`; a closed-form model may stay in a notebook cell. Shipped outputs are written by `generate_data.py` with fixed seeds, and `generate_data.py --check` regenerates them and prints the differences.
 
 ## Conventions in the notebooks
 

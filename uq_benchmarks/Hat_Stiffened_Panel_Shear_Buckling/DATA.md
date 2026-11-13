@@ -81,14 +81,15 @@ The page also gives the general form with different face-sheet and hat materials
 
 ```bash
 python generate_data.py                           # writes the three CSVs here
-python generate_data.py --out /tmp/panel --check  # writes elsewhere and compares (refuses to write here)
+python generate_data.py --check                  # writes to a temporary directory and compares
+python check_accuracy.py                         # the formula check of the Accuracy section
 ```
 
 ```bash
 python generate_data.py --variant openturns --out /tmp/panel_ot   # OpenTURNS-as-coded thickness (not shipped)
 ```
 
-The run takes 0.08 s (under 1 s with Python start-up) and also prints the gradient checks and the count of unphysical samples. The shipped files were written on 2026-10-31 in a Linux container. In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31), `--check` reports maximum relative differences of 0 (inputs), 4.9e-16 (outputs) and 7.5e-16 (gradients) from the shipped files: rounding error, not a change in the model. The notebook runs in about 4 s, and two runs print the same values apart from timings.
+The run takes 0.08 s (under 1 s with Python start-up) and also prints the gradient checks and the count of unphysical samples. The shipped files were written on 2026-10-31 in a Linux container. In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31), `--check` reports maximum relative differences of 0 (inputs), 4.9e-16 (outputs) and 7.5e-16 (gradients) from the shipped files: rounding error, not a change in the model. `--check` prints these differences and the largest of them, 7.5e-16 (relative, `gradients.csv`, in `.venv` on macOS, Python 3.11, 2026-11-12; 0.8 s with start-up); it exits with code 1 only on a structural mismatch: a missing file, a different shape or NaN pattern, or inputs that differ from the shipped ones by more than 10⁻⁸ (relative). The notebook runs in about 4 s, and two runs print the same values apart from timings.
 
 ## Accuracy
 

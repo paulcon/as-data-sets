@@ -193,7 +193,8 @@ cantvenv/bin/python convert_mechanism.py --zip d3re00160a1_suppl.zip --out /path
 export AMMONIA_SYNGAS_MECH=/path/to/ammonia_syngas_optimized.yaml
 cantvenv/bin/python generate_data.py --out /tmp/ammonia                          # all 100 rows
 cantvenv/bin/python generate_data.py --out /tmp/ammonia --max-minutes 10         # resumable chunks
-cantvenv/bin/python generate_data.py --out /tmp/ammonia_check --rows 0:3 --check # a subset vs. the shipped files
+cantvenv/bin/python generate_data.py --check                                     # all 100 rows vs. the shipped files
+cantvenv/bin/python generate_data.py --rows 0:3 --check                          # a subset vs. the shipped files
 cantvenv/bin/python check_accuracy.py                                             # the Accuracy numbers
 ```
 
@@ -202,21 +203,24 @@ Without Cantera or without the mechanism file, `generate_data.py`, `check_accura
 
 `generate_data.py` writes each finished row to `DIR/rows/row_NNNN.npz` and skips it on the next run, and writes the
 CSVs when all requested rows exist. `--out DIR` must be outside this directory (not the directory or a folder in
-it), in every mode. `--check` compares τ (relative tolerance 1e-6) and each gradient row (relative
-2-norm difference in normalized coordinates) with the shipped files, with gradient tolerances of 5e-2 at condition A
-and 2e-3 at B and C. These are set by noise in the forward differences, not by their truncation error: on the same
-platform a recomputed row matches the stored one to about 1e-11, but a rounding-level change of the inputs,
-x (1 ± 1e-13), which stands in for a change of platform, changes the stored gradients by up to 1.7e-2 at A and
-5.6e-4 at B and C and τ by up to 2.2e-7 (`check_accuracy.py`, check 7). The step of 1e-3 amplifies the solver noise
-in τ, which is largest at A (check 4). The tolerances leave a margin of about three over these changes; a rerun on
-another platform is not expected to match the gradients at A more closely than a few per cent.
+it), in every mode; with `--check` it defaults to a temporary directory, removed at the end (`--max-minutes`
+then needs `--out DIR`, and a `--check` run stopped by `--max-minutes` exits 1 without comparing). `--check`
+prints the largest difference of τ (elementwise relative) and of the gradient rows (relative 2-norm in normalized
+coordinates) from the shipped files, and exits 1 only on a structural mismatch: a different shape or NaN pattern,
+or inputs that differ by more than a relative 1e-8. On the Linux container below (Python 3.13, Cantera 3.2.0) a
+recomputed row matches the stored one to about 1e-11; Cantera is not installed on the macOS machine, so nothing
+was measured there. The gradients are noisy: a rounding-level change of the inputs, x (1 ± 1e-13), which stands
+in for a change of platform, changes the stored gradients by up to 1.7e-2 at A and 5.6e-4 at B and C and τ by up
+to 2.2e-7 (`check_accuracy.py`, check 7). The step of 1e-3 amplifies the solver noise in τ, which is largest at A
+(check 4); a rerun on another platform is not expected to match the gradients at A more closely than a few per
+cent.
 
 Provenance of the shipped files: generated on 2026-11-08 in a Linux container (x86-64, 2 cores shared with other
 jobs, `nice`), Python 3.13.18, Cantera 3.2.0, numpy 2.5.4, with `generate_data.py` and `ammonia_idt_driver.py` as
 shipped, one process, in resumable 10-minute chunks. CPU time per sample 27 s (372 ignitions), 45
 min in all (about 1.6 h of wall time, set by the shared machine). On the same platform, `generate_data.py --out DIR
---rows 0:3 --check` recomputed rows 0–2 (1.5 min of CPU) and passed: inputs, τ and gradients agree within the
-printing resolution of the check (it prints 0.0e+00 for every file).
+--rows 0:3 --check` recomputed rows 0–2 (1.5 min of CPU): inputs, τ and gradients agree within the printing
+resolution of the check (it prints 0.0e+00 for every file).
 
 ## Accuracy
 

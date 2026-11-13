@@ -4,12 +4,15 @@ Usage (see DATA.md):
   python generate_data.py --raven /path/Raven.exe --obs /path/xSSA/examples/data_in/data_obs/08KC001 \
       --cache /tmp/raven_cache --rows 0:1024  # run (or resume) a block of rows
   python generate_data.py ... --assemble    # write the CSVs here when every row is done
+  python generate_data.py --check                  # rerun all rows, compare with the CSVs here (writes nothing)
   python generate_data.py ... --rows 0:8 --check   # rerun a subset, compare with the CSVs here (writes nothing)
   python generate_data.py ... --fd          # rewrite fd_gradients_meanQ.csv (rows 0, 1, 2)
 
 --cache defaults to a folder in the system temp directory, outside the repository.
 Without Raven (--raven / RAVEN_EXE) and the xSSA streamflow folder (--obs / XSSA_OBS_DIR)
-every mode except --assemble exits with an install message.
+every mode except --assemble exits with status 3 and an install message. --check prints the largest
+differences from the shipped files and fails (exit status 1) only on structural mismatches (shapes, NaN
+pattern, a design that differs from inputs.csv by more than INPUT_RTOL).
 
 The Raven input deck is filled from the xSSA template file (LGPL-3.0), which
 raven_salmon_driver.fetch_templates downloads once from GitHub at a pinned commit into
@@ -42,6 +45,7 @@ MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", 
 OUT_NAMES = ["mean_Q", "NSE", "KGE"] + [f"Q_{m}" for m in MONTHS]
 FD_ROWS = (0, 1, 2)      # design rows of the finite-difference check
 FD_STEP = 1e-3           # step in normalized units (fraction of each half-range)
+INPUT_RTOL = 1e-8        # the design is deterministic: a larger difference means a different seed or range
 INSTALL = ("Raven is not available. Build commit cb745e1 of github.com/CSHS-CWRA/RavenHydroFramework as "
            "described in DATA.md (\"Raven build\"), clone github.com/julemai/xSSA for the forcing and "
            "streamflow files, set RAVEN_EXE and XSSA_OBS_DIR (or pass --raven and --obs), and rerun this script.")
@@ -151,6 +155,28 @@ def fd_gradients(X, args, templates, h=FD_STEP):
     return G
 
 
+def compare(X, Xf, Y, Yf, rows):
+    """Compare the design X with inputs.csv (Xf) and the reruns Y of rows with outputs.csv (Yf).
+
+    Returns False on a structural mismatch (shapes, NaN pattern, design beyond INPUT_RTOL)."""
+    Yr = Yf[rows]
+    if (X.shape != Xf.shape or any(np.shape(y) != Yr.shape[1:] for y in Y)
+            or not np.array_equal(np.isnan(np.array(Y)), np.isnan(Yr))):
+        print(f"FAIL: shapes or NaN pattern differ from the shipped files (design {X.shape} vs {Xf.shape})")
+        return False
+    Y = np.array(Y)
+    dx = float(np.max(np.abs(X - Xf) / np.maximum(np.abs(Xf), 1e-12)))
+    worst = float(np.nanmax(np.abs(Y - Yr) / np.maximum(np.abs(Yr), 1e-12), initial=0.0))
+    print(f"design: largest elementwise relative difference from inputs.csv {dx:.2e}")
+    print(f"outputs.csv: largest elementwise relative difference over rows {rows[0]}:{rows[-1] + 1} and "
+          f"15 outputs: {worst:.2e} (the file stores 10 significant digits)")
+    if dx > INPUT_RTOL:
+        print(f"FAIL: inputs.csv: the design differs from the shipped one by more than {INPUT_RTOL:g} (relative)")
+    d, n = max([(dx, "inputs.csv"), (worst, "outputs.csv")], key=lambda t: t[0])
+    print(f"largest difference from the shipped files: {d:.1e} (relative, {n})")
+    return dx <= INPUT_RTOL
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--raven", default=os.environ.get("RAVEN_EXE"))
@@ -188,13 +214,13 @@ def main():
         print("design reproduces inputs.csv bit for bit:", np.array_equal(Xf, X))
         work = os.path.join(args.cache, "tmp")
         os.makedirs(work, exist_ok=True)
-        worst = 0.0
+        Y = []
         for i in range(a, b):
             y, _ = one_run(Xf[i], args.raven, args.obs, work, templates)
-            rel = np.max(np.abs(y - Yf[i]) / np.maximum(np.abs(Yf[i]), 1e-12))
-            worst = max(worst, rel)
+            Y.append(y)
             print(f"row {i}: mean_Q {y[0]:.6g} (file {Yf[i, 0]:.6g}), NSE {y[1]:.6g} (file {Yf[i, 1]:.6g})")
-        print(f"largest relative difference over rows {a}:{b} and 15 outputs: {worst:.2e}")
+        if not compare(X, Xf, Y, Yf, list(range(a, b))):
+            sys.exit(1)
         return
     run_rows(X, range(a, b), args, templates)
 

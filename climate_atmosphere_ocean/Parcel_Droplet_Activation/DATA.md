@@ -117,17 +117,25 @@ External run, recorded here (`generate_data.py` regenerates the files where pyrc
 ```bash
 python3.13 -m venv pvenv && pvenv/bin/pip install pyrcel==2.0.0 scipy   # jax 0.12.0.1, diffrax 0.7.2, numpy 2.5.4
 pvenv/bin/python generate_data.py --out /tmp/parcel_gen                  # all 300 rows, resumable (rows.jsonl)
-pvenv/bin/python generate_data.py --out /tmp/parcel_chk --rows 0:10 --check
+pvenv/bin/python generate_data.py --check                                # all 300 rows in a temporary directory, compared
+pvenv/bin/python generate_data.py --rows 0:10 --check                    # a subset, compared with the shipped files
+pvenv/bin/python check_accuracy.py                                       # the Accuracy numbers
 ```
+
+`--check` prints the largest differences from the shipped files and exits 1 only on a structural mismatch: a
+different shape or set of nan entries, different flags (`peaked`, `grad_ok`, `grad_method`), or inputs that
+differ by more than a relative 1e-8. The largest differences observed are those of the rerun below (Linux
+container, Python 3.13, pyrcel 2.0.0, jax 0.12.0.1); pyrcel is not installed on the macOS machine, so nothing
+was measured there.
 
 Run time: the shipped files took 5084 s of CPU (1.41 CPU-hours; one process, one XLA thread) on a shared
 2-CPU container, about 5 h of wall time in resumable chunks of 20 rows. Most rows cost 0.2–20 s; the three
 finite-difference rows cost 350–850 s each, and the value-only rows with μ_g of 1–3 nm up to about 200 s. JAX
 compiles the solve once per process (30–80 s CPU). `generate_data.py --out DIR --rows 0:10 --check` took 104 s
 of CPU (243 s wall) and printed: inputs max difference 0, outputs max difference 2.89e-15, flags equal,
-gradients and activated-fraction gradients max relative difference 0 (8 rows with gradients). `--check` tolerance: 1e-6 absolute on log10 S_max and the activated fraction, flags equal, 1e-6
-relative 2-norm per row on the scaled gradients. JAX on another platform or version may differ at the solver-
-tolerance level (rtol 1e-7), which is why the tolerance is not exact equality. The script writes only to
+gradients and activated-fraction gradients max relative difference 0 (8 rows with gradients). `--check` measures: absolute difference on log10 S_max and the activated fraction, flags equal, relative 2-norm
+per row on the scaled gradients. JAX on another platform or version may differ at the solver-tolerance level
+(rtol 1e-7). The script writes only to
 `--out`, which must be outside this directory (a subdirectory is refused too).
 
 ## Accuracy

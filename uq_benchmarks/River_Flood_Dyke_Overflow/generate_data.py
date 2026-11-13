@@ -1,7 +1,7 @@
 """Write inputs.csv, outputs.csv and gradients.csv for the simplified river flood model.
 
     python generate_data.py                       # writes the three CSVs here
-    python generate_data.py --out /tmp/f --check  # writes elsewhere, compares with the files here
+    python generate_data.py --check               # writes to a temporary directory, compares with the files here
 
 Draws M = 10000 independent samples of the eight inputs of `flood_model`
 (Table 4 of Lamboni et al. 2013) by the inverse CDF of
@@ -12,13 +12,18 @@ exact gradients with respect to the physical inputs.
 It also checks the exact gradients against central finite differences
 (step 1e-6 times each input's standard deviation) at every sample and prints
 the largest relative error (row 2-norm). For Cp the samples within 1e-5 m of
-the kink at Hd = 8 m are left out of that check.
+the kink at Hd = 8 m are left out of that check. `--check` prints the largest
+differences from the shipped files and fails only on structural mismatches (shapes, NaN pattern,
+inputs).
 
 Only numpy, scipy and the standard library are imported.
 """
 import argparse
+import atexit
 import os
+import shutil
 import sys
+import tempfile
 import time
 
 import numpy as np
@@ -29,6 +34,7 @@ import flood_model as fm  # noqa: E402
 
 SEED = 2013
 M = 10000
+INPUT_RTOL = 1e-8  # --check: regenerated inputs (deterministic draws) may differ from the shipped ones by round-off only
 H_FD = 1e-6  # central-difference step in units of each input's standard deviation (check only)
 
 PROVENANCE = ('flood_model.py (Lamboni, Iooss, Popelin, Gamboa 2013, Eqs. 4.20-4.21, Table 4); '
@@ -83,9 +89,16 @@ def write(out, X, S, Cp, GS, GC):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
-    ap.add_argument('--out', default=HERE, help='output directory (default: this directory)')
+    ap.add_argument('--out', default=None,
+                    help='output directory (default: this directory; with --check, a temporary directory)')
     ap.add_argument('--check', action='store_true', help='compare with the CSVs in this directory')
     args = ap.parse_args()
+    if args.out is None:
+        if args.check:
+            args.out = tempfile.mkdtemp(prefix='check_')
+            atexit.register(shutil.rmtree, args.out, ignore_errors=True)
+        else:
+            args.out = HERE
     if os.path.abspath(args.out) == HERE and args.check:
         ap.error('--check needs --out DIR outside this directory, so that the shipped files are not overwritten')
 
@@ -102,11 +115,22 @@ def main():
     print(f'exact gradients vs central differences (step 1e-6 sd): max relative error '
           f'S {eS:.1e}, Cp {eC:.1e} ({nk} samples within 1e-5 m of Hd = 8 left out)')
     if args.check:
+        bad, worst = [], (-1.0, '')
         for n in ('inputs.csv', 'outputs.csv', 'gradients.csv'):
             a, b = read_csv(os.path.join(args.out, n)), read_csv(os.path.join(HERE, n))
-            rel = np.max(np.abs(a - b) / np.maximum(np.abs(b), 1e-300))
-            print(f'{n}: max relative difference from the shipped file {rel:.1e}')
-
+            if a.shape != b.shape or not np.array_equal(np.isnan(a), np.isnan(b)):
+                bad.append(f'FAIL: {n}: shape {a.shape} or NaN pattern differs from the shipped {b.shape}')
+                continue
+            rel = np.nanmax(np.abs(a - b) / np.maximum(np.abs(b), 1e-300))
+            print(f'{n}: largest difference from the shipped file {rel:.1e} (relative, elementwise)')
+            if n == 'inputs.csv' and rel > INPUT_RTOL:
+                bad.append(f'FAIL: {n} differs from the shipped inputs by {rel:.1e} > {INPUT_RTOL:g}')
+            worst = max(worst, (rel, n))
+        print(f'largest difference from the shipped files: {worst[0]:.1e} (relative, {worst[1]})')
+        for line in bad:
+            print(line)
+        if bad:
+            sys.exit(1)
 
 if __name__ == '__main__':
     main()

@@ -51,12 +51,13 @@ The paper gives mean and standard deviation only; reading them as the moments of
 ## Regenerating
 
 ```bash
-python generate_data.py --out DIR --check     # writes to DIR (must be outside this directory) and compares
+python generate_data.py --check               # writes to a temporary directory and compares
+python generate_data.py --out DIR --check     # the same, keeping the files in DIR (must be outside this directory)
 python generate_data.py --out .               # rewrites the shipped CSVs (explicit only)
 python check_accuracy.py                      # the numbers marked below, about 2 minutes
 ```
 
-`--out` is required, and `--check` refuses this directory and any directory inside it. One process. The shipped files were written on 2026-11-09 in a Linux container (Python 3.11.18, numpy 2.4.6). In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, macOS; 2026-11-10) `--check` takes under 1 s (the script reports 0.3 s, of it 0.03 s for the 1000 solves with adjoints) and passes: `inputs_standard.csv` is reproduced exactly, and the largest relative differences from the other shipped files are at the rounding level, of order 1e-16 (`inputs.csv`), 1e-14 (`outputs.csv`) and 1e-13 (`gradients.csv`). Stated tolerances: 1e-15 (ξ), 1e-13 (Z, rounding of exp and log), 1e-12 (V1), 1e-11 (gradients), for other platforms' linear-algebra libraries. The notebook runs in about 4–8 s in `.venv` by its own timer.
+`--out` is required without `--check` (with `--check` it defaults to a temporary directory, removed afterwards), and `--check` refuses this directory and any directory inside it; it exits with code 1 only on a structural mismatch: a missing file, a different shape or NaN pattern, or inputs (ξ or Z) that differ from the shipped ones by more than 1e-8 (relative). One process. The shipped files were written on 2026-11-09 in a Linux container (Python 3.11.18, numpy 2.4.6). In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, macOS; 2026-11-10) `--check` takes under 1 s (the script reports 0.3 s, of it 0.03 s for the 1000 solves with adjoints) and prints the largest relative differences (elementwise) from the shipped files: `inputs_standard.csv` is reproduced exactly, and the other files differ at the rounding level, of order 1e-16 (`inputs.csv`), 1e-14 (`outputs.csv`) and 1e-13 (`gradients.csv`; 3.1e-13, the largest, in `.venv` on macOS, Python 3.11, 2026-11-12). Z goes through exp and log, and V1 and the gradients through a linear solve, whose last bits can differ on other platforms. The notebook runs in about 4–8 s in `.venv` by its own timer.
 
 ## Accuracy
 

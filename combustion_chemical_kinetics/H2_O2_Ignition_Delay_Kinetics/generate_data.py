@@ -1,7 +1,8 @@
 """Regenerate the data files of H2_O2_Ignition_Delay_Kinetics (needs Cantera 3.2.0).
 
     python generate_data.py                          # all files, 2 processes (about 15 min)
-    python generate_data.py --case 19 --rows 0:10 --out /tmp/h2 --check   # subset vs shipped files
+    python generate_data.py --check                  # all files in a temporary directory, vs shipped files
+    python generate_data.py --case 19 --rows 0:10 --check   # subset vs shipped files
 
 Cases
   19    1000 Monte Carlo samples of the 19 lnA_i, uniform on [0.97, 1.03] lnA*_i (paper Sec. 4);
@@ -17,11 +18,17 @@ are consistent with each other.
 
 Needs Cantera (the shipped files were written with Cantera 3.2.0: pip install cantera==3.2.0)
 through h2o2_ignition_driver.py; without it the script stops with an error. --check and --rows
-write only to --out DIR outside this directory, so the shipped files are never overwritten.
+write only to --out DIR outside this directory, so the shipped files are never overwritten (with
+--check, a temporary directory by default). --check prints the largest differences from the shipped files
+(max |new - shipped| / max |shipped| per file) and fails only on structural mismatches (shapes, NaN pattern,
+inputs).
 """
 import argparse
+import atexit
 import os
+import shutil
 import sys
+import tempfile
 import time
 from multiprocessing import Pool
 
@@ -100,27 +107,51 @@ def run_case(case, rows, out, workers):
     return dt
 
 
+INPUT_RTOL = 1e-8   # --check fails if a regenerated input (a seeded draw) differs by more (relative)
+
+
 def check(case, out, rows):
+    """Print max |new - shipped| / max |shipped| per file; return (False on a structural mismatch, the largest
+    output difference and its file)."""
     pre = "mc_" if case == "mc36" else ""
     suf = "36" if case == "mc36" else case
     files = [f"{pre}inputs_{suf}.csv", f"{pre}outputs_{suf}.csv"]
     if case != "mc36":
         files.append(f"gradients_{suf}.csv")
+    ok, worst = True, (0.0, files[1])
     for fn in files:
         new = np.loadtxt(os.path.join(out, fn), delimiter=",", ndmin=2)
         old = np.loadtxt(os.path.join(HERE, fn), delimiter=",", ndmin=2)[rows]
-        rel = np.max(np.abs(new - old)) / np.max(np.abs(old))
+        if new.shape != old.shape or not np.array_equal(np.isnan(new), np.isnan(old)):
+            print(f"  FAIL: {fn}: shape {new.shape} or NaN pattern differs from the shipped {old.shape}")
+            ok = False
+            continue
+        rel = np.nanmax(np.abs(new - old)) / np.nanmax(np.abs(old))
         print(f"  {fn}: max |new - shipped| / max |shipped| = {rel:.2e}")
+        if "inputs" in fn:
+            if rel > INPUT_RTOL:
+                print(f"  FAIL: {fn} differs from the shipped inputs by {rel:.2e} > {INPUT_RTOL:g}")
+                ok = False
+        elif rel >= worst[0]:
+            worst = (rel, fn)
+    return ok, worst
 
 
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--case", default="all", choices=["all", "19", "36", "mc36"])
     p.add_argument("--rows", default=None, help="a:b, a subset of the rows")
-    p.add_argument("--out", default=HERE)
+    p.add_argument("--out", default=None,
+                   help="output directory (default: this directory; with --check, a temporary directory)")
     p.add_argument("--workers", type=int, default=2)
     p.add_argument("--check", action="store_true", help="compare with the shipped files")
     a = p.parse_args()
+    if a.out is None:
+        if a.check:
+            a.out = tempfile.mkdtemp(prefix="check_")
+            atexit.register(shutil.rmtree, a.out, ignore_errors=True)
+        else:
+            a.out = HERE
     if (a.check or a.rows) and os.path.abspath(a.out) == os.path.abspath(HERE):
         sys.exit('--check and --rows need --out DIR outside this directory, so that the shipped files are not overwritten')
     if M.ct is None:
@@ -130,6 +161,7 @@ def main():
     os.makedirs(a.out, exist_ok=True)
     cases = ["19", "36", "mc36"] if a.case == "all" else [a.case]
     total = 0.0
+    ok, worst = True, (0.0, "")
     for c in cases:
         if a.rows:
             i, j = (int(s) for s in a.rows.split(":"))
@@ -138,8 +170,14 @@ def main():
             rows = slice(0, SIZES[c])
         total += run_case(c, rows, a.out, a.workers)
         if a.check:
-            check(c, a.out, rows)
+            ok_c, worst_c = check(c, a.out, rows)
+            ok = ok and ok_c
+            worst = max(worst, worst_c)
     print(f"total {total:.1f} s")
+    if a.check:
+        print(f"largest difference from the shipped files: {worst[0]:.1e} (relative to the largest value, {worst[1]})")
+        if not ok:
+            sys.exit(1)
 
 
 if __name__ == "__main__":

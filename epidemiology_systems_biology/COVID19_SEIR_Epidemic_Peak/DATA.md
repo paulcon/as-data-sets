@@ -62,11 +62,12 @@ The chosen reading matches the paper's 27-run I_peak mean to within one unit of 
 
 ```bash
 python generate_data.py                                 # writes the three CSVs here
+python generate_data.py --check                         # writes to a temporary directory and compares
 python generate_data.py --out DIR --check               # writes to DIR (not this directory) and compares
 python check_accuracy.py                                # the numbers marked below
 ```
 
-One process, no multiprocessing. `--check` refuses to write into this directory. The shipped files were written on 2026-10-31 in a Linux container (Python 3.13.18, numpy 2.5.4, scipy 1.18.1). In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-11-02), `python generate_data.py --out DIR --check` took 52 s: 40 s for the 1000 solves with sensitivities (about 40 ms each) and 11 s for the finite-difference check on the first 100 samples. Its files match the shipped ones to a maximum relative difference of 5.1e-16 (inputs, rounding of exp), 2.5e-11 (outputs) and 5.6e-10 (gradients, elementwise): the stated tolerance is 1e-15 for the inputs and 1e-9 for the outputs and gradients, the size of the solver's error control (rtol 1e-11) amplified by the event location and the sensitivities.
+One process, no multiprocessing. `--check` refuses to write into this directory. The shipped files were written on 2026-10-31 in a Linux container (Python 3.13.18, numpy 2.5.4, scipy 1.18.1). In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-11-12), `python generate_data.py --check` took 47 s: 34 s for the 1000 solves with sensitivities (about 34 ms each) and 12 s for the finite-difference check on the first 100 samples. The largest relative differences (elementwise) from the shipped files were 5.1e-16 (inputs, rounding of exp), 2.5e-11 (outputs) and 5.6e-10 (gradients), of the size of the solver's error control (rtol 1e-11) amplified by the event location and the sensitivities (macOS, Python 3.11, numpy 2.4.6, scipy 1.17.1, against files written on Linux). `--check` prints these differences and does not judge them; it exits with status 1 only for a structural mismatch: a different shape or NaN pattern, or regenerated inputs that differ from `inputs.csv` by more than a relative 1e-8.
 
 ## Accuracy
 

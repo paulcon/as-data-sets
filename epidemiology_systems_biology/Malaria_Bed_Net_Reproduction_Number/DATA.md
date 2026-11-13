@@ -70,12 +70,13 @@ Units: the units above are those the equations imply. Table 2 (p. 7) prints ψ_h
 ## Regenerating
 
 ```bash
+python generate_data.py --check               # writes to a temporary directory and compares with the shipped files
 python generate_data.py --out DIR --check     # writes to DIR (outside this directory) and compares with the shipped files
 python generate_data.py --here                # rewrites the shipped files in this directory
 python check_accuracy.py                      # the numbers marked below
 ```
 
-One process, no multiprocessing. Without `--here` the script never writes into this directory or any directory below it; `--out` must be outside it (a path inside it, subdirectories included, is rejected), and `--check` needs `--out DIR`. The shipped files were written on 2026-11-09 in a Linux container (Python 3.11.18, numpy 2.4.6). In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, macOS; 2026-11-10), `python generate_data.py --out DIR --check` took about 0.2 s (0.3 s with start-up) and passed: `inputs.csv` and `outputs.csv` were reproduced with a maximum relative difference printed as 0.0e+00 and `gradients.csv` to a maximum relative difference of order 10⁻¹⁴ (elementwise). The stated tolerance is 1e-12 (relative, elementwise), which allows for a different libm or BLAS on another platform. The notebook runs in about 12 s in `.venv` (11.6 s printed by its last cell; most of it the 50 extra PRCC designs and the bootstrap). `check_accuracy.py` took about 3 s there.
+One process, no multiprocessing. Without `--here` the script never writes into this directory or any directory below it; `--out` must be outside it (a path inside it, subdirectories included, is rejected), and `--check` without `--out` writes into a temporary directory and removes it. The shipped files were written on 2026-11-09 in a Linux container (Python 3.11.18, numpy 2.4.6). In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, macOS; 2026-11-10), `python generate_data.py --check` took about 0.2 s (0.3 s with start-up); the largest relative differences (elementwise) from the shipped files were 0.0e+00 for `inputs.csv` and `outputs.csv` and 6.0e-14 for `gradients.csv`. `--check` prints these differences and does not judge them; it exits with status 1 only for a structural mismatch: a different shape or NaN pattern, or regenerated inputs that differ from `inputs.csv` by more than a relative 1e-8. The notebook runs in about 12 s in `.venv` (11.6 s printed by its last cell; most of it the 50 extra PRCC designs and the bootstrap). `check_accuracy.py` took about 3 s there.
 
 ## Accuracy
 

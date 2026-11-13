@@ -65,7 +65,7 @@ The full 100-dimensional vanilla chains (80 MB each as float64) are not stored. 
 - **Chain lengths** come from the pilot autocorrelation times τ: 4 × steps × 0.8 / τ ≥ 1000 × 1.5 for y1 and y2 in each active-variable sampler.
 - **Vanilla chains.** One chain of 100,000 steps gives an ESS of about 350 for y1, y2 (τ ≈ 230 steps) after burn-in. Four vanilla chains are not enough: they give an ESS of about 1100–1400 for y1, y2, but split R̂ = 1.011 for y2, and the spread of the 4 chain means suggests a standard error twice the computed 0.011. For the 100 x-moments the smallest ESS is 290 and the largest R̂ 1.027. With 20 chains, the ESS of y1, y2 is about 7000, split R̂ ≤ 1.004, the spread of the 20 chain means agrees with the computed standard errors, and the smallest ESS of the x-moments is 1761 (largest R̂ 1.016).
 
-**Pilot (`tune_proposal.py`).** Each run is one chain of 2,500 steps started at the vanilla posterior mean, with τ measured after 300 steps. The proposal used L from the unrounded factor. Seeds were 100–107, from a scratch version of the script; the shipped script uses `SeedSequence([2779, 1])` and the rounded L, so a rerun differs statistically.
+**Pilot (`tune_proposal.py`).** Each run is one chain of 2,500 steps started at the vanilla posterior mean, with τ measured after 300 steps. The proposal used L from the unrounded factor. Seeds were 100–107; the shipped script uses `SeedSequence([2779, 1])` and the rounded L, so a rerun differs statistically.
 
 | sampler | s | acceptance | τ(y1) | τ(y2) |
 |---|---|---|---|---|
@@ -87,11 +87,14 @@ For comparison, an earlier run (not shipped) of one chain of each sampler with t
 ```bash
 cd uq_benchmarks/PDE_Inverse_Problem_MCMC
 OPENBLAS_NUM_THREADS=1 python generate_data.py --workers 16   # writes pde_mcmc_chains_*.npz (one BLAS thread per worker)
+python generate_data.py --check               # a short run in a temporary directory, compared with the shipped files
+python generate_data.py --check --full        # the full run, compared with the shipped files (hours; see Runtime)
 python generate_data.py --n-van 2500 --n-cached 120 --n-recompute 60 --grid-draws 20 \
-    --workers 2 --out DIR                       # a short check, written to DIR
+    --workers 2 --out DIR                       # a short run, written to DIR
 python tune_proposal.py --workers 6             # the pilot (needs the chain files)
 ```
 
+- **`--check`.** Plain `--check` runs the first 1000 steps of every vanilla chain, 100 and 50 steps of the cached and recompute chains and 20 grid draws (`CHECK_SUBSET`) in a temporary directory, and compares every stored array with the same leading steps or draws of the shipped arrays: it prints the largest difference relative to each array's largest entry, for the float64 and the float32 arrays, and the largest of all, and for the accept flags how many differ and the first chain and step where they do (a last-bit difference on another platform can flip one Metropolis decision; the float arrays then show the chain's divergence from that step). It exits with code 1 only on a structural mismatch: a missing array, a different shape or NaN pattern, unequal seeds, indices or other non-float arrays, or drawn inputs (`x_true`, `X_grad`, the grid `grid_y1`, `grid_y2` and the chains' starting points) that differ from the shipped ones by more than 10⁻⁸ (relative). In `.venv` (macOS, Python 3.11, against the files written on Linux) with `--workers 2` it took 560 s (2026-11-12): largest float64 difference 5.5 × 10⁻¹³, in `W`; float32 arrays and accept flags bitwise equal. `--check --full` runs and compares the full lengths (see Runtime).
 - **Jobs.** Every chain and every block of grid points is a separate job with its own seed stream. `--workers` sets how many run at once, and the output does not depend on it. `--reuse PATH` copies chains of the same seed, data and length from PATH: a directory of chain files, or one `.npz` with all arrays (such as the Zenodo file).
 - **BLAS.** The BLAS, and its number of threads, change the last bits of the matrix products (the gradients, W and every ĝ). The shipped arrays were written on Linux with one OpenBLAS thread per worker (`OPENBLAS_NUM_THREADS=1`); `versions` (in the main file) lists the platform and the package versions. Elsewhere a rerun agrees to rounding (below). Set one BLAS thread per worker whenever several workers run: with OpenBLAS's default of one thread per CPU in every worker, 16 workers on 16 vCPUs ran about 7 times slower.
 - **Runtime.** About 3.4 × 10⁶ PDE solves (2 × 10⁶ vanilla, 6.4 × 10⁵ cached, 4 × 10⁵ recompute, 3.6 × 10⁵ grid). On an AWS c7a.4xlarge (16 vCPUs, AMD EPYC 9R14) with 16 workers, one vanilla chain or recompute chain takes about 29 min and one cached chain about 43 min; the 12 original chains and the grid took 43.8 min, and vanilla chains 5–20 another 30.6 min. On a 4-core Intel Mac with 6 workers, the 12 original chains and the grid took 179 min.
@@ -143,7 +146,7 @@ The vanilla proposal (standard deviation 0.1), M = 10, P = 10 and the 20% burn-i
 ## Unknowns
 
 - The paper's data, seeds and chains are not in this repository (How these files relate to the paper).
-- The pilot runs of the table above used seeds 100–107 from a scratch version of `tune_proposal.py` that is not shipped, so a rerun of the shipped script differs statistically (Model, Pilot).
+- The pilot runs of the table above used seeds 100–107, not the seeds of the shipped `tune_proposal.py`, so a rerun of the shipped script differs statistically (Model, Pilot).
 - The earlier runs with the paper's isotropic proposal are not shipped (Model, Pilot).
 
 ## License and credit

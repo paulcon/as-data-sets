@@ -1,7 +1,8 @@
 """Regenerate inputs.csv, outputs.csv and gradients.csv for Zika_SEIR_SEI_Brazil.
 
     python generate_data.py                       # 1000 samples, seed 2018, writes here
-    python generate_data.py --n 50 --out /tmp/zika --check
+    python generate_data.py --check               # all 1000 points, compared with the files here
+    python generate_data.py --n 50 --out DIR --check
     python generate_data.py --fd-check 20         # gradients vs. independent central differences
 
 Draws M = 1000 points uniformly on the box zika_model.LOWER..UPPER (10 inputs,
@@ -11,7 +12,10 @@ SEIR-SEI model with its forward sensitivities (zika_model.qoi_and_grad):
 - outputs.csv: C(364) in people and the misfit J (Eq. 7) in people^2;
 - gradients.csv: dC(364)/dp and dJ/dp with respect to the physical inputs p.
 
-`--check` compares newly written files with the ones next to this script.
+`--check` prints the largest differences from the files next to this script (outputs relative,
+elementwise; gradients relative, 2-norm of each row) and fails only on structural mismatches (shapes,
+NaN pattern, inputs differing by more than INPUT_RTOL); without --out it writes into a temporary
+directory and removes it.
 `--fd-check K` compares the sensitivity gradients at the first K stored rows
 with central differences of an independent solver (Radau, rtol = 1e-12,
 atol = 1e-16, step 1e-4 of each input's half-range), and prints the largest
@@ -20,8 +24,11 @@ relative error (2-norm of the 10-vector).
 Only numpy, scipy and the standard library are imported.
 """
 import argparse
+import atexit
 import os
+import shutil
 import sys
+import tempfile
 import time
 
 import numpy as np
@@ -33,6 +40,7 @@ import zika_model as zm  # noqa: E402
 SEED = 2018
 M = 1000
 FD_STEP = 1e-4   # central-difference step, as a fraction of each input's half-range
+INPUT_RTOL = 1e-8  # --check fails if the regenerated inputs differ by more than this (relative)
 
 PROVENANCE = ('zika_model.py (scipy solve_ivp DOP853, rtol 1e-11, atol 1e-15, forward sensitivities); '
               'written by generate_data.py, seed 2018')
@@ -96,11 +104,18 @@ def _qoi_radau(x, y):
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     ap.add_argument('--n', type=int, default=M, help='number of points (first n of the seed-2018 draw)')
-    ap.add_argument('--out', default=HERE)
+    ap.add_argument('--out', default=None,
+                    help='output directory (default: this directory; with --check, a temporary directory)')
     ap.add_argument('--check', action='store_true', help='compare with the CSVs in this directory')
     ap.add_argument('--fd-check', type=int, default=0, metavar='K',
                     help='check gradients at the first K stored rows against central differences')
     args = ap.parse_args()
+    if args.out is None:
+        if args.check:
+            args.out = tempfile.mkdtemp(prefix='check_')
+            atexit.register(shutil.rmtree, args.out, ignore_errors=True)
+        else:
+            args.out = HERE
     if os.path.abspath(args.out) == HERE and (args.check or args.n != M):
         ap.error('--check and --n need --out DIR outside this directory, so that the shipped files are not overwritten')
 
@@ -132,10 +147,27 @@ def main():
         X0 = read_csv(os.path.join(HERE, 'inputs.csv'))[:n]
         f0 = read_csv(os.path.join(HERE, 'outputs.csv'))[:n]
         G0 = read_csv(os.path.join(HERE, 'gradients.csv'))[:n]
-        print(f'inputs equal: {np.array_equal(X, X0)}; max relative difference: outputs '
-              f'{np.max(np.abs(f - f0)/np.abs(f0)):.1e}, gradients '
-              f'{np.max(np.linalg.norm(G - G0, axis=1)/np.linalg.norm(G0, axis=1)):.1e}')
-
+        if X0.shape != X.shape or f0.shape != f.shape or G0.shape != G.shape:
+            print(f'shapes {X0.shape}, {f0.shape}, {G0.shape} of the shipped files differ from {X.shape}, '
+                  f'{f.shape}, {G.shape}: FAIL')
+            sys.exit(1)
+        bad = False
+        for k, a, b in (('outputs', f, f0), ('gradients', G, G0)):
+            if not np.array_equal(np.isnan(a), np.isnan(b)):
+                print(f'{k}: NaN pattern differs from the shipped file: FAIL')
+                bad = True
+        rx = np.max(np.abs(X - X0)/np.abs(X0))
+        rf = np.nanmax(np.abs(f - f0)/np.abs(f0))
+        rg = np.nanmax(np.linalg.norm(G - G0, axis=1)/np.linalg.norm(G0, axis=1))
+        print(f'largest relative difference from the shipped files: inputs {rx:.1e} (elementwise), '
+              f'outputs {rf:.1e} (elementwise), gradients {rg:.1e} (2-norm of each row)')
+        if rx > INPUT_RTOL:
+            print(f'inputs differ by more than {INPUT_RTOL:g}: FAIL')
+            bad = True
+        r, where = max((rx, 'inputs.csv'), (rf, 'outputs.csv'), (rg, 'gradients.csv'))
+        print(f'largest difference from the shipped files: {r:.1e} (relative, {where})')
+        if bad:
+            sys.exit(1)
 
 if __name__ == '__main__':
     main()

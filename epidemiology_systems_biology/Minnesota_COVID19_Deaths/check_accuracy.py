@@ -12,7 +12,8 @@ Prints the numbers of the Accuracy section of DATA.md:
   4. the article's reference matrix C (code/data/covid_Ch.RData, object Cbmat: the GP estimate
      from 2,000 uniform samples on [0, 1]^8 behind the article's Fig. 5, right), its eigenvalues,
      their natural logarithms, and the first three eigenvectors.
-Without R or the supplement folder the script stops with an error that says what to install.
+Without R or the supplement folder the script stops with an error that says what to install
+(exit status 3).
 """
 import argparse
 import os
@@ -47,7 +48,8 @@ def main():
         code = D.find_code(a.code)
         rscript = D.find_rscript(a.rscript)
     except RuntimeError as e:
-        sys.exit(str(e))
+        print(e, file=sys.stderr)
+        sys.exit(3)
     rv, pv = D.versions(rscript)
     print(f"{rv}, plyr {pv}")
     with tempfile.TemporaryDirectory() as tmp:
