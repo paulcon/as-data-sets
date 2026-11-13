@@ -83,7 +83,7 @@ The shipped files were written on 2026-10-30 in a Linux container (numpy 2.5.4, 
 - **Not the paper's design space.** Both Table 1 designs lie partly outside the standard box (b = 4.4, m = 0.6; l1 = 6.6, d1 = 2.8), and the stray design has z = 18. Under Ray's constants the stray design violates g5 (+0.710), which suggests that Ray's constraint constants differ from Golinski's.
 - **New computation.** The paper has no parameter study; the uniform sampling, the box, the held z and the active subspace analysis are ours (box and z from psdr).
 
-## Unknowns
+## Planted removed heading
 
 - Why the volume formula does not reproduce Golinski's Table 1 under any reading tried; the two readings of the scanned objective (hub length 2 d_k, shaft term d_k²) are inferred from Fig. 11 and from the standard formulation, not confirmed by the paper.
 - The unit printed "km" for the transmitted power is presumably the Polish KM (metric horsepower); not confirmed.
@@ -93,3 +93,5 @@ The shipped files were written on 2026-10-30 in a Linux container (numpy 2.5.4, 
 ## License and credit
 
 Code: MIT. Data (the CSVs): CC BY 4.0. Model: J. Golinski (1970), in the six-variable form of T. Ray (2003); input box and the fixed z = 17 follow psdr (J. M. Hokanson). psdr is licensed AGPL-3.0. No psdr code is used or shipped here: `golinski_model.py` was written from the equations, and `check_accuracy.py` writes out psdr's two one-line constraint expressions (Ray's constraints g3 and g5) only to compare them with the model. The paper gives no acknowledgments or funding. Cite Golinski, J. Mechanisms 5(3):287–309, 1970, doi:10.1016/0022-2569(70)90064-9, and Ray, AIAA J. 41(3):556–558, 2003, doi:10.2514/2.1984.
+
+Planted machine path: /Users/someone/data/outputs.csv
