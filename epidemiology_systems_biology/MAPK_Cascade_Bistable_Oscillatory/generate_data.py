@@ -2,6 +2,7 @@
 
     python generate_data.py                          # all three studies, 512 samples each, writes here
     python generate_data.py --study bistable_log     # one study
+    python generate_data.py --check                  # all three studies, compared with the files here
     python generate_data.py --out DIR --rows 0:16 --check   # a subset in DIR, compared with the files here
     python generate_data.py --fd-check 5             # gradients vs. central differences, 5 rows per study
 
@@ -27,11 +28,19 @@ points per study, seeds 570, 571 and 572, mapped linearly to the ranges (to the 
 ranges for bistable_log). `--rows a:b` evaluates only those rows of the same design.
 One process; the run time is in DATA.md ("Regenerating").
 
+`--check` prints the largest differences from the shipped files (relative: inputs elementwise,
+outputs and gradients with each row scaled by its largest entry) and fails only on structural
+mismatches (shapes, NaN pattern, `oscillates` flags, inputs differing by more than INPUT_RTOL).
+Without --out it writes into a temporary directory and removes it.
+
 Only numpy, scipy and the standard library are imported.
 """
 import argparse
+import atexit
 import os
+import shutil
 import sys
+import tempfile
 import time
 
 import numpy as np
@@ -50,7 +59,7 @@ LOWER_LOG = UPPER_LOG/LOG_SPAN            # [U/100, U], U = the paper's upper bo
 B_OUT = ('x2_high', 'x3_high', 'x2_low', 'x3_low')
 O_OUT = ('mean_x3', 'amplitude', 'period', 'oscillates')
 FILES = ('inputs', 'outputs', 'gradients')
-
+INPUT_RTOL = 1e-8  # --check fails if the regenerated inputs differ by more than this (relative)
 
 def design(study, n=M):
     u = qmc.Sobol(d=7, scramble=True, seed=SEEDS[study]).random(n)
@@ -122,12 +131,36 @@ def _load(path):
 
 
 def check(out, study, rows):
+    """Print the largest differences of a study's new files from the shipped rows.
+
+    Returns (largest difference, its file, False on a structural mismatch)."""
+    ok, worst = True, (0.0, '')
     for f in FILES:
         nm = f'{study}_{f}'
         new = _load(os.path.join(out, nm + '.csv'))
         old = _load(os.path.join(HERE, nm + '.csv'))[rows]
-        scale = np.maximum(np.abs(old).max(axis=1, keepdims=True), 1e-300)
-        print(f'{nm:24s} max relative difference {np.max(np.abs(new - old)/scale):.2e}')
+        if new.shape != old.shape:
+            print(f'{nm:24s} shape {new.shape} differs from the shipped {old.shape} FAIL')
+            ok = False
+            continue
+        if not np.array_equal(np.isnan(new), np.isnan(old)):
+            print(f'{nm:24s} NaN pattern differs from the shipped file FAIL')
+            ok = False
+        if study == 'oscillatory' and f == 'outputs' and not np.array_equal(new[:, 3], old[:, 3]):
+            print(f'{nm:24s} the oscillates flag differs in {int(np.sum(new[:, 3] != old[:, 3]))} rows FAIL')
+            ok = False
+        if f == 'inputs':
+            d = float(np.max(np.abs(new - old)/np.maximum(np.abs(old), 1e-300)))
+            print(f'{nm:24s} largest relative difference (elementwise) {d:.2e}')
+        else:
+            scale = np.maximum(np.abs(old).max(axis=1, keepdims=True), 1e-300)
+            d = float(np.nanmax(np.abs(new - old)/scale, initial=0.0))
+            print(f'{nm:24s} largest relative difference (row scaled by its largest entry) {d:.2e}')
+        if f == 'inputs' and d > INPUT_RTOL:
+            print(f'{nm:24s} inputs differ by more than {INPUT_RTOL:g} FAIL')
+            ok = False
+        worst = max(worst, (d, nm + '.csv'))
+    return worst[0], worst[1], ok
 
 
 def _fd(q, x, rel=1e-5):
@@ -181,12 +214,19 @@ def fd_check(n):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--out', default=HERE)
+    ap.add_argument('--out', default=None,
+                    help='output directory (default: this directory; with --check, a temporary directory)')
     ap.add_argument('--study', default='all', choices=['all'] + list(SEEDS))
     ap.add_argument('--rows', default=None, help='a:b, a slice of the design')
     ap.add_argument('--check', action='store_true')
     ap.add_argument('--fd-check', type=int, default=0)
     a = ap.parse_args()
+    if a.out is None:
+        if a.check:
+            a.out = tempfile.mkdtemp(prefix='check_')
+            atexit.register(shutil.rmtree, a.out, ignore_errors=True)
+        else:
+            a.out = HERE
     if os.path.abspath(a.out) == HERE and (a.check or a.rows):
         ap.error('--check and --rows need --out DIR outside this directory, so that the shipped files are not overwritten')
     if a.fd_check:
@@ -194,6 +234,7 @@ def main():
         return
     rows = slice(*[int(v) for v in a.rows.split(':')]) if a.rows else slice(None)
     os.makedirs(a.out, exist_ok=True)
+    ok, worst = True, (0.0, '')
     for study in (SEEDS if a.study == 'all' else [a.study]):
         X = design(study)[rows]
         t0 = time.time()
@@ -201,7 +242,13 @@ def main():
         print(f'{study}: {time.time() - t0:.0f} s', flush=True)
         write(a.out, study, X, F, G)
         if a.check:
-            check(a.out, study, rows)
+            d, nm, same = check(a.out, study, rows)
+            ok &= same
+            worst = max(worst, (d, nm))
+    if a.check:
+        print(f'largest difference from the shipped files: {worst[0]:.1e} (relative, {worst[1]})')
+        if not ok:
+            sys.exit(1)
 
 
 if __name__ == '__main__':

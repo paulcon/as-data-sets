@@ -181,7 +181,8 @@ $OUT/fairvenv/bin/pip install aneris-iamc==0.3.1 certifi==2026.10.23 cftime==1.6
     typing_extensions==4.16.0 tzdata==2026.6 urllib3==2.8.0 xarray==2023.12.0 xlrd==2.0.2
 # the model outputs and gradients (resumable: a cache per parameter in $OUT/runs/_cache_0-841)
 $OUT/fairvenv/bin/python generate_data.py --stage runs --out $OUT/runs
-$OUT/fairvenv/bin/python generate_data.py --stage runs --rows 0:20 --out $OUT/rows20 --check   # a subset vs the shipped files
+$OUT/fairvenv/bin/python generate_data.py --check                    # stage runs, all 841 members vs the shipped files
+$OUT/fairvenv/bin/python generate_data.py --rows 0:20 --check        # a subset vs the shipped files (about 30 s)
 # the emissions (needs the two files below)
 $OUT/fairvenv/bin/python generate_data.py --stage emissions --fair-example extensions_1750-2500.csv \
     --rcmip rcmip-5-1-0-corrected-nox.csv --out $OUT/emissions --check
@@ -192,8 +193,14 @@ $OUT/fairvenv/bin/python check_accuracy.py                                      
 
 `--out` may not be inside this directory; it may be this directory itself only with `--overwrite` (which
 replaces the shipped files; the log and the gradient cache then go to a temporary folder that is removed at
-the end, so nothing else is written here), and `--check` and `--rows` always need an `--out` outside it. Tolerances of `--check`: maximum |new − shipped| / max |shipped|
-≤ 1e-9 for the QoI files, 1e-6 for the gradients, 1e-10 for the emissions, 1e-15 for the converted files.
+the end, so nothing else is written here), and `--check` and `--rows` always need an `--out` outside it. With
+`--check`, `--stage` defaults to `runs` and `--out` to a temporary directory that is removed at the end.
+`generate_data.py --check` prints, for each file, the maximum |new − shipped| relative to each column's
+largest |shipped| value (leaving out the config-id or time column, which must match exactly); the largest
+values observed, measured relative to the whole file's largest value, are those of the provenance note below (Linux, Python 3.11, fair 2.1.3: up to 1.9e-17 for the
+QoI files and 1.9e-9 for the gradients); FaIR is not installed on the macOS machine, so nothing was measured
+there. It exits 1 only on a structural mismatch: a different shape or NaN pattern, or different config ids
+(or time points, for the emissions). `convert_data.py --check` uses a tolerance of 1e-15 for the converted files.
 
 Outside inputs (not shipped in their original form):
 
@@ -215,8 +222,8 @@ gradient run was resumed once: the gradients of parameters 0–39 were written o
 under load), those of 40–44 and the two QoI files on 2026-11-08 (4.2 min wall, 80 s of CPU for 12 ensemble
 runs of 841 members). That is about 92 ensemble runs and, at the measured 6.7 s of CPU per ensemble run,
 about 10 min of CPU in all. On 2026-11-08, `--rows 0:20 --check` recomputed the first 20 members from
-scratch (33 s wall) and reproduced all six run files within tolerance (largest difference printed as
-0.0e+00); `--stage emissions --check` reproduced the emission file within tolerance (10 s), and
+scratch (33 s wall) and reproduced all six run files (largest difference printed as
+0.0e+00); `--stage emissions --check` reproduced the emission file to within 1e-10 of its largest value (10 s), and
 `convert_data.py --check` the three converted files (0.0e+00). A later
 `--rows 0:3 --check` run (24 s wall) gave largest differences 1.5e-18 (`qoi.csv`), 1.9e-17
 (`qoi_internal_variability.csv`) and 1.9e-9 (gradients). The committed notebook run took 11.4 s

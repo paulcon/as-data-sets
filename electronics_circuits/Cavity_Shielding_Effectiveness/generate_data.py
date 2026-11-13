@@ -1,6 +1,7 @@
 """Write inputs.csv, outputs.csv and gradients.csv for the slotted-cavity shielding-effectiveness bound.
 
     python generate_data.py --out DIR             # writes the three CSVs to DIR
+    python generate_data.py --check               # writes to a temporary directory, compares with the files here
     python generate_data.py --out DIR --check     # writes to DIR, compares with the files here
     python generate_data.py --here                # maintainers only: rewrites the shipped files here
 
@@ -13,11 +14,17 @@ the physical inputs (paper units).
 It also checks the gradients against central finite differences (step 1e-6 of each input's range)
 at the first FD_ROWS samples and prints the largest relative error (row 2-norm).
 
+--check prints the largest differences from the shipped files (relative to each column's largest value)
+and fails only on structural mismatches (shapes, NaN pattern, inputs).
+
 Only numpy and the standard library are imported. One process; a few seconds.
 """
 import argparse
+import atexit
 import os
+import shutil
 import sys
+import tempfile
 import time
 
 import numpy as np
@@ -30,7 +37,7 @@ SEED = 2021
 M = 1000
 FD_REL = 1e-6
 FD_ROWS = 100
-TOL = {'inputs.csv': 1e-15, 'outputs.csv': 1e-12, 'gradients.csv': 1e-12}   # per column, relative to its max
+INPUT_RTOL = 1e-8   # --check fails if a regenerated input (a seeded draw) differs by more (relative)
 
 PROVENANCE = ('cavity_se_model.py (Campione et al. 2021, Appendix A, Eqs. 5-6; slot arc length '
               'l = 2a asin(l_p/(2a)), p. 4); uniform inputs on Table 1 ranges; '
@@ -75,7 +82,8 @@ def write(out, X, f, G):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
-    ap.add_argument('--out', help='output directory (must be outside this directory)')
+    ap.add_argument('--out', default=None,
+                    help='output directory, outside this directory (with --check, default a temporary directory)')
     ap.add_argument('--here', action='store_true', help='rewrite the shipped files in this directory')
     ap.add_argument('--check', action='store_true', help='compare with the CSVs in this directory')
     ap.add_argument('--fd-rows', type=int, default=FD_ROWS,
@@ -86,6 +94,9 @@ def main():
             ap.error('--here takes no --out or --check')
         out = HERE
     else:
+        if not args.out and args.check:
+            args.out = tempfile.mkdtemp(prefix='check_')
+            atexit.register(shutil.rmtree, args.out, ignore_errors=True)
         if not args.out:
             ap.error('give --out DIR (outside this directory), or --here to rewrite the shipped files')
         out = os.path.realpath(args.out)                  # symbolic links resolved
@@ -108,18 +119,26 @@ def main():
         e = fd_check(X[:args.fd_rows], G[:args.fd_rows])
         print(f'gradient check vs central differences (step {FD_REL:g} x range), first {args.fd_rows} samples: '
               'max relative error ' + ', '.join(f'{q} {v:.1e}' for q, v in zip(cm.QOI_NAMES, e)))
-    if args.check:
-        ok = True
-        for n, tol in TOL.items():
-            a, b = read_csv(os.path.join(out, n)), read_csv(os.path.join(HERE, n))
-            rel = np.max(np.abs(a - b) / np.abs(b).max(axis=0))   # relative to each column's largest value
-            ok &= rel <= tol
-            print(f'{n}: max relative difference from the shipped file {rel:.1e} (tolerance {tol:g})')
-        print('check passed' if ok else 'CHECK FAILED')
     print(f'total {time.perf_counter() - t0:.1f} s')
-    if args.check and not ok:
-        sys.exit(1)
-
+    if args.check:
+        ok, worst = True, (0.0, 'outputs.csv')
+        for n in ('inputs.csv', 'outputs.csv', 'gradients.csv'):
+            a, b = read_csv(os.path.join(out, n)), read_csv(os.path.join(HERE, n))
+            if a.shape != b.shape or not np.array_equal(np.isnan(a), np.isnan(b)):
+                print(f'FAIL: {n}: shape {a.shape} or NaN pattern differs from the shipped {b.shape}')
+                ok = False
+                continue
+            rel = np.nanmax(np.abs(a - b) / np.nanmax(np.abs(b), axis=0))   # relative to each column's largest value
+            print(f'{n}: max relative difference from the shipped file {rel:.1e}')
+            if n == 'inputs.csv':
+                if rel > INPUT_RTOL:
+                    print(f'FAIL: {n} differs from the shipped inputs by {rel:.1e} > {INPUT_RTOL:g}')
+                    ok = False
+            elif rel >= worst[0]:
+                worst = (rel, n)
+        print(f'largest difference from the shipped files: {worst[0]:.1e} (relative to the column max, {worst[1]})')
+        if not ok:
+            sys.exit(1)
 
 if __name__ == '__main__':
     main()

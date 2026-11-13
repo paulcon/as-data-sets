@@ -10,8 +10,13 @@ One process; about 24 s of CPU per point (1000 beats), about 91 min of CPU in al
     nice -n 10 python generate_data.py            # all chunks (finished ones skipped), then merge
     python generate_data.py --chunk 3             # one chunk of 16 points -> parts/chunk_3.npz
     python generate_data.py --merge               # parts -> cipaord_virtual_drugs.csv
-    python generate_data.py --check 3             # rerun 3 points; compare with the CSV and with
+    python generate_data.py --check               # rerun 3 points; compare with the CSV and with
                                                   # a tighter tolerance; control steady state
+    python generate_data.py --check 5             # the same with 5 points
+
+--check prints the largest differences from the shipped file and fails only on structural mismatches
+(shape, NaN pattern, response class, inputs that differ from the Sobol' design by more than
+INPUT_RTOL). The rerun at rel_tol 1e-6 is printed for information only.
 
 A chunk saves its progress after every point (parts/chunk_<k>.partial.npz), so an interrupted
 run resumes where it stopped. Runs with EADs or without full repolarisation are kept and
@@ -32,6 +37,7 @@ N = 224              # first N points of a scrambled Sobol' sequence of 2^8 = 25
 CHUNK = 16
 N_CHUNKS = N // CHUNK
 ABS_TOL, REL_TOL = 1e-6, 1e-4
+INPUT_RTOL = 1e-8     # --check fails if the CSV's inputs differ from the design by more (relative)
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "cipaord_virtual_drugs.csv")
 EXTRA = ["max_dv", "dVdt_max", "n_EAD", "n_norepol", "qNet_spread", "APD90_spread",
@@ -110,24 +116,60 @@ def merge(parts):
           f"; CPU {Y[:, -1].sum() / 60:.1f} min")
 
 
+def check_file(D):
+    """Structural check of the CSV: its shape, and its inputs against the design. Return 0 or 1."""
+    if D.shape != (N, len(COLS)):
+        print(f"FAIL: {os.path.basename(OUT)} has shape {D.shape}, not {(N, len(COLS))}")
+        return 1
+    m = len(cm.NAMES)
+    dx = np.max(np.abs(D[:, :m] - design()) / np.abs(design()))
+    print(f"inputs against the Sobol' design: largest relative difference {dx:.1e} (the CSV holds 10 digits)")
+    if dx > INPUT_RTOL:
+        print(f"FAIL: the inputs differ from the design by more than {INPUT_RTOL:g} (relative)")
+        return 1
+    return 0
+
+
+def compare_row(i, a, D):
+    """Compare the rerun a (features, extras, response, cpu) of row i with the CSV row.
+    Print the largest relative difference of the 8 features; return (0 or 1, that difference)."""
+    m, nq = len(cm.NAMES), len(cm.QOI_NAMES)
+    f = D[i, m:m + nq]
+    d = np.nanmax(np.abs(a[:nq] - f) / np.abs(f), initial=0.0)
+    print(f"row {i}: largest relative difference of the 8 features from the CSV {d:.1e}", flush=True)
+    bad = 0
+    if a[nq + len(EXTRA)] != D[i, m + nq + len(EXTRA)]:
+        print(f"FAIL: row {i}: response class {a[nq + len(EXTRA)]:g}, CSV {D[i, m + nq + len(EXTRA)]:g}")
+        bad = 1
+    if not np.array_equal(np.isnan(a[:nq]), np.isnan(f)):
+        print(f"FAIL: row {i}: the NaN pattern of the features differs from the CSV")
+        bad = 1
+    return bad, d
+
+
 def check(n):
     """Rerun n points spread over the design; compare with the CSV (same tolerance) and with
     rel_tol = 1e-6 (the paper's lsoda tolerances were rtol = atol = 1e-6); then pace the
-    control model 1000 beats and compare the final state with the initial state."""
-    D = np.loadtxt(OUT, delimiter=",")
+    control model 1000 beats and compare the final state with the initial state.
+    Return the number of structural mismatches."""
+    t0 = time.time()
+    D = np.loadtxt(OUT, delimiter=",", ndmin=2)
+    bad = check_file(D)
+    if bad:
+        return bad
     idx = np.linspace(0, N - 1, n).round().astype(int)
-    m = len(cm.NAMES)
     nq = len(cm.QOI_NAMES)
     X = design()                       # exact inputs (the CSV holds them to 10 digits)
+    largest = 0.0
     for i in idx:
-        x = X[i]
-        a = np.array(evaluate(x))
-        b = np.array(evaluate(x, ABS_TOL, 1e-6))
-        f = D[i, m:m + nq]
-        d_same = np.nanmax(np.abs(a[:nq] - f) / np.abs(f))
-        d_tight = np.nanmax(np.abs(b[:nq] - f) / np.abs(f))
-        print(f"row {i}: max rel. difference of the 8 features: rerun {d_same:.1e}, "
-              f"rel_tol 1e-6 {d_tight:.1e} (qNet {b[0]:.4f} vs {f[0]:.4f}, APD90 {b[1]:.3f} vs {f[1]:.3f}); "
+        a = np.array(evaluate(X[i]))
+        b = np.array(evaluate(X[i], ABS_TOL, 1e-6))
+        f = D[i, len(cm.NAMES):len(cm.NAMES) + nq]
+        k, d = compare_row(i, a, D)
+        bad += k
+        largest = max(largest, d)
+        print(f"row {i}: at rel_tol 1e-6: {np.nanmax(np.abs(b[:nq] - f) / np.abs(f)):.1e} "
+              f"(qNet {b[0]:.4f} vs {f[0]:.4f}, APD90 {b[1]:.3f} vs {f[1]:.3f}); "
               f"cpu {a[-1]:.1f}s / {b[-1]:.1f}s", flush=True)
     import myokit
     sim, s0, iq = cm._sim(ABS_TOL, REL_TOL)
@@ -142,20 +184,24 @@ def check(n):
     j = keep[int(np.argmax(rel))]
     print(f"control, 1000 beats from the distributed CL2000 steady state: max rel. state change "
           f"{rel.max():.1e} ({names[j]}), median {np.median(rel):.1e}")
+    print(f"check of {n} rows and the control steady state: {time.time() - t0:.0f} s wall")
+    print(f"largest difference from the shipped files: {largest:.1e} (relative, {os.path.basename(OUT)})")
+    return bad
 
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser()
     p.add_argument("--chunk", type=int)
     p.add_argument("--merge", action="store_true")
-    p.add_argument("--check", type=int)
+    p.add_argument("--check", type=int, nargs="?", const=3, metavar="N",
+                   help="rerun N points spread over the design (default 3) and compare")
     p.add_argument("--parts", default=os.path.join(HERE, "parts"))
     a = p.parse_args()
     t0 = time.time()
     if not a.merge:
         need_myokit()
     if a.check:
-        check(a.check)
+        sys.exit(1 if check(a.check) else 0)
     elif a.merge:
         merge(a.parts)
     elif a.chunk is not None:

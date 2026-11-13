@@ -151,11 +151,17 @@ python3 -m venv cantvenv && cantvenv/bin/pip install cantera==3.2.0      # numpy
 #   1-s2.0-S0010218007003318-mmc3.txt  sha256 91e0b98c2129de80fd92cef17b2234d1a14d058d2c601423716d27efd7ff05cb
 cantvenv/bin/python build_mechanism.py KONNOV_DIR          # writes konnov2008_h2.yaml here (do not commit it)
 cantvenv/bin/python generate_data.py --out /tmp/h2gen      # all cases; resumable; copy the CSVs in afterwards
-cantvenv/bin/python generate_data.py --case grad --rows 0:2 --out /tmp/h2chk --check    # subset vs shipped
+cantvenv/bin/python generate_data.py --check                # all cases, in a temporary directory, vs shipped
+cantvenv/bin/python generate_data.py --case grad --rows 0:2 --check   # subset vs shipped
 cantvenv/bin/python check_accuracy.py                       # the Accuracy numbers (about 4 min)
 ```
 
-Tolerance of `--check`: 1e-6 of each column's largest value for inputs and outputs, 1e-3 for gradients.
+`--check` prints each file's largest difference relative to each column's largest value; the largest observed
+are those of the reruns below (Linux container, Python 3.13, Cantera 3.2.0; Cantera is not installed on the macOS
+machine, so nothing was measured there). It exits 1 only on a structural mismatch: a different shape or NaN
+pattern, or inputs that differ by more than a relative 1e-8. With `--check` and no `--out`, the
+files go to a temporary directory that is removed at the end; `--max-seconds` then needs `--out DIR`, and a
+`--check` run stopped by `--max-seconds` exits 1 without comparing.
 
 Provenance of the shipped files (an external run, not reproducible from the repository): generated 2026-11-09/10
 in a Linux container (x86-64, 2 cores shared with other jobs), Python 3.13.18, Cantera 3.2.0, numpy 2.5.4, with

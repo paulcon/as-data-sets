@@ -166,6 +166,7 @@ python3 -m venv venv && venv/bin/pip install numpy
 curl -LO https://github.com/MODFLOW-ORG/executables/releases/latest/download/linux.zip   # mac.zip, win64.zip for other platforms
 unzip linux.zip mf2005dbl && export MF2005DBL=$PWD/mf2005dbl
 venv/bin/python generate_data.py --out /tmp/freyberg            # all files, resumable by chunks of 25 rows
+venv/bin/python generate_data.py --check                          # all rows, in a temporary directory; prints the largest differences
 venv/bin/python generate_data.py --out /tmp/freyberg_chk --rows 0:5 --check
 venv/bin/python check_accuracy.py
 ```
@@ -174,11 +175,15 @@ The shipped files were written with `linux.zip` of 45 010 855 bytes (sha256
 ab17192a3531dec61d4f4eab3da10f618e85d1f792d5edc71306a3e06e0e22c3, dated 2026-05-26; its `code.json` names
 MF2005.1_12u, version 1.12.00, the version the paper cites, Harbaugh et al. 2017 in its references, and the
 release's readme names). `--out` must be
-outside this directory. `--check` compares heads to 1e-6 m, gradients to 1e-3 relative 2-norm per row and
-`calibrated.csv` to 1e-4 relative. The full run took about 75 min wall time on one process in a 2-CPU container shared with other jobs
+outside this directory; `--check` without `--out` uses a temporary directory. Without `mf2005dbl` both scripts exit
+with status 3 and say what to install. `--check` prints the largest differences from the shipped rows (heads absolute in m, gradients in relative
+2-norm per row, `calibrated.csv` relative) and does not judge them; it exits with status 1 only on a structural
+mismatch: different shapes, NaN pattern or dry-cell counts, or inputs that differ by more than 1e-8 of their
+largest magnitude (they are deterministic draws from the seed). MODFLOW is not installed in `.venv`, so no
+differences have been measured on another platform. The full run took about 75 min wall time on one process in a 2-CPU container shared with other jobs
 (225–250 s per 25 rows, 72 MODFLOW runs per row; the run was resumed once from its chunks after a container
-restart). `--rows 0:5 --check` (with `calibrated.csv`) took 65 s and printed `CHECK PASSED`, with every
-difference below the printed precision (0.00e+00) on the platform that wrote the files.
+restart). `--rows 0:5 --check` (with `calibrated.csv`) took 65 s and printed every difference below the
+printed precision (0.00e+00) on the platform that wrote the files.
 
 ## Accuracy
 

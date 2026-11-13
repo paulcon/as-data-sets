@@ -73,11 +73,12 @@ Counts out of 500. "Bistable" means three equilibria at the draw; the epithelial
 
 ```bash
 python generate_data.py                                 # writes the six CSVs here
+python generate_data.py --check                         # writes to a temporary directory and compares
 python generate_data.py --out DIR --check               # writes to DIR (not this directory) and compares
 python check_accuracy.py                                # the numbers marked below
 ```
 
-One process. `--check` refuses an `--out` that is this directory or a subdirectory of it. Tolerances: 1e-15 (inputs), 1e-9 (outputs), 1e-7 (gradients), relative, elementwise. The shipped files were written on 2026-11-09 in a Linux container (Python 3.11.18, numpy 2.4.6, scipy 1.17.1). In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-11-10), `python generate_data.py --out DIR --check` took about 115 s (about 50 s for the 2000 draws of each box, the rest the finite-difference check) and passed: the inputs are identical to the shipped ones, the outputs differ by a relative amount below 10⁻¹⁵ and the gradients by 10⁻¹⁵ to 10⁻¹⁴ (rounding level, far inside the tolerances).
+One process. `--check` refuses an `--out` that is this directory or a subdirectory of it. The shipped files were written on 2026-11-09 in a Linux container (Python 3.11.18, numpy 2.4.6, scipy 1.17.1). In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-11-12, on a loaded machine), `python generate_data.py --check` took about 186 s (about 80 s for the 2000 draws of each box, the rest the finite-difference check); the inputs were identical to the shipped ones, the outputs differed by a relative amount below 10⁻¹⁵ and the gradients by 10⁻¹⁵ to 10⁻¹⁴ (elementwise). `--check` prints these differences and does not judge them; it exits with status 1 only for a structural mismatch: a different shape or NaN pattern, a different number of equilibria at a draw, or regenerated inputs that differ from the shipped ones by more than a relative 1e-8.
 
 ## Accuracy
 

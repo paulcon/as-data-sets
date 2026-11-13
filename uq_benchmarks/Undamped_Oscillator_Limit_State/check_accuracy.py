@@ -31,7 +31,9 @@ Both models:
  7. Failure probability with the paper's lognormal inputs by plain Monte Carlo, 10^7 draws (seed
     31), 95 % Wilson intervals (slow: about 70 s for the yielding model).
 
-Deterministic. Imports numpy, the standard library and, for check 5 only, uqtestfuns.
+Without UQTestFuns the script runs the other checks and then exits with status 3 and a message
+naming the package. Deterministic. Imports numpy, the standard library and, for check 5 only,
+uqtestfuns.
 """
 import argparse
 import os
@@ -79,12 +81,12 @@ def zmax_timestep(X, n_pulse):
 
 
 def check_uqtestfuns(X):
+    """Check 5; returns False (and runs nothing) if UQTestFuns is not importable."""
     try:
         import uqtestfuns as uqtf
     except ImportError:
-        print('check 5 needs UQTestFuns: install it with `pip install uqtestfuns==0.7.0` and rerun '
-              '(or rerun with --skip-uqtestfuns)', file=sys.stderr)
-        sys.exit(3)
+        print('5. UQTestFuns: NOT RUN, uqtestfuns is not importable')
+        return False
     fun = uqtf.UndampedOscillator()
     print(f'5. UQTestFuns {uqtf.__version__}: default input model of UndampedOscillator')
     for mg in fun.prob_input.marginals:
@@ -93,6 +95,7 @@ def check_uqtestfuns(X):
     Xu = fun.prob_input.get_sample(100000)
     d2 = np.max(np.abs(fun(Xu) - om.limit_state_linear(Xu)))
     print(f'   max |g_lin - g_UQTestFuns|: shipped inputs {d1:.1e}; 10^5 draws of the UQTestFuns input {d2:.1e}')
+    return True
 
 
 def form_is(mean, sd, N, seed):
@@ -171,8 +174,7 @@ def main():
           f'10^4 draws, energy-bound stop vs full solution: max |difference in z_max| {np.max(np.abs(a_["z_max"] - b_["z_max"])):.1e}, '
           f'smallest relative gap to the next peak (full) {np.min(a_["peak_gap"]):.1e}')
 
-    if not args.skip_uqtestfuns:
-        check_uqtestfuns(X)
+    have_uqtf = args.skip_uqtestfuns or check_uqtestfuns(X)
 
     print('6. linear closed form, reduced pulse loads (normal inputs, Echard et al. 2013 Table 4 as listed by UQTestFuns):')
     for F1m, F1s, ref in ((0.60, 0.100, '9.09e-6 (MCS, 1.8e8 draws, CoV 2.47 %)'),
@@ -200,6 +202,10 @@ def main():
                                                             model=model)
             print(f'   {name}: {nf} failures, Pf = {pf:.4e} [{lo:.4e}, {hi:.4e}] ({time.perf_counter() - t1:.0f} s)')
     print(f'total {time.perf_counter() - t0:.0f} s')
+    if not have_uqtf:
+        print('check 5 needs UQTestFuns: install it with `pip install uqtestfuns==0.7.0` and rerun '
+              '(or rerun with --skip-uqtestfuns)', file=sys.stderr)
+        sys.exit(3)
 
 
 if __name__ == '__main__':

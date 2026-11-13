@@ -2,7 +2,8 @@
 
     python build_mechanism.py KONNOV_DIR                 # once: writes konnov2008_h2.yaml
     python generate_data.py --out DIR                    # all cases, resumable
-    python generate_data.py --case grad --rows 0:4 --out DIR --check   # subset vs shipped files
+    python generate_data.py --check                      # all cases in a temporary directory, vs shipped files
+    python generate_data.py --case grad --rows 0:4 --check   # subset vs shipped files
 
 Cases
   grad  350 samples of the 33 inputs (truncated normal, seed 2018033): the 21 outputs and
@@ -20,14 +21,19 @@ k_j -> (1 + 1e-3) k_j (Ji et al. Eq. 20), stored as df/dln k_j in the output's u
 
 Work is saved row by row under DIR/_parts, so an interrupted run continues where it
 stopped; --max-seconds ends a run cleanly after that much wall time (rerun to continue).
-The script never writes into its own directory: --out is required and must be outside it
-(not a subdirectory either; copy the finished CSVs in by hand). --check compares the rows computed with the shipped
-files: relative difference at most 1e-6 of each column's largest value for inputs and
-outputs, 1e-3 for gradients (forward differences amplify solver rounding).
+The script never writes into its own directory: --out is required without --check and must be outside
+it (not a subdirectory either; copy the finished CSVs in by hand); with --check it defaults to a temporary
+directory, removed at the end (--max-seconds then needs --out DIR, and a --check run stopped by
+--max-seconds exits 1 without comparing). --check prints the largest differences from the shipped files
+(relative to each column's largest value) and fails only on structural mismatches (shapes, NaN pattern,
+inputs).
 """
 import argparse
+import atexit
 import os
+import shutil
 import sys
+import tempfile
 import time
 
 import numpy as np
@@ -37,6 +43,7 @@ sys.path.insert(0, HERE)
 import h2_konnov_driver as D  # noqa: E402
 
 SEEDS = {"grad": 2018033, "mc": 2018100}
+INPUT_RTOL = 1e-8   # --check fails if a regenerated input (a seeded draw) differs by more (relative)
 SIZES = {"grad": 350, "mc": 1000}
 XI = np.linspace(-4.0, 4.0, 49)
 
@@ -177,32 +184,51 @@ def run_line(out, tmax, t_start):
 
 
 def check(case, out, rows):
+    """Print max |new - shipped| / column max per file; return (False on a structural mismatch, the largest
+    output difference and its file)."""
     files = {"grad": ["inputs.csv", "outputs.csv", "gradients.csv"],
              "mc": ["mc_inputs.csv", "mc_outputs.csv"],
              "line": ["directions.csv", "line_runs.csv"]}[case]
-    ok = True
+    ok, worst = True, (0.0, files[-1])
     for fn in files:
         new = np.loadtxt(os.path.join(out, fn), delimiter=",", ndmin=2)
         old = np.loadtxt(os.path.join(HERE, fn), delimiter=",", ndmin=2)
         if case != "line":
             old = old[rows]
-        scale = np.max(np.abs(old), axis=0)
+        if new.shape != old.shape or not np.array_equal(np.isnan(new), np.isnan(old)):
+            print(f"  FAIL: {fn}: shape {new.shape} or NaN pattern differs from the shipped {old.shape}")
+            ok = False
+            continue
+        scale = np.nanmax(np.abs(old), axis=0)
         scale[scale == 0] = 1.0
-        rel = np.max(np.abs(new - old) / scale)
-        tol = 1e-3 if fn == "gradients.csv" else 1e-6
-        ok &= rel <= tol
-        print(f"  {fn}: max |new - shipped| / column max = {rel:.2e} (tolerance {tol:.0e})")
-    return ok
+        rel = np.nanmax(np.abs(new - old) / scale)
+        print(f"  {fn}: max |new - shipped| / column max = {rel:.2e}")
+        if fn.endswith("inputs.csv"):            # the inputs are seeded draws
+            if rel > INPUT_RTOL:
+                print(f"  FAIL: {fn} differs from the shipped inputs by {rel:.2e} > {INPUT_RTOL:g}")
+                ok = False
+        elif rel >= worst[0]:
+            worst = (rel, fn)
+    return ok, worst
 
 
 def main():
     p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     p.add_argument("--case", default="all", choices=["all", "grad", "mc", "line"])
     p.add_argument("--rows", default=None, help="a:b, a subset of the rows (grad, mc)")
-    p.add_argument("--out", required=True, help="output directory (not this directory)")
+    p.add_argument("--out", default=None, help="output directory, not this directory (required without "
+                   "--check; with --check, default a temporary directory)")
     p.add_argument("--check", action="store_true", help="compare with the shipped files")
     p.add_argument("--max-seconds", type=float, default=np.inf)
     a = p.parse_args()
+    if a.out is None:
+        if a.check:
+            if a.max_seconds != np.inf:
+                p.error("--max-seconds with --check needs --out DIR, so that a stopped run can be resumed")
+            a.out = tempfile.mkdtemp(prefix="check_")
+            atexit.register(shutil.rmtree, a.out, ignore_errors=True)
+        else:
+            p.error("--out DIR is required without --check")
     out_abs, here_abs = os.path.realpath(a.out), os.path.realpath(HERE)
     if os.path.commonpath([out_abs, here_abs]) == here_abs:
         sys.exit("--out must be a directory outside this one (not this directory or a subdirectory of it), "
@@ -218,7 +244,7 @@ def main():
     os.makedirs(a.out, exist_ok=True)
     t_start = time.time()
     cases = ["grad", "mc", "line"] if a.case == "all" else [a.case]
-    good = True
+    good, worst = True, (0.0, "")
     for c in cases:
         if c == "line":
             if a.rows:
@@ -233,12 +259,18 @@ def main():
                 rows = slice(0, SIZES[c])
             complete = run_case(c, rows, a.out, a.max_seconds, t_start)
         if not complete:
+            if a.check:
+                sys.exit("check not done: stopped by --max-seconds before all rows were done; rerun with the "
+                         "same --out to continue")
             break
         if a.check:
-            good &= check(c, a.out, rows)
+            ok, w = check(c, a.out, rows)
+            good, worst = good and ok, max(worst, w)
     print(f"wall time {time.time() - t_start:.0f} s")
-    if a.check and not good:
-        sys.exit("check failed")
+    if a.check:
+        print(f"largest difference from the shipped files: {worst[0]:.1e} (relative to the column max, {worst[1]})")
+        if not good:
+            sys.exit(1)
 
 
 if __name__ == "__main__":

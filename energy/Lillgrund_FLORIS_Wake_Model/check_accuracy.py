@@ -48,10 +48,12 @@ them:
     venv-floris/bin/pip install --no-deps seaborn==0.13.2 floris==2.0.1
     venv-floris/bin/python check_accuracy.py --floris-only
 
-Without FLORIS, the script stops with this message unless --no-floris is given. Deterministic
+Without FLORIS, the script runs checks 2-5, then prints this message and exits with status 3
+(with --floris-only it stops at once; --no-floris never needs FLORIS). Deterministic
 (fixed rows and seed); it reads the files next to it and writes nothing.
 """
 import argparse
+import importlib.util
 import os
 import platform
 import sys
@@ -270,7 +272,8 @@ def main():
     a = ap.parse_args()
     t0 = time.perf_counter()
     X, G = load()
-    if not a.no_floris:
+    missing = not a.no_floris and not a.floris_only and importlib.util.find_spec('floris') is None
+    if not a.no_floris and not missing:
         check_floris(X)
     if not a.floris_only:
         check_steps(X, G)
@@ -278,6 +281,9 @@ def main():
         check_sweeps()
         check_nan_sample(X, G)
     print(f'\nrun time {time.perf_counter() - t0:.0f} s')
+    if missing:
+        print(INSTALL, file=sys.stderr)
+        sys.exit(3)
 
 
 if __name__ == '__main__':

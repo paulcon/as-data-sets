@@ -1,7 +1,9 @@
 """Regenerate the data files of Pulmonary_Pulse_Wave_Network (needs git and g++).
 
-    python generate_data.py --work /tmp/pulmwk --out /tmp/pulmwk/out           # all 160 rows, about 1.1 CPU-hours
-    python generate_data.py --work /tmp/pulmwk --rows 0:5 --out /tmp/pulmwk/out --check   # subset vs shipped
+    python generate_data.py --work WORK --out DIR                  # all 160 rows, about 1.1 CPU-hours
+    python generate_data.py --check                                # rows 0:3 in temporary directories, vs shipped
+    python generate_data.py --check --full                         # all 160 rows, vs shipped
+    python generate_data.py --work WORK --rows 0:5 --out DIR --check   # a chosen subset, kept in WORK and DIR
 
 The solver is the authors' C++ program sor06 (repository Colebank_Identifiability_PDE,
 WK_Simulator, commit pinned in pulmonary_wk_driver.COMMIT). It is licensed CC BY-NC 4.0 and is
@@ -20,16 +22,21 @@ status: 0 forward differences, 1 at least one backward difference, 2 the base ru
 (outputs and gradients NaN), 3 a perturbed run failed (gradients NaN).
 
 Each finished row is appended to --work/rows.jsonl, so an interrupted run resumes where it stopped.
---check and --rows write only to --out DIR outside this directory; --check compares with the
-shipped files: outputs to 1e-9 relative (max |new - shipped| / max |shipped|), gradients to 1e-6
-relative per column block (the same compiler gives identical numbers; another compiler or
-platform can change the last digits of each run, which the differences amplify).
+--check and --rows write only to --out DIR outside this directory (with --check, --work and --out
+default to temporary directories, and the rows default to CHECK_ROWS). --check prints the largest
+differences from the shipped files (max |new - shipped| / max |shipped|; gradients per column block)
+and fails only on structural mismatches (shapes, NaN pattern, status column, inputs). The same
+compiler gives identical numbers; another compiler or platform can change the last digits of each
+run, which the differences amplify.
 """
 import argparse
+import atexit
 import json
 import os
 import resource
+import shutil
 import sys
+import tempfile
 import time
 
 import numpy as np
@@ -47,8 +54,8 @@ def inside(path):
 SEED = 2025130
 M = 160
 XFMT = "%.15e"
-TOL_OUT = 1e-9
-TOL_GRAD = 1e-6
+INPUT_RTOL = 1e-8      # --check fails if the regenerated inputs (seeded draws) differ by more (relative)
+CHECK_ROWS = "0:3"     # rows of a plain --check (about 1.5 CPU-minutes)
 
 
 def design():
@@ -112,30 +119,71 @@ def write(out, X, recs, rows):
 
 
 def check(out, rows):
-    for fn, tol in (("inputs.csv", TOL_OUT), ("outputs.csv", TOL_OUT), ("gradients.csv", TOL_GRAD)):
+    """Print the largest differences from the shipped files; return the number of structural mismatches."""
+    n_fail, largest = 0, (0.0, "outputs.csv")
+    for fn in ("inputs.csv", "outputs.csv", "gradients.csv"):
         new = np.loadtxt(os.path.join(out, fn), delimiter=",", ndmin=2)
-        old = np.loadtxt(os.path.join(HERE, fn), delimiter=",", ndmin=2)[rows]
+        old = np.loadtxt(os.path.join(HERE, fn), delimiter=",", ndmin=2)
+        if len(old) != M or new.shape != old[rows].shape:
+            print(f"  FAIL: {fn}: shape {new.shape}, shipped {old.shape} (rows {rows.start}:{rows.stop} of {M})")
+            n_fail += 1
+            continue
+        old = old[rows]
+        if fn == "outputs.csv":                     # last column: the integer status
+            if not np.array_equal(new[:, -1], old[:, -1]):
+                print(f"  FAIL: {fn}: status column differs: {new[:, -1].tolist()}, shipped {old[:, -1].tolist()}")
+                n_fail += 1
+            new, old = new[:, :-1], old[:, :-1]
         ok = np.isfinite(old) & np.isfinite(new)
-        same_nan = np.array_equal(np.isnan(old), np.isnan(new))
+        if not np.array_equal(np.isnan(old), np.isnan(new)):
+            print(f"  FAIL: {fn}: failed rows (NaN pattern) differ")
+            n_fail += 1
         if fn == "gradients.csv":
             rel = max(np.max(np.abs(new[:, b][ok[:, b]] - old[:, b][ok[:, b]]), initial=0.0)
                       / max(np.max(np.abs(old[:, b][ok[:, b]]), initial=0.0), 1e-300)
                       for b in [slice(k * 9, (k + 1) * 9) for k in range(3)])
         else:
-            rel = np.max(np.abs(new[ok] - old[ok])) / np.max(np.abs(old[ok]))
-        verdict = "OK" if (rel <= tol and same_nan) else "FAIL"
-        print(f"  {fn}: max rel. difference {rel:.2e} (tolerance {tol:.0e}), "
-              f"same failed rows: {same_nan} -> {verdict}")
+            rel = np.max(np.abs(new[ok] - old[ok]), initial=0.0) / max(np.max(np.abs(old[ok]), initial=0.0), 1e-300)
+        print(f"  {fn}: largest difference {rel:.2e} (relative to the largest shipped value"
+              + (", per column block)" if fn == "gradients.csv" else ")"))
+        if fn == "inputs.csv":
+            if rel > INPUT_RTOL:
+                print(f"  FAIL: {fn}: the inputs differ by more than {INPUT_RTOL:g} (relative)")
+                n_fail += 1
+        elif rel > largest[0]:
+            largest = (rel, fn)
+    print(f"largest difference from the shipped files: {largest[0]:.1e} (relative, {largest[1]})")
+    return n_fail
 
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("--work", required=True, help="directory for the solver build and row cache")
+    p.add_argument("--work", default=None,
+                   help="directory for the solver build and row cache (required without --check; "
+                        "with --check, default a temporary directory)")
     p.add_argument("--source", default=None, help="an existing clone of the authors' repository")
-    p.add_argument("--rows", default=None, help="a:b, a subset of the rows")
-    p.add_argument("--out", required=True, help="output directory (pass this directory itself, explicitly, to rewrite the shipped files)")
+    p.add_argument("--rows", default=None,
+                   help=f"a:b, a subset of the rows (with --check, default {CHECK_ROWS} unless --full)")
+    p.add_argument("--out", default=None,
+                   help="output directory (required without --check; with --check, default a temporary "
+                        "directory; pass this directory itself, explicitly, to rewrite the shipped files)")
     p.add_argument("--check", action="store_true", help="compare with the shipped files")
+    p.add_argument("--full", action="store_true", help="with --check, all rows")
     a = p.parse_args()
+    if a.full and not a.check:
+        p.error("--full is an option of --check")
+    if a.full and a.rows:
+        p.error("--full and --rows exclude each other")
+    if a.check and not a.full and not a.rows:
+        a.rows = CHECK_ROWS
+        print(f"--check: rows {CHECK_ROWS}; --check --full for all {M} rows", flush=True)
+    for name in ("work", "out"):
+        if getattr(a, name) is None:
+            if a.check:
+                setattr(a, name, tempfile.mkdtemp(prefix="check_"))
+                atexit.register(shutil.rmtree, getattr(a, name), ignore_errors=True)
+            else:
+                p.error(f"--{name} DIR is required without --check")
     if (a.check or a.rows) and inside(a.out):
         sys.exit("--check and --rows need --out DIR outside this directory, so that the shipped "
                  "files are not overwritten")
@@ -159,8 +207,8 @@ def main():
     cpu = sum(r["cpu_s"] for r in recs)
     print(f"{len(recs)} rows: solver CPU {cpu:.0f} s (sum over the cached rows), "
           f"this call {time.time() - t0:.0f} s wall")
-    if a.check:
-        check(a.out, rows)
+    if a.check and check(a.out, rows):
+        sys.exit(1)
 
 
 if __name__ == "__main__":

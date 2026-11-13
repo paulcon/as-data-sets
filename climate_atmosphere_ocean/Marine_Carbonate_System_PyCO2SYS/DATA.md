@@ -69,12 +69,16 @@ The CSVs have two `#` lines (a description with the PyCO2SYS version and seed, a
 ```bash
 python3.13 -m venv pyco2-venv && pyco2-venv/bin/pip install PyCO2SYS==1.8.3 pandas   # pandas: an undeclared import of PyCO2SYS 1.8.3
 pyco2-venv/bin/python generate_data.py                                # writes the seven CSVs here
-pyco2-venv/bin/python generate_data.py --out <scratch dir> --check    # writes elsewhere and compares with these files
+pyco2-venv/bin/python generate_data.py --check                        # writes to a temporary directory and compares with these files
 pyco2-venv/bin/python check_accuracy.py                               # the Accuracy checks (writes nothing)
 ```
 
-The shipped files are the record; regenerate them only if a problem is found in them. `--check` refuses to
-run without `--out` pointing to another directory. The shipped files were written on 2026-11-01 in a Linux
+The shipped files are the record; regenerate them only if a problem is found in them. `--check` writes to a
+temporary directory (removed at the end) or to `--out` in another directory, and prints, for each
+file, the largest elementwise relative difference from the shipped values. On macOS x86-64 with PyCO2SYS 1.8.3,
+numpy 2.5.4 and Python 3.13, `check_accuracy.py` reproduced the outputs to 7e-14 and the gradients to 9.2e-10
+(row 2-norm; Accuracy); `generate_data.py --check` itself was not run there. `--check` exits 1 only on a
+structural mismatch: a different shape or NaN pattern, or inputs that differ by more than a relative 1e-8. The shipped files were written on 2026-11-01 in a Linux
 container (2 CPUs shared with other jobs) with PyCO2SYS 1.8.3, autograd 1.9.1, numpy 2.5.4 and Python
 3.13.18. Writing both studies took 62 s there (30.0 s and 31.8 s; each study is 57 vectorized evaluations
 of 1000 samples, two PyCO2SYS calls each). `generate_data.py` was not rerun for the repository;

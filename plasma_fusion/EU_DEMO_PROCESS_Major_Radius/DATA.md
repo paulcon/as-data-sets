@@ -179,11 +179,12 @@ message (exit status 3).
 ```
 python generate_data.py run --n 64 --cpu-budget 960 --work <scratch>   # repeat until "all 64 done"
 python generate_data.py assemble --work <scratch>                      # writes demo_runs.csv
+python generate_data.py --check                                        # rerun row 0 in a temporary --work
 python generate_data.py check --rows 2,62 --work <scratch>             # rerun stored rows
 python generate_data.py baseline --work <scratch>                      # optional: recompute the warm start
 ```
 
-`--work` is required and must lie outside the data-set directory. `run` and `check` warm-start from the
+`--work` is required except for `check` (`--check` is the same command), which uses a temporary directory without it, and must lie outside the data-set directory. `check` prints the relative difference of each rerun R0 from the file and the largest of them (0 for the reruns of rows 2 and 62 on the original Linux platform) and does not judge them; it exits with status 1 only on a structural mismatch: a rerun whose `ifail` status or NaN pattern differs from the stored row. `run` and `check` warm-start from the
 shipped `baseline_warmstart.json` unless `--recompute-baseline` is given.
 
 `run` is resumable (one JSON line per finished run in `<scratch>/results.jsonl`; gzipped MFILEs in

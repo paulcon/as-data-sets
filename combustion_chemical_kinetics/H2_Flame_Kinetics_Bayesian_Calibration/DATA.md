@@ -228,7 +228,8 @@ cantvenv/bin/python generate_data.py --out /tmp/h2flame                         
 cantvenv/bin/python generate_data.py --out /tmp/h2flame --rows 0:80             # resumable chunks
 cantvenv/bin/python generate_data.py --out /tmp/h2flame --procs 16              # rows in 16 processes
 cantvenv/bin/python generate_data.py --out /tmp/h2flame --qoi Su20 --procs 16   # one QoI only
-cantvenv/bin/python generate_data.py --out /tmp/h2chk --rows 0:3 --check        # subset vs shipped files
+cantvenv/bin/python generate_data.py --check                                   # all 500 rows vs shipped files
+cantvenv/bin/python generate_data.py --rows 0:3 --check                         # subset vs shipped files
 cantvenv/bin/python generate_data.py --out /tmp/h2nom --nominal                 # nominal.csv, nominal_gradients.csv
 cantvenv/bin/python check_accuracy.py                                           # the Accuracy numbers (checks 1-7)
 cantvenv/bin/python check_accuracy.py --checks 8,9,10                           # the 500-row adjoint comparison and checks 9, 10
@@ -236,12 +237,16 @@ cantvenv/bin/python check_accuracy.py --checks 8,9,10                           
 cantvenv/bin/python -c "import h2_flame_driver as D; D.build_mechanism('<PelePhysics>/Mechanisms/BurkeDryer/mechanism.yaml', 'burke2012_x1x6.yaml')"
 ```
 
-`--out` is required and must lie outside this directory; the scripts never write into it (copy new files in by
+`--out` is required (with `--check` it defaults to a temporary directory, removed at the end) and must lie
+outside this directory; the scripts never write into it (copy new files in by
 hand after comparing them). Each row and QoI is saved as `DIR/rows/<qoi>/row_NNNN.npz` when done and skipped on a
 rerun. When every row of a QoI exists, its `gradients_<qoi>.csv` is written to DIR, with a printed summary of the
 finite-difference checks for Su1 and Su20 (step check, forward against central, drift, grid identity); when all
-three QoIs exist, `inputs.csv` and `outputs.csv` as well. `--check` passes when values agree to 1e-6 relative and
-gradients to 3e-4 of the largest sd-scaled entry, and the status flags are equal.
+three QoIs exist, `inputs.csv` and `outputs.csv` as well. `--check` prints the largest
+difference of the values (elementwise relative) and of the gradients (relative to the largest sd-scaled stored
+entry) per QoI; the largest observed are in the table below (Linux x86-64 container, Python 3.13, Cantera 3.2.0;
+Cantera is not installed on the macOS machine, so nothing was measured there). It exits 1 only on a structural
+mismatch: different status flags, nan entries or shapes, or inputs that differ by more than a relative 1e-8.
 
 **Provenance of the shipped files.** All files were written with `h2_flame_driver.py` and Cantera 3.2.0, numpy
 2.5.4, scipy 1.18.1 on Linux x86-64. The inputs, τ, Su1 and Su20 values and the τ gradients come from a run of
@@ -270,7 +275,7 @@ reproduces the run's rows here (table below). The Su20 row of `nominal_gradients
 
 **Row 412.** The Su20 value of row 412 is that of the 2026-11-09 from-scratch solve, 0.01153983 m/s on a grid of
 364 points, obtained in two environments (the container and the c7a), so that the value and its finite-difference
-gradient belong to the same flame and `generate_data.py --check` passes. The 2026-11-03 run had given
+gradient belong to the same flame and `generate_data.py --check` reproduces them (table below). The 2026-11-03 run had given
 0.01161286 m/s on 375 points: a grid-refinement decision went the other way, and the two differ by 6.3e-3,
 less than Su20's grid sensitivity (1.4 % to 3.3 %, "Accuracy"). See Unknowns.
 
@@ -284,13 +289,13 @@ less than Su20's grid sensitivity (1.4 % to 3.3 %, "Accuracy"). See Unknowns.
 
 | rows | τ value / gradient | Su1 value / gradient | Su20 value / gradient | status flags |
 |---|---|---|---|---|
-| 0:2 (2026-11-09) | 5.9e-10 / 5.3e-05 | 3.2e-13 / 2.1e-11 | 3.4e-13 / 1.0e-11 | equal; PASS |
-| 412 (2026-11-09) | 2.9e-09 / 4.8e-05 | 3.1e-14 / 1.3e-11 | 6.2e-12 / 2.2e-11 | equal; PASS |
-| 497:500 (2026-11-09, `--qoi Su1`) | not run | 1.1e-13 / 1.7e-11 | not run | equal; PASS |
+| 0:2 (2026-11-09) | 5.9e-10 / 5.3e-05 | 3.2e-13 / 2.1e-11 | 3.4e-13 / 1.0e-11 | equal |
+| 412 (2026-11-09) | 2.9e-09 / 4.8e-05 | 3.1e-14 / 1.3e-11 | 6.2e-12 / 2.2e-11 | equal |
+| 497:500 (2026-11-09, `--qoi Su1`) | not run | 1.1e-13 / 1.7e-11 | not run | equal |
 
 Values: largest relative difference; gradients: largest difference relative to the largest sd-scaled stored entry.
 The τ gradient differences (up to 5.3e-05) are the noise of central differences of an adaptive ODE
-solution, within the stated tolerance 3e-4. Other platforms or Cantera versions may differ by more; the shipped
+solution. Other platforms or Cantera versions may differ by more; the shipped
 CSVs are the record.
 
 ## Accuracy

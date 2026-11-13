@@ -59,10 +59,11 @@ Held: Q = 3000 W (source power), α_w = 4e-4 1/K (water expansion), μ_w = 1e-3 
 
 ```bash
 python generate_data.py                            # writes the four CSVs here (about 1 s)
-python generate_data.py --out /tmp/phs --check      # writes elsewhere and compares (refuses to write here)
+python generate_data.py --check                    # writes to a temporary directory and compares
+python check_accuracy.py                           # the checks of the Accuracy section
 ```
 
-The shipped files were written on 2026-10-30 in a Linux container. The draws are fixed by the seed; the inverse CDFs come from `scipy.stats`, so another platform or scipy version can change the last digits. In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31) a run takes 0.7 s, and `--check` reports maximum relative differences of 2.3e-15 (inputs), 1.2e-15 (outputs), 7.9e-13 (gradients) and 9.1e-13 (fields) from the shipped files: rounding error, not a change in the model. The notebook runs in about 45 s in `.venv`, and two runs print the same values apart from timings; this includes a 50,000-sample Monte Carlo Sobol' estimate over the whole grid and a 200,000-sample estimate for u_r.
+The shipped files were written on 2026-10-30 in a Linux container. The draws are fixed by the seed; the inverse CDFs come from `scipy.stats`, so another platform or scipy version can change the last digits. In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31) a run takes 0.7 s, and `--check` reports maximum relative differences of 2.3e-15 (inputs), 1.2e-15 (outputs), 7.9e-13 (gradients) and 9.1e-13 (fields) from the shipped files: rounding error, not a change in the model. `--check` prints these differences and the largest of them, 9.1e-13 (relative, `fields.csv`, in `.venv` on macOS, Python 3.11, 2026-11-12; 2.8 s with start-up); it exits with code 1 only on a structural mismatch: a missing file, a different shape or NaN pattern, or inputs that differ from the shipped ones by more than 10⁻⁸ (relative). The notebook runs in about 45 s in `.venv`, and two runs print the same values apart from timings; this includes a 50,000-sample Monte Carlo Sobol' estimate over the whole grid and a 200,000-sample estimate for u_r.
 
 ## Accuracy
 

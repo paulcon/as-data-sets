@@ -14,7 +14,7 @@ Kind: **stored data**. The saturations are outputs of the authors' finite-volume
 | `generate_data.py` | `run` (prog on the samples, in parallel chunks), `assemble` (the files above from the chunk outputs; `--check` compares with the shipped files), `archive` (the two stored CSVs from the archive) | provenance |
 | `LICENSE-uqBenchmarkData.txt` | the archive's BSD 3-clause licence, unchanged | licence of the archive's files |
 
-The CSVs have two `#` lines (a description, then the column names) and are read by `np.loadtxt(path, delimiter=',')`. Values are written with 17 significant digits; the two archive files round-trip the archive's values exactly (checked when written). Their header lines were rewritten by script on 2026-11-02; the data lines are unchanged.
+The CSVs have two `#` lines (a description, then the column names) and are read by `np.loadtxt(path, delimiter=',')`. Values are written with 17 significant digits; the two archive files round-trip the archive's values exactly (checked when written).
 
 ## Model
 
@@ -40,12 +40,13 @@ The CSVs have two `#` lines (a description, then the column names) and are read 
 # needs Linux x86-64 and the archive (Zenodo 10.5281/zenodo.933827); WORK outside this directory
 unzip uqBenchmarkData.zip                                              # -> uqBenchmarkData/
 python generate_data.py run --archive uqBenchmarkData --work WORK --jobs 16
-python generate_data.py assemble --work WORK --check                   # compare with the shipped files
+python generate_data.py assemble --work WORK --check                   # print the largest differences from the shipped files
+python generate_data.py --check --archive uqBenchmarkData --jobs 16    # run in a temporary WORK, then compare
 python generate_data.py assemble --work WORK                           # or write them (here, or --out DIR)
 python generate_data.py archive --archive uqBenchmarkData --out DIR    # the two stored CSVs
 ```
 
-`run` checks the SHA-256 of `prog` and `InputParameters.txt` above, splits the 10,000 rows into chunks of 625 and runs `prog -pfile WORK/chunks/in_kk -path WORK/out_kk/ -allS -MC625` for each chunk in parallel. On any other system it exits with status 1 and a message.
+`run` checks the SHA-256 of `prog` and `InputParameters.txt` above, splits the 10,000 rows into chunks of 625 and runs `prog -pfile WORK/chunks/in_kk -path WORK/out_kk/ -allS -MC625` for each chunk in parallel. On any other system it exits with status 3 and a message. `--check` without a mode is `assemble --check`; without `--work` it first runs `prog` on all 10,000 samples in a temporary folder (as long as `run`), and without `--archive` as well it exits with status 3. `--check` prints the largest difference of the saturations from the shipped ones, relative to the largest saturation (0 for the shipped run: assembling its chunk outputs reproduces the files bit for bit; see below), and does not judge it; it exits with status 1 only on a structural mismatch: different shapes or NaN pattern, or a grid `r` that differs by more than a relative 1e-8.
 
 **The run that wrote the shipped files** (2026-11-02): an AWS c7a.4xlarge (16 vCPUs, AMD EPYC), Ubuntu 24.04, 16 chunks in parallel (the same split as `run`, with `split -l 625`). The chunks took 7.1–8.0 hours of wall time each, 28,927 s in all, about 44 s of CPU per sample on average (the cost grows with the number of time steps). `prog` keeps every sample's result in memory and writes the files when its chunk ends. `assemble --check` in `.venv` against the chunk outputs prints identical `S`, `r` and `outputs.csv` (under a second). `archive` in `.venv` rewrote the two archive files with the data lines unchanged.
 

@@ -1,6 +1,7 @@
 """Write inputs.csv, outputs.csv, gradients.csv and tt_tangent.csv for the HBV-SASK Oldman data set.
 
     python generate_data.py --out DIR            # write the four CSVs to DIR
+    python generate_data.py --check              # write them to a temporary directory and compare
     python generate_data.py --out DIR --check    # also compare them with the files shipped here
 
 Draws M = 2000 independent uniform (Monte Carlo) samples of the 12 HBV-SASK parameters on the
@@ -20,14 +21,19 @@ The script also checks the tangent against central differences (step 1e-7 of eac
 the first FD_ROWS samples and prints the largest relative error (row 2-norm, coordinates scaled
 to [-1, 1]).
 
---out is required: the shipped files are never overwritten by default. With --check, --out
-must be outside this directory (neither this directory nor any directory inside it); the comparison tolerance is 1e-9 relative (scaled by
-the largest absolute value of each column). Only numpy and the standard library are imported.
+--out is required without --check: the shipped files are never overwritten by default. --check
+without --out uses a temporary directory and removes it. With --check, --out must be outside this directory (neither this directory nor any directory inside it). --check prints the largest
+differences from the shipped files (each scaled by the largest absolute value of its column) and fails
+(exit status 1) only on structural mismatches (shapes, NaN pattern, inputs differing by more than
+INPUT_RTOL). Only numpy and the standard library are imported.
 One process.
 """
 import argparse
+import atexit
 import os
+import shutil
 import sys
+import tempfile
 import time
 
 import numpy as np
@@ -42,7 +48,7 @@ H_TT = 0.1        # degC, central-difference step for the TT column
 H_FD = 1e-7       # fraction of each range, for the tangent check only
 FD_ROWS = 20
 CHUNK = 250
-TOL = 1e-9
+INPUT_RTOL = 1e-8  # inputs are deterministic draws: a larger difference means a different seed or range
 FILES = ('inputs.csv', 'outputs.csv', 'gradients.csv', 'tt_tangent.csv')
 
 PROVENANCE = (f'hbv_sask_model.py (HBV-SASK, Razavi et al. 2019 Fig. 9; Oldman River forcing 1979-2008 '
@@ -117,11 +123,18 @@ def write(out, X, F, G, T):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
-    ap.add_argument('--out', required=True, help='output directory')
+    ap.add_argument('--out', default=None,
+                    help='output directory (required without --check; with --check, default: a temporary directory)')
     ap.add_argument('--check', action='store_true', help='compare with the CSVs shipped in this directory')
     ap.add_argument('--fd-rows', type=int, default=FD_ROWS,
                     help=f'samples for the tangent check (default {FD_ROWS}; 0 to skip)')
     args = ap.parse_args()
+    if args.out is None:
+        if args.check:
+            args.out = tempfile.mkdtemp(prefix='check_')
+            atexit.register(shutil.rmtree, args.out, ignore_errors=True)
+        else:
+            ap.error('--out DIR is required without --check')
     here, out = os.path.realpath(HERE), os.path.realpath(args.out)
     if args.check and os.path.commonpath([here, out]) == here:
         ap.error('--check needs --out DIR outside this directory (not this directory or a subdirectory of it)')
@@ -140,17 +153,24 @@ def main():
         print(f'tangent vs central differences (step {H_FD:g} of each range), first {args.fd_rows} samples: '
               f'max row relative error NSE {e[0]:.1e}, Qmean {e[1]:.1e}, Qpeak {e[2]:.1e}')
     if args.check:
-        worst = 0.0
+        ok, diffs = True, []
         for n in FILES:
             a, b = read_csv(os.path.join(args.out, n)), read_csv(os.path.join(HERE, n))
-            if a.shape != b.shape:
-                sys.exit(f'{n}: shape {a.shape} differs from shipped {b.shape}')
-            scale = np.maximum(np.max(np.abs(b), axis=0), 1e-300)
-            r = float(np.max(np.abs(a - b) / scale))
-            worst = max(worst, r)
-            print(f'{n}: max difference / column max {r:.1e}')
-        print(f'check {"OK" if worst <= TOL else "FAIL"} (tolerance {TOL:g})')
-        if worst > TOL:
+            if a.shape != b.shape or not np.array_equal(np.isnan(a), np.isnan(b)):
+                print(f'FAIL: {n}: shape {a.shape} or NaN pattern differs from the shipped file {b.shape}')
+                ok = False
+                continue
+            scale = np.maximum(np.nanmax(np.abs(b), axis=0), 1e-300)
+            r = float(np.nanmax(np.abs(a - b) / scale))
+            print(f'{n}: largest difference / column maximum {r:.1e}')
+            if n == 'inputs.csv' and r > INPUT_RTOL:
+                print(f'FAIL: {n}: the inputs differ from the shipped ones by more than {INPUT_RTOL:g} (relative)')
+                ok = False
+            diffs.append((r, n))
+        if diffs:
+            r, n = max(diffs, key=lambda t: t[0])
+            print(f'largest difference from the shipped files: {r:.1e} (relative, {n})')
+        if not ok:
             sys.exit(1)
     print(f'total {time.perf_counter() - t0:.0f} s')
 

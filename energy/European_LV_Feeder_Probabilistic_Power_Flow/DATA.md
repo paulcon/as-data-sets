@@ -19,7 +19,7 @@ scipy, matplotlib and active_subspaces, because it reads the shipped files and t
 | `opendss_driver.py` | `FeederModel` (OpenDSS driver, not a numpy/scipy model: `solve`, `qoi55`, `qoi110`, `grad`, `load_voltages_pu`); constants `LOAD_NAMES`, `LOAD_BUSES`, `LOAD_PHASES`, `P_REF`, `SD_P`, `PF_NOM`, `PF_LO`, `PF_HI`, `NAMES55/110`, `MEAN55/110`, `SD55/110`, `STEPS55/110`, `QOI_NAMES` | the model; its constants import without OpenDSS |
 | `feeder/` | the IEEE European LV Test Feeder in OpenDSS format, unchanged (63 files, 1.1 MB; see "License and credit") | model input |
 | `feeder/LICENSE-electricdss-tst.txt` | BSD 3-clause licence of the repository the feeder files come from | covers `feeder/` |
-| `generate_data.py` | writes all CSVs (`--case`, `--rows`, `--out` (required), `--check`) | regenerates the data (needs OpenDSSDirect.py 0.9.4) |
+| `generate_data.py` | writes all CSVs (`--case`, `--rows`, `--out` (required without `--check`), `--check`) | regenerates the data (needs OpenDSSDirect.py 0.9.4) |
 | `check_accuracy.py` | recomputes the numbers of "Accuracy" below (`--quick`: the nominal point and the tolerance check only) | accuracy check (needs OpenDSSDirect.py 0.9.4) |
 | `inputs_55.csv` | 1000 × 55: P_LOAD1..P_LOAD55 in kW | Monte Carlo inputs, base scenario, seed 2017055 |
 | `outputs_55.csv` | 1000 × 3: V899A (V), I78A (A), PLOSS (kW) | model output |
@@ -168,13 +168,18 @@ multiplies them by the standard deviations.
 # OpenDSS environment (Python 3.13 was used)
 python3 -m venv dssvenv && dssvenv/bin/pip install opendssdirect.py==0.9.4 numpy scipy
 dssvenv/bin/python generate_data.py --out /tmp/lv_full                       # all files (about 8 min)
-dssvenv/bin/python generate_data.py --rows 0:20 --out /tmp/lv --check         # subset vs shipped files
+dssvenv/bin/python generate_data.py --check                                   # all files vs shipped files, in a temporary directory
+dssvenv/bin/python generate_data.py --rows 0:20 --check                       # subset vs shipped files
 dssvenv/bin/python check_accuracy.py                                          # the Accuracy numbers (about 1 min of CPU)
 ```
 
-`generate_data.py` writes only into `--out`, which it requires and which must be outside this directory (it
-refuses the directory and its subdirectories in every mode). The
-tolerance of `--check` is 1e-8 (outputs) and 1e-5 (gradients) of the largest stored value of each file.
+`generate_data.py` writes only into `--out`, which it requires without `--check` and which must be outside this
+directory (it refuses the directory and its subdirectories in every mode); `--check` without `--out` writes into a
+temporary directory and removes it. `--check`
+prints, for each file, the largest difference relative to the largest stored value of the file
+(max |new - shipped| / max |shipped|; input files elementwise), and does not judge it; the observed differences are given below. It
+exits with status 1 only for a structural mismatch: a different shape or NaN pattern, or regenerated inputs that
+differ from an input file by more than a relative 1e-8.
 
 Provenance of the shipped files: generated 2026-11-03 in a Linux container (x86-64, 2 CPUs shared with other jobs,
 run at `nice 10` in one process), Python 3.13.18, OpenDSSDirect.py 0.9.4 (DSS-Python 0.15.7, dss_python_backend

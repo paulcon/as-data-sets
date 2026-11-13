@@ -144,12 +144,16 @@ pip install myokit numpy scipy        # plus SUNDIALS, e.g. apt install libsundi
 nice -n 10 python generate_data.py   # 4 chunks of 80 points (finished chunks skipped), then merge
 python generate_data.py --chunk 2    # one chunk -> parts/chunk_2.npz (saves progress every 5 points)
 python generate_data.py --merge      # parts -> rabbit_ap_samples.csv
-python generate_data.py --check 3    # rerun the first 3 points and compare with the CSV
+python generate_data.py --check      # rerun the first 3 points and compare with the CSV
+python generate_data.py --check 10   # the same with the first 10 points
 ```
 
 Without Myokit, SUNDIALS and a C compiler, `generate_data.py` (except `--merge`) stops with an error that
-says what to install and to rerun it. The shipped file is the record; it is regenerated only if a problem
-is found in it.
+says what to install and to rerun it. `--check` prints the largest relative difference of the rerun
+biomarkers from the CSV for each point (the original run on Linux with Myokit 1.39.2 and SUNDIALS 6.4.1
+gave at most 4.2e-12, below). It exits with status 1 only on a structural mismatch: a CSV of another shape,
+inputs that differ from the Sobol' design by more than 1e-8 (relative), or a rerun with a different
+response class or NaN pattern. The shipped file is the record; it is regenerated only if a problem is found in it.
 
 Provenance of the shipped file: 2026-10-31, written in an Ubuntu 24.04 container, Python 3.13.18, Myokit 1.39.2,
 SUNDIALS 6.4.1 (Ubuntu `libsundials-dev`), numpy 2.5.4, scipy 1.18.1; CVODES tolerances abs 1e-6,

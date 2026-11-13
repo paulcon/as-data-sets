@@ -15,11 +15,17 @@ fdfault_reruns.csv: selected rows of paper_tables.csv rerun with the compiled fd
 simulator, giving the integrated final slip to full precision and the run time.
 
     python generate_data.py                      # design_inputs.csv (under a second)
-    python generate_data.py --check              # compare with the shipped design_inputs.csv
+    python generate_data.py --check              # redraw into a temporary directory, compare with the shipped
+                                                 # design_inputs.csv
+
+--check prints the largest differences from the shipped files and fails only on structural mismatches
+(shape, the table and row columns, inputs differing by more than INPUT_RTOL).
     python generate_data.py --rerun 1,11,13,21,29 --fdfault-dir /path/to/fdfault
 """
 import argparse
+import atexit
 import os
+import shutil
 import sys
 import tempfile
 import time
@@ -37,6 +43,7 @@ INSTALL = ('fdfault v1.0.1 is needed for --rerun and was not found ({}). Install
            'compiled fdfault binary.')
 
 SEEDS = {2: (4742322, 20), 3: (63684, 10)}     # table -> (seed, size)
+INPUT_RTOL = 1e-8   # inputs are deterministic draws: a larger difference means a different seed or range
 COLS = 'normal stress sigma_yy (MPa), shear/normal stress ratio (-), normal stress ratio sigma_xx/sigma_yy (-)'
 
 
@@ -73,6 +80,24 @@ def write_design(path):
         for k in range(len(tab)):
             f.write(f'{int(tab[k, 0])},{int(tab[k, 1])},{lhs_row[k]},' + ','.join(repr(float(v)) for v in X[k]) + '\n')
     return X
+
+
+def compare(path, ship=HERE):
+    """Compare a redrawn design_inputs.csv with the one in ship; False on a structural mismatch."""
+    new = np.loadtxt(path, delimiter=',', ndmin=2)
+    old = np.loadtxt(os.path.join(ship, 'design_inputs.csv'), delimiter=',', ndmin=2)
+    if new.shape != old.shape:
+        print(f'shape {new.shape} differs from the shipped {old.shape}')
+        return False
+    same_int = np.array_equal(new[:, :3], old[:, :3])
+    d = float(np.max(np.abs(new[:, 3:] - old[:, 3:]) / np.abs(old[:, 3:]).max(axis=0)))
+    print(f'table and row columns identical: {same_int}; inputs: largest difference / column maximum {d:.1e}')
+    if not same_int:
+        print('FAIL: the table and row columns differ from the shipped file')
+    if d > INPUT_RTOL:
+        print(f'FAIL: the inputs differ from the shipped ones by more than {INPUT_RTOL:g} (relative)')
+    print(f'largest difference from the shipped files: {d:.1e} (relative, design_inputs.csv)')
+    return bool(same_int and d <= INPUT_RTOL)
 
 
 def require_fdfault(fdfault_dir):
@@ -117,15 +142,24 @@ if __name__ == '__main__':
     ap.add_argument('--check', action='store_true')
     ap.add_argument('--rerun', default=None, help='comma-separated 1-based rows of paper_tables.csv')
     ap.add_argument('--fdfault-dir', default=os.environ.get('FDFAULT_DIR'))
-    ap.add_argument('--out', default=HERE)
+    ap.add_argument('--out', default=None,
+                    help='output directory (default: this directory; with --check, a temporary directory)')
     a = ap.parse_args()
+    if a.out is None:
+        if a.check:
+            a.out = tempfile.mkdtemp(prefix='check_')
+            atexit.register(shutil.rmtree, a.out, ignore_errors=True)
+        else:
+            a.out = HERE
+    elif a.check and os.path.realpath(a.out) == os.path.realpath(HERE):
+        ap.error('--check needs --out DIR outside this directory, so that the shipped file is not overwritten')
     if a.rerun:
         rerun([int(s) for s in a.rerun.split(',')], a.fdfault_dir, os.path.join(a.out, 'fdfault_reruns.csv'))
     else:
-        path = os.path.join(a.out if not a.check else tempfile.mkdtemp(), 'design_inputs.csv')
+        path = os.path.join(a.out, 'design_inputs.csv')
         X = write_design(path)
         if a.check:
-            old = read_csv('design_inputs.csv')
-            print(f'max |difference| from the shipped design_inputs.csv: {np.abs(old[:, 3:] - X).max():.1e}')
+            if not compare(path):
+                sys.exit(1)
         else:
             print(f'wrote {path}: {X.shape}')

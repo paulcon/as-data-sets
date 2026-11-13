@@ -95,7 +95,8 @@ def main():
               "wrote the shipped files) and rerun check_accuracy.py.", file=sys.stderr)
         sys.exit(3)
     if not os.path.exists(M.MECH):
-        sys.exit(M.MECH_HELP + " check_accuracy.py.")
+        print(M.MECH_HELP + " check_accuracy.py.", file=sys.stderr)
+        sys.exit(3)
     t0 = time.process_time()
     print(f"Cantera {M.ct.__version__}, numpy {np.__version__}")
     model = M.IgnitionModel()

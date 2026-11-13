@@ -56,12 +56,13 @@ The paper says these ranges "are not meant to capture physical uncertainties" bu
 ## Regenerating
 
 ```bash
+python generate_data.py --check               # writes to a temporary directory and compares
 python generate_data.py --out DIR --check     # writes to DIR (not this directory) and compares
 python generate_data.py --here                # maintainers only: rewrites the shipped files in this directory
 python check_accuracy.py                      # the numbers marked below
 ```
 
-`generate_data.py` refuses to write into this directory unless given `--here` (for maintainers only; users should use `--out`), and `--out` must be outside it (symbolic links resolved); `--here` cannot be combined with `--out` or `--check`. One process. The shipped files were written on 2026-11-09 in a Linux container (Python 3.11, numpy 2.4.6). In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-11-10), `python generate_data.py --out DIR --check` took about 1.6 s (1.0 s for the 1000 samples × 54 frequencies × 7 evaluations) and passed: the inputs matched the shipped file exactly, and the outputs and gradients to rounding level (largest differences of order 10⁻¹⁶ and 10⁻¹⁵, relative to each column's largest value). The stated tolerance is a maximum difference of 10⁻¹⁵ relative for the inputs and 10⁻¹² relative to each column's largest value for the outputs and gradients (differences in libm rounding of exp, log, sin, cos amplified by the series).
+`generate_data.py` refuses to write into this directory unless given `--here` (for maintainers only; users should use `--out`), and `--out` must be outside it (symbolic links resolved); `--here` cannot be combined with `--out` or `--check`; `--check` without `--out` writes to a temporary directory that is removed at the end. One process. The shipped files were written on 2026-11-09 in a Linux container (Python 3.11, numpy 2.4.6). In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-11-10), `python generate_data.py --out DIR --check` took about 1.6 s (1.0 s for the 1000 samples × 54 frequencies × 7 evaluations): the inputs matched the shipped file exactly, and the outputs and gradients to rounding level (largest differences of order 10⁻¹⁶ and 10⁻¹⁵, relative to each column's largest value). `--check` prints these largest differences; on another platform, libm rounding of exp, log, sin and cos, amplified by the series, can make them larger. It exits 1 only on a structural mismatch: a different shape or NaN pattern, or inputs that differ by more than a relative 1e-8.
 
 ## Accuracy
 

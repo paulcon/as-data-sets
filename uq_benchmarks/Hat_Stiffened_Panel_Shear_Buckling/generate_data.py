@@ -1,7 +1,7 @@
 """Write inputs.csv, outputs.csv and gradients.csv for the hat-stiffened panel shear buckling model.
 
     python generate_data.py                       # writes the three CSVs here
-    python generate_data.py --out /tmp/p --check  # writes elsewhere, compares with the files here
+    python generate_data.py --check               # writes to a temporary directory, compares with the files here
     python generate_data.py --variant openturns --out /tmp/ot   # the OpenTURNS-as-coded thickness (not shipped)
 
 Draws M = 5000 Monte Carlo samples of the ten inputs of `panel_model` (OpenTURNS
@@ -16,13 +16,18 @@ U(8.02e-5, 8.181e-5) m instead (the notebook recomputes this variant from the mo
 It also checks the exact gradients at every sample against (1) central finite
 differences with step 1e-6 times each input's standard deviation and (2) a complex step
 (step 1e-30 times the input's value), and prints the largest relative errors (row
-2-norm), and counts samples outside physical meaning.
+2-norm), and counts samples outside physical meaning. `--check` prints the
+largest differences from the shipped files and fails only on structural mismatches (shapes, NaN
+pattern, inputs).
 
 Only numpy, scipy and the standard library are imported.
 """
 import argparse
+import atexit
 import os
+import shutil
 import sys
+import tempfile
 import time
 
 import numpy as np
@@ -33,6 +38,7 @@ import panel_model as pm  # noqa: E402
 
 SEED = 1994
 M = 5000
+INPUT_RTOL = 1e-8  # --check: regenerated inputs (deterministic draws) may differ from the shipped ones by round-off only
 H_FD = 1e-6  # central-difference step in units of each input's standard deviation (check only)
 
 PROVENANCE = ('panel_model.py (Ko and Jackson, NASA TM-4644, 1994, formula and distributions from the OpenTURNS '
@@ -99,24 +105,44 @@ def write(out, X, f, G, variant='tm'):
 
 
 def compare(out, here, files):
-    """Max relative difference (per element, NaNs must match) between the files in out and here."""
+    """Print the largest relative difference (per element) between the files in out and here.
+
+    Returns False on a structural mismatch: a different shape or NaN/inf pattern, or inputs.csv
+    beyond INPUT_RTOL."""
+    bad, worst = [], (-1.0, '')
     for f in files:
         a = np.loadtxt(os.path.join(out, f), delimiter=',', comments='#', ndmin=2)
         b = np.loadtxt(os.path.join(here, f), delimiter=',', comments='#', ndmin=2)
+        if a.shape != b.shape or not (np.array_equal(np.isnan(a), np.isnan(b))
+                                      and np.array_equal(np.isinf(a), np.isinf(b))):
+            bad.append(f'FAIL: {f}: shape {a.shape} or NaN/inf pattern differs from the shipped {b.shape}')
+            continue
         ok = np.isfinite(b)
-        same_nan = np.array_equal(np.isnan(a), np.isnan(b))
         rel = np.max(np.abs(a[ok] - b[ok]) / np.maximum(np.abs(b[ok]), 1e-300)) if ok.any() else 0.0
-        print(f'{f}: max relative difference from the shipped file {rel:.1e}'
-              + ('' if same_nan else ' (NaN pattern differs)'))
+        print(f'{f}: largest relative difference (elementwise) from the shipped file {rel:.1e}')
+        if f == 'inputs.csv' and rel > INPUT_RTOL:
+            bad.append(f'FAIL: {f} differs from the shipped inputs by {rel:.1e} > {INPUT_RTOL:g}')
+        worst = max(worst, (rel, f))
+    print(f'largest difference from the shipped files: {worst[0]:.1e} (relative, {worst[1]})')
+    for line in bad:
+        print(line)
+    return not bad
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
-    ap.add_argument('--out', default=HERE, help='output directory (default: this directory)')
+    ap.add_argument('--out', default=None,
+                    help='output directory (default: this directory; with --check, a temporary directory)')
     ap.add_argument('--check', action='store_true', help='compare with the CSVs in this directory')
     ap.add_argument('--variant', choices=('tm', 'openturns'), default='tm',
                     help="thickness range: 'tm' (default, shipped) or 'openturns' (as coded there; not shipped)")
     args = ap.parse_args()
+    if args.out is None:
+        if args.check:
+            args.out = tempfile.mkdtemp(prefix='check_')
+            atexit.register(shutil.rmtree, args.out, ignore_errors=True)
+        else:
+            args.out = HERE
     if args.variant != 'tm' and os.path.abspath(args.out) == HERE:
         ap.error('--variant openturns must be written with --out to another directory (the shipped files are tm)')
     if args.check and os.path.abspath(args.out) == HERE:
@@ -136,8 +162,8 @@ def main():
     print(f'exact gradients: max relative error vs central differences (step 1e-6 sd) {efd:.1e}, '
           f'vs complex step {ecs:.1e}')
     print(f'samples outside physical meaning: {unphysical(X)}')
-    if args.check:
-        compare(args.out, HERE, ('inputs.csv', 'outputs.csv', 'gradients.csv'))
+    if args.check and not compare(args.out, HERE, ('inputs.csv', 'outputs.csv', 'gradients.csv')):
+        sys.exit(1)
 
 
 if __name__ == '__main__':

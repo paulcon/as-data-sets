@@ -95,10 +95,11 @@ Readings of the paper that it leaves implicit (our choices):
 
 ```bash
 python generate_data.py                           # writes the six CSVs here
+python generate_data.py --check                   # writes to a temporary directory, prints the largest differences
 python generate_data.py --out /tmp/co2 --check    # writes elsewhere and compares
 ```
 
-The shipped files were written on 2026-10-30 in a Linux container (numpy 2.5.4, Python 3.13.18). In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31) the run takes 0.3 s (0.9 s with Python start-up) and also prints the gradient check; `--check` prints the largest per-element relative difference of each file: 0 for the inputs, at most 1.1e-15 for the outputs and 9.3e-14 for the gradients (rechecked 2026-11-01). The notebook runs in about 16 s under nbconvert.
+The shipped files were written on 2026-10-30 in a Linux container (numpy 2.5.4, Python 3.13.18). In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31) the run takes 0.3 s (0.9 s with Python start-up) and also prints the gradient check; `--check` prints the largest per-element relative difference of each file: 0 for the inputs, at most 1.1e-15 for the outputs and 9.3e-14 for the gradients (rechecked 2026-11-01), against the files written on Linux. `--check` reports these differences and does not judge them; it exits with status 1 only on a structural mismatch: a missing file, a different shape or NaN pattern, or inputs that differ by more than a relative 1e-8 (they are deterministic draws from the seeds). The notebook runs in about 16 s under nbconvert.
 
 ## Accuracy
 

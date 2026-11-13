@@ -6,7 +6,10 @@ does not need; without PyCO2SYS the script stops with an install message. The sh
 
     python -m venv pyco2-venv && pyco2-venv/bin/pip install PyCO2SYS==1.8.3 pandas
     pyco2-venv/bin/python generate_data.py                              # writes the seven CSVs here
-    pyco2-venv/bin/python generate_data.py --out <scratch dir> --check  # writes elsewhere, compares with these
+    pyco2-venv/bin/python generate_data.py --check                      # writes to a temporary directory, compares with these
+
+--check prints the largest differences from the shipped files and fails only on structural mismatches
+(shapes, NaN pattern, inputs).
 
 The accuracy checks (override identity, step sizes, PyCO2SYS's own derivatives) are in check_accuracy.py.
 
@@ -16,9 +19,12 @@ conditions, 1234 dbar) and "oceanwide" (a wide spread of the measured inputs, sa
 at the sea surface, 0 dbar). See DATA.md.
 """
 import argparse
+import atexit
 import os
 import platform
+import shutil
 import sys
+import tempfile
 import time
 
 import numpy as np
@@ -137,27 +143,45 @@ def reference(outdir):
               [f"{k} [{u}]" for k, u in zip(REF_KEYS, REF_UNITS)])
 
 
+INPUT_RTOL = 1e-8   # --check fails if a regenerated input (a seeded draw) differs by more (relative)
+
+
 def check_against(outdir):
-    worst = 0.0
-    for study in STUDIES:
-        for kind in ("inputs", "outputs", "gradients"):
-            a = np.loadtxt(os.path.join(HERE, f"{kind}_{study}.csv"), delimiter=",")
-            b = np.loadtxt(os.path.join(outdir, f"{kind}_{study}.csv"), delimiter=",")
-            d = np.max(np.abs(a - b) / np.maximum(np.abs(a), 1e-300 + np.max(np.abs(a)) * 1e-12))
-            worst = max(worst, d)
-            print(f"{kind}_{study}.csv: identical={np.array_equal(a, b)}, max rel diff {d:.2e}")
-    a = np.loadtxt(os.path.join(HERE, "nominal_reference.csv"), delimiter=",")
-    b = np.loadtxt(os.path.join(outdir, "nominal_reference.csv"), delimiter=",")
-    print(f"nominal_reference.csv: identical={np.array_equal(a, b)}")
-    return worst
+    """Print the largest elementwise relative difference per file; False on a structural mismatch."""
+    ok, worst = True, (0.0, "outputs_measurement.csv")
+    names = [f"{kind}_{study}.csv" for study in STUDIES for kind in ("inputs", "outputs", "gradients")]
+    for fn in names + ["nominal_reference.csv"]:
+        a = np.loadtxt(os.path.join(HERE, fn), delimiter=",")
+        b = np.loadtxt(os.path.join(outdir, fn), delimiter=",")
+        if a.shape != b.shape or not np.array_equal(np.isnan(a), np.isnan(b)):
+            print(f"FAIL: {fn}: shape {b.shape} or NaN pattern differs from the shipped {a.shape}")
+            ok = False
+            continue
+        d = np.nanmax(np.abs(a - b) / np.maximum(np.abs(a), 1e-300 + np.nanmax(np.abs(a)) * 1e-12))
+        print(f"{fn}: identical={np.array_equal(a, b, equal_nan=True)}, max rel diff {d:.2e}")
+        if fn.startswith("inputs"):                                     # the inputs are seeded draws
+            if d > INPUT_RTOL:
+                print(f"FAIL: {fn} differs from the shipped inputs by {d:.2e} > {INPUT_RTOL:g}")
+                ok = False
+        elif d >= worst[0]:
+            worst = (d, fn)
+    print(f"largest difference from the shipped files: {worst[0]:.1e} (relative, elementwise, {worst[1]})")
+    return ok
 
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("--out", default=HERE)
-    ap.add_argument("--check", action="store_true")
+    ap.add_argument("--out", default=None,
+                    help="output directory (default: this directory; with --check, a temporary directory)")
+    ap.add_argument("--check", action="store_true", help="compare with the shipped files")
     ap.add_argument("--reference-only", action="store_true")
     a = ap.parse_args()
+    if a.out is None:
+        if a.check:
+            a.out = tempfile.mkdtemp(prefix="check_")
+            atexit.register(shutil.rmtree, a.out, ignore_errors=True)
+        else:
+            a.out = HERE
     if os.path.abspath(a.out) == HERE and a.check:
         ap.error('--check needs --out DIR outside this directory, so that the shipped files are not overwritten')
     if pyco2 is None:
@@ -171,6 +195,6 @@ if __name__ == "__main__":
         raise SystemExit
     generate(a.out)
     reference(a.out)
-    if a.check:
-        check_against(a.out)
     print(f"total {time.time() - t:.1f} s")
+    if a.check and not check_against(a.out):
+        sys.exit(1)

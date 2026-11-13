@@ -11,6 +11,8 @@ remake them on Linux x86-64; the shipped files stay the record.
     python generate_data.py assemble --work WORK [--out DIR]
     # compare a finished WORK with the shipped files (writes nothing)
     python generate_data.py assemble --work WORK --check
+    # run prog in a temporary WORK, then compare with the shipped files (steps 1 and 2 with --check)
+    python generate_data.py --check --archive DIR [--jobs 16]
     # rewrite the two stored CSVs from the unzipped archive (lossless; header and values checked)
     python generate_data.py archive --archive DIR [--out DIR]
 
@@ -28,9 +30,16 @@ Files written by `assemble`:
   outputs.csv           10000 x 5: S at the cells r = 50.2, 75.3, 100.4, 125.5, 150.6 m (cells 50,
                         75, 100, 125, 150), copied from the field
 
+--check without a mode means `assemble --check`; without --work it first runs prog on all samples
+in a temporary WORK (removed afterwards). --check prints the largest differences from the shipped files
+(relative to the largest saturation) and fails (exit status 1) only on structural mismatches (shapes, NaN
+pattern, a grid r that differs by more than INPUT_RTOL). It exits with status 3 when the archive or a
+Linux x86-64 system is missing.
+
 Only numpy and the standard library are imported; `run` needs the executable.
 """
 import argparse
+import atexit
 import glob
 import math
 import os
@@ -45,6 +54,7 @@ import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CELLS = (50, 75, 100, 125, 150)
+INPUT_RTOL = 1e-8  # the grid r is fixed by the program's defaults: a larger difference means a different grid
 PROG_SHA256 = 'ca3773a458c753e408cb765beaebd369546e1551182cbad9c13eb564334c51b9'
 INPUT_SHA256 = 'c5b9e358ff7f54eca20b183110183ef534aac37135f2a4c1fed1a061fbf0707e'
 INSTALL = ("The benchmark executable is not available here. `prog` is a statically linked Linux x86-64 "
@@ -138,6 +148,30 @@ def assemble_arrays(work):
     return np.vstack(S), r
 
 
+def compare(S, r, outputs, ship=HERE):
+    """Compare an assembled field S, grid r and outputs.csv array with the files in ship; False on a structural mismatch."""
+    old = np.load(os.path.join(ship, 'saturation_field.npz'))
+    O = read_csv(os.path.join(ship, 'outputs.csv'))
+    if S.shape != old['S'].shape or r.shape != old['r'].shape or outputs.shape != O.shape:
+        print('FAIL: shapes differ from the shipped files')
+        return False
+    dr = float(np.max(np.abs(r - old['r'])) / np.max(np.abs(old['r'])))
+    same_nan = np.array_equal(np.isnan(S), np.isnan(old['S'])) and np.array_equal(np.isnan(outputs), np.isnan(O))
+    print(f'saturation_field.npz r: largest difference / largest value {dr:.1e}; NaN pattern equal: {same_nan}')
+    if dr > INPUT_RTOL:
+        print(f'FAIL: the grid r differs from the shipped one by more than {INPUT_RTOL:g} (relative)')
+    if not same_nan:
+        print('FAIL: the NaN pattern differs from the shipped files')
+    diffs = [(dr, 'saturation_field.npz r')]
+    for name, a, b in (('saturation_field.npz S', S, old['S']), ('outputs.csv', outputs, O)):
+        d = float(np.nanmax(np.abs(a - b)) / np.nanmax(np.abs(b)))
+        print(f'{name}: identical: {np.array_equal(a, b, equal_nan=True)}; largest difference / largest value {d:.1e}')
+        diffs.append((d, name))
+    d, name = max(diffs, key=lambda t: t[0])
+    print(f'largest difference from the shipped files: {d:.1e} (relative, {name})')
+    return bool(dr <= INPUT_RTOL and same_nan)
+
+
 def write(out, S, r):
     np.savez_compressed(os.path.join(out, 'saturation_field.npz'), S=S, r=r)
     cols = ','.join(f'S_r{r[c]:.1f} (1)' for c in CELLS)
@@ -149,13 +183,19 @@ def write(out, S, r):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('mode', choices=('run', 'assemble', 'archive'))
+    ap.add_argument('mode', nargs='?', choices=('run', 'assemble', 'archive'),
+                    help='default with --check: assemble')
     ap.add_argument('--archive', help='the unzipped uqBenchmarkData folder')
-    ap.add_argument('--work', help='scratch folder of the prog runs (outside this directory)')
+    ap.add_argument('--work', help='scratch folder of the prog runs (outside this directory; '
+                                   'with --check, default: a temporary folder in which prog is run first)')
     ap.add_argument('--out', default=HERE)
     ap.add_argument('--jobs', type=int, default=16)
     ap.add_argument('--check', action='store_true', help='with assemble: compare with the shipped files')
     a = ap.parse_args()
+    if a.mode is None:
+        if not a.check:
+            ap.error('a mode is required without --check: run, assemble or archive')
+        a.mode = 'assemble'
     if a.work and os.path.abspath(a.work).startswith(HERE):
         ap.error('--work must be outside this directory')
     if a.mode == 'archive':
@@ -168,7 +208,14 @@ def main():
         run(a.archive, a.work, a.jobs)
     else:
         if not a.work:
-            ap.error('assemble needs --work WORK')
+            if not a.check:
+                ap.error('assemble needs --work WORK')
+            if not a.archive:
+                print(INSTALL, file=sys.stderr)
+                sys.exit(3)
+            a.work = tempfile.mkdtemp(prefix='check_')
+            atexit.register(shutil.rmtree, a.work, ignore_errors=True)
+            run(a.archive, a.work, a.jobs)
         S, r = assemble_arrays(a.work)
         if S.shape != (10000, 250):
             sys.exit(f'assembled {S.shape}, expected (10000, 250)')
@@ -176,13 +223,11 @@ def main():
             tmp = tempfile.mkdtemp()
             try:
                 write(tmp, S, r)
-                old = np.load(os.path.join(HERE, 'saturation_field.npz'))
-                print('saturation_field.npz: S identical:', np.array_equal(old['S'], S),
-                      '; r identical:', np.array_equal(old['r'], r))
-                print('outputs.csv identical:', np.array_equal(read_csv(os.path.join(tmp, 'outputs.csv')),
-                                                               read_csv(os.path.join(HERE, 'outputs.csv'))))
+                ok = compare(S, r, read_csv(os.path.join(tmp, 'outputs.csv')))
             finally:
                 shutil.rmtree(tmp)
+            if not ok:
+                sys.exit(1)
         else:
             write(a.out, S, r)
             print(f'wrote saturation_field.npz and outputs.csv ({S.shape[0]} samples) to {a.out}')

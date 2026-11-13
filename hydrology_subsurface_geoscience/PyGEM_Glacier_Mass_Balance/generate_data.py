@@ -1,10 +1,14 @@
 """Write the input, output and gradient CSVs of the two parameter studies of `pygem_mb_model`.
 
     python generate_data.py --out DIR                 # writes the six CSVs to DIR
+    python generate_data.py --check                   # writes to a temporary directory; compares with the files here
     python generate_data.py --out DIR --check         # DIR outside this directory; compares with the files here (the safe mode)
 
+--out is required without --check; --check without --out uses a temporary directory and removes it.
 --out may not be a folder inside this directory; it may be this directory itself (`--out .`, which
-rewrites the shipped files) only without --check.
+rewrites the shipped files) only without --check. --check prints the largest differences from the shipped
+files (relative to each column's largest magnitude) and fails (exit status 1) only on structural mismatches
+(shapes, NaN pattern, inputs differing by more than INPUT_RTOL).
 
 Study m3: inputs (k_p, T_bias, f_snow), the three parameters calibrated by Rounce et al. (2020).
 Study m5: (k_p, T_bias, f_snow, d_prec, T_snow); the paper fixes the precipitation gradient d_prec and
@@ -18,8 +22,11 @@ complex step. The gradients are checked against central differences at the first
 Only numpy and the standard library are imported. One process.
 """
 import argparse
+import atexit
 import os
+import shutil
 import sys
+import tempfile
 import time
 
 import numpy as np
@@ -42,6 +49,7 @@ BOX = {
 STUDIES = {'m3': pm.NAMES3, 'm5': pm.NAMES5}
 FD_ROWS = 50
 FD_REL_STEP = 1e-7       # central-difference step, relative to the box width
+INPUT_RTOL = 1e-8   # inputs are deterministic draws: a larger difference means a different seed or range
 UNIT_TXT = {'k_p': '-', 'T_bias': 'degC', 'f_snow': 'mm w.e. d-1 degC-1', 'd_prec': 'm-1', 'T_snow': 'degC'}
 
 PROVENANCE = ('pygem_mb_model.py (numpy port of PyGEM v0.1 runmassbalance; Hintereisferner RGI60-11.00897, '
@@ -94,6 +102,28 @@ def read_csv(path):
     return np.loadtxt(path, delimiter=',', comments='#', ndmin=2)
 
 
+def compare(out, study, ship=HERE):
+    """Compare the three files of study in out with those in ship.
+
+    Returns (False if there is a structural mismatch, list of (largest difference, file name)).
+    """
+    ok, diffs = True, []
+    for n in (f'inputs_{study}.csv', f'outputs_{study}.csv', f'gradients_{study}.csv'):
+        a, b = read_csv(os.path.join(out, n)), read_csv(os.path.join(ship, n))
+        if a.shape != b.shape or not np.array_equal(np.isnan(a), np.isnan(b)):
+            print(f'  FAIL: {n}: shape {a.shape} or NaN pattern differs from the shipped file {b.shape}')
+            ok = False
+            continue
+        # difference relative to each column's largest magnitude
+        rel = float(np.nanmax(np.abs(a - b) / np.maximum(np.nanmax(np.abs(b), axis=0), 1e-300)))
+        print(f'  {n}: largest difference from the shipped file, relative to the column maximum, {rel:.1e}')
+        if n.startswith('inputs') and rel > INPUT_RTOL:
+            print(f'  FAIL: {n}: the inputs differ from the shipped ones by more than {INPUT_RTOL:g} (relative)')
+            ok = False
+        diffs.append((rel, n))
+    return ok, diffs
+
+
 def write(out, study, X, f, G):
     names = STUDIES[study]
     lo, hi = bounds(names)
@@ -112,10 +142,17 @@ def write(out, study, X, f, G):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
-    ap.add_argument('--out', required=True, help='output directory')
+    ap.add_argument('--out', default=None,
+                    help='output directory (required without --check; with --check, default: a temporary directory)')
     ap.add_argument('--check', action='store_true', help='compare with the CSVs in this directory')
     ap.add_argument('--fd-rows', type=int, default=FD_ROWS, help=f'draws for the finite-difference check (default {FD_ROWS})')
     args = ap.parse_args()
+    if args.out is None:
+        if args.check:
+            args.out = tempfile.mkdtemp(prefix='check_')
+            atexit.register(shutil.rmtree, args.out, ignore_errors=True)
+        else:
+            ap.error('--out DIR is required without --check')
     out = os.path.abspath(args.out)
     here = os.path.realpath(HERE)
     if os.path.commonpath([os.path.realpath(out), here]) == here and (args.check or os.path.realpath(out) != here):
@@ -123,6 +160,7 @@ def main():
                  'without --check, to rewrite the shipped files)')
     os.makedirs(out, exist_ok=True)
     t_all = time.perf_counter()
+    ok, diffs = True, []
     for study in ('m3', 'm5'):
         t0 = time.perf_counter()
         X = draw(study)
@@ -139,14 +177,15 @@ def main():
                   f'first {args.fd_rows} draws, box-normalized: median relative error {np.median(e):.1e}, '
                   f'max {e.max():.1e}')
         if args.check:
-            for n in (f'inputs_{study}.csv', f'outputs_{study}.csv', f'gradients_{study}.csv'):
-                a, b = read_csv(os.path.join(out, n)), read_csv(os.path.join(HERE, n))
-                # difference relative to each column's largest magnitude
-                rel = np.max(np.abs(a - b) / np.abs(b).max(axis=0))
-                tol = 1e-15 if n.startswith('inputs') else 1e-9
-                print(f'  {n}: max difference from the shipped file, relative to the column maximum, {rel:.1e} '
-                      f'(tolerance {tol:g}): {"OK" if rel <= tol else "DIFFERENT"}')
+            same, d = compare(out, study)
+            ok, diffs = same and ok, diffs + d
     print(f'total {time.perf_counter() - t_all:.0f} s')
+    if args.check:
+        if diffs:
+            rel, n = max(diffs, key=lambda t: t[0])
+            print(f'largest difference from the shipped files: {rel:.1e} (relative, {n})')
+        if not ok:
+            sys.exit(1)
 
 
 if __name__ == '__main__':

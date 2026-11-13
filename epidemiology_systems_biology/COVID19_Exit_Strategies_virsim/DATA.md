@@ -180,7 +180,7 @@ export R_LIBS=~/virsim_run/Rlib OMP_NUM_THREADS=1
 python generate_data.py --out /tmp/virsim --design-only
 
 # 3. one run, compared with the shipped row (about 1-2 min)
-python generate_data.py --out /tmp/virsim --strategy FC --rows 0:0 --check
+python generate_data.py --strategy FC --rows 0:0 --check
 
 # 4. all 2288 runs, 16 processes, then merged into /tmp/virsim/runs_S.csv, ic_prev_S.csv
 python generate_data.py --out /tmp/virsim --jobs 16 --check
@@ -198,7 +198,7 @@ build, version check and a short virsim run).
 **How the shipped files were made (2026-11-08).** The design files were written by the same code as
 `generate_data.py` step 1 (`--design-only` writes identical design files to `DIR/design`; in the Linux container its check printed a
 relative difference of 0 for the inputs, with equal seeds. In the macOS `.venv` (scipy 1.17.1) the inputs differ by up to 1.1e-15
-relative, at most 10 ulp, in the beta inverse CDFs, so the check's tolerance is 1e-14). The 572 chunks of 4 rows were run with
+relative, at most 10 ulp, in the beta inverse CDFs; the check fails if they differ by more than a relative 1e-8, or if a seed differs). The 572 chunks of 4 rows were run with
 `R/run_chunk.R` under GNU parallel, 16 processes, three phases (main rows 0-255, the replicates, main rows
 256-511). Before the full run, FC row 0 was run alone on the instance and gave the same QoIs as the same row
 run earlier in a Linux container with the same R and package versions (QoI 1 = 51.4833..., QoI 2 = 0; external
@@ -221,8 +221,12 @@ US$4 at the on-demand price of a c7a.4xlarge in us-east-1 at the time (an estima
 paper reports 1-2 minutes per run on a laptop (p. 20).
 
 `generate_data.py` without R or virsim stops after the design check with the install message above. It never
-writes into this directory: `--out` is required and must lie outside it (not the directory or a folder in it); so must
-`convert_data.py`'s.
+writes into this directory: `--out` is required without `--check` and must lie outside it (not the directory or a
+folder in it), and `--check` without `--out` writes into a temporary directory and removes it; `convert_data.py`'s
+`--out` must also lie outside it. `generate_data.py --check` prints the largest difference of the rerun QoIs from the shipped
+rows (|new - shipped| / max(1, |shipped|)) and does not judge it (the pilot rerun of FC row 0 above gave the same QoIs);
+it exits with status 1 only for a structural mismatch: a missing chunk or row, a nonzero run status, a different
+seed, or regenerated inputs that differ from the shipped ones by more than a relative 1e-8.
 
 ## Accuracy
 

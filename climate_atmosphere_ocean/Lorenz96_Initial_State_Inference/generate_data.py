@@ -1,7 +1,8 @@
 """Write the synthetic truth, the observations, and the misfit samples with exact gradients.
 
     python generate_data.py                                  # everything, written here (about 4-5 min)
-    python generate_data.py --rows 0:20 --out <scratch dir> --check   # a subset, compared with the files here
+    python generate_data.py --check                          # everything, in a temporary directory, compared with the files here
+    python generate_data.py --rows 0:20 --check              # a subset, compared with the files here
 
 The setting is Sec. 5.2 of Schuster, Constantine and Sullivan (2017): the one-level Lorenz-96 system
 with K = 36, inference variables x = (X_1(0), ..., X_36(0), F), prior N(0, 4 I_37), data at every
@@ -20,12 +21,17 @@ T in WINDOWS, and its exact gradient with respect to the physical inputs (the di
 tangent-linear recursion of the Runge-Kutta scheme in lorenz96_model.py).
 
 Files written: truth.csv, observations.csv, inputs.csv, outputs.csv, gradients.csv (see DATA.md).
-`--check` compares what was computed with the files next to this script and prints the largest
-relative differences. Only numpy and the standard library are imported (and lorenz96_model).
+`--check` writes to a temporary directory (or --out DIR outside this one), compares what was computed with
+the files next to this script, prints the largest differences from the shipped files, and fails only on
+structural mismatches (shapes, NaN pattern, and truth.csv or inputs.csv, the seeded draws). Only numpy and the
+standard library are imported (and lorenz96_model).
 """
 import argparse
+import atexit
 import os
+import shutil
 import sys
+import tempfile
 import time
 
 import numpy as np
@@ -41,6 +47,7 @@ M = 1000                 # number of prior samples
 WINDOWS = (0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0)
 BATCH = 250              # samples per call (a few MB of tangent arrays per batch)
 FMT = '%.17g'            # round-trip exact
+INPUT_RTOL = 1e-8        # --check fails if a seeded draw (truth.csv, inputs.csv) differs by more (relative)
 
 
 def truth_and_data():
@@ -95,9 +102,16 @@ def write(out, x_true, d, X, phi, G):
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     ap.add_argument('--rows', default=None, help='a:b, a subset of the M samples')
-    ap.add_argument('--out', default=HERE)
-    ap.add_argument('--check', action='store_true')
+    ap.add_argument('--out', default=None,
+                    help='output directory (default: this directory; with --check, a temporary directory)')
+    ap.add_argument('--check', action='store_true', help='compare with the files next to this script')
     args = ap.parse_args()
+    if args.out is None:
+        if args.check:
+            args.out = tempfile.mkdtemp(prefix='check_')
+            atexit.register(shutil.rmtree, args.out, ignore_errors=True)
+        else:
+            args.out = HERE
     if os.path.abspath(args.out) == HERE and (args.check or args.rows):
         ap.error('--check and --rows need --out DIR outside this directory, so that the shipped files are not overwritten')
     t0 = time.perf_counter()
@@ -116,10 +130,24 @@ def main():
         here = {n: read_csv(os.path.join(HERE, n)) for n in
                 ('truth.csv', 'observations.csv', 'inputs.csv', 'outputs.csv', 'gradients.csv')}
         new = {n: read_csv(os.path.join(args.out, n)) for n in here}
+        bad, worst = [], (0.0, 'outputs.csv')
         for n in here:
             ref = here[n] if n in ('truth.csv', 'observations.csv') else here[n][rows]
-            rel = np.max(np.abs(new[n] - ref)) / np.max(np.abs(ref))
+            if new[n].shape != ref.shape or not np.array_equal(np.isnan(new[n]), np.isnan(ref)):
+                bad.append(f'FAIL: {n}: shape {new[n].shape} or NaN pattern differs from the shipped {ref.shape}')
+                continue
+            rel = np.nanmax(np.abs(new[n] - ref)) / np.nanmax(np.abs(ref))
             print(f'{n:17s} largest difference / largest value: {rel:.1e}')
+            if n in ('truth.csv', 'inputs.csv'):          # seeded draws
+                if rel > INPUT_RTOL:
+                    bad.append(f'FAIL: {n} differs from the shipped draw by {rel:.1e} > {INPUT_RTOL:g}')
+            elif rel >= worst[0]:
+                worst = (rel, n)
+        for msg in bad:
+            print(msg)
+        print(f'largest difference from the shipped files: {worst[0]:.1e} (relative to the largest value, {worst[1]})')
+        if bad:
+            sys.exit(1)
 
 
 if __name__ == '__main__':

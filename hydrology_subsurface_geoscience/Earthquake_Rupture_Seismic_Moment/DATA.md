@@ -88,13 +88,15 @@ doi:10.1098/rsta.2020.0076 (publisher PDF, CC BY 4.0).
 
 ```bash
 python generate_data.py            # design_inputs.csv (numpy, scipy)
-python generate_data.py --check    # redraw into a temporary directory and compare
+python generate_data.py --check    # redraw into a temporary directory and print the largest difference
 FDFAULT_DIR=/path/to/fdfault python generate_data.py --rerun 1,11,13,21,29   # fdfault_reruns.csv
 python check_accuracy.py           # the numbers of "Accuracy" below (about a second)
 ```
 
-In `.venv` (Python 3.11, 2026-11-02) `--check` takes about 2 s and prints max |difference| 0.0e+00:
-the redraw is exact. Without fdfault, `--rerun` exits with status 3 and a message that names fdfault
+In `.venv` (macOS, Python 3.11, 2026-11-12) `--check` takes about 1 s and prints a largest difference of
+0.0e+00 (relative to each column's largest magnitude): the redraw is exact. It exits with status 1 only
+on a structural mismatch: a different shape, different table or row columns, or an input that differs by
+more than a relative 1e-8 (the design is a deterministic draw from the seed). Without fdfault, `--rerun` exits with status 3 and a message that names fdfault
 v1.0.1 and says how to install it and rerun the script (checked in `.venv`). fdfault is rerun only if a
 problem is found in the shipped reruns.
 

@@ -32,8 +32,8 @@ Prints, beside the values DATA.md quotes:
 
 Checks 1-2 need numpy only and read the files next to this script. Checks 3-7 need PyBaMM
 24.9.0 with casadi 3.6.7 (pip install "pybamm==24.9.0" "casadi==3.6.7", Python 3.9-3.12), about
-5-10 minutes on one core; without PyBaMM the script stops with an error that says what to
-install (use --data-only to run checks 1-2 alone). Deterministic; writes nothing.
+5-10 minutes on one core; without PyBaMM the script runs checks 1-2 and then stops with an
+error that says what to install (exit status 3; use --data-only to run checks 1-2 alone). Deterministic; writes nothing.
 """
 import argparse
 import os
@@ -170,8 +170,6 @@ def main():
     if args.data_only:
         run_ &= {1, 2}
     t_start = time.time()
-    if run_ - {1, 2}:
-        gd.require_pybamm()
     X, out, V = load()
     f, fend = out[:, 1], out[:, 2]
     Z = to_z(X)
@@ -200,6 +198,7 @@ def main():
         print(f"done, {time.time() - t_start:.0f} s")
         return
 
+    gd.require_pybamm()
     import pybamm
     print(f"   PyBaMM {pybamm.__version__}, casadi {__import__('casadi').__version__}, numpy {np.__version__}")
     if 3 in run_:

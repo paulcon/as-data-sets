@@ -58,10 +58,11 @@ The bounds are mean ± 3 sd for the eight inputs other than q. For q, the paper'
 
 ```bash
 python generate_data.py                                   # writes the three CSVs here
-python generate_data.py --out /tmp/fs --check             # writes elsewhere and compares
+python generate_data.py --check                           # writes to a temporary directory and compares
+python check_accuracy.py                                  # the checks of the Accuracy section
 ```
 
-The shipped files were written on 2026-10-30 in a Linux container (numpy 2.5.4, scipy 1.18.1, Python 3.13). In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31) a rerun takes 0.09 s for the 2000 samples (1.6 s including start-up), and `--check` prints maximum relative differences of 1.0e-15 (inputs), 1.0e-15 (outputs) and 8.6e-16 (gradients): rounding error.
+The shipped files were written on 2026-10-30 in a Linux container (numpy 2.5.4, scipy 1.18.1, Python 3.13). In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31) a rerun takes 0.09 s for the 2000 samples (1.6 s including start-up), and `--check` prints maximum relative differences of 1.0e-15 (inputs), 1.0e-15 (outputs) and 8.6e-16 (gradients): rounding error. `--check` prints these differences (gradients: relative, in the 2-norm of each gradient vector) and the largest of them, 1.0e-15 (relative, `outputs.csv`, in `.venv` on macOS, Python 3.11, 2026-11-12; 2.2 s with start-up); it exits with code 1 only on a structural mismatch: a missing file, a different shape or NaN pattern, or inputs that differ from the shipped ones by more than 10⁻⁸ (relative).
 
 ## Accuracy
 

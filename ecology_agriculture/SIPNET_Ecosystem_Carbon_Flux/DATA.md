@@ -68,13 +68,20 @@ Table A3 (p. 5819) prints the unit of the SOM respiration rate as "Day−1"; we 
 git clone https://github.com/PecanProject/sipnet && cd sipnet && git checkout c3479bd681ad092e6be33fcf14272e23e0b3fcbf && make sipnet
 cd <this directory>
 OPENBLAS_NUM_THREADS=1 python generate_data.py --sipnet /path/to/sipnet/sipnet                  # all 1000 samples
-python generate_data.py --sipnet /path/to/sipnet/sipnet --rows 0:20 --out /tmp/sipnet --check   # subset, compared with these files
-python generate_data.py --sipnet /path/to/sipnet/sipnet --fd-check                                 # fd_check_soilWHC.csv (add --out DIR --check to compare)
-python check_accuracy.py --files-only                                                               # Accuracy part 1, no SIPNET needed
+python generate_data.py --sipnet /path/to/sipnet/sipnet --check                                    # all samples, in a temporary directory, compared with these files
+python generate_data.py --sipnet /path/to/sipnet/sipnet --rows 0:20 --check                        # subset, compared with these files
+python generate_data.py --sipnet /path/to/sipnet/sipnet --fd-check                                 # fd_check_soilWHC.csv (add --check to compare)
 python check_accuracy.py --sipnet /path/to/sipnet/sipnet                                            # Accuracy parts 1-4
+python check_accuracy.py --files-only                                                               # Accuracy part 1, no SIPNET needed
 ```
 
-There is no randomness beyond the saved Latin hypercube seed. The shipped files were written on 2026-10-31 in a Linux container (Python 3.13.18, numpy 2.5.4, scipy 1.18.1) on 2 worker processes in about 4 minutes (about 17 000 SIPNET runs). There, a 20-sample `--check` run took 8.2 s and matched the shipped files to 2.4e-10 of the largest value (the 10 significant digits written). The repo's `.venv` has no SIPNET binary, so the files were not regenerated there; the notebook, which reads only the files, runs in `.venv` in about 4 s, and two runs print the same values. `fd_check_soilWHC.csv` was added later on 2026-10-31 (same binary and versions, 2 workers, 8.8 s, about 500 SIPNET runs); a `--fd-check --check` rerun matched it to 5.0e-11 relative, and a 20-sample `--check` rerun with the edited script matched the three main files to 2.4e-10.
+`--check` prints each file's largest difference relative to its largest value; the largest observed, 2.4e-10 (the
+10 significant digits written), is from the Linux container below (Python 3.13, SIPNET v2.2.0-11); there is no
+SIPNET binary on the macOS machine, so nothing was measured there. It exits 1 only on a structural mismatch: a
+different shape or NaN pattern, different row indices in `fd_check_soilWHC.csv`, or inputs that differ by more
+than a relative 1e-8.
+
+There is no randomness beyond the saved Latin hypercube seed. The shipped files were written on 2026-10-31 in a Linux container (Python 3.13.18, numpy 2.5.4, scipy 1.18.1) on 2 worker processes in about 4 minutes (about 17 000 SIPNET runs). There, a 20-sample `--check` run took 8.2 s and matched the shipped files to 2.4e-10 of the largest value (the 10 significant digits written). The repo's `.venv` has no SIPNET binary, so the files were not regenerated there; the notebook, which reads only the files, runs in `.venv` in about 4 s, and two runs print the same values. `fd_check_soilWHC.csv` was added later on 2026-10-31 (same binary and versions, 2 workers, 8.8 s, about 500 SIPNET runs); a `--fd-check --check` rerun matched it to 5.0e-11 relative, and a 20-sample `--check` rerun with the shipped script matched the three main files to 2.4e-10.
 
 **Header line.** The first `#` line of `inputs.csv`, `outputs.csv`, `gradients.csv` and `fd_check_soilWHC.csv` says "substitute set-up, not the paper's runs (see DATA.md)" before "SIPNET v2.2.0-11". `generate_data.py` writes the same header line.
 

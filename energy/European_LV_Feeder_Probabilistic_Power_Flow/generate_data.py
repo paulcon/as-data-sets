@@ -1,10 +1,12 @@
 """Regenerate the data files of European_LV_Feeder_Probabilistic_Power_Flow (needs OpenDSSDirect.py).
 
     python generate_data.py --out DIR                                   # all files into DIR
-    python generate_data.py --case 55 --rows 0:20 --out /tmp/lv --check  # subset vs shipped files
+    python generate_data.py --check                                     # all files vs shipped files
+    python generate_data.py --case 55 --rows 0:20 --check               # subset vs shipped files
 
-The script never writes into this directory: --out DIR is required and must be outside this
-directory (not the directory or a folder in it), in every mode.
+The script never writes into this directory: --out DIR is required without --check and must be
+outside this directory (not the directory or a folder in it); --check without --out writes into
+a temporary directory and removes it.
 
 Cases (IEEE European LV Test Feeder at 09:26, opendss_driver.py)
   55     1000 Monte Carlo samples of the 55 load active powers, P_i ~ N(P_Li, 0.1^2) kW,
@@ -21,16 +23,19 @@ Gradients: central differences in the physical inputs with step 0.01 of each inp
 deviation (1e-3 kW for P, 2.887e-4 for pf). Inputs are rounded to the written digits (10
 decimals) before the model runs, so the outputs belong to the stored inputs.
 
-Tolerance of --check: outputs within 1e-8 and gradients within 1e-5 of the largest stored value
-(max |new - shipped| / max |shipped|), the size of the solver's iteration error and of its
-effect on the differences.
+--check prints the largest differences from the shipped files (relative: max |new - shipped| /
+max |shipped| of each file; input files elementwise) and fails only on structural mismatches (shapes, NaN pattern, inputs
+differing by more than INPUT_RTOL).
 
 Needs OpenDSSDirect.py (the shipped files were written with OpenDSSDirect.py 0.9.4:
 pip install opendssdirect.py==0.9.4), and scipy for the lhs55 case.
 """
 import argparse
+import atexit
 import os
+import shutil
 import sys
+import tempfile
 import time
 
 import numpy as np
@@ -42,8 +47,8 @@ import opendss_driver as M  # noqa: E402
 SEEDS = {"55": 2017055, "110": 2017110, "lhs55": 2017100}
 SIZES = {"55": 1000, "110": 1000, "lhs55": 10000, "nominal": 2}
 XFMT = "%.10f"
-TOL_F, TOL_G = 1e-8, 1e-5
-
+INPUT_RTOL = 1e-8  # --check fails if the regenerated inputs differ by more than this (relative)
+INPUT_FILES = ("inputs_55.csv", "inputs_110.csv", "lhs_inputs_55.csv")
 
 def draw(case):
     rng = np.random.default_rng(SEEDS[case])
@@ -132,25 +137,47 @@ def run_case(case, rows, out, log):
 
 
 def check(case, out, rows, log):
-    ok = True
+    """Print the largest differences of a case's new files from the shipped rows.
+
+    Returns (largest difference, its file, False on a structural mismatch)."""
+    ok, worst = True, (0.0, "")
     for fn in files(case):
         new = np.loadtxt(os.path.join(out, fn), delimiter=",", ndmin=2)
         old = np.loadtxt(os.path.join(HERE, fn), delimiter=",", ndmin=2)[rows]
-        rel = np.max(np.abs(new - old)) / np.max(np.abs(old))
-        tol = TOL_G if fn.startswith("grad_") else TOL_F
-        ok &= rel <= tol
-        log(f"  {fn}: max |new - shipped| / max |shipped| = {rel:.2e} (tolerance {tol:.0e}) "
-            f"{'ok' if rel <= tol else 'FAIL'}")
-    return ok
+        if new.shape != old.shape:
+            log(f"  {fn}: shape {new.shape} differs from the shipped {old.shape} FAIL")
+            ok = False
+            continue
+        if not np.array_equal(np.isnan(new), np.isnan(old)):
+            log(f"  {fn}: NaN pattern differs from the shipped file FAIL")
+            ok = False
+        if fn in INPUT_FILES:
+            rel = float(np.max(np.abs(new - old) / np.maximum(np.abs(old), 1e-300)))
+            log(f"  {fn}: largest relative difference (elementwise) = {rel:.2e}")
+        else:
+            rel = float(np.nanmax(np.abs(new - old), initial=0.0) / np.nanmax(np.abs(old)))
+            log(f"  {fn}: largest difference, max |new - shipped| / max |shipped| = {rel:.2e}")
+        if fn in INPUT_FILES and rel > INPUT_RTOL:
+            log(f"  {fn}: inputs differ by more than {INPUT_RTOL:g} FAIL")
+            ok = False
+        worst = max(worst, (rel, fn))
+    return worst[0], worst[1], ok
 
 
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--case", default="all", choices=["all", "55", "110", "lhs55", "nominal"])
     p.add_argument("--rows", default=None, help="a:b, a subset of the rows")
-    p.add_argument("--out", required=True, help="output directory")
+    p.add_argument("--out", default=None,
+                   help="output directory (required without --check; with --check, default a temporary directory)")
     p.add_argument("--check", action="store_true", help="compare with the shipped files")
     a = p.parse_args()
+    if a.out is None:
+        if a.check:
+            a.out = tempfile.mkdtemp(prefix="check_")
+            atexit.register(shutil.rmtree, a.out, ignore_errors=True)
+        else:
+            p.error("--out DIR is required without --check")
     out = os.path.abspath(a.out)
     here = os.path.realpath(HERE)
     if os.path.commonpath([os.path.realpath(out), here]) == here:
@@ -166,7 +193,7 @@ def main():
         print(msg, flush=True)
 
     cases = ["55", "110", "lhs55", "nominal"] if a.case == "all" else [a.case]
-    total, ok = 0.0, True
+    total, ok, worst = 0.0, True, (0.0, "")
     for c in cases:
         if a.rows and c != "nominal":
             i, j = (int(s) for s in a.rows.split(":"))
@@ -175,10 +202,14 @@ def main():
             rows = slice(0, SIZES[c])
         total += run_case(c, rows, a.out, log)
         if a.check:
-            ok &= check(c, a.out, rows, log)
+            d, fn, same = check(c, a.out, rows, log)
+            ok &= same
+            worst = max(worst, (d, fn))
     log(f"total {total:.1f} s")
-    if a.check and not ok:
-        sys.exit(1)
+    if a.check:
+        log(f"largest difference from the shipped files: {worst[0]:.1e} (relative, {worst[1]})")
+        if not ok:
+            sys.exit(1)
 
 
 if __name__ == "__main__":

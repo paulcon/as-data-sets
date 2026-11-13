@@ -86,10 +86,11 @@ So the fixed-arch QoI is a single smooth formula over the whole box (one polynom
 
 ```bash
 python generate_data.py                          # writes the four CSVs here
-python generate_data.py --out /tmp/arch --check  # writes elsewhere and compares with the files here
+python generate_data.py --check                  # regenerates into a temporary directory and compares with the files here
+python check_accuracy.py                         # the complex-step check of the gradients
 ```
 
-The shipped files were written on 2026-10-30 in a Linux container (Python 3, numpy 2). In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31) the run takes 0.04 s for the computation (0.2 s with interpreter start-up), and `--check` prints maximum relative differences of 0 (inputs), 9.1e-16 (outputs), 1.4e-15 (fixed gradients) and 4.5e-15 (pin-ended gradients): rounding error. The notebook runs in about 12 s under nbconvert.
+The shipped files were written on 2026-10-30 in a Linux container (Python 3, numpy 2). In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31) the run takes 0.04 s for the computation (0.2 s with interpreter start-up), and `--check` prints maximum relative differences of 0 (inputs), 9.1e-16 (outputs), 1.4e-15 (fixed gradients) and 4.5e-15 (pin-ended gradients): rounding error. `--check` prints these differences and the largest of them (4.5e-15, relative, `gradients_pinned.csv`, in `.venv` on macOS, Python 3.11, 2026-11-12; 0.2 s with start-up); it exits with code 1 only on a structural mismatch: a missing file, a different shape or NaN pattern, or inputs that differ from the shipped ones by more than 10⁻⁸ (relative). The notebook runs in about 12 s under nbconvert.
 
 ## Accuracy
 

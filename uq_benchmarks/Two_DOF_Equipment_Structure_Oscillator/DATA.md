@@ -63,10 +63,10 @@ At the input means ω_p = 0.8165, ω_s = 1, β = −0.202, γ = 0.00667, E[x_s²
 
 ```bash
 python generate_data.py                           # writes the three CSVs here
-python generate_data.py --out /tmp/osc --check    # writes elsewhere and compares
+python generate_data.py --check                   # writes to a temporary directory and compares
 ```
 
-The run takes 0.3 s (0.4 s with Python start-up; 0.25 s of it is the 1000 Lyapunov solves) and prints the gradient check. The shipped files were written on 2026-10-30 in a Linux container. In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31), `--check` reports maximum relative differences of 2.2e-16 (inputs, from `exp`), 6.5e-14 (outputs; the largest is in the Lyapunov check column `rms_exact`, 7e-16 in `rms` and `G`) and 6.5e-14 (gradients; at most 3e-15 relative to each column's largest entry) from the shipped files: rounding error, not a change in the model. The notebook runs in about 7 s, and two runs print the same values apart from timings.
+The run takes 0.3 s (0.4 s with Python start-up; 0.25 s of it is the 1000 Lyapunov solves) and prints the gradient check. The shipped files were written on 2026-10-30 in a Linux container. In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31), `--check` reports maximum relative differences of 2.2e-16 (inputs, from `exp`), 6.5e-14 (outputs; the largest is in the Lyapunov check column `rms_exact`, 7e-16 in `rms` and `G`) and 6.5e-14 (gradients; at most 3e-15 relative to each column's largest entry) from the shipped files: rounding error, not a change in the model. `--check` prints these differences and the largest of them, 6.5e-14 (relative, `outputs.csv`, in `.venv` on macOS, Python 3.11, 2026-11-12; 1.0 s with start-up); it exits with code 1 only on a structural mismatch: a missing file, a different shape or NaN pattern, or inputs that differ from the shipped ones by more than 10⁻⁸ (relative). The notebook runs in about 7 s, and two runs print the same values apart from timings.
 
 ## Accuracy
 

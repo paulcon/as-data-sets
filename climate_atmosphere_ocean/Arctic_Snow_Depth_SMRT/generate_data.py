@@ -1,7 +1,8 @@
 """Generate the data of Arctic_Snow_Depth_SMRT with SMRT (needs SMRT 1.5.1; the notebook does not).
 
     python generate_data.py                       # 400 samples, 2 processes, writes here
-    python generate_data.py --rows 0:5 --out /tmp/snow --check   # a subset, compared with the files here
+    python generate_data.py --check               # all 400 samples into a temporary directory, compared with the files here
+    python generate_data.py --rows 0:5 --check    # a subset, compared with the files here
 
 Draws N = 400 Monte Carlo samples (numpy default_rng(424), independent uniform on the ranges of
 Yan et al. 2026, Table 1, single-layer dry snow) of (depth, density, temperature, radius,
@@ -23,12 +24,17 @@ Files written: inputs.csv, outputs.csv, gradients.csv, fd_jumps.csv. There is no
 randomness, so a run reproduces the files (to the digits written, on the same SMRT version; the
 script stops if the installed SMRT is not CONFIG['smrt_version'] unless --any-smrt is given, and
 stops with an error that says what to install if SMRT is missing). --check and --rows write only to
---out DIR outside this directory. Run with one BLAS thread per worker (set below).
+--out DIR outside this directory (with --check, a temporary directory by default). --check prints the
+largest differences from the shipped files and fails only on structural mismatches (shapes, NaN pattern,
+jump flags, inputs). Run with one BLAS thread per worker (set below).
 """
 import argparse
+import atexit
 import multiprocessing as mp
 import os
+import shutil
 import sys
+import tempfile
 import time
 
 os.environ.setdefault('OPENBLAS_NUM_THREADS', '1')
@@ -43,6 +49,7 @@ import snow_smrt_driver as sm  # noqa: E402
 
 SEED = 424
 N = 400
+INPUT_RTOL = 1e-8           # --check fails if a regenerated input (a seeded draw) differs by more (relative)
 H = 1e-4                    # finite-difference step, fraction of each input's half-range
 JUMP_REL, JUMP_ABS = 0.05, 0.5
 
@@ -114,11 +121,18 @@ def write(out, X, F, G, J):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--rows', default=None, help='a:b subset of the N samples')
-    ap.add_argument('--out', default=HERE)
+    ap.add_argument('--out', default=None,
+                    help='output directory (default: this directory; with --check, a temporary directory)')
     ap.add_argument('--workers', type=int, default=2)
     ap.add_argument('--check', action='store_true', help='compare with the files next to this script')
     ap.add_argument('--any-smrt', action='store_true', help='run with another SMRT version')
     a = ap.parse_args()
+    if a.out is None:
+        if a.check:
+            a.out = tempfile.mkdtemp(prefix='check_')
+            atexit.register(shutil.rmtree, a.out, ignore_errors=True)
+        else:
+            a.out = HERE
     if (a.check or a.rows) and os.path.abspath(a.out) == os.path.abspath(HERE):
         sys.exit('--check and --rows need --out DIR outside this directory, so that the shipped files are not overwritten')
     from importlib.metadata import version, PackageNotFoundError
@@ -149,10 +163,27 @@ def main():
           f'processes; jump flags in {np.count_nonzero(J)} (sample, channel) entries')
     if a.check:
         ld = lambda p: np.loadtxt(p, delimiter=',', ndmin=2)  # noqa: E731
+        bad, worst = [], (0.0, 'outputs.csv')
         for name in ['inputs.csv', 'outputs.csv', 'gradients.csv', 'fd_jumps.csv']:
             new, old = ld(os.path.join(a.out, name)), ld(os.path.join(HERE, name))[rows]
-            rel = np.abs(new - old).max() / max(np.abs(old).max(), 1e-300)
-            print(f'{name}: max |new - shipped| / max |shipped| = {rel:.1e}')
+            if new.shape != old.shape or not np.array_equal(np.isnan(new), np.isnan(old)):
+                bad.append(f'FAIL: {name}: shape {new.shape} or NaN pattern differs from the shipped {old.shape}')
+                continue
+            rel = np.nanmax(np.abs(new - old), initial=0.0) / max(np.nanmax(np.abs(old), initial=0.0), 1e-300)
+            print(f'{name}: largest |new - shipped| / largest |shipped| = {rel:.1e}')
+            if name == 'fd_jumps.csv':
+                if rel > 0:
+                    bad.append(f'FAIL: {name}: jump flags differ from the shipped ones')
+            elif name == 'inputs.csv':
+                if rel > INPUT_RTOL:
+                    bad.append(f'FAIL: {name} differs from the shipped inputs by {rel:.1e} > {INPUT_RTOL:g}')
+            elif rel >= worst[0]:
+                worst = (rel, name)
+        for msg in bad:
+            print(msg)
+        print(f'largest difference from the shipped files: {worst[0]:.1e} (relative to the largest value, {worst[1]})')
+        if bad:
+            sys.exit(1)
 
 
 if __name__ == '__main__':

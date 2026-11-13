@@ -10,7 +10,8 @@ unless --any-version is given.
     python generate_data.py --rows 400:800 --partial /tmp/eis_partial
     python generate_data.py --rows 800:1000 --partial /tmp/eis_partial
     python generate_data.py --assemble     --partial /tmp/eis_partial    # writes the CSVs here
-    python generate_data.py --check 0,517,999                            # recompute rows, compare
+    python generate_data.py --check                                      # recompute rows 0,517,999, compare
+    python generate_data.py --check 3,400                                # recompute other rows, compare
     python generate_data.py --reference --jacobian                       # small files at the truth
     python generate_data.py --gradcheck 3,400,871                        # adjoint vs central FD
     python generate_data.py --meshcheck 3,400,871                        # paper mesh vs 2x mesh
@@ -23,8 +24,8 @@ spectra at the true parameters of Table 3, plus the nine per-SOC terms Phi_m and
 gradients. inputs.csv is the source of truth for the inputs (written with %.17g, checked
 to round-trip exactly). Rows already in --partial are skipped (resume). One process.
 --rows and --assemble need --partial, a directory outside this one. --check, --gradcheck and
---meshcheck print and write nothing; --reference, --jacobian, --assemble and --checkpoints
-rewrite shipped files in this directory.
+--meshcheck print and write nothing; --check prints the largest differences from the shipped files
+and fails only on structural mismatches (shapes, NaN pattern). --reference, --jacobian, --assemble and --checkpoints rewrite shipped files in this directory.
 """
 import argparse
 import os
@@ -166,7 +167,11 @@ def write_reference():
                       + ",".join(f"{n} [{p[3]}]" for n, p in zip(se.NAMES, se.PARAMETERS)))
 
 
+CHECK_ROWS = "0,517,999"  # rows recomputed by --check without a value
+
+
 def check(rows):
+    """Recompute rows and print the largest differences from the files; False on a structural mismatch."""
     X = read_csv("inputs.csv")
     f = read_csv("outputs.csv")
     g = read_csv("gradients.csv")
@@ -174,14 +179,35 @@ def check(rows):
     zref = read_csv("reference_impedance.csv")
     mf = se.ImpedanceMisfit()
     zr = np.column_stack([zref[:, 1::2] + 1j * zref[:, 2::2]]).T
-    print("reference spectra: max rel. diff", np.max(np.abs(mf.Zref - zr) / np.abs(zr)))
-    for i in rows:
-        t = time.time()
-        phi, phim, gi, gmi = mf.misfit(X[i], gradient=True)
-        dt = time.time() - t
-        rel = lambda a, b: np.max(np.abs(a - b)) / np.max(np.abs(b))
-        print(f"row {i}: Phi rel {rel(np.r_[phi, phim], f[i]):.2e}, grad rel {rel(gi, g[i]):.2e}, "
-              f"per-SOC grad rel {rel(gmi.ravel(), gm[i]):.2e} ({dt:.1f} s)")
+    return compare(mf.Zref, zr, [(i, mf.misfit(X[i], gradient=True), f[i], g[i], gm[i]) for i in rows])
+
+
+def compare(Zref, zr, results):
+    """Print the largest differences of the recomputed reference spectra Zref and rows from the shipped
+    ones; results holds (row, (phi, phim, g, gm), shipped outputs, gradients, per-SOC gradients).
+    Returns False on a structural mismatch."""
+    if Zref.shape != zr.shape:
+        print(f"reference spectra: shape {Zref.shape} differs from the shipped {zr.shape}: FAIL")
+        return False
+    ok = True
+    d = float(np.max(np.abs(Zref - zr) / np.abs(zr)))
+    worst = (d, "reference_impedance.csv")
+    print(f"reference spectra: largest relative difference (elementwise) {d:.2e}")
+    names = ("outputs.csv", "gradients.csv", "gradients_soc.csv")
+    for i, (phi, phim, gi, gmi), *old in results:
+        new = (np.r_[phi, phim], np.ravel(gi), np.ravel(gmi))
+        for n, a, b in zip(names, new, old):
+            if a.shape != b.shape or not np.array_equal(np.isnan(a), np.isnan(b)):
+                print(f"row {i}: {n}: shape or NaN pattern differs from the shipped row: FAIL")
+                ok = False
+        r = [float(np.nanmax(np.abs(a - b)) / np.nanmax(np.abs(b))) if a.shape == b.shape else 0.0
+             for a, b in zip(new, old)]
+        worst = max(worst, *zip(r, names))
+        print(f"row {i}: largest difference relative to the largest value of the row: Phi {r[0]:.2e}, "
+              f"grad {r[1]:.2e}, per-SOC grad {r[2]:.2e}")
+    print(f"check: {len(results)} rows")
+    print(f"largest difference from the shipped files: {worst[0]:.1e} (relative, {worst[1]})")
+    return ok
 
 
 def jacobian_fd(steps=(1e-5, 1e-3)):
@@ -319,7 +345,8 @@ if __name__ == "__main__":
     ap.add_argument("--assemble", action="store_true")
     ap.add_argument("--reference", action="store_true",
                     help="write reference_impedance.csv and true_parameters.csv")
-    ap.add_argument("--check", help="comma-separated rows to recompute and compare")
+    ap.add_argument("--check", nargs="?", const=CHECK_ROWS,
+                    help=f"comma-separated rows to recompute and compare (default {CHECK_ROWS})")
     ap.add_argument("--jacobian", action="store_true",
                     help="write impedance_jacobian.csv (dZ/dtheta at the true parameters)")
     ap.add_argument("--gradcheck", help="comma-separated rows: adjoint vs central differences")
@@ -341,8 +368,9 @@ if __name__ == "__main__":
         run_rows(range(lo, hi), a.partial)
     if a.assemble:
         assemble(a.partial)
+    ok = True
     if a.check:
-        check([int(v) for v in a.check.split(",")])
+        ok = check([int(v) for v in a.check.split(",")])
     if a.jacobian:
         jacobian()
     if a.gradcheck:
@@ -351,3 +379,5 @@ if __name__ == "__main__":
         meshcheck([int(v) for v in a.meshcheck.split(",")])
     if a.checkpoints:
         checkpoints()
+    if not ok:
+        sys.exit(1)

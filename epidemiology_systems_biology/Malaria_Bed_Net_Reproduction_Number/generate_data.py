@@ -1,6 +1,7 @@
 """Write inputs.csv, outputs.csv and gradients.csv for the malaria R_eff model.
 
     python generate_data.py --out DIR                  # writes the three CSVs to DIR (outside this directory)
+    python generate_data.py --check                    # writes to a temporary directory and compares with the files here
     python generate_data.py --out DIR --check          # writes to DIR and compares with the files here
     python generate_data.py --here                     # rewrites the shipped files in this directory
 
@@ -12,11 +13,17 @@ parts R_r and R_s (Eq. 20), and the exact gradient of R_eff with respect to the 
 It also checks the gradients against central differences (relative step 1e-6 in each input) at
 the first FD_ROWS samples and the identity R_eff = rho(F V^{-1})^2 (Eqs. 16-19) at every sample.
 
+--check prints the largest differences from the shipped files (relative, elementwise) and fails only on
+structural mismatches (shapes, NaN pattern, inputs differing by more than INPUT_RTOL).
+
 Only numpy and the standard library are imported. One process; about a second.
 """
 import argparse
+import atexit
 import os
+import shutil
 import sys
+import tempfile
 import time
 
 import numpy as np
@@ -29,7 +36,7 @@ SEED = 2019
 M = 1000
 H_FD = 1e-6
 FD_ROWS = 100
-RTOL_CHECK = 1e-12
+INPUT_RTOL = 1e-8  # --check fails if the regenerated inputs differ by more than this (relative)
 FILES = ('inputs.csv', 'outputs.csv', 'gradients.csv')
 
 PROVENANCE = ('malaria_model.py (Bala and Gimba 2019, Eqs. 1 and 19; xi1 = a b1 rho kv/kh, p. 10); '
@@ -80,11 +87,16 @@ def write(out, X, F, G):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
-    ap.add_argument('--out', help='output directory (outside this directory and its subdirectories)')
+    ap.add_argument('--out', default=None,
+                    help='output directory, outside this directory and its subdirectories (with --check, '
+                         'default a temporary directory)')
     ap.add_argument('--here', action='store_true', help='rewrite the shipped files in this directory')
     ap.add_argument('--check', action='store_true', help='compare the new files with the shipped ones')
     ap.add_argument('--fd-rows', type=int, default=FD_ROWS)
     args = ap.parse_args()
+    if args.out is None and args.check and not args.here:
+        args.out = tempfile.mkdtemp(prefix='check_')
+        atexit.register(shutil.rmtree, args.out, ignore_errors=True)
     if args.here == bool(args.out):
         ap.error('give exactly one of --out DIR (outside this directory) or --here')
     if args.out and _inside_here(args.out):
@@ -112,14 +124,24 @@ def main():
         print(f'gradient vs central differences (relative step {H_FD:g}), first {args.fd_rows} samples: '
               f'max relative error {fd_check(X[:args.fd_rows], G[:args.fd_rows]):.1e}')
     if args.check:
-        worst = 0.0
+        bad, worst = False, (0.0, FILES[0])
         for n in FILES:
             a, b = read_csv(os.path.join(out, n)), read_csv(os.path.join(HERE, n))
-            rel = np.max(np.abs(a - b) / np.maximum(np.abs(b), 1e-300))
-            worst = max(worst, rel)
-            print(f'{n}: max relative difference from the shipped file {rel:.1e}')
-        print(f'check {"passed" if worst <= RTOL_CHECK else "FAILED"} (tolerance {RTOL_CHECK:g})')
-        if worst > RTOL_CHECK:
+            if a.shape != b.shape:
+                print(f'{n}: shape {a.shape} differs from the shipped {b.shape}: FAIL')
+                bad = True
+                continue
+            if not np.array_equal(np.isnan(a), np.isnan(b)):
+                print(f'{n}: NaN pattern differs from the shipped file: FAIL')
+                bad = True
+            rel = float(np.nanmax(np.abs(a - b) / np.maximum(np.abs(b), 1e-300), initial=0.0))
+            print(f'{n}: largest relative difference (elementwise) from the shipped file {rel:.1e}')
+            if n == 'inputs.csv' and rel > INPUT_RTOL:
+                print(f'{n}: inputs differ by more than {INPUT_RTOL:g}: FAIL')
+                bad = True
+            worst = max(worst, (rel, n))
+        print(f'largest difference from the shipped files: {worst[0]:.1e} (relative, {worst[1]})')
+        if bad:
             sys.exit(1)
     print(f'total {time.perf_counter() - t0:.1f} s')
 

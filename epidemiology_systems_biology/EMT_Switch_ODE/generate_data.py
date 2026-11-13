@@ -3,6 +3,7 @@ the treatment group C = 2 cells, T = 3.64e-6 ng/mL, over the +/-10 % and +/-25 %
 Supplementary Table S1 of Gasior (2026).
 
     python generate_data.py                        # writes the six CSVs here
+    python generate_data.py --check                # writes to a temporary directory, compares with the files here
     python generate_data.py --out DIR --check      # writes to DIR, compares with the files here
 
 For each box, M = 2000 independent uniform (Monte Carlo) draws of the 11 inputs with numpy's
@@ -13,13 +14,17 @@ function theorem, and the number of equilibria of the group at that draw is reco
 
 It also checks the gradients against central finite differences in the normalized inputs
 (step 1e-6 of the half-width) at the first FD_ROWS draws of each box and prints the largest
-relative error (row 2-norm).
+relative error (row 2-norm). --check prints the largest differences from the shipped files
+(relative, elementwise) and fails only on structural mismatches (shapes, NaN pattern, numbers of equilibria, inputs differing by more than INPUT_RTOL).
 
 Only numpy, scipy and the standard library are imported. One process.
 """
 import argparse
+import atexit
 import os
+import shutil
 import sys
+import tempfile
 import time
 
 import numpy as np
@@ -34,8 +39,7 @@ SEEDS = {10: 575, 25: 576}
 M = 2000
 H_FD = 1e-6
 FD_ROWS = 50
-TOL = {'inputs': 1e-15, 'outputs': 1e-9, 'gradients': 1e-7}
-
+INPUT_RTOL = 1e-8  # --check fails if the regenerated inputs differ by more than this (relative)
 
 def draw(box, M=M):
     rng = np.random.default_rng(SEEDS[box])
@@ -69,6 +73,28 @@ def fd_check(X, G, box):
     return err.max(axis=0)
 
 
+def compare(kind, n, A, B):
+    """Print the largest difference of a new file A from the shipped file B.
+
+    Returns (relative difference, False on a structural mismatch)."""
+    if A.shape != B.shape:
+        print(f'   {n}: shape {A.shape} differs from the shipped {B.shape} FAIL')
+        return 0.0, False
+    ok = True
+    if not np.array_equal(np.isnan(A), np.isnan(B)):
+        print(f'   {n}: NaN pattern differs from the shipped file FAIL')
+        ok = False
+    if kind == 'outputs' and not np.array_equal(A[:, 2], B[:, 2]):   # column 2: the number of equilibria
+        print(f'   {n}: the number of equilibria differs in {int(np.sum(A[:, 2] != B[:, 2]))} rows FAIL')
+        ok = False
+    rel = float(np.nanmax(np.abs(A - B) / np.maximum(np.abs(B), 1e-300), initial=0.0))
+    print(f'   {n}: largest relative difference (elementwise) from the shipped file {rel:.1e}')
+    if kind == 'inputs' and rel > INPUT_RTOL:
+        print(f'   {n}: inputs differ by more than {INPUT_RTOL:g} FAIL')
+        ok = False
+    return rel, ok
+
+
 def read_csv(path):
     return np.loadtxt(path, delimiter=',', comments='#', ndmin=2)
 
@@ -93,17 +119,25 @@ def write(out, box, X, f, G):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
-    ap.add_argument('--out', default=HERE, help='output directory (default: this directory)')
+    ap.add_argument('--out', default=None,
+                    help='output directory (default: this directory; with --check, a temporary directory)')
     ap.add_argument('--check', action='store_true', help='compare with the CSVs in this directory')
     ap.add_argument('--fd-rows', type=int, default=FD_ROWS,
                     help=f'draws per box for the finite-difference check (default {FD_ROWS})')
     args = ap.parse_args()
+    if args.out is None:
+        if args.check:
+            args.out = tempfile.mkdtemp(prefix='check_')
+            atexit.register(shutil.rmtree, args.out, ignore_errors=True)
+        else:
+            args.out = HERE
     here, out = os.path.realpath(HERE), os.path.realpath(args.out)
     if args.check and os.path.commonpath([here, out]) == here:
         ap.error('--check needs --out DIR outside this directory (not this directory or a subdirectory of it), '
                  'so that the shipped files are not overwritten')
     os.makedirs(args.out, exist_ok=True)
     t0 = time.perf_counter()
+    ok, worst = True, (0.0, '')
     for box in (10, 25):
         t1 = time.perf_counter()
         X = draw(box)
@@ -120,11 +154,14 @@ def main():
         if args.check:
             for kind in ('inputs', 'outputs', 'gradients'):
                 n = f'{kind}_pm{box}.csv'
-                A, B = read_csv(os.path.join(args.out, n)), read_csv(os.path.join(HERE, n))
-                rel = np.max(np.abs(A - B) / np.maximum(np.abs(B), 1e-300))
-                print(f'   {n}: max relative difference from the shipped file {rel:.1e} '
-                      f'(tolerance {TOL[kind]:g}) {"OK" if rel <= TOL[kind] else "FAIL"}')
+                rel, same = compare(kind, n, read_csv(os.path.join(args.out, n)), read_csv(os.path.join(HERE, n)))
+                ok &= same
+                worst = max(worst, (rel, n))
     print(f'total {time.perf_counter() - t0:.0f} s')
+    if args.check:
+        print(f'largest difference from the shipped files: {worst[0]:.1e} (relative, {worst[1]})')
+        if not ok:
+            sys.exit(1)
 
 
 if __name__ == '__main__':

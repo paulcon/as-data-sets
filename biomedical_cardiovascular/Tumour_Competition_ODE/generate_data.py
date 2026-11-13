@@ -1,8 +1,11 @@
 """Write the samples (lv_samples_*.npz) for the competitive Lotka-Volterra tumour model (Zou and Lewis 2026).
 
     python generate_data.py                                   # writes lv_samples_*.npz here (22 to 60 min, DATA.md)
-    python generate_data.py --out DIR --check --blocks 1      # regenerates the first block of each
-                                                              # design in DIR and compares (about 1.5 min)
+    python generate_data.py --check                           # regenerates the first block of each
+                                                              # design in a temporary directory and
+                                                              # compares (about 1.5 min)
+    python generate_data.py --check --full                    # all blocks (about 30 min)
+    python generate_data.py --out DIR --check --blocks 4      # the first 4 blocks, kept in DIR
     python generate_data.py --out DIR --cache CDIR --max-minutes 9   # resumable chunks
 
 Two designs, each 4096 regions x 25 points = 102,400 points of x = (r_S, r_R, K_S, K_R, gamma_S,
@@ -21,8 +24,8 @@ stratified sample of the unit cube.
 
 For every point it stores q_pri (Eq. 3.3), q_sec (Eq. 3.5) and their exact forward-sensitivity
 gradients (tumour_model.qoi). Inputs and values are stored as float64; the gradients are computed
-in float64 and stored rounded to float32 (largest relative rounding per row about 6e-8: below the
---check gradient tolerance and far below the error of the paper's forward differences);
+in float64 and stored rounded to float32 (largest relative rounding per row about 6e-8, far below
+the error of the paper's forward differences);
 reduce_gradients.py applies the same rounding to a float64 file. It also checks the gradients of
 the first FD_ROWS grid4 points against central differences (step 1e-6, solves at rtol = atol = 1e-12) and prints the largest
 relative error; for q_sec only at points with q_sec (1 - q_sec) > 1e-6, because where q_sec is
@@ -30,11 +33,16 @@ within 1e-6 of 0 or 1 its gradient is below about 1e-6 and the differences of q_
 
 Blocks of 256 cells are cached as .npz files when --cache is given, so an interrupted run
 continues where it stopped; --max-minutes stops after the block that passes the limit.
+--check prints the largest differences from the shipped files and fails only on structural
+mismatches (shapes, NaN pattern, cells, inputs), or when --max-minutes stops it before the end.
 Only numpy, scipy and the standard library are imported. One process.
 """
 import argparse
+import atexit
 import os
+import shutil
 import sys
+import tempfile
 import time
 
 import numpy as np
@@ -52,9 +60,9 @@ NAMED_CELLS_8 = [(1, 2, 3, 4, 1, 4),    # r_S, gamma_S in [0.125, 0.25]; r_R in 
                  (7, 7, 7, 7, 7, 7)]    # the top cell [0.875, 1]^6 (p. 2201)
 FD_ROWS = 20
 H_FD = 1e-6
-TOL_Q, TOL_G = 1e-8, 1e-6   # --check: q_pri relative, q_sec absolute; gradients relative row 2-norm
-                            # (floor 1e-8 on the norm), after rounding the new gradients to float32
-                            # (TOL_G is about 8 float32 units in the last place)
+# --check measures: q_pri relative, q_sec absolute; gradients relative row 2-norm (floor 1e-8 on the
+# norm), after rounding the new gradients to float32
+INPUT_RTOL = 1e-8           # --check fails if a regenerated input (a seeded draw) differs by more (relative)
 GRAD_DTYPE = np.float32     # storage precision of *_grad
 DESCRIPTION = (
     'Competitive Lotka-Volterra tumour model of Zou and Lewis 2026 (doi:10.3934/mbe.2026079), '
@@ -136,13 +144,31 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0],
                                  formatter_class=argparse.RawDescriptionHelpFormatter,
                                  epilog='\n'.join(__doc__.split('\n')[1:]))
-    ap.add_argument('--out', default=HERE, help='output directory (default: this directory)')
-    ap.add_argument('--check', action='store_true', help='compare with the lv_samples_*.npz files in this directory')
+    ap.add_argument('--out', default=None,
+                    help='output directory (default: this directory; with --check, a temporary directory)')
+    ap.add_argument('--check', action='store_true',
+                    help='compare with the lv_samples_*.npz files in this directory (the first block of each '
+                         'design unless --full or --blocks is given)')
+    ap.add_argument('--full', action='store_true', help='with --check, regenerate and compare every block')
     ap.add_argument('--blocks', type=int, default=None,
                     help=f'compute only the first BLOCKS blocks of {BLOCK} cells of each design')
     ap.add_argument('--cache', default=None, help='directory for resumable block files')
     ap.add_argument('--max-minutes', type=float, default=None, help='stop after the block that passes this time')
     args = ap.parse_args()
+    if args.full and not args.check:
+        ap.error('--full is an option of --check')
+    if args.full and args.blocks is not None:
+        ap.error('--full and --blocks exclude each other')
+    if args.check and not args.full and args.blocks is None:
+        args.blocks = 1
+        print(f'--check: the first block ({BLOCK} cells, {BLOCK * M_LOCAL} points) of each design; '
+              '--check --full for all blocks', flush=True)
+    if args.out is None:
+        if args.check:
+            args.out = tempfile.mkdtemp(prefix='check_')
+            atexit.register(shutil.rmtree, args.out, ignore_errors=True)
+        else:
+            args.out = HERE
     here, out = os.path.realpath(HERE), os.path.realpath(args.out)
     if os.path.commonpath([here, out]) == here and (args.check or args.blocks is not None):
         ap.error('--check and --blocks need --out DIR outside this directory (not this directory or a subdirectory '
@@ -160,6 +186,9 @@ def main():
         r = design(G, args.blocks, args.cache, deadline)
         if r is None:
             print(f'stopped after {time.perf_counter() - t0:.0f} s (--max-minutes); rerun with the same --cache to continue')
+            if args.check:
+                print('FAIL: --check did not finish what it was asked to check')
+                sys.exit(1)
             return
         res[G] = r
     t1 = time.perf_counter()
@@ -185,24 +214,49 @@ def main():
     print(f'gradient check vs central differences (h = {H_FD:g}, rtol = atol = 1e-12), first {FD_ROWS} grid4 points: '
           f'max relative error q_pri {e[:, 0].max():.1e}; q_sec {e[ok, 1].max():.1e} ({ok.sum()} points with '
           f'q_sec (1 - q_sec) > 1e-6)')
+    failed = 0
     if args.check:
         ref = tm.load_samples()
+        largest = (0.0, 'relative, q_pri of grid4')
         for key in ('grid4', 'sub8'):
             n = len(data[f'{key}_X'])
-            same = (np.array_equal(ref[f'{key}_region'][:n], data[f'{key}_region']))
-            dx = np.max(np.abs(ref[f'{key}_X'][:n] - data[f'{key}_X']))
+            rows = {len(ref[f'{key}_{a}']) for a in ('region', 'X', 'f', 'grad')}
+            shapes = [(ref[f'{key}_{a}'][:n].shape, data[f'{key}_{a}'].shape) for a in ('region', 'X', 'f', 'grad')]
+            if rows != {N_REGIONS * M_LOCAL} or any(r != d for r, d in shapes):
+                failed += 1
+                print(f'FAIL: {key}: shipped rows {sorted(rows)}; shipped vs new shapes {shapes}')
+                continue
             fr, fn = ref[f'{key}_f'][:n], data[f'{key}_f']
-            dq = np.array([np.max(np.abs(fr[:, 0] - fn[:, 0]) / np.abs(fr[:, 0])),   # q_pri: relative
-                           np.max(np.abs(fr[:, 1] - fn[:, 1]))])                       # q_sec in [0, 1]: absolute
             gr = ref[f'{key}_grad'][:n].astype(np.float64)            # stored float32
             gn = data[f'{key}_grad'].astype(np.float64)               # new, rounded to float32 above
-            dg = np.max(np.linalg.norm(gr - gn, axis=2) / np.maximum(np.linalg.norm(gr, axis=2), 1e-8), axis=0)
-            ok = same and dx <= 1e-15 and np.all(dq <= TOL_Q) and np.all(dg <= TOL_G)
-            print(f'{key}: {n} points compared; cells identical {same}; inputs max abs diff {dx:.1e}; '
-                  f'values max rel diff {dq[0]:.1e}, {dq[1]:.1e} (tol {TOL_Q:g}); gradients max rel diff '
-                  f'{dg[0]:.1e}, {dg[1]:.1e} (tol {TOL_G:g}): {"OK" if ok else "FAIL"}')
+            Xr, Xn = ref[f'{key}_X'][:n], data[f'{key}_X']
+            bad = []
+            if not np.array_equal(ref[f'{key}_region'][:n], data[f'{key}_region']):
+                bad.append('cells differ')
+            if not (np.array_equal(np.isnan(fr), np.isnan(fn)) and np.array_equal(np.isnan(gr), np.isnan(gn))
+                    and np.array_equal(np.isnan(Xr), np.isnan(Xn))):
+                bad.append('NaN pattern differs')
+            dx = np.nanmax(np.abs(Xr - Xn) / np.abs(Xr))
+            if dx > INPUT_RTOL:
+                bad.append(f'inputs differ by more than {INPUT_RTOL:g} (relative)')
+            dg = np.nanmax(np.linalg.norm(gr - gn, axis=2) / np.maximum(np.linalg.norm(gr, axis=2), 1e-8), axis=0)
+            d = {'relative, q_pri': np.nanmax(np.abs(fr[:, 0] - fn[:, 0]) / np.abs(fr[:, 0])),
+                 'absolute, q_sec': np.nanmax(np.abs(fr[:, 1] - fn[:, 1])),           # in [0, 1]
+                 'relative, gradients': dg.max()}
+            print(f'{key}: {n} points compared; largest differences from the shipped file: inputs {dx:.1e} '
+                  f'(relative), q_pri {d["relative, q_pri"]:.1e} (relative), q_sec {d["absolute, q_sec"]:.1e} '
+                  f'(absolute), gradients of q_pri, q_sec {dg[0]:.1e}, {dg[1]:.1e} (relative, row 2-norm)')
+            for b in bad:
+                print(f'FAIL: {key}: {b}')
+            failed += bool(bad)
+            for k in d:
+                if d[k] > largest[0]:
+                    largest = (d[k], f'{k} of {key}')
     print(f'total {time.perf_counter() - t0:.0f} s')
-
+    if args.check:
+        print(f'largest difference from the shipped files: {largest[0]:.1e} ({largest[1]})')
+    if failed:
+        sys.exit(1)
 
 if __name__ == '__main__':
     main()

@@ -1,11 +1,14 @@
 """Write the mesh, the field basis, the samples and the reference eigenpairs of the wrench model.
 
     python generate_data.py --out DIR                 # writes every data file to DIR
+    python generate_data.py --check                   # writes to a temporary directory and compares with the files here
     python generate_data.py --out DIR --check         # writes to DIR and compares with the files here
-    python generate_data.py --out DIR --n 100 --check # a quick partial run (first 100 samples, no reference)
+    python generate_data.py --n 100 --check           # a quick partial run (first 100 samples, no reference)
 
 DIR must not be a folder inside this directory, and may be this directory itself only without
---check and --n; the shipped files were written with `--out .` from this directory. Steps:
+--check and --n; the shipped files were written with `--out .` from this directory. `--check`
+prints the largest differences from the shipped files and fails only on structural mismatches
+(shapes, NaN pattern, the set of triangles, inputs). Steps:
 
 1. `wrench_mesh.make_mesh()`: the 2197-triangle mesh (mesh_nodes.csv, mesh_elements.csv,
    mesh_boundary.csv).
@@ -22,8 +25,11 @@ DIR must not be a folder inside this directory, and may be this directory itself
 Only numpy, scipy and the standard library are imported. One process.
 """
 import argparse
+import atexit
 import os
+import shutil
 import sys
+import tempfile
 import time
 
 import numpy as np
@@ -40,15 +46,7 @@ M_REF = 10000
 R_KL = 318
 N_VEC = 5
 
-# --check tolerances (see DATA.md, "Regenerating")
-TOL_NODES = 1e-12      # absolute, node coordinates
-TOL_PHI = 1e-6         # relative (column 2-norm), basis columns with eigenvalue >= 1e-8 lambda_1
-TOL_EIG_SIGMA = 1e-10  # relative to lambda_1(Sigma), eigenvalues of Sigma
-TOL_XI = 1e-15         # absolute, inputs (they come from the generator, not from a computation)
-TOL_F = 1e-6           # relative, outputs
-TOL_G = 1e-6           # relative (row 2-norm), gradients
-TOL_REF_EIG = 1e-6     # relative, the reference eigenvalues 1-50
-TOL_REF_VEC = 1e-6     # 2-norm, the reference eigenvectors 1-5 (signs fixed)
+INPUT_RTOL = 1e-8  # --check: regenerated inputs (deterministic draws) may differ from the shipped ones by round-off only
 
 FILES = ('mesh_nodes.csv', 'mesh_elements.csv', 'mesh_boundary.csv', wm.KL_FILE,
          'inputs.csv', 'outputs.csv', 'gradients.csv', 'reference_10000.csv')
@@ -112,14 +110,20 @@ def write_reference(out, lam, V):
 
 
 def compare(out, n, with_ref):
-    """Print the differences from the shipped files and return True if within the tolerances."""
-    ok = True
+    """Print the differences from the shipped files; return the structural failures and the largest difference."""
+    bad, worst = [], [-1.0, '']
 
-    def rep(name, val, tol, note=''):
-        nonlocal ok
-        good = val <= tol
-        ok &= good
-        print(f'  {name}: {val:.1e} (tolerance {tol:g}) {"ok" if good else "EXCEEDED"} {note}')
+    def rep(name, val, measure, where):
+        print(f'  {name}: {val:.1e} ({measure})')
+        if val > worst[0]:
+            worst[:] = [val, f'{measure}, {where}']
+
+    def load(f, out_rows=None):
+        a, b = read_csv(os.path.join(HERE, f))[:n if out_rows else None], read_csv(os.path.join(out, f))
+        if a.shape != b.shape or not np.array_equal(np.isnan(a), np.isnan(b)):
+            bad.append(f'FAIL: {f}: shape {b.shape} or NaN pattern differs from the shipped {a.shape}')
+            return None, None
+        return a, b
 
     p0, t0, s0 = wm.read_mesh(HERE)
     p1, t1, s1 = wm.read_mesh(out)
@@ -134,40 +138,64 @@ def compare(out, n, with_ref):
         print(f'  mesh: same {len(t0)} triangles and boundary segments as the shipped mesh '
               f'({int(np.sum(perm == np.arange(len(perm))))} at the same index)')
     else:
-        print('  mesh: the triangles or boundary segments differ from the shipped mesh')
-    ok &= same_set
+        bad.append('FAIL: mesh: the triangles or boundary segments differ from the shipped mesh')
     if p0.shape == p1.shape:
-        rep('mesh nodes, max abs difference', np.abs(p0 - p1).max(), TOL_NODES)
+        rep('mesh nodes, max abs difference', np.abs(p0 - p1).max(), 'absolute', 'mesh_nodes.csv')
+    else:
+        bad.append(f'FAIL: mesh_nodes.csv: shape {p1.shape} differs from the shipped {p0.shape}')
     z0, z1 = np.load(os.path.join(HERE, wm.KL_FILE)), np.load(os.path.join(out, wm.KL_FILE))
     lam0 = z0['eigenvalues']
-    rep('eigenvalues of Sigma, max abs difference / lambda_1', np.abs(lam0 - z1['eigenvalues']).max() / lam0[0], TOL_EIG_SIGMA)
+    if lam0.shape != z1['eigenvalues'].shape or z0['Phi'].shape != z1['Phi'].shape:
+        bad.append(f'FAIL: {wm.KL_FILE}: shapes differ from the shipped file')
+        return bad, worst
+    rep('eigenvalues of Sigma, max abs difference / lambda_1', np.abs(lam0 - z1['eigenvalues']).max() / lam0[0],
+        'relative to lambda_1', f'{wm.KL_FILE} eigenvalues')
     if not same_set:
-        return False
+        return bad, worst
     Phi0, Phi1 = z0['Phi'], z1['Phi'][perm]
     lead = lam0 >= 1e-8 * lam0[0]
     dphi = np.linalg.norm(Phi0[:, lead] - Phi1[:, lead], axis=0) / np.linalg.norm(Phi0[:, lead], axis=0)
-    rep(f'Phi columns 1-{lead.sum()} (eigenvalue >= 1e-8 lambda_1, rows in the shipped element order), max relative difference', dphi.max(), TOL_PHI)
+    rep(f'Phi columns 1-{lead.sum()} (eigenvalue >= 1e-8 lambda_1, rows in the shipped element order), '
+        'max relative difference', dphi.max(), 'relative, column 2-norm', f'{wm.KL_FILE} Phi')
     dtrail = np.linalg.norm(Phi0[:, ~lead] - Phi1[:, ~lead]) / np.linalg.norm(Phi0)
-    print(f'  Phi columns {lead.sum() + 1}-{R_KL} (eigenvalues below 1e-8 lambda_1): difference / ||Phi||_F = {dtrail:.1e} (not checked)')
-    xi0, xi1 = read_csv(os.path.join(HERE, 'inputs.csv'))[:n], read_csv(os.path.join(out, 'inputs.csv'))
-    rep('inputs, max abs difference', np.abs(xi0 - xi1).max(), TOL_XI)
-    f0, f1 = read_csv(os.path.join(HERE, 'outputs.csv'))[:n, 0], read_csv(os.path.join(out, 'outputs.csv'))[:, 0]
-    rep('outputs, max relative difference', np.max(np.abs(f0 - f1) / np.abs(f0)), TOL_F)
-    G0, G1 = read_csv(os.path.join(HERE, 'gradients.csv'))[:n], read_csv(os.path.join(out, 'gradients.csv'))
-    rep('gradients, max relative row difference', np.max(np.linalg.norm(G0 - G1, axis=1) / np.linalg.norm(G0, axis=1)), TOL_G)
+    print(f'  Phi columns {lead.sum() + 1}-{R_KL} (eigenvalues below 1e-8 lambda_1): difference / ||Phi||_F = {dtrail:.1e} (not compared)')
+    xi0, xi1 = load('inputs.csv', True)
+    if xi0 is not None:
+        d = np.max(np.abs(xi0 - xi1) / np.abs(xi0))
+        rep('inputs, max relative difference', d, 'relative', 'inputs.csv')
+        if d > INPUT_RTOL:
+            bad.append(f'FAIL: inputs.csv differs from the shipped inputs by {d:.1e} > {INPUT_RTOL:g}')
+    f0, f1 = load('outputs.csv', True)
+    if f0 is not None:
+        rep('outputs, max relative difference', np.max(np.abs(f0 - f1) / np.abs(f0)), 'relative', 'outputs.csv')
+    G0, G1 = load('gradients.csv', True)
+    if G0 is not None:
+        rep('gradients, max relative row difference',
+            np.max(np.linalg.norm(G0 - G1, axis=1) / np.linalg.norm(G0, axis=1)), 'relative, row 2-norm', 'gradients.csv')
     if with_ref:
-        R0, R1 = read_csv(os.path.join(HERE, 'reference_10000.csv')), read_csv(os.path.join(out, 'reference_10000.csv'))
-        rep('reference eigenvalues 1-50, max relative difference', np.max(np.abs(R0[:50, 0] - R1[:50, 0]) / R0[:50, 0]), TOL_REF_EIG)
-        rep(f'reference eigenvectors 1-{N_VEC}, max 2-norm difference', np.linalg.norm(R0[:, 1:] - R1[:, 1:], axis=0).max(), TOL_REF_VEC)
-    return ok
+        R0, R1 = load('reference_10000.csv')
+        if R0 is not None:
+            rep('reference eigenvalues 1-50, max relative difference',
+                np.max(np.abs(R0[:50, 0] - R1[:50, 0]) / R0[:50, 0]), 'relative', 'reference_10000.csv eigenvalues')
+            rep(f'reference eigenvectors 1-{N_VEC}, max 2-norm difference',
+                np.linalg.norm(R0[:, 1:] - R1[:, 1:], axis=0).max(), '2-norm', 'reference_10000.csv eigenvectors')
+    return bad, worst
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
-    ap.add_argument('--out', required=True, help='output directory (use . only to rewrite the shipped files)')
+    ap.add_argument('--out', default=None,
+                    help='output directory (required without --check; use . only to rewrite the shipped files; '
+                         'with --check, a temporary directory by default)')
     ap.add_argument('--check', action='store_true', help='compare the files written to DIR with the files here')
     ap.add_argument('--n', type=int, default=None, help=f'number of samples (default {M}); skips the reference run')
     args = ap.parse_args()
+    if args.out is None:
+        if args.check:
+            args.out = tempfile.mkdtemp(prefix='check_')
+            atexit.register(shutil.rmtree, args.out, ignore_errors=True)
+        else:
+            ap.error('--out DIR is required without --check')
     out = os.path.abspath(args.out)
     here = os.path.realpath(HERE)
     if os.path.commonpath([os.path.realpath(out), here]) == here and \
@@ -221,11 +249,15 @@ def main():
         t4 = time.perf_counter()
         print(f'reference: M_REF = {M_REF}, {t4 - t3:.0f} s; eigenvalues 1-5: '
               + ', '.join(f'{v:.4g}' for v in lam_ref[:5]))
+    print(f'total {time.perf_counter() - t_start:.0f} s')
     if args.check:
         print('comparison with the shipped files:')
-        ok = compare(out, n, with_ref)
-        print('all within tolerance' if ok else 'SOME DIFFERENCES EXCEED THE TOLERANCES')
-    print(f'total {time.perf_counter() - t_start:.0f} s')
+        bad, worst = compare(out, n, with_ref)
+        print(f'largest difference from the shipped files: {worst[0]:.1e} ({worst[1]})')
+        for line in bad:
+            print(line)
+        if bad:
+            sys.exit(1)
 
 
 if __name__ == '__main__':

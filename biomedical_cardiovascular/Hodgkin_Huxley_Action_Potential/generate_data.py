@@ -1,7 +1,8 @@
 """Write inputs.csv, outputs.csv and gradients.csv for the Hodgkin-Huxley data set.
 
     python generate_data.py                       # 1000 samples, 2 processes, writes here
-    python generate_data.py --n 20 --out /tmp/hh --check
+    python generate_data.py --check               # all 1000 rows, in a temporary directory, compared
+    python generate_data.py --n 20 --check        # the first 20 rows only
 
 Draws N samples of the 11 physical inputs, independent uniform on nominal +- 20 %
 (HH_model.LOWER, HH_model.UPPER), with numpy's default_rng(SEED). For each sample it
@@ -10,15 +11,19 @@ solves the model together with its forward sensitivity equations
 peak time, v at 19 times) and their gradients with respect to the physical inputs.
 
 The samples are the first N rows of one fixed stream, so `--n 20` gives the first 20
-rows of the shipped files; `--workers` changes only the run time. `--check` compares
-the new files with the ones next to this script.
+rows of the shipped files; `--workers` changes only the run time. `--check` writes the new
+files to a temporary directory (unless --out DIR is given), prints the largest differences from
+the shipped files and fails only on structural mismatches (shapes, NaN pattern, inputs).
 
 Only numpy, scipy and the standard library are imported.
 """
 import argparse
+import atexit
 import multiprocessing as mp
 import os
+import shutil
 import sys
+import tempfile
 import time
 
 import numpy as np
@@ -29,6 +34,7 @@ import HH_model as hm  # noqa: E402
 
 SEED = 2015
 N = 1000
+INPUT_RTOL = 1e-8   # --check fails if a regenerated input (a seeded draw) differs by more (relative)
 
 PROVENANCE = ('HH_model.py (Eq. (1) of Torres Valderrama et al. 2015; I = 150, t in [0, 14] ms; '
               'solve_ivp DOP853, rtol = 1e-10, atol = 1e-12, forward sensitivities); '
@@ -67,9 +73,16 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     ap.add_argument('--n', type=int, default=N, help='number of samples (default 1000)')
     ap.add_argument('--workers', type=int, default=2)
-    ap.add_argument('--out', default=HERE, help='output directory (default: this directory)')
+    ap.add_argument('--out', default=None,
+                    help='output directory (default: this directory; with --check, a temporary directory)')
     ap.add_argument('--check', action='store_true', help='compare with the CSVs in this directory')
     args = ap.parse_args()
+    if args.out is None:
+        if args.check:
+            args.out = tempfile.mkdtemp(prefix='check_')
+            atexit.register(shutil.rmtree, args.out, ignore_errors=True)
+        else:
+            args.out = HERE
     if os.path.abspath(args.out) == HERE and (args.check or args.n != N):
         ap.error('--check and --n need --out DIR outside this directory, so that the shipped files are not overwritten')
 
@@ -88,13 +101,34 @@ def main():
 
     if args.check:
         n = len(X)
-        X0 = read_csv(os.path.join(HERE, 'inputs.csv'))[:n]
-        f0 = read_csv(os.path.join(HERE, 'outputs.csv'))[:n]
-        G0 = read_csv(os.path.join(HERE, 'gradients.csv'))[:n].reshape(G.shape)
-        print(f'inputs identical: {np.array_equal(X0, read_csv(os.path.join(args.out, "inputs.csv")))}; '
-              f'max relative difference: outputs {np.max(np.abs(f - f0)/np.abs(f0)):.1e}, '
-              f'gradients {np.max(np.linalg.norm(G - G0, axis=2)/np.linalg.norm(G0, axis=2)):.1e}')
-
+        X0, f0, G0 = (read_csv(os.path.join(HERE, name)) for name in ('inputs.csv', 'outputs.csv', 'gradients.csv'))
+        rows = (len(X0), len(f0), len(G0))
+        X0, f0, G0 = X0[:n], f0[:n], G0[:n]
+        X1 = read_csv(os.path.join(args.out, 'inputs.csv'))
+        if not (min(rows) == max(rows) >= n and X1.shape == X0.shape and f0.shape == f.shape
+                and G0.shape == (n, G[0].size)):
+            print(f'FAIL: rows of the shipped inputs, outputs, gradients {rows}; first {n} rows, shipped vs new '
+                  f'shapes: inputs {X0.shape} vs {X1.shape}, outputs {f0.shape} vs {f.shape}, '
+                  f'gradients {G0.shape} vs {(n, G[0].size)}')
+            sys.exit(1)
+        G0 = G0.reshape(G.shape)
+        bad = []
+        if not (np.array_equal(np.isnan(f), np.isnan(f0)) and np.array_equal(np.isnan(G), np.isnan(G0))):
+            bad.append('NaN pattern of the outputs or gradients differs from the shipped files')
+        dx = np.nanmax(np.abs(X1 - X0)/np.abs(X0))
+        if dx > INPUT_RTOL:
+            bad.append(f'inputs differ by {dx:.1e} (relative), more than {INPUT_RTOL:g}')
+        d = {'outputs.csv': np.nanmax(np.abs(f - f0)/np.abs(f0)),
+             'gradients.csv': np.nanmax(np.linalg.norm(G - G0, axis=2)/np.linalg.norm(G0, axis=2))}
+        print(f'first {n} rows: largest relative difference from the shipped files: inputs {dx:.1e}, '
+              f'outputs {d["outputs.csv"]:.1e} (elementwise), gradients {d["gradients.csv"]:.1e} '
+              '(2-norm of each gradient vector)')
+        for b in bad:
+            print('FAIL:', b)
+        k = max(d, key=d.get)
+        print(f'largest difference from the shipped files: {d[k]:.1e} (relative, {k})')
+        if bad:
+            sys.exit(1)
 
 if __name__ == '__main__':
     main()

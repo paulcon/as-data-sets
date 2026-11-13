@@ -4,7 +4,8 @@
     python generate_data.py --out DIR --rows 0:40            # rows 0..39 only (resumable chunks)
     python generate_data.py --out DIR --procs 16             # rows in 16 worker processes
     python generate_data.py --out DIR --qoi Su1              # one QoI only (tau, Su1, Su20 or a list)
-    python generate_data.py --out DIR --rows 0:3 --check     # recompute 3 rows, compare with shipped
+    python generate_data.py --check                          # all 500 rows in a temporary directory, compare with shipped
+    python generate_data.py --rows 0:3 --check               # recompute 3 rows, compare with shipped
     python generate_data.py --out DIR --nominal              # nominal.csv, nominal_gradients.csv
 
 Design: M = 500 Monte Carlo draws (seed 2019452) from the prior of Bell et al. (2019), Table 1:
@@ -26,14 +27,19 @@ worker processes. CPU per row: tau a few seconds, Su1 about 5 s, Su20 about a mi
 DIR, with a summary of the finite-difference checks for Su1 and Su20; when every row of all three
 QoIs exists, inputs.csv and outputs.csv as well. Progress is appended to DIR/generate.log.
 
-Guard: --out DIR must be given and must lie outside this directory, so the shipped files are
-never overwritten (copy the new files in by hand after comparing them). --check compares with a
-stated tolerance (relative 1e-6 for values, 3e-4 of the largest sd-scaled stored entry for
-gradients) and writes nothing but DIR/rows and DIR/generate.log.
+Guard: --out DIR must be given without --check and must lie outside this directory, so the shipped
+files are never overwritten (copy the new files in by hand after comparing them); with --check it
+defaults to a temporary directory, removed at the end. --check prints the largest differences from the
+shipped files (values: elementwise relative; gradients: relative to the largest sd-scaled stored entry) and
+fails only on structural mismatches (shapes, nan entries, status flags, inputs). It writes nothing but
+DIR/rows and DIR/generate.log.
 """
 import argparse
+import atexit
 import os
+import shutil
 import sys
+import tempfile
 import time
 
 for _v in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
@@ -49,7 +55,7 @@ SEED = 2019452
 M = 500
 QOIS = ["tau", "Su1", "Su20"]
 UNITS = {"tau": "s", "Su1": "m/s", "Su20": "m/s"}
-TOL_VALUE, TOL_GRAD = 1e-6, 3e-4
+INPUT_RTOL = 1e-8         # --check fails if a regenerated input (a seeded draw) differs by more (relative)
 HOW = {"tau": "central differences, step 1e-3 of each prior sd",
        "Su1": "central finite differences on the fixed grid of each flame, step 1e-3 of each "
               "prior sd and at most 2 % of an A factor (FlameSpeed.fd_grad)",
@@ -200,35 +206,60 @@ def write_nominal(out):
 
 
 def check(rows, qois, out):
+    """Print the largest value and gradient differences per QoI; False on a structural mismatch."""
     ld = lambda n: np.loadtxt(os.path.join(HERE, n), delimiter=",", ndmin=2)  # noqa: E731
     Xs, Fs = ld("inputs.csv")[rows], ld("outputs.csv")[rows]
+    passed, worst = True, (0.0, "elementwise", f"{qois[0]} value")
     for q in qois:
         j = QOIS.index(q)
         R = collect(q, range(rows.start, rows.stop), out)
         dx = np.max(np.abs(np.array([r["x"] for r in R]) / Xs - 1)[Xs != 0], initial=0.0)
         new = np.array([float(r["value"]) for r in R])
         st = np.array([int(r["status"]) for r in R])
-        rel = np.nanmax(np.abs(new / Fs[:, j] - 1))
         Gs = ld(f"gradients_{q}.csv")[rows]
         Gn = np.array([r["grad"] for r in R])
+        fails = []
+        if dx > INPUT_RTOL:
+            fails.append(f"inputs differ from the shipped ones by {dx:.1e} > {INPUT_RTOL:g}")
+        if not np.array_equal(st, Fs[:, 3 + j]):
+            fails.append("status flags differ")
+        if not np.array_equal(np.isnan(new), np.isnan(Fs[:, j])):
+            fails.append("nan entries of the values differ")
+        if Gn.shape != Gs.shape or not np.array_equal(np.isnan(Gn), np.isnan(Gs)):
+            fails.append(f"gradient shape {Gn.shape} or nan entries differ from the shipped {Gs.shape}")
+        for msg in fails:
+            print(f"FAIL: {q}: {msg}")
+        passed = passed and not fails
+        if Gn.shape != Gs.shape:
+            continue
+        rel = np.nanmax(np.abs(new / Fs[:, j] - 1), initial=0.0)
         sc = D.PRIOR_SD
-        grel = np.nanmax(np.abs((Gn - Gs) * sc)) / np.nanmax(np.abs(Gs * sc))
-        same = np.array_equal(st, Fs[:, 3 + j])
-        ok = dx <= 1e-12 and rel <= TOL_VALUE and grel <= TOL_GRAD and same
-        print(f"{q}: inputs max relative difference {dx:.1e}; max relative value difference {rel:.1e} (tol {TOL_VALUE:g}); "
-              f"gradient difference {grel:.1e} of the largest sd-scaled entry (tol {TOL_GRAD:g}); status "
-              f"equal {same}: {'PASS' if ok else 'FAIL'}")
+        grel = np.nanmax(np.abs((Gn - Gs) * sc), initial=0.0) / np.nanmax(np.abs(Gs * sc))
+        print(f"{q}: inputs max relative difference {dx:.1e}; max relative value difference {rel:.1e}; "
+              f"gradient difference {grel:.1e} of the largest sd-scaled entry")
+        for d, how, what in ((rel, "elementwise", f"{q} value"), (grel, "of the largest sd-scaled entry", f"{q} gradient")):
+            if d >= worst[0]:
+                worst = (d, how, what)
+    print(f"largest difference from the shipped files: {worst[0]:.1e} (relative, {worst[1]}, {worst[2]})")
+    return passed
 
 
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--out", required=True, help="output directory, outside this directory")
+    p.add_argument("--out", default=None, help="output directory, outside this directory (required without "
+                   "--check; with --check, default a temporary directory)")
     p.add_argument("--rows", default=None, help="a:b, a subset of the rows")
     p.add_argument("--qoi", default="tau,Su1,Su20", help="comma-separated subset of tau, Su1, Su20")
     p.add_argument("--check", action="store_true", help="compare the rows with the shipped files")
     p.add_argument("--nominal", action="store_true", help="write nominal.csv and nominal_gradients.csv")
     p.add_argument("--procs", type=int, default=1, help="worker processes for the rows (default 1)")
     a = p.parse_args()
+    if a.out is None:
+        if a.check:
+            a.out = tempfile.mkdtemp(prefix="check_")
+            atexit.register(shutil.rmtree, a.out, ignore_errors=True)
+        else:
+            p.error("--out DIR is required without --check")
     out = os.path.abspath(a.out)
     here = os.path.realpath(HERE)
     if os.path.commonpath([os.path.realpath(out), here]) == here:
@@ -255,7 +286,8 @@ def main():
     run_rows(range(rows.start, rows.stop), qois, out, X, a.procs)
     print("rows %d:%d (%s) done in %.0f s wall" % (rows.start, rows.stop, ",".join(qois), time.time() - t0))
     if a.check:
-        check(rows, qois, out)
+        if not check(rows, qois, out):
+            sys.exit(1)
         return
     done = [q for q in qois if all(os.path.exists(row_file(out, q, i)) for i in range(M))]
     if done:

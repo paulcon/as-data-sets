@@ -22,7 +22,7 @@ found in the shipped data. `davis_training_98.csv` holds the authors' own XFOIL 
 | `davis_rerun_outputs.csv` | 98 × 7, as `outputs.csv` | our XFOIL at the 98 inputs of the authors' file |
 | `re_sensitivity.csv` | 35 × 10: alpha, flap, Re, then the 7 output columns | XFOIL at the 7 calibration points for Re = 665,000, 696,500, 700,000, 703,500 and 735,000: a labelled sensitivity check of the paper's printed Re range (p. 3), not a design |
 | `convergence_ladder.csv` | 47 × 8: file, row, status, then the continuation path (side, start angle, smallest step, steps, XFOIL processes) | one row for every point of the XFOIL files that needed the retry ladder (status 3 or 4) or failed every attempt (−1); its first header line names the driver module `xfoil_run.py`; the driver in this directory is `xfoil_driver.py` |
-| `generate_data.py` | writes all of the above; `--check N` reruns the first N rows of each design plus every retry-ladder row, and compares (writes nothing) | regenerates the data (needs XFOIL; exits with status 1 and a build message without it) |
+| `generate_data.py` | writes all of the above; `--check N` reruns the first N rows of each design plus every retry-ladder row, and compares (writes nothing) | regenerates the data (needs XFOIL; exits with code 3 and a build message without it) |
 | `xfoil_driver.py` | `run(alpha, flap, re, ncrit=0.01, xtr_top=1, xtr_bot=1, ...)`: one XFOIL analysis with the convergence protocol below | the XFOIL driver |
 | `check_accuracy.py` | recomputes the numbers below marked with its name, from the shipped files (numpy only; does not run XFOIL; under 1 s); `--davis-src FILE` also compares `davis_training_98.csv` with the authors' file | check |
 
@@ -181,13 +181,18 @@ The eigenvalue ratios depend on the rule for failed runs by up to 4 % (CL 143.7�
 # 1. build XFOIL 6.99 (see "XFOIL build" below), then
 python generate_data.py --xfoil /path/to/xfoil                       # all files except the copy
 python generate_data.py --davis-src /path/to/uqchallenge2/training/training_100.csv
-python generate_data.py --xfoil /path/to/xfoil --check 25            # 25 rows of each design + ladder rows
+python generate_data.py --xfoil /path/to/xfoil --check               # 25 rows of each design + ladder rows
+python generate_data.py --xfoil /path/to/xfoil --check 50            # the first 50 rows of each design instead
 ```
 
 Without an XFOIL executable (`--xfoil PATH` or `XFOIL_EXE`) the script stops with exit status 3 and a
 message that says what to build and to rerun it (checked in `.venv`); only the `--davis-src` copy runs
-without XFOIL. `--check` writes nothing. XFOIL is not installed in `.venv`, so the script was not run
-there.
+without XFOIL. `--check` writes nothing. It prints the largest relative difference (elementwise) of
+the rerun rows of each output file from the shipped values, and of each input file from its seed; in
+the original run (Linux, gfortran 13.3.0) these were all 0 (see below). It exits with status 1 only on
+a structural mismatch: input and output files of different shapes, a different status or NaN pattern,
+or an input file that differs from its seed by more than 1e-8 (relative). XFOIL is not installed in
+`.venv`, so the script was not run there.
 
 **Run time of `generate_data.py`** (the original run that wrote the shipped files, 2026-11-01, in a
 Linux container with Python 3.13, Ubuntu 24.04.5 x86-64, one process under `nice -n 10` on a heavily

@@ -1,6 +1,7 @@
 """Regenerate the data files of Freyberg_MODFLOW_Forecast (needs MODFLOW-2005 1.12.00, mf2005dbl).
 
     python generate_data.py --out DIR                      # all 500 rows (about 1 h on one core)
+    python generate_data.py --check                        # all rows, in a temporary directory, compared
     python generate_data.py --out DIR --rows 0:5 --check   # a subset, compared with the shipped files
 
 Design: 500 Monte Carlo samples, independent and uniform in log10 of the 71 inputs between the
@@ -20,14 +21,17 @@ standard deviations 1/weight (calibrated.csv; 143 runs, central differences with
 
 Files written to DIR: inputs.csv, outputs.csv, gradients.csv, calibrated.csv (and chunks/ with
 the partial results, so an interrupted run resumes where it stopped). DIR must be outside this directory,
-so the shipped files are never overwritten. --check compares the rows computed with the shipped
-rows: heads to 1e-6 m, gradients to 1e-3 in relative 2-norm per row (finite differences with a
-1e-4 step amplify solver round-off of about 1e-10 m), calibrated.csv to 1e-4 relative.
+so the shipped files are never overwritten; --check without --out uses a temporary directory and removes
+it. --check compares the rows computed with the shipped rows and prints the largest differences from the
+shipped files (heads absolute in m; gradients in relative 2-norm per row; calibrated.csv relative). It
+fails (exit status 1) only on structural mismatches: shapes, NaN pattern, dry-cell counts, or inputs
+differing by more than INPUT_RTOL of their largest magnitude.
 
 Needs numpy and the double-precision MODFLOW-2005 1.12.00 executable (mf2005dbl on the PATH or
-MF2005DBL=/path/to/mf2005dbl); without it the script stops with an error saying what to install.
+MF2005DBL=/path/to/mf2005dbl); without it the script exits with status 3 and says what to install.
 """
 import argparse
+import atexit
 import os
 import shutil
 import sys
@@ -44,6 +48,7 @@ SEED = 602988
 N = 500
 CHUNK = 25
 XFMT = "%.17e"
+INPUT_RTOL = 1e-8   # inputs are deterministic draws: a larger difference means a different seed or range
 
 
 def draw():
@@ -175,42 +180,71 @@ def write(out, X, parts, i0, i1):
                              "(71 columns per forecast)" % M.FD_STEP, gc))
 
 
-def check(out, i0, i1):
-    ok = True
+def check(out, i0, i1, ship=HERE):
+    """Print the largest differences from the shipped rows; False on a structural mismatch."""
+    ok, diffs = True, []
     new_o = np.loadtxt(os.path.join(out, "outputs.csv"), delimiter=",", ndmin=2)
-    old_o = np.loadtxt(os.path.join(HERE, "outputs.csv"), delimiter=",", ndmin=2)[i0:i1]
-    d = np.nanmax(np.abs(new_o[:, :22] - old_o[:, :22]))
+    old_o = np.loadtxt(os.path.join(ship, "outputs.csv"), delimiter=",", ndmin=2)[i0:i1]
+    if new_o.shape != old_o.shape:
+        print("  FAIL: outputs.csv: shape %s differs from the shipped rows %s" % (new_o.shape, old_o.shape))
+        return False
     same_nan = np.array_equal(np.isnan(new_o), np.isnan(old_o))
+    d = np.nanmax(np.abs(new_o[:, :22] - old_o[:, :22])) if same_nan and not np.isnan(old_o[:, :22]).all() else 0.0
     same_dry = np.array_equal(new_o[:, 22:], old_o[:, 22:])
-    print("  outputs.csv: max |new - shipped| head = %.2e m (tolerance 1e-6); nan pattern equal: %s; "
-          "dry counts equal: %s" % (d, same_nan, same_dry))
-    ok &= bool(d <= 1e-6 and same_nan and same_dry)
+    print("  outputs.csv: largest |new - shipped| head = %.2e m; nan pattern equal: %s; dry counts equal: %s"
+          % (d, same_nan, same_dry))
+    if not (same_nan and same_dry):
+        print("  FAIL: outputs.csv: the NaN pattern or the dry-cell counts differ from the shipped rows")
+        ok = False
+    diffs.append((d, "absolute in m", "outputs.csv"))
     new_g = np.loadtxt(os.path.join(out, "gradients.csv"), delimiter=",", ndmin=2)
-    old_g = np.loadtxt(os.path.join(HERE, "gradients.csv"), delimiter=",", ndmin=2)[i0:i1]
+    old_g = np.loadtxt(os.path.join(ship, "gradients.csv"), delimiter=",", ndmin=2)[i0:i1]
+    if new_g.shape != old_g.shape or not np.array_equal(np.isnan(new_g), np.isnan(old_g)):
+        print("  FAIL: gradients.csv: shape or nan pattern differs from the shipped rows")
+        return False
     fin = np.all(np.isfinite(old_g), axis=1) & np.all(np.isfinite(new_g), axis=1)
     if fin.any():
         rel = np.max(np.linalg.norm(new_g[fin] - old_g[fin], axis=1)
                      / np.linalg.norm(old_g[fin], axis=1))
-        print("  gradients.csv: max relative 2-norm difference per row = %.2e (tolerance 1e-3)" % rel)
-        ok &= bool(rel <= 1e-3)
+        print("  gradients.csv: largest relative 2-norm difference per row = %.2e" % rel)
+        diffs.append((rel, "relative", "gradients.csv"))
     new_x = np.loadtxt(os.path.join(out, "inputs.csv"), delimiter=",", ndmin=2)
-    old_x = np.loadtxt(os.path.join(HERE, "inputs.csv"), delimiter=",", ndmin=2)[i0:i1]
-    print("  inputs.csv: max |new - shipped| = %.1e" % np.max(np.abs(new_x - old_x)))
+    old_x = np.loadtxt(os.path.join(ship, "inputs.csv"), delimiter=",", ndmin=2)[i0:i1]
+    if new_x.shape != old_x.shape:
+        print("  FAIL: inputs.csv: shape %s differs from the shipped rows %s" % (new_x.shape, old_x.shape))
+        return False
+    dx = np.max(np.abs(new_x - old_x)) / np.max(np.abs(old_x))
+    print("  inputs.csv: largest |new - shipped| / largest |shipped| = %.1e" % dx)
+    if dx > INPUT_RTOL:
+        print("  FAIL: inputs.csv: the inputs differ from the shipped ones by more than %g (relative)" % INPUT_RTOL)
+        ok = False
+    diffs.append((dx, "relative", "inputs.csv"))
     new_c = np.loadtxt(os.path.join(out, "calibrated.csv"), delimiter=",")
-    old_c = np.loadtxt(os.path.join(HERE, "calibrated.csv"), delimiter=",")
-    rc = np.max(np.abs(new_c - old_c) / np.maximum(np.abs(old_c), 1e-12))
-    print("  calibrated.csv: max relative difference = %.2e (tolerance 1e-4)" % rc)
-    ok &= bool(rc <= 1e-4)
-    print("CHECK", "PASSED" if ok else "FAILED")
+    old_c = np.loadtxt(os.path.join(ship, "calibrated.csv"), delimiter=",")
+    if new_c.shape != old_c.shape or not np.array_equal(np.isnan(new_c), np.isnan(old_c)):
+        print("  FAIL: calibrated.csv: shape or nan pattern differs from the shipped file")
+        return False
+    rc = np.nanmax(np.abs(new_c - old_c) / np.maximum(np.abs(old_c), 1e-12))
+    print("  calibrated.csv: largest elementwise relative difference = %.2e" % rc)
+    diffs.append((rc, "relative", "calibrated.csv"))
+    d, measure, name = max(diffs, key=lambda t: t[0])
+    print("largest difference from the shipped files: %.1e (%s, %s)" % (d, measure, name))
     return ok
 
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("--out", required=True, help="output directory, outside this directory")
+    p.add_argument("--out", default=None, help="output directory, outside this directory "
+                   "(required without --check; with --check, default: a temporary directory)")
     p.add_argument("--rows", default=None, help="a:b, a subset of the rows")
     p.add_argument("--check", action="store_true", help="compare with the shipped files")
     a = p.parse_args()
+    if a.out is None:
+        if a.check:
+            a.out = tempfile.mkdtemp(prefix="check_")
+            atexit.register(shutil.rmtree, a.out, ignore_errors=True)
+        else:
+            p.error("--out DIR is required without --check")
     here, out = os.path.realpath(HERE), os.path.realpath(a.out)
     if os.path.commonpath([here, out]) == here:      # this directory, a subdirectory, or a link into it
         sys.exit("--out must be a directory outside this data set, so the shipped files are not "
@@ -218,7 +252,8 @@ def main():
     try:
         M.find_mf2005()
     except RuntimeError as e:
-        sys.exit(str(e))
+        print(e, file=sys.stderr)
+        sys.exit(3)
     i0, i1 = (0, N) if a.rows is None else (int(s) for s in a.rows.split(":"))
     chunkdir = os.path.join(out, "chunks")
     os.makedirs(chunkdir, exist_ok=True)

@@ -77,11 +77,11 @@ The notebook's results: ln C₅₂ has λ₁/λ₂ = 7.25 and λ₂/λ₃ = 5.90
 
 ```bash
 python generate_data.py                                   # 1000 points, seed 2018, writes here
-python generate_data.py --out /tmp/zika --check           # regenerate elsewhere and compare
+python generate_data.py --check                           # regenerate in a temporary directory and compare
 python generate_data.py --fd-check 20                     # gradients vs. independent central differences
 ```
 
-The shipped files were written on 2026-10-30 in a Linux container (Python 3.13.18, numpy 2.5.4, scipy 1.18.1). In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31) a rerun takes 46 s on one core, and `--check` gives maximum relative differences of 6.4 × 10⁻¹³ (outputs) and 2.7 × 10⁻¹² (gradients), with identical inputs. `--fd-check 20` takes 269 s.
+The shipped files were written on 2026-10-30 in a Linux container (Python 3.13.18, numpy 2.5.4, scipy 1.18.1). In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31) a rerun takes 46 s on one core, and `--check` gives maximum relative differences of 6.4 × 10⁻¹³ (outputs) and 2.7 × 10⁻¹² (gradients), with identical inputs (52 s for `python generate_data.py --check`, 2026-11-12). `--check` prints these differences (outputs elementwise, gradients by the 2-norm of each row) and does not judge them; it exits with status 1 only for a structural mismatch: a different shape or NaN pattern, or regenerated inputs that differ from `inputs.csv` by more than a relative 1e-8. `--fd-check 20` takes 269 s.
 
 ## Accuracy
 

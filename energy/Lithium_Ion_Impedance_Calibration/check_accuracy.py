@@ -31,8 +31,8 @@ Prints, beside the values DATA.md quotes:
 
 Checks 1-4 need numpy only. Checks 5-10 need PyBaMM 26.10.1.1, pybammsolvers 0.11.1, PyBOP 26.3
 and CasADi 3.8.1 (the versions that wrote the shipped files; recipe in DATA.md); without them
-the script stops with an error that says what to install (use --data-only to run checks 1-4
-alone). Deterministic; writes nothing.
+the script runs checks 1-4 and then stops with an error that says what to install (exit status
+3; use --data-only to run checks 1-4 alone). Deterministic; writes nothing.
 """
 import argparse
 import os
@@ -154,10 +154,9 @@ def main():
     ap.add_argument("--any-version", action="store_true", help="run with other PyBaMM/PyBOP/CasADi versions")
     args = ap.parse_args()
     t0 = time.time()
-    if not args.data_only:
-        gd.require_packages(args.any_version)
     data_checks()
     if not args.data_only:
+        gd.require_packages(args.any_version)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             model_checks(args.skip_slow)

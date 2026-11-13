@@ -1,7 +1,7 @@
 """Write inputs.csv, outputs.csv and gradients.csv for the fire detection satellite.
 
     python generate_data.py                       # writes the three CSVs here
-    python generate_data.py --out /tmp/fs --check # writes elsewhere and compares with the files here
+    python generate_data.py --check               # writes to a temporary directory and compares with the files here
 
 Draws N = 2000 samples of the nine inputs from independent truncated normals
 TN(MEAN, SD, LOWER, UPPER) (see fire_satellite_model.py) with
@@ -10,11 +10,16 @@ relative fixed-point tolerance of 1e-13, and computes the gradients of the three
 outputs with respect to the physical inputs by the complex step through the
 fixed-point iteration. The whole run takes well under a second.
 
+`--check` prints the largest differences from the shipped files and fails only on structural
+mismatches (shapes, NaN pattern, inputs).
 Only numpy, scipy and the standard library are imported.
 """
 import argparse
+import atexit
 import os
+import shutil
 import sys
+import tempfile
 import time
 
 import numpy as np
@@ -25,6 +30,7 @@ import fire_satellite_model as fm  # noqa: E402
 
 SEED = 2012
 N = 2000
+INPUT_RTOL = 1e-8  # --check: regenerated inputs (deterministic draws) may differ from the shipped ones by round-off only
 
 PROVENANCE = ('fire_satellite_model.py (Sankararaman & Mahadevan 2012, Sec. 6; fixed point on P_ACS '
               'to relative tolerance 1e-13); written by generate_data.py, seed 2012')
@@ -60,9 +66,16 @@ def write(out, X, F, G):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
-    ap.add_argument('--out', default=HERE, help='output directory (default: this directory)')
+    ap.add_argument('--out', default=None,
+                    help='output directory (default: this directory; with --check, a temporary directory)')
     ap.add_argument('--check', action='store_true', help='compare with the CSVs in this directory')
     args = ap.parse_args()
+    if args.out is None:
+        if args.check:
+            args.out = tempfile.mkdtemp(prefix='check_')
+            atexit.register(shutil.rmtree, args.out, ignore_errors=True)
+        else:
+            args.out = HERE
     if os.path.abspath(args.out) == HERE and args.check:
         ap.error('--check needs --out DIR outside this directory, so that the shipped files are not overwritten')
     os.makedirs(args.out, exist_ok=True)
@@ -73,12 +86,27 @@ def main():
     print(f'wrote {args.out}: {len(X)} samples, {time.perf_counter() - t0:.2f} s')
 
     if args.check:
-        X0 = read_csv(os.path.join(HERE, 'inputs.csv'))
-        F0 = read_csv(os.path.join(HERE, 'outputs.csv'))
-        G0 = read_csv(os.path.join(HERE, 'gradients.csv')).reshape(G.shape)
-        print('max relative difference from the shipped files: inputs '
-              f'{np.max(np.abs(X - X0) / np.abs(X0)):.1e}, outputs {np.max(np.abs(F - F0) / np.abs(F0)):.1e}, '
-              f'gradients {np.max(np.linalg.norm(G - G0, axis=2) / np.linalg.norm(G0, axis=2)):.1e}')
+        new = {'inputs.csv': X, 'outputs.csv': F, 'gradients.csv': G.reshape(len(G), -1)}
+        bad, worst = [], (-1.0, '')
+        for n, a in new.items():
+            b = read_csv(os.path.join(HERE, n))
+            if a.shape != b.shape or not np.array_equal(np.isnan(a), np.isnan(b)):
+                bad.append(f'FAIL: {n}: shape {a.shape} or NaN pattern differs from the shipped {b.shape}')
+                continue
+            if n == 'gradients.csv':   # per output: 2-norm of the gradient vector
+                a, b = a.reshape(G.shape), b.reshape(G.shape)
+                d, measure = np.nanmax(np.linalg.norm(a - b, axis=2) / np.linalg.norm(b, axis=2)), 'relative, 2-norm'
+            else:
+                d, measure = np.nanmax(np.abs(a - b) / np.abs(b)), 'relative'
+            print(f'{n}: largest difference {d:.1e} ({measure})')
+            if n == 'inputs.csv' and d > INPUT_RTOL:
+                bad.append(f'FAIL: {n} differs from the shipped inputs by {d:.1e} > {INPUT_RTOL:g}')
+            worst = max(worst, (d, f'{measure}, {n}'))
+        print(f'largest difference from the shipped files: {worst[0]:.1e} ({worst[1]})')
+        for line in bad:
+            print(line)
+        if bad:
+            sys.exit(1)
 
 
 if __name__ == '__main__':

@@ -14,8 +14,13 @@ and records three end-of-period totals, plus their gradients with respect to the
 physical parameters by central finite differences.
 
     python generate_data.py --sipnet /path/to/sipnet               # all M samples
-    python generate_data.py --sipnet /path/to/sipnet --rows 0:10 --out /tmp/x --check
-    python generate_data.py --sipnet /path/to/sipnet --fd-check [--out /tmp/x --check]
+    python generate_data.py --sipnet /path/to/sipnet --check                # all M samples in a temporary directory, compared
+    python generate_data.py --sipnet /path/to/sipnet --rows 0:10 --check
+    python generate_data.py --sipnet /path/to/sipnet --fd-check [--check]
+
+--check and --rows write to --out DIR outside this directory (with --check, a temporary directory by
+default). --check prints the largest differences from the shipped files (max |new - shipped| / max |shipped|
+per file) and fails only on structural mismatches (shapes, NaN pattern, row indices, inputs).
 
 The data are a substitute set-up, not the paper's runs (DATA.md); the header of every CSV says so.
 
@@ -27,6 +32,7 @@ Outputs (CSV, two '#' header lines, np.loadtxt(path, delimiter=',')):
                    small soilWHC (normalized soilWHC < FD_CHECK_Z), steps FD_CHECK_STEPS
 """
 import argparse
+import atexit
 import os
 import shutil
 import subprocess
@@ -207,8 +213,32 @@ def fd_check(X, binary, workers, out_dir, check):
               f"Latin hypercube seed {SEED}. Compare with gradients.csv (step {H:g})", cols)
     if check:
         ref = read_csv(os.path.join(HERE, "fd_check_soilWHC.csv"))
-        err = np.abs(A - ref).max() / np.abs(ref).max()
-        print(f"fd_check_soilWHC.csv: max abs difference / max abs value = {err:.2e}")
+        ok, err = A.shape == ref.shape and np.array_equal(A[:, 0], ref[:, 0]), 0.0
+        if not ok:
+            print(f"FAIL: fd_check_soilWHC.csv: shape {A.shape} or row indices differ from the shipped file")
+        else:
+            ok = compare("fd_check_soilWHC.csv, soilWHC", A[:, 1:2], ref[:, 1:2], inputs=True)[0]
+            ok_d, err = compare("fd_check_soilWHC.csv, derivatives", A[:, 2:], ref[:, 2:])
+            ok = ok and ok_d
+        print(f"largest difference from the shipped files: {err:.1e} (relative to the largest value, fd_check_soilWHC.csv)")
+        return 0 if ok else 1
+    return 0
+
+
+INPUT_RTOL = 1e-8   # --check fails if a regenerated input (a seeded draw) differs by more (relative)
+
+
+def compare(name, A, ref, inputs=False):
+    """Print the difference of A from the shipped ref; (False on a structural mismatch, the difference)."""
+    if A.shape != ref.shape or not np.array_equal(np.isnan(A), np.isnan(ref)):
+        print(f"FAIL: {name}: shape {A.shape} or NaN pattern differs from the shipped {ref.shape}")
+        return False, 0.0
+    err = float(np.nanmax(np.abs(A - ref)) / np.nanmax(np.abs(ref)))
+    print(f"{name}: max abs difference / max abs value = {err:.2e}")
+    if inputs and err > INPUT_RTOL:      # the inputs are a seeded draw
+        print(f"FAIL: {name} differs from the shipped inputs by {err:.2e} > {INPUT_RTOL:g}")
+        return False, err
+    return True, err
 
 
 SUBSTITUTE = "substitute set-up, not the paper's runs (see DATA.md)"
@@ -246,13 +276,20 @@ def main():
     ap.add_argument("--sipnet", default=None,
                     help="path to the compiled SIPNET binary (default: $SIPNET, else sipnet on PATH)")
     ap.add_argument("--rows", default=None, help="subset a:b of the M samples")
-    ap.add_argument("--out", default=HERE, help="output directory")
+    ap.add_argument("--out", default=None,
+                    help="output directory (default: this directory; with --check, a temporary directory)")
     ap.add_argument("--workers", type=int, default=os.cpu_count())
     ap.add_argument("--h", type=float, default=H)
     ap.add_argument("--check", action="store_true", help="compare with the shipped files")
     ap.add_argument("--fd-check", action="store_true",
                     help="write only fd_check_soilWHC.csv (smaller-step soilWHC derivatives)")
     a = ap.parse_args()
+    if a.out is None:
+        if a.check:
+            a.out = tempfile.mkdtemp(prefix="check_")
+            atexit.register(shutil.rmtree, a.out, ignore_errors=True)
+        else:
+            a.out = HERE
     if (a.check or a.rows) and os.path.abspath(a.out) == os.path.abspath(HERE):
         sys.exit('--check and --rows need --out DIR outside this directory, so that the shipped files are not overwritten')
     binary = find_sipnet(a.sipnet)
@@ -283,10 +320,15 @@ def main():
               f"in normalized inputs (one-sided near bounds); {tag}",
               [f"d{q}/d{n}" for q in QOIS for n in NAMES])
     if a.check:
+        ok, worst = True, (0.0, "outputs.csv")
         for name, A in [("inputs.csv", Xs), ("outputs.csv", F), ("gradients.csv", G)]:
-            ref = read_csv(os.path.join(HERE, name))[rows]
-            err = np.abs(A - ref).max() / np.abs(ref).max()
-            print(f"{name}: max abs difference / max abs value = {err:.2e}")
+            good, err = compare(name, A, read_csv(os.path.join(HERE, name))[rows], inputs=name == "inputs.csv")
+            ok = good and ok
+            if name != "inputs.csv" and err >= worst[0]:
+                worst = (err, name)
+        print(f"largest difference from the shipped files: {worst[0]:.1e} (relative to the largest value, {worst[1]})")
+        return 0 if ok else 1
+    return 0
 
 
 if __name__ == "__main__":

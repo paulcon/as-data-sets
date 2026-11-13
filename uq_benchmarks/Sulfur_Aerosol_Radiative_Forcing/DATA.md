@@ -55,10 +55,10 @@ Charlson gives nominal values and relative uncertainties, not distributions. The
 
 ```bash
 python generate_data.py                          # writes the three CSVs here
-python generate_data.py --out /tmp/sulfur --check   # writes elsewhere and compares
+python generate_data.py --check                  # writes to a temporary directory and compares
 ```
 
-The shipped files were written on 2026-10-30 in a Linux container (numpy 2.5.4, Python 3.13). In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31) the run takes 0.04 s (0.2 s with Python start-up) and also prints the gradient check; `--check` finds the files differ from the shipped ones by rounding error: at most a relative 2.2e-16 (inputs) and 8.9e-16 (outputs and gradients). The notebook runs in about 8 s under nbconvert.
+The shipped files were written on 2026-10-30 in a Linux container (numpy 2.5.4, Python 3.13). In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-10-31) the run takes 0.04 s (0.2 s with Python start-up) and also prints the gradient check; `--check` finds the files differ from the shipped ones by rounding error: at most a relative 2.2e-16 (inputs) and 8.9e-16 (outputs and gradients). `--check` prints these differences and the largest of them, 8.9e-16 (relative, `outputs.csv`, in `.venv` on macOS, Python 3.11, 2026-11-12; 0.3 s with start-up); it exits with code 1 only on a structural mismatch: a missing file, a different shape or NaN pattern, or inputs that differ from the shipped ones by more than 10⁻⁸ (relative). The notebook runs in about 8 s under nbconvert.
 
 ## Accuracy
 

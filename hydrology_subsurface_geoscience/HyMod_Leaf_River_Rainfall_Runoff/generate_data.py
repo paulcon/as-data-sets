@@ -1,6 +1,7 @@
 """Write inputs.csv, outputs.csv and gradients.csv for the HyMod Leaf River data set.
 
     python generate_data.py                       # writes the three CSVs here (about 1 s)
+    python generate_data.py --check               # writes them to a temporary directory and compares
     python generate_data.py --out /tmp/hymod --check
 
 Draws M = 2000 independent uniform (plain Monte Carlo) samples of the five HyMod
@@ -10,8 +11,9 @@ writes the physical inputs, the three QoIs (NSE, mean flow, peak flow over days
 31-365) and their exact (forward-mode, almost-everywhere) gradients with
 respect to the physical parameters.
 
-`--check` compares the new files with the ones next to this script and prints
-the largest relative differences. `--forcing-from LeafCatch.txt` writes
+`--check` prints the largest differences from the shipped files and fails (exit
+status 1) only on structural mismatches (shapes, NaN pattern, inputs differing by
+more than INPUT_RTOL). Without --out it uses a temporary directory. `--forcing-from LeafCatch.txt` writes
 forcing.csv (first 365 rows of SAFE's examples/data/LeafCatch.txt, values
 unchanged) and forcing_other_years.csv (water years 1950, 1951 and 1959, used
 only by the notebook's robustness section) if they are missing, and otherwise
@@ -20,8 +22,11 @@ checks the shipped ones against it.
 Only numpy and the standard library are imported.
 """
 import argparse
+import atexit
 import os
+import shutil
 import sys
+import tempfile
 import time
 
 import numpy as np
@@ -32,6 +37,7 @@ import hymod_model as hm  # noqa: E402
 
 SEED = 2015
 M = 2000
+INPUT_RTOL = 1e-8  # inputs are deterministic draws: a larger difference means a different seed or range
 
 PROVENANCE = ('hymod_model.py (HyMod as run by SAFE; daily steps, zero initial storages), '
               f'forcing.csv days 1-365, QoIs over days {hm.WARMUP + 1}-365; written by generate_data.py')
@@ -105,10 +111,17 @@ def forcing_from(path):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
-    ap.add_argument('--out', default=HERE, help='output directory (default: this directory)')
+    ap.add_argument('--out', default=None,
+                    help='output directory (default: this directory; with --check, a temporary directory)')
     ap.add_argument('--check', action='store_true', help='compare with the CSVs in this directory')
     ap.add_argument('--forcing-from', help="path to SAFE-python's LeafCatch.txt")
     args = ap.parse_args()
+    if args.out is None:
+        if args.check:
+            args.out = tempfile.mkdtemp(prefix='check_')
+            atexit.register(shutil.rmtree, args.out, ignore_errors=True)
+        else:
+            args.out = HERE
     if os.path.abspath(args.out) == HERE and args.check:
         ap.error('--check needs --out DIR outside this directory, so that the shipped files are not overwritten')
     if args.forcing_from:
@@ -124,10 +137,25 @@ def main():
     if args.check:
         X0 = read_csv(os.path.join(HERE, 'inputs.csv'))
         f0 = read_csv(os.path.join(HERE, 'outputs.csv'))
-        G0 = read_csv(os.path.join(HERE, 'gradients.csv')).reshape(G.shape)
-        rg = np.linalg.norm(G - G0, axis=2) / np.linalg.norm(G0, axis=2)
-        print(f'inputs equal: {np.array_equal(X, X0)}; max relative difference: outputs '
-              f'{np.max(np.abs(f - f0) / np.abs(f0)):.1e}, gradients {rg.max():.1e}')
+        G0 = read_csv(os.path.join(HERE, 'gradients.csv'))
+        bad = [n for n, a, b in [('inputs.csv', X, X0), ('outputs.csv', f, f0),
+                                 ('gradients.csv', G.reshape(len(G), -1), G0)]
+               if a.shape != b.shape or not np.array_equal(np.isnan(a), np.isnan(b))]
+        for n in bad:
+            print(f'FAIL: {n}: shape or NaN pattern differs from the shipped file')
+        if bad:
+            sys.exit(1)
+        G0 = G0.reshape(G.shape)
+        rg = np.nanmax(np.linalg.norm(G - G0, axis=2) / np.linalg.norm(G0, axis=2))
+        rx, rf = np.max(np.abs(X - X0) / np.abs(X0)), np.nanmax(np.abs(f - f0) / np.abs(f0))
+        print(f'largest relative difference (elementwise; gradients: row 2-norm per QoI): inputs {rx:.1e}, '
+              f'outputs {rf:.1e}, gradients {rg:.1e}')
+        if rx > INPUT_RTOL:
+            print(f'FAIL: inputs.csv: the inputs differ from the shipped ones by more than {INPUT_RTOL:g} (relative)')
+        rel, n = max([(rx, 'inputs.csv'), (rf, 'outputs.csv'), (rg, 'gradients.csv')], key=lambda t: t[0])
+        print(f'largest difference from the shipped files: {rel:.1e} (relative, {n})')
+        if rx > INPUT_RTOL:
+            sys.exit(1)
 
 
 if __name__ == '__main__':

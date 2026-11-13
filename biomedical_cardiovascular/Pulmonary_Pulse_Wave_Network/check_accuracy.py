@@ -1,7 +1,7 @@
 """Accuracy checks for Pulmonary_Pulse_Wave_Network (needs git and g++; reruns the authors' solver).
 
-    python check_accuracy.py --work /tmp/pulmwk                 # rows 0:5, about 8 CPU-minutes
-    python check_accuracy.py --work /tmp/pulmwk --rows 0:10
+    python check_accuracy.py                                    # rows 0:5, about 8 CPU-minutes
+    python check_accuracy.py --work WORK --rows 0:10            # keep the solver build in WORK
 
 Prints, for each checked row of the shipped files:
   1. the base run again: max |p - shipped| over (p_mean, p_sys, p_dia), in mmHg;
@@ -11,11 +11,15 @@ Prints, for each checked row of the shipped files:
      central steps; the same for the pulse pressure pp = p_sys - p_dia (gradient dp_sys - dp_dia);
 and, with no solver runs, the mean-pressure check over all rows: p_mean against the Windkessel
 estimate Qbar * (R_LPA || R_RPA), R = (Rp + Rd) * R_SCALE, Qbar = mean inflow of Qin.dat.
-The solver is cloned into --work and compiled there (it is not part of this data set).
+The solver is cloned into --work (default a temporary directory, removed at the end) and compiled
+there (it is not part of this data set).
 """
 import argparse
+import atexit
 import os
+import shutil
 import sys
+import tempfile
 
 import numpy as np
 
@@ -26,10 +30,14 @@ import pulmonary_wk_driver as D  # noqa: E402
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("--work", required=True)
+    p.add_argument("--work", default=None,
+                   help="directory for the solver build (default: a temporary directory)")
     p.add_argument("--source", default=None, help="an existing clone of the authors' repository")
     p.add_argument("--rows", default="0:5")
     a = p.parse_args()
+    if a.work is None:
+        a.work = tempfile.mkdtemp(prefix="check_")
+        atexit.register(shutil.rmtree, a.work, ignore_errors=True)
     if os.path.commonpath([os.path.realpath(a.work), HERE]) == HERE:
         sys.exit("--work must be outside this directory")
     try:

@@ -198,20 +198,24 @@ sha256sum NH3_H2.yaml   # 23289472b013db8b4095448419c62996035b0f02265e0d5569b88f
 cantvenv/bin/python generate_data.py --case idt --out /tmp/nh3        # 1000 ignition samples
 cantvenv/bin/python generate_data.py --case lfs --out /tmp/nh3        # 200 flame samples
 cantvenv/bin/python generate_data.py --case nominal --out /tmp/nh3    # nominal.csv
-cantvenv/bin/python generate_data.py --case idt --rows 0:10 --out /tmp/nh3 --check   # a subset vs the shipped files
-cantvenv/bin/python generate_data.py --case lfs --rows 4:30 --out /tmp/nh3b --check  # flames: start at a run start
+cantvenv/bin/python generate_data.py --check                          # all three cases, in a temporary directory, vs the shipped files
+cantvenv/bin/python generate_data.py --case idt --rows 0:10 --check   # a subset vs the shipped files
+cantvenv/bin/python generate_data.py --case lfs --rows 4:30 --check   # flames: start at a run start
 cantvenv/bin/python check_accuracy.py                                 # the Accuracy numbers
 ```
 
-`--out` is required and must be outside this directory, so the shipped files are never overwritten. Runs are
-resumable (`<out>/<case>_rows.txt`; `--max-seconds` stops cleanly between rows). `--check` compares with the
-shipped rows. Ignition delay and `nominal.csv`: relative maximum difference 1e-6 for the inputs and outputs,
-relative 2-norm 1e-3 per gradient row. Flames: per row, the relative difference of S_u and the relative 2-norm
-difference of the gradient; the check reports how many rows agree to 1e-6 and 1e-3 (the same solver history) and
-passes when every row is within 5e-2 in S_u and 2e-1 in the gradient. The looser flame tolerance is the spread a
-different solver history produces ("Path dependence" under Accuracy: up to 3.2 % in S_u and 8.3e-2 in the
-gradient, row 24). A pass with rows above 1e-6 means the same flame to the accuracy of its grid, not the same
-digits.
+`--out` is required and must be outside this directory, so the shipped files are never overwritten; with
+`--check` it defaults to a temporary directory (removed at the end), and `--case` to all three cases in turn. Runs are
+resumable (`<out>/<case>_rows.txt`; `--max-seconds` stops cleanly between rows). `--check` with `--max-seconds`
+needs `--out DIR`; a stopped check exits 1 without comparing. `--check` prints the largest differences from the
+shipped rows: for ignition delay and `nominal.csv`, the relative maximum difference of the outputs and the relative
+2-norm per gradient row; for the flames, per row, the relative difference of S_u and the relative 2-norm
+difference of the gradient, with the number of rows that agree to 1e-6 and 1e-3 (the same solver history). A
+different solver history gives up to 3.2 % in S_u and 8.3e-2 in the gradient ("Path dependence" under Accuracy,
+row 24), so rows above 1e-6 can be the same flame to the accuracy of its grid, not the same digits. The largest
+differences observed are below (Linux container, Python 3.13, Cantera 3.2.0; Cantera is not installed on the macOS
+machine, so nothing was measured there). `--check` exits 1 only on a structural mismatch: a different shape or set
+of nan entries, or inputs that differ by more than a relative 1e-8.
 
 **Reproducing the flame rows exactly.** The shipped flame rows were written in seven runs, each a new process and
 so a new model instance, that started at rows 0, 4, 51, 55, 92, 133 and 166 (rows 0–3 in a timing run, then
@@ -223,7 +227,7 @@ reproduced rows 0–26 to 3e-13 in S_u and 2e-11 in the gradients (the rounding 
 container restart stopped it; `--rows 166:200` (the last run, which includes rows 187 and 192) reproduces all
 34 rows to the written digits (432 s). A run that starts elsewhere solves the same flames after a
 different sequence: `--rows 20:30` gives rows 24 and 26 that differ by −3.22 % and +1.73 % in S_u (gradients
-3.7e-2 and 1.4e-2), with the other eight within 1.4e-5, and passes the flame tolerance.
+3.7e-2 and 1.4e-2), with the other eight within 1.4e-5.
 
 Provenance of the shipped files: generated 2026-11-08 in three sessions separated by container restarts (ignition
 rows 0–161, then rows 162–999 and flame rows 0–54, then flame rows 55–199 and `nominal.csv`; the Cantera venv was
@@ -232,11 +236,11 @@ six other jobs; load average 3–8), Python 3.13.18, Cantera 3.2.0, numpy 2.5.4,
 `generate_data.py` as shipped, one process at a time under `nice`, in chunks of at most 9 minutes. Wall time
 about 1 h 55 min (heavily shared CPU; the logged times per row sum to 4138 s for the ignition rows and 2598 s for
 196 flame rows); CPU time about 45 minutes (measured with `--check` runs: 19.6 s of user time for 10 ignition rows
-and 30.8 s for 5 flame rows, the latter including the nominal flame that every flame run solves first). After the
-data were written, the driver was changed in ways that do not touch the generating path (`idt()` now restores the
-gas state on return, so that a later flame in the same instance keeps its pressure; a `refine` argument of
-`lfs()` now takes effect; clearer error messages), and `generate_data.py` gained the new instance at the run
-starts above and the per-row flame check. With the shipped scripts, `--check` reproduces ignition rows 0–2 and
+and 30.8 s for 5 flame rows, the latter including the nominal flame that every flame run solves first). The shipped
+driver and `generate_data.py` differ from the ones that wrote the data only outside the generating path: `idt()`
+restores the gas state on return, so that a later flame in the same instance keeps its pressure; a `refine`
+argument of `lfs()` takes effect; the error messages are clearer; and `generate_data.py` has the new instance at
+the run starts above and the per-row flame check. With the shipped scripts, `--check` reproduces ignition rows 0–2 and
 `nominal.csv` by 0, and flame rows as described above.
 
 ## Accuracy

@@ -152,6 +152,7 @@ python generate_data.py shape      --l2sea-home L2SEA --raw RAW --max-minutes 17
 python generate_data.py g6         --l2sea-home L2SEA --raw RAW --max-minutes 17   # repeat until done
 python generate_data.py diag       --l2sea-home L2SEA --raw RAW --max-minutes 17
 python generate_data.py assemble   --raw RAW --n 384 --out .
+python generate_data.py --check    --l2sea-home L2SEA        # rerun rows 0, 100, 383; compare with outputs.csv
 ```
 
 `--l2sea-home` may be replaced by the environment variable `L2SEA_HOME`. Without a build of L2-Sea every
@@ -159,7 +160,7 @@ step but `assemble` stops with exit status 3 and a message that says what to bui
 (checked in `.venv`). `sweep`, `shape`, `g6` and `diag` with `--check K` rerun K evenly spaced stored runs
 instead and print the largest relative difference from the stored values; they write nothing to this
 directory. `assemble` writes the CSVs into `--out` (default: this directory) and checks that the 41 `diag`
-reruns equal `outputs.csv` exactly. L2-Sea is not installed in `.venv`, so none of these steps was run there.
+reruns equal `outputs.csv` exactly. `--check` without a step reruns rows 0, 100 and 383 of the design on G7 and prints the largest relative difference (elementwise) of each from `outputs.csv` at its 9 significant digits (it writes nothing). Of these rows, row 0 is one of the 41 `diag` reruns, which reproduced `outputs.csv` exactly in the original run (Linux, GNU Fortran 13.3.0, LAPACK/BLAS 3.12.0); rows 100 and 383 are not among them. `--check` exits with status 1 only on a structural mismatch: `inputs.csv` and `outputs.csv` of shapes that do not match the design, `inputs.csv` differing from the Sobol' design by more than 1e-8 (relative), or a run that fails where the shipped row has numbers, or the reverse. L2-Sea is not installed in `.venv`, so none of these steps was run there.
 
 **Provenance of the shipped files** (original run, in a Linux container with Python 3.13; not repeatable
 without a build of L2-Sea). L2-Sea commit `100da62ea5ee4647b3312ffb999b2ef22649110a` (2026-03-31), built

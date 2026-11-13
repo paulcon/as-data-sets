@@ -143,11 +143,18 @@ the 24 printed indices agree to within 0.1.
 # a separate venv for SMRT (the notebook's venv does not need it)
 python3 -m venv svenv && svenv/bin/pip install smrt==1.5.1
 svenv/bin/python generate_data.py                                         # 400 samples, 2 processes
-svenv/bin/python generate_data.py --rows 173:178 --out /tmp/snow --check  # a subset, compared with the files here
+svenv/bin/python generate_data.py --check                                 # all 400 samples, compared with the files here
+svenv/bin/python generate_data.py --rows 173:178 --check                  # a subset, compared with the files here
 svenv/bin/python check_accuracy.py                                        # the Accuracy numbers
 ```
 
-`generate_data.py` stops if the installed SMRT is not 1.5.1 (override with `--any-smrt`).
+`generate_data.py` stops if the installed SMRT is not 1.5.1 (override with `--any-smrt`). `--check` writes into a
+temporary directory (or `--out DIR`) and prints, for each file, the largest difference from the shipped file
+relative to the file's largest value. On the platform of the shipped files (below) the largest differences
+observed were 0 (`--rows 173:178`) and 4e-11 for `gradients.csv` (`--rows 175:176`); SMRT is not installed on
+the macOS (Python 3.11) machine, so no difference was measured there. `--check` exits 1 only on a structural
+mismatch: a different shape or NaN pattern, any change in `fd_jumps.csv`, or inputs that differ by more than a
+relative 1e-8.
 
 **Provenance of the shipped files.** Generated 2026-10-31, 19:40:06–19:49:39 UTC, 573 s wall time on two
 processes of a shared 2-core Linux x86-64 container (about 0.2 s per SMRT run of 12 channels on one core).

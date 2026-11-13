@@ -34,8 +34,8 @@ Prints, beside each value DATA.md quotes:
    and /6, and for /4 with an observation sd of 0.1 m instead of 1/weight = 1 m for the heads.
 
 The computation is deterministic and writes nothing in this directory. Needs numpy and MODFLOW-2005
-1.12.00 (mf2005dbl on the PATH or MF2005DBL=/path/to/mf2005dbl); without it the script stops with
-an error saying what to install.
+1.12.00 (mf2005dbl on the PATH or MF2005DBL=/path/to/mf2005dbl); without it the script exits with
+status 3 and says what to install.
 """
 import argparse
 import os
@@ -110,7 +110,8 @@ def main():
     try:
         M.find_mf2005()
     except RuntimeError as e:
-        sys.exit(str(e))
+        print(e, file=sys.stderr)
+        sys.exit(3)
     d = tempfile.mkdtemp(prefix="frey_chk_")
     try:
         if a.only == 5:

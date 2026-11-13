@@ -2,7 +2,10 @@
 
 Run from anywhere with the repository's Python 3 environment:
 
-    python generate_data.py --workers 6          # the shipped file (see DATA.md for the time)
+    python generate_data.py --workers 6          # the shipped files (see DATA.md for the time)
+    python generate_data.py --check              # a short run (CHECK_SUBSET) in a temporary directory,
+                                                  # compared with the start of the shipped chains
+    python generate_data.py --check --full       # the full run, compared with the shipped files (hours)
     python generate_data.py --n-van 2000 --n-cached 200 --n-recompute 100 --grid-draws 20 \\
         --out DIR                                 # a short run, written to DIR
     python generate_data.py --reuse OLD           # copy finished jobs from OLD (a directory
@@ -40,13 +43,25 @@ Every job runs in one process; --workers sets how many jobs run at once. The
 output does not depend on --workers. Each stream draws step by step, so a
 shorter run reproduces the first steps of a longer one (the grid draws are one
 block, so the first K of a shorter run equal the first K of a longer one).
+
+`--check` uses that: it runs CHECK_SUBSET (unless the lengths are given) into a temporary
+directory (unless --out is given; never this one), compares every stored array with the
+same leading steps or draws of the shipped arrays (the wall times, versions and, in a
+shorter run, the vanilla chains' last states are not compared), prints the largest
+differences from the shipped files (for the accept flags, how many differ and the first chain
+and step where they do: a last-bit difference can flip one Metropolis decision) and fails only
+on structural mismatches (a missing array, shapes, NaN pattern, unequal seeds, indices or other
+non-float arrays, inputs: CHECK_INPUTS and the chains' starting points beyond INPUT_RTOL).
 """
 import argparse
+import atexit
 import hashlib
 import os
 import platform
 import re
+import shutil
 import sys
+import tempfile
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
@@ -124,6 +139,13 @@ GRID_HALF = np.array([1.0, 1.7])         # 5 standard deviations of the pilot ch
 GRID_N = 21            # points per axis (the coarse grid is every other point)
 GRID_DRAWS_FINE = 160  # draws of z at every grid point
 GRID_DRAWS = 2560      # draws of z at the coarse points
+
+# --check: the short run of plain --check (the first steps of every chain and the first draws of
+# the grid); differences are max |new - shipped| / max |shipped| per array
+CHECK_SUBSET = {'n_van': 1000, 'n_cached': 100, 'n_recompute': 50, 'grid_draws': 20}
+CHECK_INPUTS = ('x_true', 'X_grad', 'grid_y1', 'grid_y2')  # deterministic draws and the grid (and *_x0, *_y0)
+INPUT_RTOL = 1e-8  # --check: the inputs may differ from the shipped ones by round-off only
+FULL_LENGTHS = {'n_van': N_VAN, 'n_cached': N_CACHED, 'n_recompute': N_RECOMPUTE, 'grid_draws': GRID_DRAWS}
 
 
 def streams(seed=SEED):
@@ -252,21 +274,102 @@ def _load_part(path, fp, job):
         return out, float(z['dt'])
 
 
+def compare_with_shipped(new, ref):
+    """Compare the arrays of a run with the leading steps or draws of the shipped ones.
+
+    Prints the largest differences; returns False on a structural mismatch."""
+    worst = {'float64': (-1.0, ''), 'float32': (-1.0, '')}
+    bad, n_cmp, flips = [], 0, []
+    for key, a in new.items():
+        if key in ('wall', 'wall_total', 'versions'):
+            continue
+        b = ref.get(key)
+        if b is None:
+            bad.append(f'{key} (not in the shipped files)')
+            continue
+        if key.startswith('grid_f_'):
+            b = b[:, :, :a.shape[2]]
+        elif a.ndim and key.split('_')[0] in ('vanilla', 'cached', 'recompute'):
+            if key.endswith('_last') and len(new[key[:-len('last')] + 'accept']) != len(ref[key[:-len('last')] + 'accept']):
+                continue                  # the last state of a shorter chain is not stored
+            b = b[:len(a)] if len(a) <= len(b) else b
+        if a.shape != b.shape:
+            bad.append(f'{key} (shape {a.shape}, shipped {b.shape})')
+            continue
+        n_cmp += 1
+        if a.dtype.kind == 'f':
+            if not np.array_equal(np.isnan(a), np.isnan(b)):
+                bad.append(f'{key} (NaN pattern differs)')
+                continue
+            kind = 'float32' if a.dtype == np.float32 else 'float64'
+            scale = float(np.nanmax(np.abs(b))) if b.size else 0.0
+            d = float(np.nanmax(np.abs(a.astype(np.float64) - b))) / (scale or 1.0) if b.size else 0.0
+            if (key in CHECK_INPUTS or key.endswith(('_x0', '_y0'))) and d > INPUT_RTOL:
+                bad.append(f'{key} (an input, {d:.1e} > {INPUT_RTOL:g})')
+            if d >= worst[kind][0]:
+                worst[kind] = (d, key)
+        elif key.endswith('_accept'):
+            diff = np.flatnonzero(a != b)
+            if diff.size:
+                flips.append((key, diff.size, int(diff[0])))
+        elif not np.array_equal(a, b):
+            bad.append(f'{key} (not equal)')
+    print(f'compared {n_cmp} arrays with the shipped files (max |new - shipped| / max |shipped|):')
+    for kind in ('float64', 'float32'):
+        print(f'  {kind}: largest {worst[kind][0]:.1e} ({worst[kind][1]})')
+    if flips:
+        first = min(flips, key=lambda f: f[2])
+        print(f'  accept flags: {sum(f[1] for f in flips)} differ, in {len(flips)} chains; first at step {first[2]} '
+              f'of {first[0][:-len("_accept")]}')
+    else:
+        print('  accept flags: all equal')
+    print(f'  others (seeds, indices): {"all equal" if not any("not equal" in m for m in bad) else "NOT ALL EQUAL"}')
+    d, key = max(worst.values())
+    print(f'largest difference from the shipped files: {d:.1e} (relative to the largest value, {key})')
+    for m in bad:
+        print(f'FAIL: {m}')
+    return not bad
+
+
 def main(argv=None):
-    p = argparse.ArgumentParser(description=__doc__.split('\n')[0])
-    p.add_argument('--n-van', type=int, default=N_VAN)
-    p.add_argument('--n-cached', type=int, default=N_CACHED)
-    p.add_argument('--n-recompute', type=int, default=N_RECOMPUTE)
-    p.add_argument('--grid-draws', type=int, default=GRID_DRAWS,
-                   help=f'draws at the coarse grid points; the fine points get '
+    p = argparse.ArgumentParser(description=__doc__.split('\n')[0], allow_abbrev=False)
+    p.add_argument('--n-van', type=int, default=None, help=f'steps per vanilla chain (default {N_VAN})')
+    p.add_argument('--n-cached', type=int, default=None,
+                   help=f'steps per cached-ghat chain (default {N_CACHED})')
+    p.add_argument('--n-recompute', type=int, default=None,
+                   help=f'steps per recompute-ghat chain (default {N_RECOMPUTE})')
+    p.add_argument('--grid-draws', type=int, default=None,
+                   help=f'draws at the coarse grid points (default {GRID_DRAWS}); the fine points get '
                         f'min(this, {GRID_DRAWS_FINE})')
     p.add_argument('--workers', type=int, default=6)
     p.add_argument('--reuse', metavar='FILE',
                    help='copy chains of the same seed, data and length from FILE instead of running them')
-    p.add_argument('--out', default=OUT, help='directory for the chain files (default: this one)')
+    p.add_argument('--out', default=None,
+                   help='directory for the chain files (default: this one; with --check, a temporary directory)')
     p.add_argument('--checkpoint', metavar='DIR',
                    help="directory for finished jobs (default: OUT with '_parts' for '.npz')")
+    p.add_argument('--check', action='store_true',
+                   help='compare the run with the shipped files; without --full and without lengths given, '
+                        'a short run (%s)' % ', '.join(f'{k} {v}' for k, v in CHECK_SUBSET.items()))
+    p.add_argument('--full', action='store_true', help='with --check: the full-length run')
     args = p.parse_args(argv)
+    if args.full and not args.check:
+        p.error('--full is an option of --check')
+    lengths = CHECK_SUBSET if args.check and not args.full else FULL_LENGTHS
+    for k, v in lengths.items():
+        if getattr(args, k) is None:
+            setattr(args, k, v)
+    if args.out is None:
+        if args.check:
+            args.out = tempfile.mkdtemp(prefix='check_')
+            atexit.register(shutil.rmtree, args.out, ignore_errors=True)
+        else:
+            args.out = OUT
+    here = os.path.realpath(HERE)
+    if args.check and os.path.commonpath([os.path.realpath(args.out), here]) == here:
+        p.error('--check needs --out DIR outside this directory, so that the shipped files are not overwritten')
+    if args.check:
+        print('--check: ' + ', '.join(f'{k} {getattr(args, k)}' for k in FULL_LENGTHS), flush=True)
 
     t0 = time.perf_counter()
     rng = streams()
@@ -382,6 +485,8 @@ def main(argv=None):
         print(f'{kind}: mean acceptance {acc:.4f}', flush=True)
     print(f'wrote {len(paths)} files in {args.out} ({sum(os.path.getsize(q) for q in paths) / 1e6:.1f} MB) in '
           f'{out["wall_total"]:.0f} s = {out["wall_total"] / 60:.1f} min', flush=True)
+    if args.check and not compare_with_shipped(load_chains(args.out), load_chains(HERE)):
+        return 1
 
 
 def _fields(kind, k):

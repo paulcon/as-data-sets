@@ -169,11 +169,18 @@ export JULIA=/path/to/julia JULIA_PROJECT=ENV BFIELD=/path/to/bfield_spt100.csv
 python generate_data.py design --out DIR     # LHS design and DIR/julia_inputs.csv (seconds)
 python generate_data.py run --out DIR        # HallThruster.jl, one process; resumable (rerun to continue)
 python generate_data.py assemble --out DIR   # cathode + plume components, writes DIR/hall_thruster_spt100.csv
+python generate_data.py --check              # `check` (below), then the three stages in a temporary directory; prints the largest differences
 ```
 
 `DIR` must be a directory other than this one: the shipped CSV is the record of the runs, and a new
 file is compared with it, not copied over it. Without Julia, HallThruster.jl or the B-field file, the
-`run` stage exits with status 3 and says what to install. Per the repository's rule for outside codes,
+`run` stage exits with status 3 and says what to install. `--check` runs the `check` stage below, then
+design, run and assemble for all 440 rows in a temporary directory (or in `--out DIR`), and compares every
+column of the new CSV except `wall_s` with the shipped one, printing the largest relative
+differences (no rerun has been compared here: Julia is not installed in `.venv`). It does not judge them; it
+exits with status 1 only on a structural mismatch: a different shape, NaN pattern, status column or
+oscillation flag, or inputs that differ by more than 1e-8 of their column's largest magnitude. Without Julia it exits with status 3
+after the `check` stage. Per the repository's rule for outside codes,
 the runs are repeated only if a problem is found in the shipped data.
 
 **Run time of the shipped runs** (external run): the 440 HallThruster.jl runs took 5.0–17.6 s each (median
@@ -188,9 +195,12 @@ so all of them used the settings above; `check_accuracy.py` uses them for its re
 **Without Julia.** `python generate_data.py check` redraws the design and recomputes the cathode and
 plume columns and the oscillation flag from the stored discharge outputs; it only reads the shipped file.
 In the repo's `.venv` (Python 3.11.16, numpy 2.4.6, scipy 1.17.1, macOS; 2026-11-02) it runs in about 3 s
-and prints: inputs max rel diff 4.0e-09 (the 11 significant digits written); Vcc 4.5e-11; Tc 1.8e-11;
-j_peak 4.4e-11; phi_d 4.7e-11; oscillating flag reproduced: True (20 runs). These are rounding-level
-differences (the file holds 11 significant digits), so the design and the numpy components reproduce.
+and prints the largest relative differences from the file written on Linux: inputs 3.4e-11 of each
+column's largest magnitude (the 11 significant digits written); elementwise, Vcc 4.5e-11, Tc 1.8e-11,
+j_peak 4.4e-11, phi_d 4.7e-11; oscillating flag reproduced: True (20 runs). These are rounding-level differences, so the design and the numpy components
+reproduce. `check` prints these differences and does not judge them; it exits with status 1 only on a
+structural mismatch: a different shape or oscillation flag, or inputs that differ by more than 1e-8 of their column's largest
+magnitude.
 
 ## Accuracy
 

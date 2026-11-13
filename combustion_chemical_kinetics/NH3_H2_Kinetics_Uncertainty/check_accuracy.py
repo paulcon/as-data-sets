@@ -198,7 +198,8 @@ def main():
     try:
         D.mech_path(a.mech)
     except FileNotFoundError as e:
-        sys.exit(str(e))
+        print(e, file=sys.stderr)
+        sys.exit(3)
     some = a.quick or a.flames or a.adjoint or a.path
     do = {k: not some for k in (1, 2, 3, 4, 5, 6, 7)}
     if a.quick:

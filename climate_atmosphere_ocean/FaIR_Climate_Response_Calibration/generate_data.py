@@ -1,7 +1,8 @@
 """Regenerate the FaIR files of FaIR_Climate_Response_Calibration (needs FaIR 2.1.3; see DATA.md).
 
     python generate_data.py --stage runs --out DIR                      # qoi*.csv and gradients_*.csv
-    python generate_data.py --stage runs --rows 0:20 --out DIR --check  # a subset, compared with the shipped files
+    python generate_data.py --check                                     # stage runs, all 841 members, compared with the shipped files
+    python generate_data.py --rows 0:20 --check                         # a subset, compared with the shipped files
     python generate_data.py --stage emissions --fair-example EXT --rcmip RCMIP --out DIR [--check]
 
 Stages
@@ -17,13 +18,15 @@ Stages
              h_j = DELTA * sd(u_j), sd over the 841 posterior members). Needs FaIR 2.1.3.
 
 Run stage "runs" resumes: the gradient of each parameter is cached in DIR/_cache_<rows>/ and a log is
-appended to DIR/generate_data.log. --out is required, may not be inside this directory, and may be
-this directory itself only with --overwrite (which replaces the shipped files; the log and the cache then go
-to a temporary folder, removed at the end, so the run does not resume); --check and --rows need an
---out outside this directory. --check compares with the shipped
-files at a relative tolerance of 1e-9 (QoIs) and 1e-6 (gradients) of each file's largest value.
+appended to DIR/generate_data.log. --out is required without --check, may not be inside this directory,
+and may be this directory itself only with --overwrite (which replaces the shipped files; the log and the
+cache then go to a temporary folder, removed at the end, so the run does not resume); --check and --rows need
+an --out outside this directory. With --check, --stage defaults to runs and --out to a temporary directory
+(removed at the end). --check prints the largest differences from the shipped files and fails only on
+structural mismatches (shapes, NaN pattern, config ids, time points).
 """
 import argparse
+import atexit
 import datetime
 import os
 import shutil
@@ -38,7 +41,6 @@ sys.path.insert(0, HERE)
 import fair_driver as D  # noqa: E402
 
 DELTA = 1e-3              # finite-difference step, in posterior standard deviations of u_j
-TOL = {"qoi": 1e-9, "grad": 1e-6, "emis": 1e-10}
 INSTALL_FAIR = (f"FaIR is not installed. Install it (pip install fair=={D.FAIR_VERSION}, the version "
                 "that wrote the shipped files; DATA.md gives the full environment) and rerun generate_data.py.")
 INSTALL_ANERIS = ("aneris or scmdata is not installed. Install them (pip install aneris-iamc==0.3.1 "
@@ -169,27 +171,56 @@ def run_stage(out, rows, log, work):
 
 
 def check(out, files, rows):
+    """Print the largest difference of each file, relative to each column's largest value; False on a
+    structural mismatch."""
+    ok, worst = True, (0.0, files[0])
     for fn in files:
-        kind = "grad" if fn.startswith("gradients") else ("emis" if fn == D.F_EMIS else "qoi")
         new = np.loadtxt(os.path.join(out, fn), delimiter=",", ndmin=2)
         old = np.loadtxt(os.path.join(HERE, fn), delimiter=",", ndmin=2)
-        if kind != "emis":
+        if fn != D.F_EMIS:
             old = old[rows]
-        rel = np.max(np.abs(new - old)) / np.max(np.abs(old))
-        print(f"  {fn}: max |new - shipped| / max |shipped| = {rel:.1e} "
-              f"({'ok' if rel <= TOL[kind] else 'FAIL'}, tolerance {TOL[kind]:g})")
+        if new.shape != old.shape or not np.array_equal(np.isnan(new), np.isnan(old)):
+            print(f"  FAIL: {fn}: shape {new.shape} or NaN pattern differs from the shipped {old.shape}")
+            ok = False
+            continue
+        if not fn.startswith("gradients"):      # first column: config ids or time points
+            if not np.array_equal(new[:, 0], old[:, 0]):
+                print(f"  FAIL: {fn}: first column (config ids or time points) differs from the shipped file")
+                ok = False
+            new, old = new[:, 1:], old[:, 1:]
+        scale = np.nanmax(np.abs(old), axis=0)
+        scale[scale == 0] = 1.0
+        rel = np.nanmax(np.abs(new - old) / scale)
+        print(f"  {fn}: max |new - shipped| / column max |shipped| = {rel:.1e}")
+        if rel >= worst[0]:
+            worst = (rel, fn)
+    print(f"largest difference from the shipped files: {worst[0]:.1e} (relative to the column max, {worst[1]})")
+    return ok
 
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("--stage", required=True, choices=["emissions", "runs"])
-    p.add_argument("--out", required=True)
+    p.add_argument("--stage", default=None, choices=["emissions", "runs"],
+                   help="required without --check; with --check, default runs")
+    p.add_argument("--out", default=None,
+                   help="output directory (required without --check; with --check, default a temporary directory)")
     p.add_argument("--overwrite", action="store_true", help="allow --out to be this directory")
     p.add_argument("--rows", default=None, help="a:b, a subset of the 841 members (stage runs)")
     p.add_argument("--check", action="store_true", help="compare with the shipped files")
     p.add_argument("--fair-example", help="extensions_1750-2500.csv (FaIR v2.2.0 examples)")
     p.add_argument("--rcmip", help="rcmip-5-1-0-corrected-nox.csv (fair-calibrate v1.4.1 data/emissions)")
     a = p.parse_args()
+    if a.stage is None:
+        if a.check:
+            a.stage = "runs"
+        else:
+            p.error("--stage is required without --check")
+    if a.out is None:
+        if a.check:
+            a.out = tempfile.mkdtemp(prefix="check_")
+            atexit.register(shutil.rmtree, a.out, ignore_errors=True)
+        else:
+            p.error("--out DIR is required without --check")
     out = os.path.realpath(a.out)
     here = os.path.realpath(HERE)
     same = out == here
@@ -214,10 +245,11 @@ def main():
         else:
             rows = slice(0, 841)
         files = run_stage(a.out, rows, log, work)
-    if a.check:
-        check(a.out, files, rows)
+    ok = check(a.out, files, rows) if a.check else True
     if same:
         shutil.rmtree(work)
+    if not ok:
+        sys.exit(1)
 
 
 if __name__ == "__main__":

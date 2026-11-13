@@ -1,7 +1,9 @@
 """Regenerate outputs.csv and gradients.csv from the 1000 stored inputs in inputs.csv.
 
     python generate_data.py                      # all 1000 samples, 3 processes, writes here
-    python generate_data.py --rows 0:20 --out /tmp/hiv --check
+    python generate_data.py --check              # samples 0-49 vs the shipped files
+    python generate_data.py --check --full       # all 1000 samples vs the shipped files
+    python generate_data.py --rows 0:20 --out DIR --check
 
 For each row of inputs.csv (physical parameters) this computes T(t) at the 19
 times in TIMES with `HIV_model.trajectory`, and the gradient of each T(t_i)
@@ -15,17 +17,23 @@ are stored data. Samples are independent, so `--workers` only changes the run
 time, never the numbers. The 2026 run took 33 min on three processes (about
 4 s of CPU per sample).
 
-`--check` compares the new files with the ones next to this script and prints
-the largest relative differences. `--check` and `--rows` need `--out` outside this
-directory, so that the shipped files are not overwritten. inputs.csv is never
+`--check` prints the largest differences from the files next to this script (relative: outputs
+elementwise, gradients in the 2-norm of each time's row) and fails only on structural mismatches
+(shapes, NaN pattern, a different set of zero-gradient rows).
+Without --rows it checks the first 50 samples, or all of them with --full. `--check`
+and `--rows` need `--out` outside this directory, so that the shipped files are not
+overwritten; `--check` without `--out` writes into a temporary directory and removes it. inputs.csv is never
 rewritten here (it cannot be redrawn); with `--out` elsewhere a copy is written there.
 
 Only numpy, scipy and the standard library are imported.
 """
 import argparse
+import atexit
 import multiprocessing as mp
 import os
+import shutil
 import sys
+import tempfile
 import time
 
 import numpy as np
@@ -39,6 +47,8 @@ TIMES = np.array([24, 38, 40, 45, 50, 55, 65, 90, 140, 500, 1000, 1600, 1700, 18
                   2200, 2400, 2800, 3400])
 
 H = 3e-4  # central finite-difference step in normalized coordinates
+
+QUICK_ROWS = 50      # samples checked by --check without --rows or --full
 
 PROVENANCE = ('HIV_model.py (solve_ivp LSODA, rtol = atol = 1e-10, T floor 0.1); '
               'gradients w.r.t. normalized inputs x = (2p - (upper + lower))/(upper - lower), '
@@ -99,14 +109,47 @@ def write(out, X, f, G):
                       + ','.join(f'dT({s})/d{n}' for s in t for n in names))
 
 
+def compare(f, G, f0, G0):
+    """Print the largest differences of f, G from the shipped f0, G0; return False on a structural mismatch."""
+    if f.shape != f0.shape or G.shape != G0.shape:
+        print(f'shapes {f.shape}, {G.shape} differ from the shipped {f0.shape}, {G0.shape}: FAIL')
+        return False
+    ok = True
+    if not (np.array_equal(np.isnan(f), np.isnan(f0)) and np.array_equal(np.isnan(G), np.isnan(G0))):
+        print('NaN pattern differs from the shipped files: FAIL')
+        ok = False
+    nz = np.linalg.norm(G0, axis=2) > 0
+    if not np.array_equal(np.linalg.norm(G, axis=2) == 0, ~nz):
+        print('zero-gradient rows differ from the shipped file: FAIL')
+        ok = False
+    rf = np.nanmax(np.abs(f - f0)/np.abs(f0), initial=0.)
+    rg = np.nanmax(np.linalg.norm(G - G0, axis=2)[nz]/np.linalg.norm(G0, axis=2)[nz], initial=0.)
+    print(f'largest relative difference from the shipped files: outputs {rf:.1e} (elementwise), '
+          f'gradients {rg:.1e} (2-norm of each nonzero row)')
+    r, where = max((rf, 'outputs.csv'), (rg, 'gradients.csv'))
+    print(f'largest difference from the shipped files: {r:.1e} (relative, {where})')
+    return ok
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
-    ap.add_argument('--rows', default=':', help='row slice of inputs.csv, e.g. 0:20 (default all)')
+    ap.add_argument('--rows', default=None,
+                    help=f'row slice of inputs.csv, e.g. 0:20 (default all; with --check, 0:{QUICK_ROWS})')
     ap.add_argument('--workers', type=int, default=3)
-    ap.add_argument('--out', default=HERE, help='output directory (default: this directory)')
+    ap.add_argument('--out', default=None,
+                    help='output directory (default: this directory; with --check, a temporary directory)')
     ap.add_argument('--check', action='store_true',
                     help='compare with the CSVs in this directory')
+    ap.add_argument('--full', action='store_true', help='with --check and no --rows: check all samples')
     args = ap.parse_args()
+    if args.out is None:
+        if args.check:
+            args.out = tempfile.mkdtemp(prefix='check_')
+            atexit.register(shutil.rmtree, args.out, ignore_errors=True)
+        else:
+            args.out = HERE
+    if args.rows is None:
+        args.rows = f'0:{QUICK_ROWS}' if args.check and not args.full else ':'
     if os.path.abspath(args.out) == HERE and (args.check or args.rows != ':'):
         ap.error('--check and --rows need --out DIR outside this directory, so that the shipped files are not overwritten')
 
@@ -124,18 +167,15 @@ def main():
             if (i + 1) % 50 == 0 or i + 1 == len(X):
                 print(f'{i + 1}/{len(X)} samples, {time.perf_counter() - t0:.0f} s', flush=True)
     write(args.out, X, f, G)
-    print(f'wrote {args.out}: {time.perf_counter() - t0:.0f} s, '
+    print(f'wrote {args.out} (rows {args.rows}): {time.perf_counter() - t0:.0f} s, '
           f'{(f[:, -1] <= hm.T_FLOOR).sum()} samples at the floor at t = {TIMES[-1]}', flush=True)
 
     if args.check:
         f0 = read_csv(os.path.join(HERE, 'outputs.csv'))[a:b]
-        G0 = read_csv(os.path.join(HERE, 'gradients.csv'))[a:b].reshape(G.shape)
-        rf = np.abs(f - f0)/np.abs(f0)
-        nz = np.linalg.norm(G0, axis=2) > 0
-        rg = np.linalg.norm(G - G0, axis=2)[nz]/np.linalg.norm(G0, axis=2)[nz]
-        print(f'max relative difference: outputs {rf.max():.1e}, gradients {rg.max():.1e} '
-              f'(rows with a nonzero gradient); zero-gradient rows equal: '
-              f'{np.array_equal(np.linalg.norm(G, axis=2) == 0, ~nz)}')
+        G0 = read_csv(os.path.join(HERE, 'gradients.csv'))[a:b]
+        G0 = G0.reshape(len(G0), *G.shape[1:])
+        if not compare(f, G, f0, G0):
+            sys.exit(1)
 
 
 if __name__ == '__main__':

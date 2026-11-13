@@ -14,17 +14,22 @@ baseline_warmstart.json (PROCESS v3.4.2 output, MIT; R0 = 8.356952988650034 m). 
 kept; a run that PROCESS does not declare converged (ifail != 1) stays in the file with
 converged = 0.
 
-Usage (one process; resumable; each call stops after --cpu-budget CPU seconds). --work is required:
-PROCESS writes its scratch files (results.jsonl, MFILEs, process.log) there, never in this directory.
+Usage (one process; resumable; each call stops after --cpu-budget CPU seconds). --work is required
+except for check: PROCESS writes its scratch files (results.jsonl, MFILEs, process.log) there, never
+in this directory.
     python generate_data.py run --n 128 --cpu-budget 1080 --work <scratch dir>
     python generate_data.py assemble --work <scratch dir>        # writes demo_runs.csv
+    python generate_data.py --check                               # = check --rows 0 in a temporary --work
     python generate_data.py check --rows 0,5 --work <scratch dir> # rerun rows, compare
     python generate_data.py baseline --work <scratch dir>         # recompute the warm start
 Add --recompute-baseline to run/check to warm-start from a recomputed baseline (written to
 <scratch dir>/baseline.json) instead of the shipped baseline_warmstart.json; in another
 numpy/scipy the recomputed one need not be bitwise identical, and R0 depends on the start.
+`check` without --work uses a temporary directory and removes it. --check prints the largest differences
+from the shipped files (relative difference of R0) and fails (exit status 1) only on structural mismatches
+(an ifail status or a NaN pattern that differs from the stored row).
 """
-import argparse, importlib.util, json, os, sys, time, platform
+import argparse, atexit, importlib.util, json, os, shutil, sys, tempfile, time, platform
 
 import numpy as np
 from scipy.stats import qmc
@@ -155,6 +160,7 @@ def do_assemble(a):
 
 def do_check(a):
     data = np.loadtxt(os.path.join(HERE, "demo_runs.csv"), delimiter=",")
+    ok, diffs = True, []
     base = baseline(a.work, a.recompute_baseline)
     warm = {k: v for k, v in base["itv"].items() if k != "rmajor"}
     for i in [int(s) for s in a.rows.split(",")]:
@@ -164,20 +170,44 @@ def do_check(a):
         print(f"row {i}: stored R0 {data[i, 9]:.10f} conv {data[i, 7]:.0f} | rerun R0 "
               f"{res['rmajor']:.10f} ifail {res['ifail']:.0f} | rel diff "
               f"{abs(res['rmajor'] - data[i, 9]) / data[i, 9]:.2e}", flush=True)
+        if res['ifail'] != data[i, 8] or np.isnan(res['rmajor']) != np.isnan(data[i, 9]):
+            print(f"FAIL: row {i}: the ifail status or the NaN pattern of R0 differs from the stored row")
+            ok = False
+        elif not np.isnan(data[i, 9]):
+            diffs.append((abs(res['rmajor'] - data[i, 9]) / data[i, 9], i))
+    if diffs:
+        d, i = max(diffs)
+        print(f"largest difference from the shipped files: {d:.1e} (relative, demo_runs.csv R0, row {i})")
+    if not ok:
+        sys.exit(1)
 
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=["run", "assemble", "check", "baseline"])
+    ap.add_argument("cmd", nargs="?", choices=["run", "assemble", "check", "baseline"],
+                    help="default with --check: check")
+    ap.add_argument("--check", action="store_true", help="the same as the check command")
     ap.add_argument("--n", type=int, default=N_MAX)
     ap.add_argument("--cpu-budget", type=float, default=1080.0)
-    ap.add_argument("--work", required=True,
+    ap.add_argument("--work", default=None,
                     help="scratch directory for PROCESS's files (results.jsonl, MFILEs, process.log), "
-                         "outside this directory")
+                         "outside this directory (required except for check; for check, default: a "
+                         "temporary directory)")
     ap.add_argument("--rows", default="0")
     ap.add_argument("--recompute-baseline", action="store_true",
                     help="warm-start from a recomputed baseline instead of baseline_warmstart.json")
     a = ap.parse_args()
+    if a.check:
+        if a.cmd not in (None, "check"):
+            ap.error("--check is the check command; it cannot be combined with " + a.cmd)
+        a.cmd = "check"
+    elif a.cmd is None:
+        ap.error("a command is required without --check: run, assemble, check or baseline")
+    if a.work is None:
+        if a.cmd != "check":
+            ap.error("--work DIR is required for " + a.cmd)
+        a.work = tempfile.mkdtemp(prefix="check_")
+        atexit.register(shutil.rmtree, a.work, ignore_errors=True)
     a.work = os.path.abspath(a.work)
     if os.path.commonpath([a.work, HERE]) == HERE:
         ap.error("--work must be a scratch directory outside the data-set directory")
