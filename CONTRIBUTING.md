@@ -67,7 +67,7 @@ An outside code (a CFD solver, a hydrology code, MATLAB, a commercial package, â
 The model is Python code in the directory, so the data can be regenerated and the notebook can call the model.
 
 - **The model is a module named `*_model.py`** that imports only numpy and scipy and loads its own files relative to `__file__`. A closed-form model of a few lines may stay in a notebook cell, but a module is preferred so the model can be used outside the notebook.
-- **Every shipped data file is written by `generate_data.py`**, with fixed seeds and all settings in the script. The script must reproduce the shipped files to a tolerance stated in `DATA.md`. Give it a `--check` option that regenerates into memory or another directory and compares, and never overwrites the shipped files.
+- **Every shipped data file is written by `generate_data.py`**, with fixed seeds and all settings in the script. Its `--check` option regenerates the files without overwriting the shipped ones and prints how far they are from them (see "How the scripts are run" below); `DATA.md` reports those differences.
 - **Inputs the model needs but that cannot be regenerated** (a basis computed by a lost script, measured data the model is fitted to) are treated as stored data.
 - **The notebook calls the model directly** when that is cheap, and loads the shipped files when regeneration is expensive.
 
@@ -76,6 +76,17 @@ A data set may have one part of each kind (see `plasma_fusion/MHD_Generator/`).
 ### Accuracy numbers
 
 Every accuracy number in `DATA.md` (solver tolerances, gradient checks, comparisons with a reference code) must be printed by the notebook, by `generate_data.py`, or by a `check_accuracy.py` in the directory. Like `generate_data.py`, a `check_accuracy.py` that needs an outside code exits with code 3 and an install message when the code is missing. Label a number that no script here can produce (a commercial code, a run that cannot be repeated) as "external run, not reproducible from the repository".
+
+### How the scripts are run
+
+Reviewers and the automatic checks run the scripts from the data set's directory with these commands and no other arguments:
+
+- `python generate_data.py --check` regenerates the shipped files, or a representative subset of them that the script names, into a temporary directory, compares them with the shipped files, and removes the temporary directory. It should take under about 10 minutes on a laptop. When it checks a subset, `python generate_data.py --check --full` checks everything. Every other option has a default.
+- `python check_accuracy.py` runs every check it can.
+
+`--check` reports how far the regenerated files are from the shipped ones; it does not judge the size of the difference, because the machine and software that wrote the shipped files are not always fully known. For each file or quantity it prints the largest difference, and it ends with one line of the form `largest difference from the shipped files: 3.2e-13 (relative, outputs.csv)`. Round-off is recognizable; a larger difference is for the reader to examine. `--check` fails only on a structural mismatch: a missing file, different shapes, a different NaN pattern, different flags or other integer values, or regenerated inputs that differ by more than 1e-8 of each input's largest magnitude. In `DATA.md`, report the differences you observed and the platform and code versions you observed them on.
+
+Both scripts exit with code 0 when they run to the end, 1 on a structural mismatch or any other failure, and 3 when an outside code, package or download is missing.
 
 ## 5. Write the notebook
 
@@ -148,7 +159,7 @@ Before you open a pull request, check the data set as a reviewer would. Write an
 
 **Analysis**
 
-- For a Python model, the model's equations and constants match the paper's numbered equations, and `generate_data.py --check` reproduces the shipped files.
+- For a Python model, the model's equations and constants match the paper's numbered equations, and the differences `generate_data.py --check` prints are at round-off, or explained in `DATA.md`.
 - Gradients agree with your own finite differences at a few random samples.
 - The estimator suits the data. A global quadratic fit needs at least (m+1)(m+2)/2 samples, and a global linear fit finds at most one direction.
 - The subspace dimension is justified by an eigenvalue gap and the subspace errors, and eigenvector signs follow a stated rule.
@@ -167,8 +178,8 @@ Before you open a pull request, check the data set as a reviewer would. Write an
 `main` is protected, so every change lands through a pull request. Before you open one, check that:
 
 - [ ] the notebook runs top to bottom from its directory in a fresh kernel, and twice gives the same numbers;
-- [ ] `generate_data.py --check` (where there is one) reproduces the shipped files;
-- [ ] `check_accuracy.py` (where there is one) reproduces the numbers in `DATA.md`;
+- [ ] `python generate_data.py --check` (where there is one) runs, as in section 4, "How the scripts are run", and `DATA.md` reports the differences it prints;
+- [ ] `python check_accuracy.py` (where there is one) reproduces the numbers in `DATA.md`;
 - [ ] `DATA.md` has every section of the template, including the unknowns;
 - [ ] the license is clear, and `LICENSE-DATA` lists any exception;
 - [ ] the self-review in section 10 is done, and anything it could not settle is in `DATA.md`'s unknowns;

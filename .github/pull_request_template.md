@@ -18,7 +18,7 @@
 ## Checklist (CONTRIBUTING.md, sections 6, 10 and 11)
 
 - [ ] The notebook runs top to bottom from its directory in a fresh kernel, and twice gives the same numbers.
-- [ ] `generate_data.py --check` (where there is one) reproduces the shipped files.
+- [ ] `generate_data.py --check` (where there is one) runs, and `DATA.md` reports the differences it prints.
 - [ ] `check_accuracy.py` (where there is one) reproduces the numbers in `DATA.md`.
 - [ ] Every claim about the paper cites a page, table, figure or equation, and my own choices are stated as mine.
 - [ ] Every number in the text is either cited to the paper or printed by the code; disagreements with the paper are reported with both values.
