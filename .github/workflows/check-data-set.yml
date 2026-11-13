@@ -1,0 +1,64 @@
+name: Check data set
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: check-data-set-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      datasets: ${{ steps.datasets.outputs.datasets }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: List the changed data sets
+        id: datasets
+        run: echo "datasets=$(python3 .github/scripts/check_pr.py --base origin/${{ github.base_ref }} --datasets-json)" >> "$GITHUB_OUTPUT"
+
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Check the changed files
+        run: python .github/scripts/check_pr.py --base origin/${{ github.base_ref }}
+      - name: Check that the notebook index is up to date
+        run: python docs/make_notebook_index.py --check
+      - name: Check that the suggested-articles page is up to date
+        run: python docs/make_candidates_md.py --check
+
+  datasets:
+    needs: changes
+    if: needs.changes.outputs.datasets != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        directory: ${{ fromJSON(needs.changes.outputs.datasets) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - name: Install the requirements
+        run: pip install -r requirements.txt
+      - name: Run the notebook and scripts
+        run: python .github/scripts/run_dataset.py "${{ matrix.directory }}"

@@ -187,6 +187,13 @@ Before you open a pull request, check the data set as a reviewer would. Write an
 
 In the pull request, link the claim issue, and say which paper the analysis follows, which kind of data set it is, how long the notebook and the scripts take to run, and whether and how you used an AI agent. For the listing, give the number of inputs, the active subspace dimension, and one sentence on the model and the quantity studied. Leave "Allow edits by maintainers" on, so the maintainer can add the listing to your branch.
 
+Checks run automatically on each pull request. They fail on a file over 10 MB, a PDF, a machine path such as `/Users/<name>/`, a reference-style link that does not render in a notebook, a `DATA.md` missing a section of the template, or a notebook not named after its directory; then they run the changed data set's notebook, `generate_data.py --check` and `check_accuracy.py`, with 30 minutes for each. A script that exits with code 3 because an outside code or download is missing is reported as skipped, not failed. Run the checks yourself first:
+
+```bash
+python .github/scripts/check_pr.py                            # the changed files
+python .github/scripts/run_dataset.py energy/My_New_Data_Set  # the notebook and scripts
+```
+
 The maintainer may close a pull request that skips the checklist or the claim, or that needs more review than can be given, with a note on what is missing.
 
 ### What the maintainer does
