@@ -48,6 +48,8 @@ pip install -r requirements.txt
 cd epidemiology_systems_biology/HIV_Long_Term_Dynamics && jupyter nbconvert --to notebook --execute --inplace HIV_Long_Term_Dynamics.ipynb
 python docs/make_notebook_index.py --check    # the notebook index is generated; the maintainer updates it
 python docs/make_candidates_md.py --check     # the suggested-articles page is generated; do not edit it by hand
+python .github/scripts/check_pr.py            # the checks CI runs on the files a branch changes
+python .github/scripts/run_dataset.py <category>/<Name>   # runs the notebook, generate_data.py --check and check_accuracy.py as CI does
 # From inside a data set's directory; exit code 0 ran, 1 a structural mismatch or other failure, 3 an outside code, package or download is missing:
 python generate_data.py --check    # regenerate into a temporary directory and print the differences (under ~10 min; --check --full where it checks a subset)
 python check_accuracy.py           # rerun the accuracy numbers in DATA.md

@@ -1,0 +1,29 @@
+name: Stale claims
+
+on:
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v11
+        with:
+          only-issue-labels: article-claim
+          days-before-stale: 30
+          days-before-close: 7
+          days-before-pr-stale: -1
+          days-before-pr-close: -1
+          stale-issue-label: stale-claim
+          stale-issue-message: >-
+            This claim has had no activity for 30 days, so it is marked stale and will be
+            closed in 7 days. Comment to keep it open. A closed claim can be reopened.
+          close-issue-message: >-
+            Closed after 37 days without activity. Reopen it, or open a new claim, when you
+            pick the work up again.
+          remove-stale-when-updated: true

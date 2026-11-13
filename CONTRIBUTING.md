@@ -14,7 +14,7 @@ You may build a data set by hand or with an AI agent. If you use an agent, read 
 
 Read the article before you claim it, and check that the inputs, their ranges and the data or model are really there.
 
-**Claim it.** Open an issue with the **Claim an article** form before you start building. Give the DOI, whether the article is on the suggested list, the kind of data set you plan (section 4), and the compute it will need. A claim tells others what you are working on; it does not reserve the article. Keep one open claim at a time. A claim with no activity for 30 days is closed, and you can reopen it.
+**Claim it.** Open an issue with the **Claim an article** form before you start building. Give the DOI, whether the article is on the suggested list, the kind of data set you plan (section 4), and the compute it will need. A claim tells others what you are working on; it does not reserve the article. Keep one open claim at a time. A claim with no activity for 30 days is marked stale and closed a week later; you can reopen it.
 
 **Articles that already have a data set in the repo.** You may build another data set from an article that already has one in this repo. Two analyses of the same article can differ in their quantity of interest, inputs, model, data or conclusions. The repo maintainer may add a note to each notebook that points to the other.
 
@@ -186,6 +186,13 @@ Before you open a pull request, check the data set as a reviewer would. Write an
 - [ ] you have read the whole notebook and `DATA.md` yourself and checked every attribution against the paper.
 
 In the pull request, link the claim issue, and say which paper the analysis follows, which kind of data set it is, how long the notebook and the scripts take to run, and whether and how you used an AI agent. For the listing, give the number of inputs, the active subspace dimension, and one sentence on the model and the quantity studied. Leave "Allow edits by maintainers" on, so the maintainer can add the listing to your branch.
+
+Checks run automatically on each pull request. They fail on a file over 10 MB, a PDF, a machine path such as `/Users/<name>/`, a reference-style link that does not render in a notebook, a `DATA.md` missing a section of the template, or a notebook not named after its directory; then they run the changed data set's notebook, `generate_data.py --check` and `check_accuracy.py`, with 30 minutes for each. A script that exits with code 3 because an outside code or download is missing is reported as skipped, not failed. Run the checks yourself first:
+
+```bash
+python .github/scripts/check_pr.py                            # the changed files
+python .github/scripts/run_dataset.py energy/My_New_Data_Set  # the notebook and scripts
+```
 
 The maintainer may close a pull request that skips the checklist or the claim, or that needs more review than can be given, with a note on what is missing.
 
