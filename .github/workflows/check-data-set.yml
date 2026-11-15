@@ -38,7 +38,20 @@ jobs:
       - name: Check the changed files
         run: python .github/scripts/check_pr.py --base origin/${{ github.base_ref }}
       - name: Check that the notebook index is up to date
-        run: python docs/make_notebook_index.py --check
+        # A new data set is listed by the maintainer, so the index is checked only when a
+        # pull request changes a README or docs/, or a notebook that is already listed.
+        run: |
+          changed=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          listed=""
+          for f in $(echo "$changed" | grep '\.ipynb$'); do
+            name=$(basename "$(dirname "$f")")
+            if grep -qF "[$name]" docs/notebook-index.md; then listed="$listed $f"; fi
+          done
+          if echo "$changed" | grep -qE '(^|/)README\.md$|^docs/' || [ -n "$listed" ]; then
+            python docs/make_notebook_index.py --check
+          else
+            echo "::notice::No listing change and no listed notebook changed; the maintainer updates the notebook index when listing a new data set."
+          fi
       - name: Check that the suggested-articles page is up to date
         run: python docs/make_candidates_md.py --check
 
