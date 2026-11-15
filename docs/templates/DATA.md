@@ -46,7 +46,7 @@ python generate_data.py --check   # reruns into a temporary directory and compar
 python check_accuracy.py          # (where there is one) prints the accuracy numbers below
 ```
 
-The run time, the platform and any outside-code versions, and the largest differences `--check` reports there. If `--check` checks a subset, say which, and give the time of `--check --full`. For stored data: what cannot be regenerated, or the outside code (and version) that `generate_data.py` needs, and the message it gives when that code is missing.
+The run time, the platform and any outside-code versions, and the largest differences `--check` reports there. They are from one machine; another platform may differ at round-off, and other machines' values need not be added. If `--check` checks a subset, say which, and give the time of `--check --full`. For stored data: what cannot be regenerated, or the outside code (and version) that `generate_data.py` needs, and the message it gives when that code is missing.
 
 ## Accuracy
 
