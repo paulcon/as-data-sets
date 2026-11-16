@@ -61,6 +61,7 @@ Each data set's directory contains a Jupyter notebook (`.ipynb`), the data or mo
 
 ## Ecology and agriculture (`ecology_agriculture/`)
 
+* **[Irrigation_Water_Withdrawal](ecology_agriculture/Irrigation_Water_Withdrawal/):** the water withdrawn to irrigate wheat in one grid cell of Uvalde County, Texas, from a 12-input closed-form irrigation model. [[paper]](https://doi.org/10.1038/s41467-022-30731-8) _Python model._
 * **[SIPNET_Ecosystem_Carbon_Flux](ecology_agriculture/SIPNET_Ecosystem_Carbon_Flux/):** two-year totals of net ecosystem exchange, evapotranspiration and gross primary production from the SIPNET ecosystem model. [[paper]](https://doi.org/10.5194/bg-15-5801-2018) _Stored data._
 
 ## Energy: batteries, PV, wind, nuclear, power grids, buildings (`energy/`)
