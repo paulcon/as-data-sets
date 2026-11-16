@@ -18,9 +18,9 @@ Each CSV has two `#` header lines (a description with the provenance, then the c
 
 ## Model
 
-**Source.** S. Tennøe, G. Halnes and G. T. Einevoll, "Uncertainpy: A Python Toolbox for Uncertainty Quantification and Sensitivity Analysis in Computational Neuroscience", *Frontiers in Neuroinformatics* 12:49, 2018, doi:10.3389/fninf.2018.00049, §4.2 ("Hodgkin-Huxley model"), Table 2 and Fig. 4. Open access, CC BY 4.0. Read in the PubMed Central full text (PMC6102374), which has no page numbers; citations here are by section, table and figure.
+**Source.** S. Tennøe, G. Halnes and G. T. Einevoll, "Uncertainpy: A Python Toolbox for Uncertainty Quantification and Sensitivity Analysis in Computational Neuroscience", *Frontiers in Neuroinformatics* 12:49, 2018, doi:10.3389/fninf.2018.00049, §4.2 ("Hodgkin-Huxley model", pp. 18–19), Table 2 (p. 19) and Fig. 4 (p. 20). Open access, CC BY 4.0. Page numbers refer to the published PDF.
 
-**Equations.** The paper names "the original Hodgkin-Huxley model (Hodgkin and Huxley, 1952)" (§4.2) but does not print its equations. The model here is the space-clamped Hodgkin–Huxley model, with the potential v (mV) measured from rest and depolarization positive. This is the convention of Fig. 4 of the paper ("parameterized so it has a resting potential of 0 mV"):
+**Equations.** The paper names "the original Hodgkin-Huxley model (Hodgkin and Huxley, 1952)" (§4.2, p. 18) but does not print its equations. The model here is the space-clamped Hodgkin–Huxley model, with the potential v (mV) measured from rest and depolarization positive. This is the convention of Fig. 4 of the paper (caption, p. 20: "parameterized so it has a resting potential of 0 mV"):
 
 - Cm dv/dt = I − gNa m³ h (v − ENa) − gK n⁴ (v − EK) − gL (v − EL)
 - dx/dt = αx(v)(1 − x) − βx(v) x for x = m, n, h
@@ -30,33 +30,33 @@ Each CSV has two `#` header lines (a description with the provenance, then the c
 
 t is in ms. The rate functions are as printed in Eq. (1) of Torres Valderrama et al. (2015), doi:10.1186/2190-8567-5-3, the study the paper repeats. Their removable singularities at v = 10 and v = 25 mV are evaluated through u/expm1(u) with a series near u = 0. Eq. (1) of Torres Valderrama et al. adds I without dividing it by C. We use the Hodgkin–Huxley form above, in which Cm multiplies dv/dt.
 
-**Inputs** (m = 11), nominal values from Table 2 of the paper. "We assume each of these parameters has a uniform distribution in the range ±10% around their original value" (§4.2):
+**Inputs** (m = 11), nominal values from Table 2 of the paper (p. 19). "[W]e assume each of these parameters has a uniform distribution in the range ±10% around their original value" (§4.2, p. 19):
 
 | name | symbol | units | description | range or distribution | source |
 |---|---|---|---|---|---|
-| `V0` | V₀ | mV | initial potential | U[−11, −9] (nominal −10) | Table 2; §4.2 |
-| `Cm` | C_m | µF/cm² | membrane capacitance | U[0.9, 1.1] (1) | Table 2; §4.2 |
-| `gNa` | ḡ_Na | mS/cm² | maximum Na conductance | U[108, 132] (120) | Table 2; §4.2 |
-| `gK` | ḡ_K | mS/cm² | maximum K conductance | U[32.4, 39.6] (36) | Table 2; §4.2 |
-| `gL` | ḡ_L | mS/cm² | maximum leak conductance | U[0.27, 0.33] (0.3) | Table 2; §4.2 |
-| `ENa` | E_Na | mV | Na reversal potential | U[100.8, 123.2] (112) | Table 2; §4.2 |
-| `EK` | E_K | mV | K reversal potential | U[−13.2, −10.8] (−12) | Table 2; §4.2 |
-| `EL` | E_L | mV | leak reversal potential | U[9.5517, 11.674] (10.613) | Table 2; §4.2 |
-| `n0` | n₀ | – | initial K activation | U[0.00099, 0.00121] (0.0011) | Table 2; §4.2 |
-| `m0` | m₀ | – | initial Na activation | U[0.00027, 0.00033] (0.0003) | Table 2; §4.2 |
-| `h0` | h₀ | – | initial Na inactivation | U[0.89982, 1.0998] (0.9998) | Table 2; §4.2 |
+| `V0` | V₀ | mV | initial potential | U[−11, −9] (nominal −10) | Table 2 and §4.2, p. 19 |
+| `Cm` | C_m | µF/cm² | membrane capacitance | U[0.9, 1.1] (1) | Table 2 and §4.2, p. 19 |
+| `gNa` | ḡ_Na | mS/cm² | maximum Na conductance | U[108, 132] (120) | Table 2 and §4.2, p. 19 |
+| `gK` | ḡ_K | mS/cm² | maximum K conductance | U[32.4, 39.6] (36) | Table 2 and §4.2, p. 19 |
+| `gL` | ḡ_L | mS/cm² | maximum leak conductance | U[0.27, 0.33] (0.3) | Table 2 and §4.2, p. 19 |
+| `ENa` | E_Na | mV | Na reversal potential | U[100.8, 123.2] (112) | Table 2 and §4.2, p. 19 |
+| `EK` | E_K | mV | K reversal potential | U[−13.2, −10.8] (−12) | Table 2 and §4.2, p. 19 |
+| `EL` | E_L | mV | leak reversal potential | U[9.5517, 11.674] (10.613) | Table 2 and §4.2, p. 19 |
+| `n0` | n₀ | – | initial K activation | U[0.00099, 0.00121] (0.0011) | Table 2 and §4.2, p. 19 |
+| `m0` | m₀ | – | initial Na activation | U[0.00027, 0.00033] (0.0003) | Table 2 and §4.2, p. 19 |
+| `h0` | h₀ | – | initial Na inactivation | U[0.89982, 1.0998] (0.9998) | Table 2 and §4.2, p. 19 |
 
 The bounds are nominal ± 0.1 |nominal| (printed by the notebook). For h0 the upper bound exceeds 1, the largest value of a gating variable; 473 of the 1000 samples have h0 > 1 (`generate_data.py`). We keep the paper's stated ranges. The equations stay well defined, since h relaxes toward h∞(v) < 1.
 
-**Stimulus, time window, solver.** I = 140 µA/cm², constant from t = 0, and the window 5 ≤ t ≤ 15 ms are from the caption of Fig. 4 of the paper. The following are this data set's choices: the end time T = 15 ms, and the solver, `scipy.integrate.solve_ivp` with DOP853, rtol 1e-10 and atol 1e-12 on the state and the sensitivities together.
+**Stimulus, time window, solver.** I = 140 µA/cm², constant from t = 0, and the window 5 ≤ t ≤ 15 ms are from the caption of Fig. 4 of the paper (p. 20). The following are this data set's choices: the end time T = 15 ms, and the solver, `scipy.integrate.solve_ivp` with DOP853, rtol 1e-10 and atol 1e-12 on the state and the sensitivities together.
 
-**Quantities of interest.** The paper studies v(t) and its first-order Sobol' indices over the window and defines no scalar output. Its Fig. 4 marks "the peak of the first action potential" and "the minimum after the first action potential" in the window (caption). Our outputs, our choice:
+**Quantities of interest.** The paper studies v(t) and its first-order Sobol' indices over the window and defines no scalar output. Its Fig. 4 marks "the peak of the first action potential" with a yellow line and "the minimum after the first action potential" with a cyan line (caption, p. 20). The lines sit at about 8.67 and 10.85 ms (our approximate read-off of the figure), inside the window, so the paper's "first action potential" is the first one in the window, not the spike at 0.62 ms. Our outputs, our choice:
 
 - `vpeak`, `tpeak`: value and time of the first local maximum of v after 5 ms. Range 32.123–59.075 mV, 8.333–9.048 ms.
 - `vmin`, `tmin`: value and time of the first local minimum after it. Range 4.187–14.171 mV, 10.499–11.220 ms.
 - v(t) at t = 5, 5.5, …, 15 ms (21 times).
 
-The ranges are printed by the notebook and `generate_data.py`. Extrema are found by a `solve_ivp` event on dv/dt = 0 and classified by the sign of d²v/dt². In every sample, v has exactly one maximum before 5 ms, the first spike. After the peak in the window, 592 samples have a further maximum before 15 ms, the start of the next action potential; it is not used. Both counts are from `generate_data.py`.
+The ranges are printed by the notebook and `generate_data.py`. Extrema are found by a `solve_ivp` event on dv/dt = 0 and classified by the sign of d²v/dt². In every sample, v has exactly one maximum before 5 ms, the first spike. After the peak in the window, 592 samples have a further maximum before 15 ms, the peak of the next action potential; it is not used. Both counts are from `generate_data.py`.
 
 **Gradients.** These are exact up to the solver tolerance, from the forward sensitivity equations (4 states × 11 parameters) solved with the state. For v(t), the gradient is the sensitivity of v at t. At an extremum t*, dv/dt = 0, so ∂v(t*)/∂p = s_v(t*), and ∂t*/∂p = −(∇ₓF_v · s(t*) + ∂F_v/∂p)/(∇ₓF_v · F) at t*. They are with respect to the **physical** inputs.
 
@@ -81,7 +81,7 @@ Observed on macOS (Darwin 23.6.0, Intel Core i7-1068NG7, 8 logical CPUs), Python
 
   These are relative, elementwise. They are at the level of the solver tolerance (rtol 1e-10) and of the 11 digits written for the gradients.
 - `python check_accuracy.py` takes 110 s.
-- The notebook takes about 40 s.
+- The notebook takes about 45 s.
 
 ## Accuracy
 
@@ -92,14 +92,15 @@ Observed on macOS (Darwin 23.6.0, Intel Core i7-1068NG7, 8 logical CPUs), Python
 
 ## How these files relate to the paper
 
-These are new runs of our own implementation, not the paper's runs. The paper used polynomial chaos with point collocation through Uncertainpy (§4.2) and does not publish its samples or its numerical Sobol' indices. We used the paper's inputs, ranges, stimulus and window, and the rate functions of Torres Valderrama et al. (2015). The notebook compares qualitatively with the statements of §4.2 and Fig. 4:
+These are new runs of our own implementation, not the paper's runs. The paper used polynomial chaos with point collocation through Uncertainpy (§4.2, p. 19) and does not publish its samples or its numerical Sobol' indices. We used the paper's inputs, ranges, stimulus and window, and the rate functions of Torres Valderrama et al. (2015). The notebook compares with the statements of §4.2 (pp. 18–19) and with approximate read-offs of Fig. 4 (p. 20). The read-offs were measured on the published figure against its axis labels. We estimate them good to about 0.05 ms in time, 0.5 mV for the mean, 0.1 mV for the standard deviation and 0.02 for an index. The notebook prints each read-off, this data set's value and the difference. The comparisons:
 
-- the variance of v is largest at the peak (8.5 ms on our 0.5 ms grid; the paper says between 8 and 9 ms);
+- the variance of v is largest at the peak: 6.10 mV at 8.45 ms on a 0.01 ms grid, recomputed in the notebook. The paper says between 8 and 9 ms, and Fig. 4A shows about 6.1 mV at about 8.45 ms;
+- the mean and standard deviation of v(t) match the read-offs of Fig. 4A, and the yellow and cyan lines, to within the read-off precision. The largest difference is 0.31 mV, in the peak of the mean;
 - ḡ_K and E_Na lead;
 - the leading input over time follows the sequence the paper describes;
 - V₀, m₀ and n₀ are negligible.
 
-One statement agrees only in part, and we cannot explain the difference: the paper finds sensitivity to h₀ "through most of the simulation", whereas here h₀'s gradient-based score fades after about 11.5 ms. Our sensitivity measure is the mean squared derivative, not the Sobol' index.
+The paper finds that the model "maintains a sensitivity to the initial Na+ inactivation state (h0) through most of the simulation" (§4.2, p. 19). Here h₀'s share of the trace of C, C_jj/tr C, is moderate up to 10 ms, lower around the peak, and at most 0.054 from 10.5 ms on. That share equals the first-order Sobol' index for a function linear in the inputs. Fig. 4B shows the same shape for the Sobol' index of h₀, about 0.03–0.06 after 11 ms, and the two agree to within 0.01 at the five times read. So h₀ is moderate up to about 10 ms and small after it, here and in Fig. 4B. The paper's sentence describes a longer persistence than either shows.
 
 The paper's Table 2 differs from Table 2 of Torres Valderrama et al. (2015) in two places. The paper has E_Na = 112 mV, n₀ = 0.0011 and m₀ = 0.0003; Torres Valderrama et al. have E_Na = 115 mV, n₀ = 0.0003 and m₀ = 0.0011. We use the paper's values as printed. `check_accuracy.py`, check 4, shows the effect at the nominal point:
 - exchanging m₀ and n₀ changes v(t) by at most 0.00695 mV;
@@ -111,11 +112,10 @@ The paper points to the code of the case study, `uncertainpy/examples/valderrama
 
 - The paper does not print the model equations. The rate functions here are from Torres Valderrama et al. (2015), Eq. (1). Hodgkin and Huxley (1952) could not be read for this data set, so the equations were not checked against its pages.
 - Whether the paper's n₀ = 0.0011 and m₀ = 0.0003 (Table 2) are an exchange of the earlier values, and whether E_Na = 112 mV (rather than 115 mV) is intended. The effects are quantified above.
-- The paper's simulation end time, time step and solver. Its §4.5 mentions "the total simulation time in the model, disregarding the first 5 ms" without giving it. The example code uses 15 ms and `odeint`, but we cannot confirm that this is the code the published figures came from.
-- The paper's polynomial chaos settings for Fig. 4 (order, number of collocation nodes, seed) and its numerical Sobol' indices. Only figures are published, and we did not read values from Fig. 4.
+- The paper's simulation end time, time step and solver. Its §4.5 (p. 25) mentions "the total simulation time in the model, disregarding the first 5 ms" without giving it. The example code uses 15 ms and `odeint`, but we cannot confirm that this is the code the published figures came from.
+- The paper's polynomial chaos settings for Fig. 4 (order, number of collocation nodes, seed). Its Sobol' indices are published only as a figure; the comparisons use approximate read-offs of it.
 - Whether the ±10 % range was meant to allow h₀ > 1.
-- Whether "the peak of the first action potential" in the caption of Fig. 4 is the first maximum after 5 ms, as we assume, or the first spike of the simulation (before 5 ms, outside the window shown).
-- The page numbers of the published PDF, since the full text was read without pagination.
+- Which quantity the yellow and cyan lines of Fig. 4 mark: the nominal peak and minimum, the means of their times over the samples, or the extrema of the mean. All three lie within 0.04 ms of the lines, closer than the read-off can separate.
 
 ## License and credit
 
