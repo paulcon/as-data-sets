@@ -1,6 +1,6 @@
 # Suggested articles
 
-These 635 published articles might each support a new data set. They are suggestions, not approved projects: you may build a data set from any suitable article, on this list or not. [Contributing a data set](../CONTRIBUTING.md) explains how. Each entry gives only the article's year, title, authors and DOI; [candidates.csv](candidates.csv) has the same entries with every author.
+These 634 published articles might each support a new data set. They are suggestions, not approved projects: you may build a data set from any suitable article, on this list or not. [Contributing a data set](../CONTRIBUTING.md) explains how. Each entry gives only the article's year, title, authors and DOI; [candidates.csv](candidates.csv) has the same entries with every author.
 
 ## Where the list came from
 
@@ -29,7 +29,7 @@ Written by `docs/make_candidates_md.py` from `docs/candidates.csv`; do not edit 
 - [Energy](#energy) (34)
 - [Plasma and fusion](#plasma-and-fusion) (30)
 - [Epidemiology and systems biology](#epidemiology-and-systems-biology) (24)
-- [Biomedical and cardiovascular](#biomedical-and-cardiovascular) (42)
+- [Biomedical and cardiovascular](#biomedical-and-cardiovascular) (41)
 - [Combustion and chemical kinetics](#combustion-and-chemical-kinetics) (78)
 - [Structural, materials and additive manufacturing](#structural-materials-and-additive-manufacturing) (76)
 - [Electronics and circuits](#electronics-and-circuits) (37)
@@ -467,7 +467,6 @@ Written by `docs/make_candidates_md.py` from `docs/candidates.csv`; do not edit 
 | 2018 | Applying a Global Sensitivity Analysis Workflow to Improve the Computational Efficiencies in Physiologically-Based Pharmacokinetic Modeling | Hsieh, N.-H.; Reisfeld, B.; Bois, F. Y.; et al. | [10.3389/fphar.2018.00588](https://doi.org/10.3389/fphar.2018.00588) |
 | 2018 | Combined Parameter and Model Reduction of Cardiovascular Problems by Means of Active Subspaces and POD-Galerkin Methods | Tezzele, M.; Ballarin, F.; Rozza, G. | [10.1007/978-3-319-96649-6_8](https://doi.org/10.1007/978-3-319-96649-6_8) |
 | 2018 | Parameter space and model reduction with shape parametrization, by means of active subspace and POD-Galerkin methods for industrial and biomedical applications | Tezzele, M.; Ballarin, F.; Mola, A.; et al. | [10.14293/P2199-8442.1.SOP-MATH.ZKDILB.v1](https://doi.org/10.14293/P2199-8442.1.SOP-MATH.ZKDILB.v1) |
-| 2018 | Uncertainpy: A Python Toolbox for Uncertainty Quantification and Sensitivity Analysis in Computational Neuroscience | Tennøe, S.; Halnes, G.; Einevoll, G. T. | [10.3389/fninf.2018.00049](https://doi.org/10.3389/fninf.2018.00049) |
 | 2019 | Comprehensive Uncertainty Quantification and Sensitivity Analysis for Cardiac Action Potential Models | Pathmanathan, P.; Cordeiro, J. M.; Gray, R. A. | [10.3389/fphys.2019.00721](https://doi.org/10.3389/fphys.2019.00721) |
 | 2019 | Learning-accelerated discovery of immune-tumour interactions | Ozik, J.; Collier, N.; Heiland, R.; et al. | [10.1039/c9me00036d](https://doi.org/10.1039/c9me00036d) |
 | 2019 | On the unsteady Darcy-Forchheimer-Brinkman equation in local and nonlocal tumor growth models | Fritz, M.; Lima, E. A. B. F.; Oden, J. T.; et al. | [10.1142/S0218202519500325](https://doi.org/10.1142/S0218202519500325) |
