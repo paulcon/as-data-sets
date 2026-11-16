@@ -1,6 +1,6 @@
 # Suggested articles
 
-These 634 published articles might each support a new data set. They are suggestions, not approved projects: you may build a data set from any suitable article, on this list or not. [Contributing a data set](../CONTRIBUTING.md) explains how. Each entry gives only the article's year, title, authors and DOI; [candidates.csv](candidates.csv) has the same entries with every author.
+These 633 published articles might each support a new data set. They are suggestions, not approved projects: you may build a data set from any suitable article, on this list or not. [Contributing a data set](../CONTRIBUTING.md) explains how. Each entry gives only the article's year, title, authors and DOI; [candidates.csv](candidates.csv) has the same entries with every author.
 
 ## Where the list came from
 
@@ -23,7 +23,7 @@ It also noted what makes an article a stronger candidate: an existing active sub
 Written by `docs/make_candidates_md.py` from `docs/candidates.csv`; do not edit by hand.
 
 - [Aerospace and CFD](#aerospace-and-cfd) (141)
-- [Hydrology, subsurface and geoscience](#hydrology-subsurface-and-geoscience) (83)
+- [Hydrology, subsurface and geoscience](#hydrology-subsurface-and-geoscience) (82)
 - [Climate, atmosphere and ocean](#climate-atmosphere-and-ocean) (43)
 - [Ecology and agriculture](#ecology-and-agriculture) (33)
 - [Energy](#energy) (34)
@@ -246,7 +246,6 @@ Written by `docs/make_candidates_md.py` from `docs/candidates.csv`; do not edit 
 | 2022 | Global Sensitivity Analysis of the distributed hydrologic model ParFlow-CLM (V3.6.0) | Qu, W.; Bogena, H.; Schüth, C.; et al. | [10.5194/gmd-2022-131](https://doi.org/10.5194/gmd-2022-131) |
 | 2022 | Large variations in global irrigation withdrawals caused by uncertain irrigation efficiencies | Puy, A.; Lankford, B.; Meier, J.; et al. | [10.1088/1748-9326/ac5768](https://doi.org/10.1088/1748-9326/ac5768) |
 | 2022 | Neglecting uncertainties surrounding model parameters can drastically underestimate flood risks | Sharma, S.; Lee, B. S.; Hosseini-Shakib, I.; et al. | [10.1002/essoar.10510275.1](https://doi.org/10.1002/essoar.10510275.1) |
-| 2022 | The delusive accuracy of global irrigation water withdrawal estimates | Puy, A.; Sheikholeslami, R.; Gupta, H. V.; et al. | [10.1038/s41467-022-30731-8](https://doi.org/10.1038/s41467-022-30731-8) |
 | 2022 | The sensitivity of simulated streamflow to individual hydrologic processes across North America | Mai, J.; Craig, J. R.; Tolson, B. A.; et al. | [10.1038/s41467-022-28010-7](https://doi.org/10.1038/s41467-022-28010-7) |
 | 2022 | Uncertainty quantification for basin-scale geothermal conduction models | Degen, D.; Veroy, K.; Wellmann, F. | [10.1038/s41598-022-08017-2](https://doi.org/10.1038/s41598-022-08017-2) |
 | 2023 | Bayesian Calibration Points to Misconceptions in Three‐Dimensional Hydrodynamic Reservoir Modeling | Schwindt, S.; Callaú Medrano, S.; Mouris, K.; et al. | [10.1029/2022wr033660](https://doi.org/10.1029/2022wr033660) |
