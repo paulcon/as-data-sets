@@ -1,6 +1,6 @@
 """Check the files a pull request changes.
 
-    python .github/scripts/check_pr.py                     # changes since origin/main
+    python .github/scripts/check_pr.py                     # changes since origin/main, committed or not
     python .github/scripts/check_pr.py --base upstream/main
     python .github/scripts/check_pr.py --all               # every data set and tracked file
     python .github/scripts/check_pr.py --datasets-json     # print the changed data-set directories
@@ -88,9 +88,15 @@ def git(*args):
 
 
 def changed_files(base):
-    """(status, path) for each file changed between the merge base with `base` and HEAD."""
-    out = git('diff', '--name-status', '--no-renames', f'{base}...HEAD')
-    return [tuple(line.split('\t', 1)) for line in out.splitlines() if line]
+    """(status, path) for each file changed since the merge base with `base`: commits, staged and
+    unstaged edits, and untracked files that are not ignored, so the checks also see work that is
+    not committed yet. On a clean checkout (as in CI) this is the change between the merge base
+    and HEAD."""
+    merge_base = git('merge-base', base, 'HEAD').strip()
+    out = git('diff', '--name-status', '--no-renames', merge_base)
+    changes = [tuple(line.split('\t', 1)) for line in out.splitlines() if line]
+    untracked = git('ls-files', '--others', '--exclude-standard').splitlines()
+    return changes + [('A', p) for p in untracked if p]
 
 
 def dataset_of(path):
