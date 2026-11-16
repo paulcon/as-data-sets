@@ -145,6 +145,7 @@ SIZES = {
     'Cole_Cole_Cell_Monolayer_Impedance': ('4', '1, 2'),
     'Four_Chamber_Heart_Electromechanics': ('29, 45', '1'),
     'Hodgkin_Huxley_Action_Potential': ('11', '1, 2'),
+    'Hodgkin_Huxley_Spike_Peak': ('11', '1, 2'),
     'Luo_Rudy_Cardiac_Action_Potential': ('6', '1, none'),
     'Pulmonary_Pulse_Wave_Network': ('9', '1, 2'),
     'Pyloric_Circuit_Energy_Consumption': ('31', '1'),
