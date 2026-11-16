@@ -12,7 +12,7 @@ You may build a data set by hand or with an AI agent. If you use an agent, read 
 - inputs with stated ranges or distributions;
 - a route to input/output data: data you can download, a model you can run, or data the authors will share with you.
 
-Read the article before you claim it, and check that the inputs, their ranges and the data or model are really there.
+The model, the inputs and their ranges may be in the article's supplementary materials, or in a code or data archive the article cites (Zenodo, GitHub, a data repository), rather than in the article itself; that counts. Read the article, and its supplement where the model or inputs are there, before you claim it, and check that the inputs, their ranges and the data or model are really there.
 
 **Claim it.** Open an issue with the **Claim an article** form before you start building. Give the DOI, whether the article is on the suggested list, the kind of data set you plan (section 4), and the compute it will need. A claim tells others what you are working on; it does not reserve the article. Keep one open claim at a time. A claim with no activity for 30 days is marked stale and closed a week later; you can reopen it.
 
@@ -135,9 +135,9 @@ jupyter nbconvert --to notebook --execute --inplace My_New_Data_Set.ipynb
 
 ## 6. Check accuracy and attribution
 
-A notebook here should be a faithful account of a published study. In this section, *the text* is the data set's own prose (the notebook's markdown cells, `DATA.md`, its README bullet), and *the paper* is the published article.
+A notebook here should be a faithful account of a published study. In this section, *the text* is the data set's own prose (the notebook's markdown cells, `DATA.md`, its README bullet), and *the paper* is the published article. Its supplementary materials and the code or data archive it cites count as part of the paper, but are cited as sources of their own.
 
-- **Cite the paper.** Quote equations as printed and note any misprint. Label your own choices, such as a range or a threshold, as yours.
+- **Cite the paper.** Quote equations as printed and note any misprint. When the model, the inputs or the data come from a supplement or an archive, cite its own page, table or equation, with its DOI or stable link and its version. Label your own choices, such as a range or a threshold, as yours.
 - **Print every result.** Each number in the text is either cited to the paper or printed by the notebook, `generate_data.py` or `check_accuracy.py`. Compute comparisons from those values, and reread the text after any rerun.
 - **Report disagreements with the paper**, giving both values. Never adjust the data or the analysis to match.
 - **Check posted data against the paper** before building on them, and report any mismatch.
