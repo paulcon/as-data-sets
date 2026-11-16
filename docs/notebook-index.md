@@ -120,6 +120,7 @@ Every notebook, with its number of inputs, the dimension of the active subspace 
 | [Cole_Cole_Cell_Monolayer_Impedance](../biomedical_cardiovascular/Cole_Cole_Cell_Monolayer_Impedance/Cole_Cole_Cell_Monolayer_Impedance.ipynb) | Python model | 4 | 1, 2 | gradients | Gaussian | surrogate |
 | [Four_Chamber_Heart_Electromechanics](../biomedical_cardiovascular/Four_Chamber_Heart_Electromechanics/Four_Chamber_Heart_Electromechanics.ipynb) | stored data | 29, 45 | 1 | linear fit, quadratic fit | uniform | surrogate |
 | [Hodgkin_Huxley_Action_Potential](../biomedical_cardiovascular/Hodgkin_Huxley_Action_Potential/Hodgkin_Huxley_Action_Potential.ipynb) | Python model | 11 | 1, 2 | gradients, given matrix | uniform | surrogate |
+| [Hodgkin_Huxley_Spike_Peak](../biomedical_cardiovascular/Hodgkin_Huxley_Spike_Peak/Hodgkin_Huxley_Spike_Peak.ipynb) | Python model | 11 | 1, 2 | gradients | uniform | surrogate |
 | [Luo_Rudy_Cardiac_Action_Potential](../biomedical_cardiovascular/Luo_Rudy_Cardiac_Action_Potential/Luo_Rudy_Cardiac_Action_Potential.ipynb) | stored data | 6 | 1, none | linear fit, quadratic fit | uniform | surrogate |
 | [Pulmonary_Pulse_Wave_Network](../biomedical_cardiovascular/Pulmonary_Pulse_Wave_Network/Pulmonary_Pulse_Wave_Network.ipynb) | stored data | 9 | 1, 2 | gradients, quadratic fit | uniform | surrogate |
 | [Pyloric_Circuit_Energy_Consumption](../biomedical_cardiovascular/Pyloric_Circuit_Energy_Consumption/Pyloric_Circuit_Energy_Consumption.ipynb) | stored data | 31 | 1 | linear fit, quadratic fit, given matrix | uniform | surrogate |
