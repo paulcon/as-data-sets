@@ -22,7 +22,7 @@ How the files are read (e.g. `np.loadtxt(path, delimiter=',')`), the number of h
 
 ## Model
 
-**Source.** The paper, report or code the model or the runs come from, with a DOI or a stable URL, and the version or commit of any code.
+**Source.** The paper, supplement, report or code the model or the runs come from, with a DOI or a stable URL, and the version or commit of any code.
 
 **Equations or solver.** The model in enough detail to check it: the equations, or for an outside code its name, version, mesh and solver settings.
 
@@ -30,7 +30,7 @@ How the files are read (e.g. `np.loadtxt(path, delimiter=',')`), the number of h
 
 | name | symbol | units | description | range or distribution | source |
 |---|---|---|---|---|---|
-| `x1` | x₁ | ... | ... | U[a, b] | paper, Table ... |
+| `x1` | x₁ | ... | ... | U[a, b] | paper, Table ... (or supplement, Table S...) |
 
 **Quantities of interest.** What each output is, its units, its range over the samples.
 

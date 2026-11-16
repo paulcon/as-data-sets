@@ -42,7 +42,7 @@ body:
     id: why
     attributes:
       label: Why the article fits
-      description: The simulation model, the scalar quantity of interest, the number of inputs, and where the paper gives their ranges or distributions (page or table).
+      description: The simulation model, the scalar quantity of interest, the number of inputs, and where the paper gives their ranges or distributions (page or table). If the model or inputs are in a supplement or the authors' archive, say so and give its link.
     validations:
       required: true
   - type: dropdown
