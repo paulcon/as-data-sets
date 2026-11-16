@@ -106,6 +106,7 @@ SIZES = {
     'Marine_Carbonate_System_PyCO2SYS': ('14', '1, 2'),
     'Parcel_Droplet_Activation': ('8', '1, 2'),
     # Ecology and agriculture
+    'Irrigation_Water_Withdrawal': ('12', '1'),
     'SIPNET_Ecosystem_Carbon_Flux': ('8', '1, 4'),
     # Energy
     'BISON_Fuel_Performance_Surrogates': ('13', '1, 2'),

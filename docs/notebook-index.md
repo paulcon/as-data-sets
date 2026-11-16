@@ -65,6 +65,7 @@ Every notebook, with its number of inputs, the dimension of the active subspace 
 
 | Notebook | Kind | Inputs (m) | Dimension (n) | Subspace from | Input distribution | Also |
 |---|---|---|---|---|---|---|
+| [Irrigation_Water_Withdrawal](../ecology_agriculture/Irrigation_Water_Withdrawal/Irrigation_Water_Withdrawal.ipynb) | Python model | 12 | 1 | gradients | uniform | surrogate, activity scores |
 | [SIPNET_Ecosystem_Carbon_Flux](../ecology_agriculture/SIPNET_Ecosystem_Carbon_Flux/SIPNET_Ecosystem_Carbon_Flux.ipynb) | stored data | 8 | 1, 4 | gradients | uniform | surrogate, activity scores, MCMC |
 
 ## Energy
