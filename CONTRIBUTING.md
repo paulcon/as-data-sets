@@ -14,7 +14,7 @@ You may build a data set by hand or with an AI agent. If you use an agent, read 
 
 The model, the inputs and their ranges may be in the article's supplementary materials, or in a code or data archive the article cites (Zenodo, GitHub, a data repository), rather than in the article itself; that counts. Read the article, and its supplement where the model or inputs are there, before you claim it, and check that the inputs, their ranges and the data or model are really there.
 
-**Claim it.** Open an issue with the **Claim an article** form before you start building. Give the DOI, whether the article is on the suggested list, the kind of data set you plan (section 4), and the compute it will need. A claim tells others what you are working on; it does not reserve the article. Keep one open claim at a time. A claim with no activity for 30 days is marked stale and closed a week later; you can reopen it.
+**Claim it.** Open an issue with the **Claim an article** form before you start building. Give the DOI, whether the article is on the suggested list, the kind of data set you plan (section 4), whether it is a reproduction or a new study with the paper's model (section 6), and the compute it will need. A claim tells others what you are working on; it does not reserve the article. Keep one open claim at a time. A claim with no activity for 30 days is marked stale and closed a week later; you can reopen it.
 
 **Articles that already have a data set in the repo.** You may build another data set from an article that already has one in this repo. Two analyses of the same article can differ in their quantity of interest, inputs, model, data or conclusions. The repo maintainer may add a note to each notebook that points to the other.
 
@@ -112,7 +112,7 @@ The notebook is the case study: it explains the application, runs the analysis a
 5. **Load data**, with checks: shapes, ranges, the files against the model where there is one, gradients against finite differences.
 6. **Estimate the subspace**, then the results: eigenvalues with bootstrap bands, subspace errors, eigenvectors, and sufficient summary plots of `f` against the active variables.
 7. Optionally, **surrogates** on the active variables (`ac.fit_surrogate`) and other uses (integration, optimization, inversion).
-8. **Comparison with the paper**: a table of published values against the notebook's values, with every difference explained or stated as unexplained.
+8. **Comparison with the paper**: for a reproduction, a table of published values against the notebook's values, with every difference explained or stated as unexplained. For a new study with the paper's model, a table of the settings (the paper's and this data set's) and, optionally, the relation to the paper's conclusions (section 6).
 9. **References**, then a final cell that prints the total run time.
 
 **Conventions.**
@@ -135,7 +135,12 @@ jupyter nbconvert --to notebook --execute --inplace My_New_Data_Set.ipynb
 
 ## 6. Check accuracy and attribution
 
-A notebook here should be a faithful account of a published study. In this section, *the text* is the data set's own prose (the notebook's markdown cells, `DATA.md`, its README bullet), and *the paper* is the published article. Its supplementary materials and the code or data archive it cites count as part of the paper, but are cited as sources of their own.
+A notebook here is one of two things:
+
+- **A reproduction**: the paper's model under the paper's conditions, with its runs or with new ones made the same way. The notebook is a faithful account of the published study.
+- **A new study with the paper's model**: the paper's model under different conditions, ranges, settings or code versions (for example, runs sized to the computing you have). The paper defines the model; the results are this data set's own and may or may not agree with the paper's.
+
+Say in the claim (section 1) which one you plan. The rules below apply to both, and the last bullet adds rules for a new study. In this section, *the text* is the data set's own prose (the notebook's markdown cells, `DATA.md`, its README bullet), and *the paper* is the published article. Its supplementary materials and the code or data archive it cites count as part of the paper, but are cited as sources of their own.
 
 - **Cite the paper.** Quote equations as printed and note any misprint. When the model, the inputs or the data come from a supplement or an archive, cite its own page, table or equation, with its DOI or stable link and its version. Label your own choices, such as a range or a threshold, as yours.
 - **Print every result.** Each number in the text is either cited to the paper or printed by the notebook, `generate_data.py` or `check_accuracy.py`. Compute comparisons from those values, and reread the text after any rerun.
@@ -144,6 +149,12 @@ A notebook here should be a faithful account of a published study. In this secti
 - **Describe what you did accurately**: the sampling design, how the inputs are scaled, and any samples outside the inputs' physical range.
 - **Compare with the figures.** When the paper prints no numbers for a result, read approximate values off its figures, label them as read-offs, and compare them with printed values of your own.
 - **Cite the published version** of the article, with its printed page numbers, and say if you used a preprint.
+- **Cite claims about an outside code** (how a solver treats an input, what a routine does) to the file, routine and tagged version or commit where you read them, so a reviewer can check them.
+- **For a new study with the paper's model:**
+  - Cite the paper for the model: its equations, inputs, ranges and quantities of interest. Every attribution is still checked on the page.
+  - Say in the notebook's introduction that the data set is a new study, not a reproduction, and why its conditions differ.
+  - Give a table, *Settings: the paper and this data set*, that lists every difference from the paper (design, conditions, resolution, code version, definitions of the outputs), in the notebook and in `DATA.md`.
+  - A comparison with the paper's conclusions is optional and qualitative. It quotes the paper's statement with its page and gives this data set's printed value. It does not present agreement as validation. Offer an explanation of a difference only where the paper's text or your data support it, and label it as possible; otherwise state the difference as unexplained.
 
 ## 7. Write DATA.md
 
@@ -183,7 +194,8 @@ Before you open a pull request, check the data set as a reviewer would. Write an
 **Notebook and text**
 
 - The notebook runs top to bottom from its directory in a fresh kernel, and twice gives the same numbers. Record the run time.
-- Every number in the text is either cited to the paper or equal to a printed output, and every attribution to the paper is on the cited page.
+- Every number in the text is either cited to the paper or equal to a printed output, and every attribution to the paper is on the cited page. A number worked out while building (in a chat or a scratch script) is not a result until an output prints it: check each count in `DATA.md` against a printed line.
+- For a new study with the paper's model, the settings table lists every difference from the paper (section 6).
 - Authors, title, venue, year and DOI of every source are correct.
 - The figures render. There is no `plt.show()`, no saved image file, and no pandas.
 - `DATA.md` has every section of the template, including the unknowns.
@@ -200,7 +212,7 @@ Before you open a pull request, check the data set as a reviewer would. Write an
 - [ ] the self-review in section 10 is done, and anything it could not settle is in `DATA.md`'s unknowns;
 - [ ] you have read the whole notebook and `DATA.md` yourself and checked every attribution against the paper.
 
-In the pull request, link the claim issue, and say which paper the analysis follows, which kind of data set it is, how long the notebook and the scripts take to run, and whether and how you used an AI agent. For the listing, give the number of inputs, the active subspace dimension, and one sentence on the model and the quantity studied. Leave "Allow edits by maintainers" on, so the maintainer can add the listing to your branch.
+In the pull request, link the claim issue, and say which paper the analysis follows, which kind of data set it is, how long the notebook and the scripts take to run, and whether and how you used an AI agent. For the listing, give the number of inputs, the active subspace dimension (with several quantities of interest, the dimension for each, or the range and the exceptions), and one sentence on the model and the quantity studied. Leave "Allow edits by maintainers" on, so the maintainer can add the listing to your branch.
 
 Checks run automatically on each pull request. They fail on a file over 10 MB, a PDF, a machine path such as `/Users/<name>/`, a reference-style link that does not render in a notebook, a `DATA.md` missing a section of the template, or a notebook not named after its directory; then they run the changed data set's notebook, `generate_data.py --check` and `check_accuracy.py`, with 30 minutes for each. A script that exits with code 3 because an outside code or download is missing is reported as skipped, not failed. Run the checks yourself first:
 
