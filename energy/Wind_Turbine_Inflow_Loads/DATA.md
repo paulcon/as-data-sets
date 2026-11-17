@@ -111,20 +111,28 @@ The original runs (from the build and run logs in the archive): four AWS EC2 c7a
 
 ## How these files relate to the paper
 
-These are new runs that use the paper's model; they are not a reproduction of the paper's simulations, and were sized to the computing available for them (a limited number of cloud machine-hours). They follow the paper's near-rated case (12 m/s; the 18 inputs and Table 3 ranges; the inflow model of Eqs. 7 and 8; 30 seeds; Eq. 5 ultimate loads and MLife-convention DELs) and differ from it in:
+These are new runs that use the paper's model; they are not a reproduction of the paper's simulations, and were sized to the computing available for them (a limited number of cloud machine-hours). They follow the paper's near-rated case (12 m/s; the 18 inputs and Table 3 ranges; the inflow model of Eqs. 7 and 8; 30 seeds; Eq. 5 ultimate loads and MLife-convention DELs). The settings that differ from the paper, or that the paper does not state, are in the table.
 
-* **design**: 300 independent uniform draws instead of the paper's radial elementary-effects design (30 Sobol starting points, ±10 % steps, 19 points each; pp. 483 and 487); the same 30 seeds for every set (the paper does not say);
-* **wind grid** 15 × 15 points, 145 m square, instead of 25 × 25 (p. 480);
-* **transient** 60 s dropped instead of 30 s (p. 480), 600 s analysed in both;
-* **tower drag**: the regression-test case computes AeroDyn tower loads (`TwrAero = True`); the paper did not consider tower drag (p. 480);
-* **ultimate bending moments** per component; the paper takes the largest vector sum of the first two components (p. 481), which cannot be formed from the stored per-channel maxima, so whether it would change the active directions is not known;
-* **S-N exponents** m = 10 (blade root) and 4 (others), and a 1 Hz equivalent frequency: the paper does not give them;
-* **non-positive-definite coherence matrices**: modified by the TurbSim patch in 38 sets; the paper does not say how it handled them;
-* **code versions**: OpenFAST v3.5.5; the paper does not give its version (it cites "OpenFAST (2017)", p. 480, whose reference is the online documentation dated November 2017, p. 512).
+**Settings: the paper and this data set**
 
-The paper is used to define the model (inputs, ranges, inflow model, quantities of interest); the notebook's results are not expected to reproduce the paper's and may or may not agree with its conclusions. The notebook relates them briefly to the paper's headline conclusion (σ_u and α the most influential parameters, pp. 479 and 490): σ_u leads here too, while α ranks lower. One possible reason is that this data set has only the near-rated bin, whereas the paper's shear sensitivity comes mostly from the below-rated bin with its wider α range (pp. 486-487); whether the other differences in settings contribute cannot be determined from the paper's text and these runs.
+| | paper | this data set |
+|---|---|---|
+| turbine | NREL 5 MW reference turbine, p. 480; the variant (land-based or offshore) is not stated | land-based model of the OpenFAST regression tests, case `5MW_Land_DLL_WTurb`, with the baseline DISCON controller |
+| codes | OpenFAST, version not stated ("OpenFAST (2017)", p. 480; the reference is the online documentation, dated November 2017, p. 512) | OpenFAST and TurbSim v3.5.5 |
+| wind-speed bins | 8, 12 and 18 m/s, p. 480 | 12 m/s only |
+| design | radial elementary effects: 30 Sobol starting points, steps of 10 % of each range, 19 points each, pp. 483 and 487 | 300 independent uniform draws on the ranges (seed 20261112) |
+| seeds | 30 per point, p. 487; whether the same for every point is not stated | 30, the same for every set |
+| analysis subset | not stated | 284 of the 300 sets, those with all 30 seeds complete |
+| mean wind profile | power-law shear $\alpha$ and a linear veer, $\beta$ the total veer across the turbine, centred on the hub, p. 485; the direction outside the rotor is not stated | TurbSim user-defined profile (`USR`), $12\,(z/90)^\alpha$ m/s at 5-200 m, direction $\beta (z - 90)/126$ within the rotor (27-153 m) and held at the edge values outside |
+| spectrum, Eq. 7 | denominator printed with $L_1$, p. 485 | $L_q$ |
+| non-positive-definite coherence | not stated | off-diagonals scaled by $1/(1+\epsilon)$ (patched TurbSim), 38 sets |
+| wind grid | 25 × 25 points covering the rotor, p. 480 | 15 × 15 points, 145 m square |
+| transient | 30 s, then 10 min, p. 480 | 60 s, then 600 s |
+| tower drag | not considered, p. 480 | AeroDyn tower loads on (`TwrAero = True` in the regression-test case) |
+| ultimate bending moments | largest vector sum of the first two components, p. 481 | each component separately; the vector sum cannot be formed from the stored maxima |
+| DEL | MLife, no Goodman correction, zero fixed mean, p. 483; S-N exponents and equivalent frequency not given | same conventions; $m = 10$ (blade root) and 4 (others), 1 Hz, 600 s |
 
-Equation 7 is printed with $L_1$ in the denominator (p. 485); the runs use $L_q$, since the paper gives a separate integral scale for each component.
+The paper is used to define the model (inputs, ranges, inflow model, quantities of interest); the notebook's results are not expected to reproduce the paper's and may or may not agree with its conclusions. The notebook relates them briefly to the paper's conclusions: "Overall, 46 % of the outliers for both ultimate and fatigue loads are due to u-direction turbulence standard deviation (σu) and 26 % for vertical shear (α); for all but two QoIs, these are the most sensitive parameters" (p. 490), and "Secondary parameters of importance are identified as veer, u-direction integral length, and u components of the IEC coherence model, as well as the exponent" (p. 479). Here σ_u leads too (the largest activity score for 25 of the 29 loads), while α ranks lower (among the three largest for 17 of the 29). One possible reason is that this data set has only the near-rated bin, whereas the paper's shear sensitivity comes mostly from the below-rated bin with its wider α range (pp. 486-487); whether the other differences in settings contribute cannot be determined from the paper's text and these runs.
 
 ## Unknowns
 
