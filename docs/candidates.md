@@ -1,6 +1,6 @@
 # Suggested articles
 
-These 633 published articles might each support a new data set. They are suggestions, not approved projects: you may build a data set from any suitable article, on this list or not. [Contributing a data set](../CONTRIBUTING.md) explains how. Each entry gives only the article's year, title, authors and DOI; [candidates.csv](candidates.csv) has the same entries with every author.
+These 632 published articles might each support a new data set. They are suggestions, not approved projects: you may build a data set from any suitable article, on this list or not. [Contributing a data set](../CONTRIBUTING.md) explains how. Each entry gives only the article's year, title, authors and DOI; [candidates.csv](candidates.csv) has the same entries with every author.
 
 ## Where the list came from
 
@@ -26,7 +26,7 @@ Written by `docs/make_candidates_md.py` from `docs/candidates.csv`; do not edit 
 - [Hydrology, subsurface and geoscience](#hydrology-subsurface-and-geoscience) (82)
 - [Climate, atmosphere and ocean](#climate-atmosphere-and-ocean) (43)
 - [Ecology and agriculture](#ecology-and-agriculture) (33)
-- [Energy](#energy) (34)
+- [Energy](#energy) (33)
 - [Plasma and fusion](#plasma-and-fusion) (30)
 - [Epidemiology and systems biology](#epidemiology-and-systems-biology) (24)
 - [Biomedical and cardiovascular](#biomedical-and-cardiovascular) (41)
@@ -369,7 +369,6 @@ Written by `docs/make_candidates_md.py` from `docs/candidates.csv`; do not edit 
 | 2019 | Experimental parameter uncertainty in proton exchange membrane fuel cell modeling. Part II: Sensitivity analysis and importance ranking | Vetter, R.; Schumacher, J. O. | [10.1016/j.jpowsour.2019.04.057](https://doi.org/10.1016/j.jpowsour.2019.04.057) |
 | 2019 | Global Sensitivity Analysis of the Single Particle Lithium-Ion Battery Model with Electrolyte | Grandjean, T. R. B.; Li, L.; Odio, M. X.; et al. | [10.1109/vppc46532.2019.8952455](https://doi.org/10.1109/vppc46532.2019.8952455) |
 | 2019 | Gradient-Free Construction of Active Subspaces for Dimension Reduction in Complex Models with Applications to Neutronics | Coleman, K. D.; Lewis, A.; Smith, R. C.; et al. | [10.1137/16M1075119](https://doi.org/10.1137/16M1075119) |
-| 2019 | Sensitivity analysis of the effect of wind characteristics and turbine properties on wind turbine loads | Robertson, A. N.; Shaler, K.; Sethuraman, L.; et al. | [10.5194/wes-4-479-2019](https://doi.org/10.5194/wes-4-479-2019) |
 | 2019 | Stepwise Global Sensitivity Analysis of a Physics-Based Battery Model using the Morris Method and Monte Carlo Experiments | Janse van Rensburg, A.; van Schoor, G.; van Vuuren, P. A. | [10.1016/j.est.2019.100875](https://doi.org/10.1016/j.est.2019.100875) |
 | 2020 | Data-driven dimensional analysis of heat transfer in irradiated particle-laden turbulent flow | Jofre, L.; del Rosario, Z. R.; Iaccarino, G. | [10.1016/j.ijmultiphaseflow.2019.103198](https://doi.org/10.1016/j.ijmultiphaseflow.2019.103198) |
 | 2020 | Efficient analysis of parametric sensitivity and uncertainty of fuel cell models with application to SOFC | Radaideh, M. I.; Radaideh, M. I. | [10.1002/er.4837](https://doi.org/10.1002/er.4837) |

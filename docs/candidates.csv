@@ -383,7 +383,6 @@ energy,pvlib python: a python package for modeling solar energy systems,"Holmgre
 energy,Experimental parameter uncertainty in proton exchange membrane fuel cell modeling. Part II: Sensitivity analysis and importance ranking,"Vetter, R.; Schumacher, J. O.",2019,10.1016/j.jpowsour.2019.04.057,
 energy,Global Sensitivity Analysis of the Single Particle Lithium-Ion Battery Model with Electrolyte,"Grandjean, T. R. B.; Li, L.; Odio, M. X.; Widanage, W. D.",2019,10.1109/vppc46532.2019.8952455,
 energy,Gradient-Free Construction of Active Subspaces for Dimension Reduction in Complex Models with Applications to Neutronics,"Coleman, K. D.; Lewis, A.; Smith, R. C.; Williams, B.; Morris, M.; Khuwaileh, B.",2019,10.1137/16M1075119,
-energy,Sensitivity analysis of the effect of wind characteristics and turbine properties on wind turbine loads,"Robertson, A. N.; Shaler, K.; Sethuraman, L.; Jonkman, J.",2019,10.5194/wes-4-479-2019,
 energy,Stepwise Global Sensitivity Analysis of a Physics-Based Battery Model using the Morris Method and Monte Carlo Experiments,"Janse van Rensburg, A.; van Schoor, G.; van Vuuren, P. A.",2019,10.1016/j.est.2019.100875,
 energy,Data-driven dimensional analysis of heat transfer in irradiated particle-laden turbulent flow,"Jofre, L.; del Rosario, Z. R.; Iaccarino, G.",2020,10.1016/j.ijmultiphaseflow.2019.103198,
 energy,Efficient analysis of parametric sensitivity and uncertainty of fuel cell models with application to SOFC,"Radaideh, M. I.; Radaideh, M. I.",2020,10.1002/er.4837,
