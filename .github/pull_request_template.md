@@ -41,4 +41,17 @@
 
 <What you could not verify, and questions for the article's authors. Write "none" if there are none.>
 
+## For the maintainer (contributors: leave this section unticked)
+
+Before merging:
+
+- [ ] The PR matches its claim issue and changes only its data set's directory.
+- [ ] The notebook, `generate_data.py --check` and `check_accuracy.py` rerun in the maintainer's environment, and the re-executed notebook is committed on this branch.
+- [ ] Spot checks (CONTRIBUTING.md, section 10): gradients against finite differences at 3 samples, eigenvalues from the shipped files, input marginals against the declared space, and a few attributions against the paper.
+- [ ] The license of every file is checked: no PDFs, publisher supplements or copied GPL code.
+- [ ] The listing is on this branch: README bullet, category README section, `SIZES` in `docs/make_notebook_index.py` and the regenerated index, and `CONTRIBUTORS.md`.
+- [ ] If another data set uses the same article, each notebook's introduction points to the other, and the PR is labelled `same-article`.
+
+After merging: close the claim issue, and remove the article from the suggested list.
+
 <!-- Delete anything a tool added to this description that is not about the data set, such as a link to an agent session. -->
