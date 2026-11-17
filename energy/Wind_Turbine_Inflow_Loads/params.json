@@ -1,0 +1,92 @@
+[
+ {
+  "name": "alpha",
+  "low": -0.4,
+  "high": 0.9
+ },
+ {
+  "name": "beta",
+  "low": -10,
+  "high": 50
+ },
+ {
+  "name": "Lu",
+  "low": 8,
+  "high": 1400
+ },
+ {
+  "name": "Lv",
+  "low": 2,
+  "high": 1300
+ },
+ {
+  "name": "Lw",
+  "low": 2,
+  "high": 450
+ },
+ {
+  "name": "sigu",
+  "low": 0.2,
+  "high": 7.3
+ },
+ {
+  "name": "sigv",
+  "low": 0.05,
+  "high": 8.1
+ },
+ {
+  "name": "sigw",
+  "low": 0.05,
+  "high": 4.3
+ },
+ {
+  "name": "au",
+  "low": 1.5,
+  "high": 26
+ },
+ {
+  "name": "av",
+  "low": 1.7,
+  "high": 18
+ },
+ {
+  "name": "aw",
+  "low": 2,
+  "high": 17
+ },
+ {
+  "name": "bu",
+  "low": 0,
+  "high": 0.08
+ },
+ {
+  "name": "bv",
+  "low": 0,
+  "high": 0.003
+ },
+ {
+  "name": "bw",
+  "low": 0,
+  "high": 0.006
+ },
+ {
+  "name": "gamma",
+  "low": 0,
+  "high": 1
+ },
+ {
+  "name": "PCuw",
+  "low": -3.5,
+  "high": 0.5
+ },
+ {
+  "name": "PCuv",
+  "low": -4.5,
+  "high": 6.0
+ },
+ {
+  "name": "PCvw",
+  "low": -2.7,
+  "high": 1.0
+ }
+]
