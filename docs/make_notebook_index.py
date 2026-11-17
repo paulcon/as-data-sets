@@ -120,6 +120,7 @@ SIZES = {
     'PyPSA_Eur_Investment_Ranges': ('5', '1'),
     'Residential_Building_Stock_Energy_Use': ('15', '1, 2'),
     'Single_Diode_Solar_Cell': ('5', '1'),
+    'Wind_Turbine_Inflow_Loads': ('18', '1, 2'),
     # Plasma and fusion
     'EU_DEMO_PROCESS_Major_Radius': ('6', '1'),
     'Hall_Thruster_Multi_Component': ('18', '1, 2'),

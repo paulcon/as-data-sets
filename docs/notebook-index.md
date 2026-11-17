@@ -83,6 +83,7 @@ Every notebook, with its number of inputs, the dimension of the active subspace 
 | [PyPSA_Eur_Investment_Ranges](../energy/PyPSA_Eur_Investment_Ranges/PyPSA_Eur_Investment_Ranges.ipynb) | stored data | 5 | 1 | local linear gradients, linear fit, quadratic fit | uniform | surrogate |
 | [Residential_Building_Stock_Energy_Use](../energy/Residential_Building_Stock_Energy_Use/Residential_Building_Stock_Energy_Use.ipynb) | stored data | 15 | 1, 2 | local linear gradients, linear fit, quadratic fit | uniform | surrogate |
 | [Single_Diode_Solar_Cell](../energy/Single_Diode_Solar_Cell/Single_Diode_Solar_Cell.ipynb) | stored data | 5 | 1 | gradients | uniform | surrogate |
+| [Wind_Turbine_Inflow_Loads](../energy/Wind_Turbine_Inflow_Loads/Wind_Turbine_Inflow_Loads.ipynb) | stored data | 18 | 1, 2 | linear fit, quadratic fit | uniform | surrogate, activity scores |
 
 ## Plasma and fusion
 

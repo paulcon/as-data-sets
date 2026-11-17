@@ -77,6 +77,7 @@ Each data set's directory contains a Jupyter notebook (`.ipynb`), the data or mo
 * **[PyPSA_Eur_Investment_Ranges](energy/PyPSA_Eur_Investment_Ranges/):** the total annual cost of a fully renewable European power system from PyPSA-Eur capacity-expansion runs. [[paper]](https://doi.org/10.1016/j.isci.2023.106702) _Stored data._
 * **[Residential_Building_Stock_Energy_Use](energy/Residential_Building_Stock_Energy_Use/):** the energy use intensity of an Irish semi-detached house. [[paper]](https://doi.org/10.1016/j.dib.2024.110241) _Stored data._
 * **[Single_Diode_Solar_Cell](energy/Single_Diode_Solar_Cell/):** a lumped-parameter single-diode photovoltaic solar cell model. [[paper]](https://doi.org/10.1002/sam.11281) _Stored data._
+* **[Wind_Turbine_Inflow_Loads](energy/Wind_Turbine_Inflow_Loads/):** ultimate and fatigue loads of the NREL 5 MW wind turbine from 9000 OpenFAST runs at 12 m/s with 18 turbulent-inflow inputs. [[paper]](https://doi.org/10.5194/wes-4-479-2019) _Stored data._
 
 ## Plasma and fusion (`plasma_fusion/`)
 
