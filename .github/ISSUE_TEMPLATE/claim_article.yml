@@ -56,6 +56,17 @@ body:
         - Not sure yet
     validations:
       required: true
+  - type: dropdown
+    id: conditions
+    attributes:
+      label: Conditions (CONTRIBUTING.md, section 6)
+      description: A reproduction uses the paper's conditions. A new study uses the paper's model under different conditions, ranges, settings or code versions.
+      options:
+        - Same conditions as the paper (reproduction)
+        - Different conditions (new study with the paper's model)
+        - Not sure yet
+    validations:
+      required: true
   - type: textarea
     id: source
     attributes:

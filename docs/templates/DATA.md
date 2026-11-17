@@ -54,7 +54,7 @@ Each accuracy number, and the script that prints it: the notebook, `generate_dat
 
 ## How these files relate to the paper
 
-Whether these are the paper's runs or new ones, which of the paper's results the notebook reproduces, and every difference from the paper, explained or stated as unexplained.
+Whether the data set is a reproduction or a new study with the paper's model (CONTRIBUTING.md, section 6), and whether these are the paper's runs or new ones. For a reproduction: which of the paper's results the notebook reproduces, and every difference from the paper, explained or stated as unexplained. For a new study: the table *Settings: the paper and this data set*, listing every difference, and how the results relate to the paper's conclusions, if the notebook compares them.
 
 ## Unknowns
 

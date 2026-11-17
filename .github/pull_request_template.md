@@ -6,13 +6,14 @@
 - Claim issue: #<number>
 - Article: <authors, title, venue, year, DOI>
 - Kind: stored data (<outside code>) | Python model (`<name>_model.py`)
+- Reproduction | new study with the paper's model (CONTRIBUTING.md, section 6)
 - Other data sets here for this article: none | `<directory>`
 - Run times: notebook <...>; `generate_data.py` <...>; `check_accuracy.py` <...> (machine: <...>)
 
 ## For the listing (the maintainer writes it)
 
 - Number of inputs: <m>
-- Active subspace dimension: <n>
+- Active subspace dimension: <n> (with several quantities of interest: the dimension for each, or the range and the exceptions)
 - Summary: <one sentence on the model and the quantity studied>
 
 ## Checklist (CONTRIBUTING.md, sections 6, 10 and 11)
